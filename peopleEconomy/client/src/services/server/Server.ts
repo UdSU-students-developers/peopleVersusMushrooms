@@ -1,6 +1,7 @@
 import CONFIG from '../../config';
 import Store from "../Store/Store";
 import { TUser } from "./types";
+import { io, Socket } from 'socket.io-client';
 
 const HOST = CONFIG.HOST;
 
@@ -8,49 +9,88 @@ class Server {
     HOST = HOST;
     store: Store;
     chatInterval: NodeJS.Timer | null = null;
-    showErrorCb: (text: string) => void = function() {};
+    showErrorCb: (text: string) => void = function () { };
+    socket: Socket | null = null;
+    socketConnected: boolean = false;
+    private eventHandlers: Map<string, Function[]> = new Map();
 
     constructor(store: Store) {
         this.store = store;
     }
 
-    private async request<T>(
-        method: string,
-        params: { [key: string]: string } = {},
-        queryParams: { [key: string]: string } = {}
-    ): Promise<T | null> {
-        try {
-            const token = this.store.getToken();
-            let url = `${this.HOST}/${method}`;
-            const paramValues = Object.values(params);
-            if (paramValues.length > 0) {
-                url += "/" + paramValues.join("/");
-            }
-            const queryParts: string[] = [];
-            if (token) {
-                queryParts.push("token=" + token);
-            }
-            for (const key in queryParams) {
-                queryParts.push(key + "=" + queryParams[key]);
-            }
-            if (queryParts.length > 0) {
-                url += "?" + queryParts.join("&");
-            }
+    initSocket(): void {
+        if (this.socket) return;
 
-            console.log("Request URL:", url);
-            const response = await fetch(url);
-            const body = await response.json();
+        const token = this.store.getToken();
+        this.socket = io(this.HOST, {
+            query: token ? { token } : {},
+            transports: ['websocket'],
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000
+        });
 
-            if (body && body.error) {
-                this.setError(body.error);
-                console.error("Server error:", body.error);
-                return null;
-            }
-            return body as T;
-        } catch (e) {
-            console.log("Request exception:", e);
-            this.setError("Unknown error");
-            return null;
+        this.socket.on('connect', () => {
+            this.socketConnected = true;
+            this.emitEvent('connect');
+        });
+
+        this.socket.on('disconnect', (reason) => {
+            this.socketConnected = false;
+            this.emitEvent('disconnect', reason);
+        });
+
+        this.socket.on('connect_error', (error) => {
+            console.error('Socket connection error:', error);
+            this.setError('Connection error');
+            this.emitEvent('connect_error', error);
+        });
+
+        this.socket.on('error', (error) => {
+            console.error('Socket error:', error);
+            this.setError(error.message || 'Socket error');
+            this.emitEvent('error', error);
+        });
+
+        this.socket.onAny((eventName, ...args) => {
+            this.emitEvent(eventName, ...args);
+        });
+    }
+
+    on(event: string, callback: Function): void {
+        if (!this.eventHandlers.has(event)) {
+            this.eventHandlers.set(event, []);
+        }
+        this.eventHandlers.get(event)?.push(callback);
+    }
+
+    private emitEvent(event: string, ...args: any[]): void {
+        const handlers = this.eventHandlers.get(event);
+        if (handlers) {
+            handlers.forEach(callback => {
+                try {
+                    callback(...args);
+                } catch (error) {
+                    console.error(`Error in event handler for ${event}:`, error);
+                }
+            });
+        }
+    }
+
+    private emit(event: string, data: any): void {
+        if (!this.socket || !this.socketConnected) {
+            this.setError('Socket not connected');
+            return;
+        }
+        this.socket.emit(event, data);
+    }
+
+    disconnectSocket(): void {
+        if (this.socket) {
+            this.socket.disconnect();
+            this.socket = null;
+            this.socketConnected = false;
+            this.eventHandlers.clear();
         }
     }
 
@@ -62,13 +102,6 @@ class Server {
         this.showErrorCb = cb;
     }
 
-    async register(username: string, password: string): Promise<boolean> { //Функцию выпилить! Она для примера
-        const user = await this.request<TUser & { username?: string; name?: string; id?: number }>("reg", { username, password });
-        if (!user) return false;
-        const name = user.username ? user.username : user.name;
-        this.store.setUser({ token: user.token, name: name, id: user.id });
-        return true;
-    }
 }
 
 export default Server;

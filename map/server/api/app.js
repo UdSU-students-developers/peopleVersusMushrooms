@@ -22,6 +22,23 @@ async function startServer() {
     // Создаем менеджеры
     new TestManager({ mediator, db, io });
 
+
+    // настройка http запросов
+    /*
+        app.use((_, res, next) => {
+            res.header('Content-Type', 'application/json; charset=utf-8');
+            res.header('Access-Control-Allow-Origin', '*');
+            next();
+        });
+        
+        app.use(express.json());
+        app.use(express.urlencoded({ extended: true }));
+        
+        // Создаем роутер
+        const router = new Router(mediator);
+        app.use('/', router);
+    */
+
     // Запуск сервака
     server.listen(SERVER_PORT, () => {
         console.log(`Server ${SERVER_NAME} running on port ${SERVER_PORT}`);

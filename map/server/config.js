@@ -15,15 +15,10 @@ class CONFIG {
         TESTDB: 'TESTDB',
     }
 
-    static ONS = {
-        // test ons
-        TEST: 'test',
-        DISCONNECT: 'disconnect'
-    }
-
-    static EMMITS = {
-        // test emmits
-        CONNECTION_TEST: 'connectionTest'
+    // сокетные сообщения
+    static MESSAGES = {
+        CHECK: 'CHECK',
+        SEND_TO_ALL: 'SEND_TO_ALL'
     }
 }
 

@@ -52,7 +52,7 @@ class ORM {
         }
     }
 
-    async update(table, condition, field, operand = 'AND') {
+    update(table, condition, field, operand = 'AND') {
         try {
             let sql = `UPDATE ${table}`;
             const fields = [];
@@ -75,14 +75,14 @@ class ORM {
                 sql += ` WHERE ${conditions.join(` ${operand} `)}`;
             }
             
-            const result = await this.db.execute(sql, params);
+            const result = this.db.execute(sql, params);
             return result.changes > 0;
         } catch (e) {
             return null;
         }
     }
 
-    async insert(table, field) {
+    insert(table, field) {
         try {
             let sql = `INSERT INTO ${table}`;
             const fields = [];
@@ -98,14 +98,14 @@ class ORM {
                 sql += ` (${fields.join(', ')}) VALUES (${placeholders.join(', ')})`;
             }
             
-            const result = await this.db.execute(sql, params);
+            const result = this.db.execute(sql, params);
             return result.lastID;
         } catch (e) {
             return null;
         }
     }
     
-    async delete(table, condition, operand = 'AND') {
+    delete(table, condition, operand = 'AND') {
         try {
             let sql = `DELETE FROM ${table}`;
             const conditions = [];
@@ -119,7 +119,7 @@ class ORM {
                 sql += ` WHERE ${conditions.join(` ${operand} `)}`;
             }
             
-            const result = await this.db.execute(sql, params);
+            const result = this.db.execute(sql, params);
             return result.changes > 0;
         } catch (e) {
             return null;

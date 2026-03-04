@@ -3,15 +3,15 @@ module.exports = (gameManager, answer) => {
         const { token, id, unitId } = req.body;
 
         if (!token) {
-            return res.json(answer.bad(11));
+            return res.send(answer.bad(11));
         }
 
         if (!id || !unitId) {
-            return res.json(answer.bad(13));
+            return res.send(answer.bad(13));
         }
 
         const result = gameManager.updateUnit(id, unitData);
 
-        return res.json(result);
+        return res.send(result);
     }
 }

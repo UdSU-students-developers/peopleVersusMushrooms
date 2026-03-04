@@ -11,7 +11,6 @@ class GameManager extends BaseManager {
         this.answer = answer;
         this.easystar = easystar;
 
-        this.nextUnitId = 1;
         this.nextMushroomId = 1;
 
         this.matrix = [];
@@ -47,18 +46,17 @@ class GameManager extends BaseManager {
 
     createUnit(unitData) {
         const unit = new Unit(this.db, this.easystar);
-        const unitId = this.nextUnitId++;
 
         unit.init({
-            id: unitId, 
+            id: unit.id, 
             x: unitData.x, 
             y: unitData.y
         });
 
-        this.units.set(unitId, unit);
+        this.units.set(unit.id, unit);
 
         return this.answer.good({
-            id: unitId,
+            id: unit.id,
             x: unit.x,
             y: unit.y
         });

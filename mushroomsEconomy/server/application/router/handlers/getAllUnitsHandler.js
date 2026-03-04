@@ -3,11 +3,11 @@ module.exports = (gameManager, answer) => {
         const { token } = req.body;
 
         if (!token) {
-            return res.json(answer.bad(11));
+            return res.send(answer.bad(11));
         }
 
         const result = gameManager.getAllUnits();
 
-        return res.json(result);
+        return res.send(result);
     }
 }

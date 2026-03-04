@@ -3,15 +3,15 @@ module.exports = (gameManager, answer) => {
         const { token, mushroomData } = req.body;
 
         if (!token) {
-            return res.json(answer.bad(11));
+            return res.send(answer.bad(11));
         }
 
         if (!mushroomData) {
-            return res.json(answer.bad(13));
+            return res.send(answer.bad(13));
         }
 
         const result = gameManager.createMushroom(mushroomData);
 
-        return res.json(result);
+        return res.send(result);
     }
 }

@@ -8,7 +8,6 @@ class GameManager extends BaseManager {
 
         this.units = new Map();
         this.mushrooms = new Map();
-        this.mediator = mediator;
         this.answer = answer;
         this.easystar = easystar;
 
@@ -94,7 +93,7 @@ class GameManager extends BaseManager {
             return this.answer.bad(14);
         }
 
-        this.unit.delete(numberId);
+        this.units.delete(numberId);
 
         return this.answer.good(`Unit deleted: ${numberId}`);
     }

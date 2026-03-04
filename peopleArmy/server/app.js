@@ -12,12 +12,16 @@ const mediator = new Mediator(CONFIG.MEDIATOR);
 
 const registrationManager = new RegistrationManager(mediator, db);
 
+const allManagers = {
+    registrationManager,
+};
+
 // Пример: подписка на событие "пользователь зарегистрирован"
 mediator.subscribe(mediator.EVENTS.USER_REGISTERED, (user) => {
     console.log(`[Mediator] Новый пользователь: ${user.username}`);
 });
 
-const router = new Router({ registrationManager });
+const router = new Router(managers);
 
 app.use(express.static(`${__dirname}/public`));
 app.use('/', router);

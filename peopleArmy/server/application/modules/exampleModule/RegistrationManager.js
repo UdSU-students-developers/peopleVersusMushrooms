@@ -4,6 +4,7 @@ const BaseManager = require('../BaseManager');
 class RegistrationManager extends BaseManager {
     constructor(mediator, db) {
         super(mediator, db);
+        
         // Регистрируем триггер: любой модуль может вызвать mediator.get(REGISTER, { username, password })
         // и получить результат регистрации без прямой ссылки на RegistrationManager
         this.mediator.set(this.TRIGGERS.REGISTER, (data) => this.register(data?.username, data?.password));

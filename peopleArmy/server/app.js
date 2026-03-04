@@ -12,7 +12,7 @@ const mediator = new Mediator(CONFIG.MEDIATOR);
 
 const registrationManager = new RegistrationManager(mediator, db);
 
-// Пример: подписка на событие "пользователь зарегистрирован" (логирование, рассылка и т.д.)
+// Пример: подписка на событие "пользователь зарегистрирован"
 mediator.subscribe(mediator.EVENTS.USER_REGISTERED, (user) => {
     console.log(`[Mediator] Новый пользователь: ${user.username}`);
 });

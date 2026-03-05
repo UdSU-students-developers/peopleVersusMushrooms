@@ -1,5 +1,5 @@
 const CONFIG = {
-    HOST: 'http://localhost:3005', // Адрес сервера
+    HOST: 'http://localhost:3004', // Адрес сервера
 };
 
 export default CONFIG;

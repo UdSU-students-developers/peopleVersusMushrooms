@@ -6,8 +6,8 @@ class GameManager extends BaseManager {
     constructor(mediator, db, answer, easystar) {
         super(mediator, db);
 
-        this.units = new Map();
-        this.mushrooms = new Map();
+        this.units = [];
+        this.mushrooms = [];
         this.answer = answer;
         this.easystar = easystar;
 
@@ -34,11 +34,13 @@ class GameManager extends BaseManager {
         const unitsList = [];
 
         this.units.forEach((unit, id) => {
-            unitsList.push({
-                id: id,
-                x: unit.x,
-                y: unit.y
-            });
+            if (unit && unit !== -1) {
+                unitsList.push({
+                    id: id,
+                    x: unit.x,
+                    y: unit.y
+                });
+            }
         });
 
         return this.answer.good(unitsList);
@@ -53,7 +55,7 @@ class GameManager extends BaseManager {
             y: unitData.y
         });
 
-        this.units.set(unit.id, unit);
+        this.units.push(unit);
 
         return this.answer.good({
             id: unit.id,
@@ -65,11 +67,11 @@ class GameManager extends BaseManager {
     updateUnit(id, unitData) {
         const numberId = parseInt(id);
 
-        if (!this.units.has(numberId)) {
+        if (!this.units[numberId] || this.units[numberId] === -1) {
             return this.answer.bad(14);
         }
 
-        const unit = this.units.get(numberId);
+        const unit = this.units[numberId];
         
         unit.init({
             id: numberId, 
@@ -87,11 +89,11 @@ class GameManager extends BaseManager {
     deleteUnit(id) {
         const numberId = parseInt(id);
 
-        if (!this.units.has(numberId)) {
+        if (!this.units[numberId] || this.units[numberId] === -1) {
             return this.answer.bad(14);
         }
 
-        this.units.delete(numberId);
+        this.units[numberId] = -1;
 
         return this.answer.good(`Unit deleted: ${numberId}`);
     }
@@ -100,11 +102,13 @@ class GameManager extends BaseManager {
         const mushroomsList = [];
 
         this.mushrooms.forEach((mushroom, id) => {
-            mushroomsList.push({
-                id: id,
-                x: mushroom.x,
-                y: mushroom.y
-            });
+            if (mushroom && mushroom !== -1) {
+                mushroomsList.push({
+                    id: id,
+                    x: mushroom.x,
+                    y: mushroom.y
+                });
+            }
         });
 
         return this.answer.good(mushroomsList);
@@ -115,7 +119,7 @@ class GameManager extends BaseManager {
         mushroom.init(mushroomData);
 
         const mushroomId = this.nextMushroomId++;
-        this.mushrooms.set(mushroomId, mushroom);
+        this.mushrooms.push(mushroom);
 
         return this.answer.good({
             id: mushroomId,
@@ -127,11 +131,11 @@ class GameManager extends BaseManager {
     updateMushroom(id, mushroomData) {
         const numberId = parseInt(id);
 
-        if (!this.mushrooms.has(numberId)) {
+        if (!this.mushrooms[numberId] || this.mushrooms[numberId] === -1) {
             return this.answer.bad(12);
         }
 
-        const mushroom = this.mushrooms.get(numberId);
+        const mushroom = this.mushrooms[numberId];
         mushroom.init(mushroomData);
 
         return this.answer.good({
@@ -144,11 +148,11 @@ class GameManager extends BaseManager {
     deleteMushroom(id) {
         const numberId = parseInt(id);
 
-        if (!this.mushrooms.has(numberId)) {
+        if (!this.mushrooms[numberId] || this.mushrooms[numberId] === -1) {
             return this.answer.bad(12);
         }
 
-        this.mushrooms.delete(numberId);
+        this.mushrooms[numberId] = -1;
 
         return this.answer.good(`Mushroom deleted: ${numberId}`);
     }

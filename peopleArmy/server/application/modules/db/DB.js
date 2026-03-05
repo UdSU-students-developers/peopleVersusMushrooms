@@ -1,7 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const ORM = require('./ORM');
 
-// Тут используется sqlite3, но вы можете сменить её на другую (лучше так и сделать). Трусов упомянал postgreSQL, поэтому если будете менять, ставьте её
 
 class DB {
     constructor({ DATABASE }) {
@@ -9,6 +8,13 @@ class DB {
         this.orm = new ORM(this.db);
     }
 
+    getUserByName(username) {
+        return this.orm.get('users', { username });
+    }
+
+    updateToken(id, token) {
+        return this.orm.update('users', ['token'], [token], { id });
+    }
 
     destructor() {
         this.db.close();

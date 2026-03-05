@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
-import Server from '../services/server/Server';
 import Registration from './Registration/Registration';
 import Login from './Login/Login';
 import Chat from './Chat/Chat'
-import Store from '../services/Store/Store';
-
 
 export enum PAGES {
     LOGIN,
@@ -14,19 +11,13 @@ export enum PAGES {
 
 export interface IBasePage {
     setPage: (name: PAGES) => void;
-    server: Server,
-    store: Store,
 }
 
 const PageManager: React.FC = () => {
     const [page, setPage] = useState<PAGES>(PAGES.LOGIN);
-    const store = new Store();
-    const server = new Server(store);
 
     const props = {
-        setPage,
-        server,
-        store,
+        setPage
     }
 
     return (

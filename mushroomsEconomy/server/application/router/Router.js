@@ -25,7 +25,7 @@ function Router({ exampleManager, gameManager, answer }) {
     router.delete('/mushroom/delete', deleteMushroomHandler(gameManager, answer));
 
     //Методы для работы с unit
-    router.post('/unit/getAll', getAllUnitsHandler(gameManager, answer));
+    router.get('/unit/getAll', getAllUnitsHandler(gameManager, answer));
     router.post('/unit/create', createUnitHandler(gameManager, answer));
     router.post('/unit/update', updateUnitHandler(gameManager, answer));
     router.delete('/unit/delete', deleteUnitHandler(gameManager, answer));

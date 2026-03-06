@@ -1,16 +1,18 @@
 module.exports = (mediator, Answer) => {
-    const { TESTDB } = mediator.getTriggerTypes();
+    const { REGISTRATION } = mediator.getTriggerTypes();
 
     return async (req, res) => {
         const params = {
-            userId: req.params.userId,
+            login: req.params.login,
+            passwordHash: req.params.passwordHash,
+            nickname: req.params.nickname,
         };
         
-        if (!params.userId) {
+        if (!params.login || !params.passwordHash ) {
             return res.json(Answer.bad(242));
         }
 
-        const response = await mediator.get(TESTDB, params);
+        const response = await mediator.get(REGISTRATION, params);
 
         if (response && response.error) {
             return res.json(Answer.bad(response.error));

@@ -1,14 +1,73 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset='utf-8'>
-    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
-    <title>Page Title</title>
-    <meta name='viewport' content='width=device-width, initial-scale=1'>
-    <link rel='stylesheet' type='text/css' media='screen' href='main.css'>
-    <script src='main.js'></script>
+    <title>Тест сокетов</title>
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 <body>
-    <h1>Server is running</h1>
+    <h1>Тест сокетов</h1>
+    
+    <script>
+        const socket = io('http://localhost:3001');
+        
+        socket.on('connect', () => {
+            console.log('Подключено к серверу. Мой ID:', socket.id);
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Отключено от сервера');
+        });
+
+        socket.on('REGISTRATION', (data) => {
+            console.log('REGISTRATION ответ:', data);
+        });
+
+        socket.on('LOGIN', (data) => {
+            console.log('LOGIN ответ:', data);
+            if (data.result === 'ok') {
+                window.userToken = data.data.token;
+                console.log('Токен сохранен:', data.data.token);
+            }
+        });
+
+        socket.on('LOGOUT', (data) => {
+            console.log('LOGOUT ответ:', data);
+            if (data.result === 'ok') {
+                window.userToken = null;
+            }
+        });
+
+        socket.on('CHECK', (data) => {
+            console.log('CHECK ответ:', data);
+        });
+
+        socket.on('SEND_TO_ALL', (data) => {
+            console.log('SEND_TO_ALL:', data);
+        });
+
+        window.test = {
+            reg: (login, pass, nick) => {
+                const hash = CryptoJS.MD5(pass).toString();
+                console.log('📤 REGISTRATION:', { login, passwordHash: hash, nickname: nick });
+                socket.emit('REGISTRATION', { login, passwordHash: hash, nickname: nick });
+            },
+            
+            login: (login, pass) => {
+                const hash = CryptoJS.MD5(pass).toString();
+                console.log('📤 LOGIN:', { login, passwordHash: hash });
+                socket.emit('LOGIN', { login, passwordHash: hash });
+            },
+            
+            logout: () => {
+                console.log('📤 LOGOUT');
+                socket.emit('LOGOUT');
+            },
+        };
+
+        console.log(' test.reg("логин", "пароль", "ник") - регистрация');
+        console.log(' test.login("логин", "пароль") - авторизация');
+        console.log(' test.logout() - логаут');
+    </script>
 </body>
 </html>

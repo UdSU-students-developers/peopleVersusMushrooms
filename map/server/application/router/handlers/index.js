@@ -1,9 +1,11 @@
-// test handlers
-const useTestHandler = require("./testHandlers/useTestHandler");
-const useTestDataBaseHandler = require("./testHandlers/useTestDataBaseHandler");
+// userHandlers
+const useLoginHandler = require("./userHandlers/useLoginHandler");
+const useRegistrationHandler = require("./userHandlers/useRegistrationHandler");
+const useLogoutHandler = require("./userHandlers/useLogoutHandler");
 
 module.exports = {
-    //test
-    useTestHandler,
-    useTestDataBaseHandler,
+    //users
+    useLoginHandler,
+    useRegistrationHandler,
+    useLogoutHandler,
 };

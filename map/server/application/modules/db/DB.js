@@ -33,9 +33,35 @@ class DB {
         return this.db.all(sql, params);
     }
 
-    // ============ TEST METHODS ============
-    getUserById(userId) {
-        return this.orm.get('users', { id: userId }, 'name');
+    // ============ USER METHODS ============
+    getUserByGuid(guid) {
+        return this.orm.get('users', { guid });
+    }
+
+    getUserByLogin(login) {
+        return this.orm.get('users', { login });
+    }
+
+    getUserByToken(token) {
+        return this.orm.get('users', { token });
+    }
+
+    updateToken(userGuid, token) {
+        return this.orm.update('users', { guid: userGuid }, { token });
+    }
+
+    createUser(login, passwordHash, nickname, guid, token) {
+        return this.orm.insert('users', {
+            login,
+            password: passwordHash,
+            nickname,
+            guid,
+            token,
+        });
+    }
+
+    clearToken(userGuid) {
+        return this.orm.update('users', { guid: userGuid }, { token: null });
     }
 }
 

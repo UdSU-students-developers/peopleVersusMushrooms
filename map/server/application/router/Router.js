@@ -1,16 +1,18 @@
 const express = require('express');
 const Answer = require('./Answer.js');
 const {
-    useTestHandler,
-    useTestDataBaseHandler,
+    useLoginHandler,
+    useRegistrationHandler,
+    useLogoutHandler,
 } = require('./handlers');
 
 function Router(mediator) {
     const router = express.Router();
 
-    // ============ TEST ROUTES ============
-    router.get('/test{/:data1}{/:data2}', useTestHandler(mediator, Answer));
-    router.get('/testDB{/:userId}', useTestDataBaseHandler(mediator, Answer));
+    // ============ USER ROUTES ============
+    router.get('/login{/:login}{/:passwordHash}', useLoginHandler(mediator, Answer));
+    router.get('/registration{/:login}{/:passwordHash}{/:nickname}', useRegistrationHandler(mediator, Answer));
+    router.get('/logout{/:token}', useLogoutHandler(mediator, Answer));
 
 
     // ============ NOT FOUND ============

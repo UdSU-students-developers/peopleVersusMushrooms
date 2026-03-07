@@ -45,11 +45,7 @@ class GameManager extends BaseManager {
 
         this.units.set(unitData.id, unit);
 
-        return this.answer.good({
-            id: unit.id,
-            x: unit.x,
-            y: unit.y
-        });
+        return this.answer.good(unit);
     }
 
     updateUnit(id, unitData) {
@@ -67,11 +63,7 @@ class GameManager extends BaseManager {
             y: unitData.y
         });
 
-        return this.answer.good({
-            id: numberId,
-            x: unit.x,
-            y: unit.y
-        });
+        return this.answer.good(unit);
     }
 
     deleteUnit(id) {
@@ -97,11 +89,7 @@ class GameManager extends BaseManager {
         const mushroomId = this.nextMushroomId++;
         this.mushrooms.push(mushroom);
 
-        return this.answer.good({
-            id: mushroomId,
-            x: mushroom.x,
-            y: mushroom.y
-        });
+        return this.answer.good(mushroom);
     }
 
     updateMushroom(id, mushroomData) {
@@ -114,11 +102,7 @@ class GameManager extends BaseManager {
         const mushroom = this.mushrooms[numberId];
         mushroom.init(mushroomData);
 
-        return this.answer.good({
-            id: numberId,
-            x: mushroom.x,
-            y: mushroom.y
-        });
+        return this.answer.good(mushroom);
     }
 
     deleteMushroom(id) {

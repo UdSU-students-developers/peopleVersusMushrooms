@@ -1,14 +1,57 @@
-import React from "react";
-import { IBasePage } from '../PageManager';
+import React, { useState } from 'react';
+import { IBasePage, PAGES } from '../PageManager';
 import './Registration.css';
 
-const Registration: React.FC<IBasePage> = (props: IBasePage) => {
+const Registration: React.FC<IBasePage> = ({ setPage, server, store }) => {
+
+    const [login, setLogin] = useState<string>('');
+    const [password, setPassword] = useState<string>('');
+    const [name, setName] = useState<string>('');
+
+    const handleRegister = (e: any) => {
+        e.preventDefault();
+    };
 
     return (
-        <div>
-            <p>Registration</p>
+        <div className="registration-container">
+            <h2>Создание аккаунта</h2>
+
+            <form onSubmit={handleRegister}>
+                <input
+                    placeholder="Ваше имя"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                />
+
+                <input
+                    placeholder="Придумайте логин"
+                    value={login}
+                    onChange={(e) => setLogin(e.target.value)}
+                    required
+                />
+
+                <input
+                    type="password"
+                    placeholder="Придумайте пароль"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                />
+
+                <button type="submit">
+                    Зарегистрироваться
+                </button>
+            </form>
+
+            <p
+                className="switch-mode"
+                onClick={() => setPage(PAGES.LOGIN)}
+            >
+                Уже есть аккаунт? Войти
+            </p>
         </div>
     );
-}
+};
 
 export default Registration;

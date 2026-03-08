@@ -3,6 +3,7 @@ import Server from '../services/server/Server';
 import Registration from './Registration/Registration';
 import Login from './Login/Login';
 import Chat from './Chat/Chat'
+import SocketChat from '../components/SocketChat';
 import Store from '../services/Store/Store';
 
 
@@ -10,6 +11,7 @@ export enum PAGES {
     LOGIN,
     REGISTRATION,
     CHAT,
+    SOCKET_CHAT,
 }
 
 export interface IBasePage {
@@ -34,6 +36,7 @@ const PageManager: React.FC = () => {
             {page === PAGES.REGISTRATION && <Registration {...props} />}
             {page === PAGES.LOGIN && <Login {...props} />}
             {page === PAGES.CHAT && <Chat {...props} />}
+            {page === PAGES.SOCKET_CHAT && <SocketChat />}
         </>
     );
 }

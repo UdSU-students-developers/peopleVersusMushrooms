@@ -6,7 +6,10 @@ const Login: React.FC<IBasePage> = (props: IBasePage) => {
 
     return (
         <div>
-            <p>Login</p>    
+            <p>Login</p>
+            <button onClick={() => props.setPage(PAGES.SOCKET_CHAT)}>
+                Перейти к тестовому сокет чату
+            </button>
         </div>
     );
 }

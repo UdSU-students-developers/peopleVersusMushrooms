@@ -1,0 +1,123 @@
+.socket-chat {
+    max-width: 600px;
+    margin: 20px auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.socket-chat-header {
+    background: #f5f5f5;
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.socket-chat-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.connection-status {
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.connection-status.connected {
+    background: #d4edda;
+    color: #155724;
+}
+
+.connection-status.disconnected {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.messages-container {
+    height: 400px;
+    overflow-y: auto;
+    background: #fafafa;
+}
+
+.messages {
+    padding: 15px;
+}
+
+.message {
+    margin-bottom: 15px;
+    background: white;
+    border-radius: 8px;
+    padding: 10px;
+    border-left: 3px solid #007bff;
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    font-size: 12px;
+    color: #666;
+}
+
+.message-from {
+    font-weight: bold;
+}
+
+.message-time {
+    color: #999;
+}
+
+.message-content {
+    color: #333;
+    line-height: 1.4;
+}
+
+.input-container {
+    padding: 15px;
+    border-top: 1px solid #ddd;
+    display: flex;
+    gap: 10px;
+}
+
+.input-container input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.input-container input:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+.input-container button {
+    padding: 10px 20px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.input-container button:hover:not(:disabled) {
+    background: #0056b3;
+}
+
+.input-container button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.input-container input:disabled {
+    background: #f5f5f5;
+    cursor: not-allowed;
+}

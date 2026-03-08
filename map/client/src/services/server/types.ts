@@ -10,9 +10,10 @@ export type TAnswer<T> = {
 }
 
 export type TUser = {
-    token: string;
-    name: string;
     id?: number;
+    nickname: string;
+    guid?: number;
+    token: string;
 }
 
 

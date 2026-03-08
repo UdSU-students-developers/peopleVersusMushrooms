@@ -1,6 +1,10 @@
 export enum EMESSAGES {
     CHECK = 'CHECK',
     SEND_TO_ALL = 'SEND_TO_ALL',
+    //user sockets
+    LOGIN = 'LOGIN',
+    REGISTRATION = 'REGISTRATION',
+    LOGOUT = 'LOGOUT',
 };
 
 const CONFIG = {

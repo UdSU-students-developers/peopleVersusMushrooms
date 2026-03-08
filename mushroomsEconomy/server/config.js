@@ -1,6 +1,6 @@
 const CONFIG = {
     NAME: 'Mushroom economy server',
-    PORT: 3005, //Порт соостветсвующий серверу вашего сервиса
+    PORT: 3005,
 
     DATABASE: {
         NAME: 'data.db',
@@ -12,17 +12,33 @@ const CONFIG = {
         },
         TRIGGERS: {
             EXAMPLE_TRIGGER: "EXAMPLE_TRIGGER",
+
+            // Mushrooms
+            GET_ALL_MUSHROOMS: "GET_ALL_MUSHROOMS",
+            CREATE_MUSHROOM: "CREATE_MUSHROOM",
+            UPDATE_MUSHROOM: "UPDATE_MUSHROOM",
+            DELETE_MUSHROOM: "DELETE_MUSHROOM",
+
+            // Units
+            GET_ALL_UNITS: "GET_ALL_UNITS",
+            CREATE_UNIT: "CREATE_UNIT",
+            UPDATE_UNIT: "UPDATE_UNIT",
+            DELETE_UNIT: "DELETE_UNIT",
+
+            // Matrix
+            UPDATE_MATRIX: "UPDATE_MATRIX",
         },
     },
+
     CORS: {
-        origin: "http://localhost:3004",
+        origin: "*",
     },
 
     SOCKET: {
-        LOGIN: 'login', //логинится
-        MESSAGE: 'message',  // шлет сообщение
-        TYPING: 'typing',           // печатает
-    }
-}
+        LOGIN: 'login',
+        MESSAGE: 'message',
+        TYPING: 'typing',
+    },
+};
 
 module.exports = CONFIG;

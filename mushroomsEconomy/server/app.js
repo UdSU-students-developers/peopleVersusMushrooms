@@ -22,13 +22,15 @@ const answer = new Answer();
 const gameManager = new GameManager( { mediator, db, common, io, answer } );
 
 app.use(express.static(`${__dirname}/public`));
-app.use('/', new Router(mediator));
+app.use('/', new Router(mediator, answer));
 
 function deinit() {
     db.destrucor();
     setTimeout(() => process.exit(), 500);
 }
 
-server.listen(PORT, () => console.log(`${NAME} started at port ${PORT}`));
+const startLog = `${NAME} started at port ${PORT} \nYou can connect to server ONLY from CORS: \n ${CONFIG.CORS.origin}`;
+
+server.listen(PORT, () => console.log(startLog));
 
 process.on('SIGNINT', deinit);

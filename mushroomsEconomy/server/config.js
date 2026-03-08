@@ -19,6 +19,7 @@ const CONFIG = {
     },
 
     SOCKET: {
+        LOGIN: 'login', //логинится
         MESSAGE: 'message',  // шлет сообщение
         TYPING: 'typing',           // печатает
     }

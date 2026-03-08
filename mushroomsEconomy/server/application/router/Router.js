@@ -15,7 +15,7 @@ const {
     updateMatrixHandler,
 } = require('./handlers');
 
-function Router({ exampleManager, gameManager, answer }) {
+function Router(mediator) {
     router.get('/reg/:username/:password', useRegistrationHandler(exampleManager)); //Методы для примера, замените своими
 
     //Методы для работы с mushroom

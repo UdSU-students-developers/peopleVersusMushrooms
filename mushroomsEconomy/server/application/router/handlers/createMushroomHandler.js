@@ -1,6 +1,7 @@
-module.exports = (gameManager, answer) => {
+module.exports = (mediator, answer) => {
     return (req, res) => {
         const { token, mushroomData } = req.body;
+        const { CREATE_MUSHROOM } = mediator.getTriggerTypes();
 
         if (!token) {
             return res.send(answer.bad(11));
@@ -10,7 +11,7 @@ module.exports = (gameManager, answer) => {
             return res.send(answer.bad(13));
         }
 
-        const result = gameManager.createMushroom(mushroomData);
+        const result = mediator.get(CREATE_MUSHROOM, mushroomData);
 
         return res.send(result);
     }

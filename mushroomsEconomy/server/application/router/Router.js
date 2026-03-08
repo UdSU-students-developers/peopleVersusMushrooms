@@ -15,23 +15,23 @@ const {
     updateMatrixHandler,
 } = require('./handlers');
 
-function Router({ exampleManager, gameManager, answer }) {
-    router.get('/reg/:username/:password', useRegistrationHandler(exampleManager)); //Методы для примера, замените своими
+function Router(mediator, answer) {
+    //router.get('/reg/:username/:password', useRegistrationHandler(mediator));
 
-    //Методы для работы с mushroom
-    router.get('/mushroom/getAll', getAllMushroomsHandler(gameManager, answer));
-    router.post('/mushroom/create', createMushroomHandler(gameManager, answer));
-    router.post('/mushroom/update', updateMushroomHandler(gameManager, answer));
-    router.delete('/mushroom/delete', deleteMushroomHandler(gameManager, answer));
+    // Mushrooms
+    router.get('/mushroom/getAll', getAllMushroomsHandler(mediator, answer));
+    router.get('/mushroom/create', createMushroomHandler(mediator, answer));
+    router.get('/mushroom/update', updateMushroomHandler(mediator, answer));
+    router.get('/mushroom/delete', deleteMushroomHandler(mediator, answer));
 
-    //Методы для работы с unit
-    router.get('/unit/getAll', getAllUnitsHandler(gameManager, answer));
-    router.post('/unit/create', createUnitHandler(gameManager, answer));
-    router.post('/unit/update', updateUnitHandler(gameManager, answer));
-    router.delete('/unit/delete', deleteUnitHandler(gameManager, answer));
+    // Units
+    router.get('/unit/getAll', getAllUnitsHandler(mediator, answer));
+    router.get('/unit/create', createUnitHandler(mediator, answer));
+    router.get('/unit/update', updateUnitHandler(mediator, answer));
+    router.get('/unit/delete', deleteUnitHandler(mediator, answer));
 
-    //Методы для работы с матрицей
-    router.post('/matrix/update', updateMatrixHandler(gameManager, answer));
+    // Matrix
+    router.get('/matrix/update', updateMatrixHandler(mediator, answer));
 
     router.all('/*path', notFoundHandler);
     return router;

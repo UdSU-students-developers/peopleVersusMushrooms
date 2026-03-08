@@ -1,15 +1,17 @@
+const EasyStar = require('easystarjs');
 const BaseManager = require("../BaseManager");
 const Mushroom = require("./Mushroom");
 const Unit = require("./Unit");
 
 class GameManager extends BaseManager {
-    constructor(mediator, db, answer, easystar) {
-        super(mediator, db);
+    constructor(options) {
+        const { mediator, db, answer, io } = options;
+        super({ mediator, db, io });
 
+        this.easystar = new EasyStar.js();
         this.units = new Map();
         this.mushrooms = [];
         this.answer = answer;
-        this.easystar = easystar;
 
         this.nextMushroomId = 1;
 

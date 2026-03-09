@@ -3,7 +3,7 @@ const BaseManager = require('../BaseManager');
 
 class UserManager extends BaseManager {
     constructor(options) {
-        this.db = options.db;
+        super(options);
         this.answer = options.answer;
     }
 

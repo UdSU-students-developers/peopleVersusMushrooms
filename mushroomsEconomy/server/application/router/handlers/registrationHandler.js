@@ -1,13 +1,13 @@
 module.exports = (userManager, answer) => {
-    return async (req, res) => {
-        const { login, password, username } = req.params;
+    return async (data, socket) => {
+        const { login, password, username } = data;
 
         if (!login || !password || !username) {
-            return answer.bad(13);
+            socket.emit('registration', answer.bad(13));
         }
 
         const result = await userManager.registration(login, password, username);
 
-        return res.send(result);
+        return socket.emit('registration', result);
     }
 }

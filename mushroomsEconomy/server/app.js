@@ -27,24 +27,26 @@ const exampleManager = new ExampleManager({
     mediator: mediator, 
     db: db
 });
+
 const gameManager = new GameManager({
     mediator: mediator, 
     db: db, 
     answer: answer,
     easystar: easystar
 });
+
 const userManager = new UserManager({
     mediator: mediator, 
-    db: db
+    db: db,
 });
 
-const router = new Router({ exampleManager, gameManager, answer, userManager });
+const router = new Router({ exampleManager, gameManager, answer, userManager, io });
 
 app.use(express.static(`${__dirname}/public`));
 app.use('/', router);
 
 function deinit() {
-    db.destrucor();
+    db.destructor();
     setTimeout(() => process.exit(), 500);
 }
 

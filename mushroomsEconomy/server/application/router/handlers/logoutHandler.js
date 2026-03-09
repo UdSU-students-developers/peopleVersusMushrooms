@@ -1,13 +1,13 @@
 module.exports = (userManager, answer) => {
-    return async (req, res) => {
-        const { token } = req.params;
+    return async (data, socket) => {
+        const { token } = data;
 
         if (!token) {
-            return answer.bad(13);
+            socket.emit('logout', answer.bad(13));
         }
 
         const result = await userManager.logout(token);
 
-        return res.send(result);
+        socket.emit('logout', result);
     }
 }

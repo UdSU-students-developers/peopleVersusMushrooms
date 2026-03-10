@@ -39,6 +39,14 @@ const CONFIG = {
         MESSAGE: 'message',
         TYPING: 'typing',
     },
+
+    SERVICES: {
+        //Название_сервиса: URL
+        MAP: 'http://localhost:3001',
+        MUSHROOMSARMY: 'http://localhost:3003',
+        PEOPLEARMY: 'http://localhost:3007',
+        PEOPLEECONOMY: 'http://localhost:3009'
+    }
 };
 
 module.exports = CONFIG;

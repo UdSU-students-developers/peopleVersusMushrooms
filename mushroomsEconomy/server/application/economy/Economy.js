@@ -92,11 +92,20 @@ class Economy {
     }
 
     get() {
+    }
 
+    printMap() {
+        console.log(`\n===========================`);
+        this.map.forEach(row => {
+            console.log(row.join(' '));
+        });
+        console.log('===========================\n');
     }
 
     update() {
         this.mycelium.forEach(mycelium => mycelium.update());
+        console.clear();
+        this.printMap();
         //...
     }
 }

@@ -18,8 +18,6 @@ const CONFIG = {
     SOCKET: {
         MESSAGE: 'message',  // шлет сообщение
         TYPING: 'typing',           // печатает
-        CONNECTION: 'connection', //Подключение
-        DISCONNECT: 'disconnect', //Отключение
 
         REGISTRATION: 'registration',
         LOGIN: 'login',

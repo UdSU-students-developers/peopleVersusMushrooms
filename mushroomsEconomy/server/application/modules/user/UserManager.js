@@ -5,13 +5,15 @@ const User = require('./User');
 class UserManager extends BaseManager {
     constructor(options) {
         super(options);
-        this.answer = options.answer;
-        this.common = options.common;
+
+        const { common, answer } = options;
+
+        this.answer = answer;
+        this.common = common;
         this.users = new Map(); // Ключ guid значение new User
 
         if (!this.io) return;
 
-        this.io = options.io;
         this.io.on('connection', (socket) => {
 
             socket.on(CONFIG.SOCKET.REGISTRATION, (data) => this.socketRegistration(data, socket));

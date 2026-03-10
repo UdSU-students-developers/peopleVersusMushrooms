@@ -12,43 +12,22 @@ const Router = require('./application/router/Router');
 const DB = require('./application/modules/db/DB');
 const Mediator = require('./application/modules/mediator/Mediator');
 const Answer = require('./application/Answer');
-const ExampleManager = require('./application/modules/exampleModule/ExampleManager');
 const GameManager = require('./application/modules/game/GameManager');
 const UserManager = require('./application/modules/user/UserManager');
 const Common = require('./application/modules/common/Common');
-const easystar = require('easystarjs');
 
 const { NAME, PORT, DATABASE } = CONFIG;
 
 const db = new DB({ DATABASE });
 const mediator = new Mediator(CONFIG.MEDIATOR);
-const answer = new Answer();
 const common = new Common();
+const answer = new Answer();
 
-const exampleManager = new ExampleManager({
-    mediator: mediator, 
-    db: db
-});
-
-const gameManager = new GameManager({
-    mediator: mediator, 
-    db: db, 
-    answer: answer,
-    easystar: easystar
-});
-
-const userManager = new UserManager({
-    mediator: mediator, 
-    common: common,
-    db: db,
-    answer: answer,
-    io: io
-});
-
-const router = new Router({ exampleManager, gameManager, answer, userManager, io });
+const gameManager = new GameManager( { mediator, db, common, io, answer } );
+const userManager = new UserManager({ mediator, db, common, io, answer });
 
 app.use(express.static(`${__dirname}/public`));
-app.use('/', router);
+app.use('/', new Router(mediator, answer));
 
 function deinit() {
     db.destructor();

@@ -17,7 +17,7 @@ const {
     updateMatrixHandler,
 } = require('./handlers');
 
-function Router({ exampleManager, gameManager, answer, userManager, io }) {
+function Router({ gameManager, answer }) {
     //Методы для работы с mushroom
     router.get('/mushroom/getAll', getAllMushroomsHandler(gameManager, answer));
     router.post('/mushroom/create', createMushroomHandler(gameManager, answer));

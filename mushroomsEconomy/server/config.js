@@ -42,6 +42,14 @@ const CONFIG = {
     
     ECONOMY: {
         INTERVAL: 200, //ms
+
+        MYCELIUM: {
+            HP: 1,
+            GROW_SPEED: 100,
+            GROW_LEVEL_UP: 2,
+            MAX_LEVEL: 3,
+            POWER: 3,
+        }
     }
 };
 

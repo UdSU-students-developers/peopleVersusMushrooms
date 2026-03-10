@@ -4,12 +4,12 @@ import './Registration.css';
 
 const Registration: React.FC<IBasePage> = ({ setPage, server, store }) => {
 
-    const [login, setLogin] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [name, setName] = useState<string>('');
 
-    const handleRegister = (e: any) => {
+    const handleRegister = async (e: any) => {
         e.preventDefault();
+        await server.register(name, password);
     };
 
     return (
@@ -21,13 +21,6 @@ const Registration: React.FC<IBasePage> = ({ setPage, server, store }) => {
                     placeholder="Ваше имя"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    required
-                />
-
-                <input
-                    placeholder="Придумайте логин"
-                    value={login}
-                    onChange={(e) => setLogin(e.target.value)}
                     required
                 />
 

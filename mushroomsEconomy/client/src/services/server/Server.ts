@@ -32,6 +32,10 @@ class Server {
             console.log('connect');
         });
 
+        this.socket.on(CONFIG.SOCKET.REGISTRATION, (data) => this.handleRegistration(data));
+        this.socket.on(CONFIG.SOCKET.LOGIN, (data) => this.handleLogin(data));
+        this.socket.on(CONFIG.SOCKET.LOGOUT, (data) => this.handleLogout(data));
+
         this.mediator.set(
             CONFIG.MEDIATOR.TRIGGERS.MESSAGE,
             (data: { name: string; text: string }) => this.chatMessage(data.name, data.text)
@@ -90,12 +94,59 @@ class Server {
         this.showErrorCb = cb;
     }
 
-    async register(username: string, password: string): Promise<boolean> { //Функцию выпилить! Она для примера
-        const user = await this.request<TUser & { username?: string; name?: string; id?: number }>("reg", { username, password });
-        if (!user) return false;
-        const name = user.username ? user.username : user.name;
-        this.store.setUser({ token: user.token, name: name, id: user.id });
+    // async register(username: string, password: string): Promise<boolean> { //Функцию выпилить! Она для примера
+    //     const user = await this.request<TUser & { username?: string; name?: string; id?: number }>("reg", { username, password });
+    //     if (!user) return false;
+    //     const name = user.username ? user.username : user.name;
+    //     this.store.setUser({ token: user.token, name: name, id: user.id });
+    //     return true;
+    // }
+
+    async register(name: string, password: string): Promise<boolean> {
+        this.socket.emit(CONFIG.SOCKET.REGISTRATION, { name, password });
         return true;
+    }
+
+    async login(name: string, password: string): Promise<boolean> {
+        this.socket.emit(CONFIG.SOCKET.LOGIN, { name, password });
+        return true;
+    }
+
+    async logout(name: string, password: string): Promise<boolean> {
+        this.socket.emit(CONFIG.SOCKET.LOGOUT, { name, password });
+        return true;
+    }
+
+    private handleRegistration(response: any) {
+        console.log('Registration response: ', response);
+
+        if (response) {
+            this.store.setUser({
+                name: response.data.name,
+                token: response.data.token
+            });
+        } else {
+            this.setError('Ошибка регистрации');
+        }
+    }
+
+    private handleLogin(response: any) {
+        console.log('Registration response: ', response);
+
+        if (response) {
+            this.store.setUser({
+                name: response.data.name,
+                token: response.data.token
+            });
+        } else {
+            this.setError('Ошибка регистрации');
+        }
+    }
+
+    private handleLogout(response: any) {
+        if (response) {
+            this.store.clearUser();
+        }
     }
 }
 

@@ -14,18 +14,10 @@ class User {
     }
 
     async get() {
-        if (!this.id) return null;
-
-        const userData = await this.db.getUserById(this.id);
-        if (userData) {
-            this.id = userData.id;
-            this.guid = userData.guid;
-            this.name = userData.name;
-            this.passwordHash = userData.passwordHash;
-            this.token = userData.token;
+        return {
+            name: this.name,
+            guid: this.guid
         }
-
-        return this;
     }
 
     getSelf() {
@@ -37,7 +29,7 @@ class User {
             guid: this.guid,
             name: this.name,
             passwordHash: this.passwordHash,
-            tokem: this.token
+            token: this.token
         }
     }
 
@@ -57,6 +49,13 @@ class User {
             this.name = userData.name;
             this.passwordHash = userData.passwordHash;
             this.token = userData.token;
+
+            console.log('id: ', this.id);
+            console.log('guid: ', this.guid);
+            console.log('name: ', this.name);
+            console.log('passwordHash: ', passwordHash);
+            console.log('token: ', this.token);
+
             return this;
         }
 
@@ -70,8 +69,9 @@ class User {
     async registration(name, password) {
         const passwordHash = this.hashPassword(password);
         const token = this.generateToken();
+        const guid = this.common.guid();
 
-        const userData = await this.db.registration(name, passwordHash, token);
+        const userData = await this.db.registration(name, guid, passwordHash, token);
 
         if (userData) {
             this.id = userData.id;
@@ -79,17 +79,22 @@ class User {
             this.name = userData.name;
             this.passwordHash = userData.passwordHash;
             this.token = userData.token;
+            console.log('id: ', this.id);
+            console.log('guid: ', this.guid);
+            console.log('name: ', this.name);
+            console.log('passwordHash: ', passwordHash);
+            console.log('token: ', this.token);
         }
 
         return this;
     }
 
     hashPassword(password) {
-        return crypto('sha256').update(password).digest('hex');
+        return md5(password);
     }
     
     generateToken() {
-        return crypto.randomBytes(32).toString('hex');
+        return md5(Date.now() + Math.random().toString());
     }
 }
 

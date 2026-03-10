@@ -13,6 +13,10 @@ const CONFIG = {
     SOCKET: {
         MESSAGE: 'message',  // шлет сообщение
         TYPING: 'typing',           // печатает
+
+        REGISTRATION: 'registration',
+        LOGIN: 'login',
+        LOGOUT: 'logout',
     }
 };
 

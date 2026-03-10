@@ -7,7 +7,9 @@ const Login: React.FC<IBasePage> = ({ setPage, server, store }) => {
     const [login, setLogin] = useState<string>('');
     const [password, setPassword] = useState<string>('');
 
-    const handleLogin = () => {
+    const handleLogin = async (e: any) => {
+        e.preventDefault();
+        await server.login(login, password);
     };
 
     const goToRegister = () => {

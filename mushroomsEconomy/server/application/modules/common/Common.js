@@ -9,3 +9,5 @@ class Common { //Класс для того, что вроде как и не з
         });
     }
 }
+
+module.exports = Common;

@@ -3,7 +3,7 @@ const CONFIG = require("../../../config");
 const { HP, GROW_SPEED, GROW_LEVEL_UP, MAX_LEVEL, POWER } = CONFIG.ECONOMY.MYCELIUM;
 
 class Mycelium {
-    constructor({ x, y, guid, callbacks: { } }) {
+    constructor({ x, y, guid, callbacks }) {
         this.x = x;
         this.y = y;
         this.guid = guid;
@@ -16,7 +16,12 @@ class Mycelium {
     }
 
     get() {
-        
+        return {
+            x: this.x,
+            y: this.y,
+            hp: this.hp,
+            level: this.level,
+        }
     }
 
     update() {
@@ -26,8 +31,11 @@ class Mycelium {
         this.grow += GROW_SPEED;
         if (this.grow >= GROW_LEVEL_UP) {
             this.grow = 0;
-            this.level += 1;
-            this.level = this.level >= MAX_LEVEL ? MAX_LEVEL : this.level;
+            if (this.level < MAX_LEVEL) {
+                this.level += 1;
+            } else {
+                this.extend();
+            }
         }
     }
 
@@ -38,21 +46,19 @@ class Mycelium {
     // породить новую грибницу
 
     canExtend() {
-        //...
-        // здесь надо знать карту, здания, юниты, и... ВРАЖЕСКИЕ здания, и =)
-        // map
-        // buildings
-        // this.mycelium
-        // enemy buildings
+        const freeCells = this.callbacks.checkAround(this.x, this.y);
+        return freeCells.length > 0;
     }
 
     extend() {
         this.grow = 0;
         this.level = 0;
-        // получить точку (x, y), в которой можно вырасти
+        const freeCells = this.callbacks.checkAround(this.x, this.y);
+        if (freeCells.length === 0) return;
+        const { x, y } = freeCells[Math.floor(Math.random() * freeCells.length)];
         this.callbacks.extend(x, y);
     }
 
 }
 
-module.exports = Mycelium;
+module.exports = Mycelium; 

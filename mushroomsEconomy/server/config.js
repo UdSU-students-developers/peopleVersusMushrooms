@@ -1,6 +1,9 @@
 const CONFIG = {
     NAME: 'Mushroom economy server',
     PORT: 3005,
+    CORS: {
+        origin: "*",
+    },
 
     DATABASE: {
         NAME: 'data.db',
@@ -30,15 +33,16 @@ const CONFIG = {
         },
     },
 
-    CORS: {
-        origin: "*",
-    },
 
     SOCKET: {
         LOGIN: 'login',
         MESSAGE: 'message',
         TYPING: 'typing',
     },
+    
+    ECONOMY: {
+        INTERVAL: 200, //ms
+    }
 };
 
 module.exports = CONFIG;

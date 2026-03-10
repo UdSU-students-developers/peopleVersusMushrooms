@@ -22,31 +22,31 @@ class UserManager extends BaseManager {
         });
     }
 
-    socketRegistration(data = {}, socket) {
+    async socketRegistration(data = {}, socket) {
         const { name, password } = data;
         if (!name || !password) {
             socket.emit(CONFIG.SOCKET.REGISTRATION, this.answer.bad(13));
         }
 
-        if (this.db.getUserByName(name)) {
+        if (await this.db.getUserByName(name)) {
             socket.emit(CONFIG.SOCKET.REGISTRATION, this.answer.bad(17));
         }
 
         const user = new User({db: this.db, socketId: socket.id});
-        user.registration(name, password);
+        await user.registration(name, password);
         this.users.set(user.guid, user);
 
         socket.emit(CONFIG.SOCKET.REGISTRATION, this.answer.good(true));
     }
 
-    socketLogin(data = {}, socket) {
+    async socketLogin(data = {}, socket) {
         const { name, password } = data;
         if (!name || !password) {
             socket.emit(CONFIG.SOCKET.LOGIN, this.answer.bad(13));
         }
 
         const user = new User({ db: this.db, socketId: socket.id });
-        user.login(name, password);
+        await user.login(name, password);
 
         if (!user) {
             socket.emit(CONFIG.SOCKET.LOGIN, this.answer.bad(16));
@@ -57,7 +57,7 @@ class UserManager extends BaseManager {
         socket.emit(CONFIG.SOCKET.LOGIN, this.answer.good(true));
     }
 
-    socketLogout(data = {}, socket) {
+    async socketLogout(data = {}, socket) {
         const { token } = data;
 
         if (!token) {
@@ -65,7 +65,7 @@ class UserManager extends BaseManager {
         }
 
         const user = this.users.get(guid);
-        user.logout();
+        await user.logout();
         this.users.delete(user.guid);
 
         socket.emit(CONFIG.SOCKET.LOGOUT, this.answer.good(true));

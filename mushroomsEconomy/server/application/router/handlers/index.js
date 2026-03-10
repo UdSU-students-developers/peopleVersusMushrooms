@@ -9,9 +9,6 @@ const createUnitHandler = require("./createUnitHandler");
 const updateUnitHandler = require("./updateUnitHandler");
 const deleteUnitHandler = require("./deleteUnitHandler");
 const updateMatrixHandler = require("./updateMatrixHandler");
-const registrationHandler = require("./registrationHandler");
-const loginHandler = require("./loginHandler");
-const logoutHandler = require("./logoutHandler");
 
 module.exports = {
     notFoundHandler,
@@ -25,7 +22,4 @@ module.exports = {
     updateUnitHandler,
     deleteUnitHandler,
     updateMatrixHandler,
-    registrationHandler,
-    loginHandler,
-    logoutHandler
 };

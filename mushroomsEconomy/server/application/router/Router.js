@@ -15,9 +15,6 @@ const {
     updateUnitHandler,
     deleteUnitHandler,
     updateMatrixHandler,
-    registrationHandler,
-    loginHandler,
-    logoutHandler
 } = require('./handlers');
 
 function Router({ exampleManager, gameManager, answer, userManager, io }) {

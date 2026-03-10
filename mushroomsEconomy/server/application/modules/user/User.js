@@ -13,10 +13,10 @@ class User {
         this.token;
     }
 
-    get() {
+    async get() {
         if (!this.id) return null;
 
-        const userData = this.db.getUserById(this.id);
+        const userData = await this.db.getUserById(this.id);
         if (userData) {
             this.id = userData.id;
             this.guid = userData.guid;
@@ -29,15 +29,24 @@ class User {
     }
 
     getSelf() {
-        
+        return {
+            db: this.db,
+            common: this.common,
+            socketId: this.socketId = socketId,
+            id: this.id,
+            guid: this.guid,
+            name: this.name,
+            passwordHash: this.passwordHash,
+            tokem: this.token
+        }
     }
 
     isLogin() {
         return this.socketId && this.token;
     }
 
-    login(name, password) {
-        const userData = this.db.getUserByName(name);
+    async login(name, password) {
+        const userData = await this.db.getUserByName(name);
         if (!userData) return null;
 
         const passwordHash = this.hashPassword(password);
@@ -58,11 +67,11 @@ class User {
         this.token = null;
     }
 
-    registration(name, password) {
+    async registration(name, password) {
         const passwordHash = this.hashPassword(password);
         const token = this.generateToken();
 
-        const userData = this.db.registration(name, passwordHash, token);
+        const userData = await this.db.registration(name, passwordHash, token);
 
         if (userData) {
             this.id = userData.id;

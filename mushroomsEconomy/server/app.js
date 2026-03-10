@@ -2,7 +2,7 @@ const CONFIG = require('./config');
 
 const express = require('express');
 const app = express();
-const server = require('http').createServer();
+const server = require('http').createServer(app);
 const io = require('socket.io')(server, CONFIG.CORS);
 
 const Router = require('./application/router/Router');
@@ -11,6 +11,7 @@ const Mediator = require('./application/modules/mediator/Mediator');
 const Common = require('./application/modules/common/Common');
 const Answer = require('./application/Answer');
 const GameManager = require('./application/modules/game/GameManager');
+const LobbyManager = require('./application/modules/lobby/LobbyManager');
 
 const { NAME, PORT, DATABASE } = CONFIG;
 
@@ -20,6 +21,8 @@ const common = new Common();
 const answer = new Answer();
 
 const gameManager = new GameManager( { mediator, db, common, io, answer } );
+const lobbyManager = new LobbyManager({ mediator, common, db, answer });
+lobbyManager.handleConnection(io);
 
 app.use(express.static(`${__dirname}/public`));
 app.use('/', new Router(mediator, answer));

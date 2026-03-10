@@ -38,6 +38,16 @@ const CONFIG = {
         LOGIN: 'login',
         MESSAGE: 'message',
         TYPING: 'typing',
+
+        CREATE_ROOM: 'create_room',
+        DELETE_ROOM: 'delete_room',
+        JOIN_ROOM: 'join_room',
+        LEAVE_ROOM: 'leave_room',
+        KICK_USER: 'kick_user',
+        
+        ROOM_LIST: 'room_list',      
+        ROOM_UPDATE: 'room_update',
+        ERROR: 'error', 
     },
 };
 

@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { IBasePage } from '../PageManager';
 import SocketService from '../../services/SocketService';
+import CONFIG from '../../config';
 import './Chat.css';
+import mediatorInstance from '../../services/Mediator/mediatorInstance';
+
+const {EVENTS, TRIGGERS} = CONFIG.MEDIATOR;
 
 interface Message {
     id: number;
@@ -42,12 +46,29 @@ const Chat: React.FC<IBasePage> = (props: IBasePage) => {
             setIsConnected(SocketService.isConnected());
         }, 1000);
 
+        //тест медиатора
+        mediatorInstance.set(TRIGGERS.TEST_TRIGGER, () => {
+            return {status:'ok', from: 'Chat'};
+        }   );
+
+        const handleTestEvent = (data: any) => {
+            console.log('Получено событие TEST_EVENT с данными:', data);
+        };
+        mediatorInstance    .subscribe(EVENTS.TEST_EVENT, handleTestEvent);
+
         // Очистка при размонтировании
         return () => {
             clearInterval(checkConnection);
+            mediatorInstance.unsubscribe(EVENTS.TEST_EVENT, handleTestEvent);
         };
     }, []);
 
+
+    const handleTest = (): void => {
+        mediatorInstance.call(EVENTS.TEST_EVENT, { message: 'Hello from Chat!' });
+        const result = mediatorInstance.get(TRIGGERS.TEST_TRIGGER);
+        console.log('[TEST_TRIGGER result]', result);
+    };
     /**
      * Обработчик отправки сообщения
      * Проверяет валидность сообщения и отправляет через сокет
@@ -141,8 +162,10 @@ const Chat: React.FC<IBasePage> = (props: IBasePage) => {
                     Отправить
                 </button>
             </div>
-        </div>
-    );
-};
+            <button onClick={handleTest}>Test Mediator</button>
+             
+        </div>  
+    );  
+};  
 
 export default Chat;

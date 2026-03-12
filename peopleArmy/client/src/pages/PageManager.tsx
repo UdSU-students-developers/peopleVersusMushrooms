@@ -4,8 +4,8 @@ import Registration from './Registration/Registration';
 import Login from './Login/Login';
 import Chat from './Chat/Chat';
 import Store from '../services/Store/Store';
-import mediatorInstance from '../services/Mediator/mediatorInstance';
 import Mediator from '../services/Mediator/Mediator';
+import CONFIG from '../config';
 
 export enum PAGES {
     LOGIN,
@@ -25,11 +25,16 @@ const PageManager: React.FC = () => {
     const store = new Store();
     const server = new Server(store);
 
+    const mediator = new Mediator({
+        EVENTS: CONFIG.MEDIATOR.EVENTS,
+        TRIGGERS: CONFIG.MEDIATOR.TRIGGERS,
+    });
+
     const props = {
         setPage,
         server,
         store,
-        mediator: mediatorInstance,
+        mediator,
     }
 
     return (

@@ -3,7 +3,6 @@ import { IBasePage } from '../PageManager';
 import SocketService from '../../services/SocketService';
 import CONFIG from '../../config';
 import './Chat.css';
-import mediatorInstance from '../../services/Mediator/mediatorInstance';
 
 const {EVENTS, TRIGGERS} = CONFIG.MEDIATOR;
 
@@ -20,6 +19,7 @@ interface Message {
  * Позволяет отправлять и получать сообщения в реальном времени
  */
 const Chat: React.FC<IBasePage> = (props: IBasePage) => {
+    const {mediator} = props;
     const [message, setMessage] = useState<string>('');
     const [messages, setMessages] = useState<Message[]>([]);
     const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -47,26 +47,26 @@ const Chat: React.FC<IBasePage> = (props: IBasePage) => {
         }, 1000);
 
         //тест медиатора
-        mediatorInstance.set(TRIGGERS.TEST_TRIGGER, () => {
+        mediator.set(TRIGGERS.TEST_TRIGGER, () => {
             return {status:'ok', from: 'Chat'};
         }   );
 
         const handleTestEvent = (data: any) => {
             console.log('Получено событие TEST_EVENT с данными:', data);
         };
-        mediatorInstance    .subscribe(EVENTS.TEST_EVENT, handleTestEvent);
+        mediator.subscribe(EVENTS.TEST_EVENT, handleTestEvent);
 
         // Очистка при размонтировании
         return () => {
             clearInterval(checkConnection);
-            mediatorInstance.unsubscribe(EVENTS.TEST_EVENT, handleTestEvent);
+            mediator.unsubscribe(EVENTS.TEST_EVENT, handleTestEvent);
         };
     }, []);
 
 
     const handleTest = (): void => {
-        mediatorInstance.call(EVENTS.TEST_EVENT, { message: 'Hello from Chat!' });
-        const result = mediatorInstance.get(TRIGGERS.TEST_TRIGGER);
+        mediator.call(EVENTS.TEST_EVENT, { message: 'Hello from Chat!' });
+        const result = mediator.get(TRIGGERS.TEST_TRIGGER);
         console.log('[TEST_TRIGGER result]', result);
     };
     /**

@@ -2,28 +2,47 @@ import md5 from 'md5';
 import { io, Socket } from 'socket.io-client';
 import CONFIG, { EMESSAGES } from '../../config';
 import { TAnswer, TUser } from "./types";
+import Mediator from '../Mediator/Mediator';
 
 const HOST = CONFIG.HOST;
 
 class Server {
     socket: Socket;
     chatInterval: NodeJS.Timer | null = null;
+    mediator: Mediator;
 
-    constructor() {
+    constructor(mediator: Mediator) {
+        this.mediator = mediator;
         this.socket = io(HOST);
+
         this.socket.on('connect', () => console.log('КОНнЕНКШОН!!! id:', this.socket.id));
         this.socket.on("disconnect", () => console.log('дисконнект. id:', this.socket.id));
-        this.socket.on(EMESSAGES.CHECK, (data: string) => console.log(data));
-        this.socket.on(EMESSAGES.SEND_TO_ALL, (data: { name: string, text: string }) => console.log(data));
-        this.socket.on(EMESSAGES.LOGIN, (data: TAnswer<TUser>) => console.log(data));
-        this.socket.on(EMESSAGES.REGISTRATION, (data: TAnswer<TUser>) => console.log(data));
-        this.socket.on(EMESSAGES.LOGOUT, (data: TAnswer<TUser>) => console.log(data));
+
+        this.socket.on(EMESSAGES.CHECK, (data: string) => {
+            this.mediator.call(EMESSAGES.CHECK, data);
+        });
+
+        this.socket.on(EMESSAGES.SEND_TO_ALL, (data: { name: string, text: string }) => {
+            this.mediator.call(EMESSAGES.SEND_TO_ALL, data);
+        });
+
+        this.socket.on(EMESSAGES.LOGIN, (data: TAnswer<TUser>) => {
+            this.mediator.call(EMESSAGES.LOGIN, data);
+        });
+
+        this.socket.on(EMESSAGES.REGISTRATION, (data: TAnswer<TUser>) => {
+            this.mediator.call(EMESSAGES.REGISTRATION, data);
+        });
+
+        this.socket.on(EMESSAGES.LOGOUT, (data: TAnswer<TUser>) => {
+            this.mediator.call(EMESSAGES.LOGOUT, data);
+        });
     }
 
     private async request<T>(method: string, params: { [key: string]: string | number } = {}): Promise<T | null> {
         try {
             params.method = method;
-            const token = 'default token'; //this.store.getToken();
+            const token = this.mediator.get<string>(EMESSAGES.GET_TOKEN);
             if (token) {
                 params.token = token;
             }

@@ -5,6 +5,7 @@ export enum EMESSAGES {
     LOGIN = 'LOGIN',
     REGISTRATION = 'REGISTRATION',
     LOGOUT = 'LOGOUT',
+    GET_TOKEN = 'GET_TOKEN',
 };
 
 const CONFIG = {

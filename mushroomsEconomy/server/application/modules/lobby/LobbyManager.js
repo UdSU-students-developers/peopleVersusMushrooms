@@ -1,24 +1,16 @@
-const Room = require('./Room');
-const CONFIG = require('../../../config')
+const CONFIG = require('../../../config');
+const BaseManager = require('../BaseManager')
 
-class LobbyManager {
-    constructor({ mediator, common, db, answer }) {
-        this.mediator = mediator;
-        this.common = common;
-        this.db = db;
-        this.orm = db.orm;
-        this.answer = answer; 
-
-        this.users = new Map(); 
+class LobbyManager extends BaseManager {
+    constructor(options) {
+        super(options);
+        this.users = {}; 
 
         this.init();
     }
 
-    async init() {
-        this.initSocket();
-    }
-
-    initSocket() {
+    init() {
+        this.handleConnection(this.io);
     }
 
     handleConnection(io) {
@@ -40,19 +32,21 @@ class LobbyManager {
         socket.emit(CONFIG.SOCKET.ERROR, { code, message });
     }
 
-    getUser(socket) { return this.users.get(socket.id); }
+    getUser(socket) { 
+        return this.users[socket.id];
+    }
 
     async handleLogin(socket, data) {
         if (!data || !data.name) return this.sendError(socket, 16);
         
         const user = { id: this.common.guid(), name: data.name };
-        this.users.set(socket.id, user);
+        this.users[socket.id] = user;
 
-        const rooms = await Room.findAll(this.orm, this.common);
+        const rooms = await this.db.getAllRooms();
         
         socket.emit('login_success', { 
             user, 
-            rooms: rooms.map(r => r.toJSON()) 
+            rooms: rooms 
         });
     }
 
@@ -62,22 +56,22 @@ class LobbyManager {
 
         if (!data || !data.name) return this.sendError(socket, 18);
 
-        const room = await Room.create(data.name, user.id, this.orm, this.common);
+        const room = await this.db.createRoom(data.name, user.id);
         
-        socket.emit('room_created', room.toJSON());
-        socket.broadcast.emit('room_created', room.toJSON());
+        socket.emit('room_created', room);
+        socket.broadcast.emit('room_created', room);
     }
 
     async handleDeleteRoom(socket, data) {
         const user = this.getUser(socket);
         if (!user) return this.sendError(socket, 17);
 
-        const room = await Room.findById(data.roomId, this.orm, this.common);
+        const room = await this.db.getRoomById(data.roomId);
         if (!room) return this.sendError(socket, 19);
 
         if (room.ownerId !== user.id) return this.sendError(socket, 20);
 
-        await room.delete();
+        await this.db.deleteRoom(room.id);
 
         socket.broadcast.emit('room_deleted', { roomId: room.id });
         socket.emit('room_deleted', { roomId: room.id });
@@ -87,32 +81,37 @@ class LobbyManager {
         const user = this.getUser(socket);
         if (!user) return this.sendError(socket, 17);
 
-        const room = await Room.findById(data.roomId, this.orm, this.common);
+        const room = await this.db.getRoomById(data.roomId);
         if (!room) return this.sendError(socket, 19);
 
-        await room.addParticipant(user.id);
+        if (!room.participants.includes(user.id)) {
+            room.participants.push(user.id);
+            await this.db.saveRoom(room);
+        }
 
-        socket.emit('room_updated', room.toJSON());
-        socket.broadcast.emit('room_updated', room.toJSON());
+        socket.emit('room_updated', room);
+        socket.broadcast.emit('room_updated', room);
     }
 
     async handleKickUser(socket, data) {
         const user = this.getUser(socket);
         if (!user) return this.sendError(socket, 17);
 
-        const room = await Room.findById(data.roomId, this.orm, this.common);
+        const room = await this.db.getRoomById(data.roomId);
         if (!room) return this.sendError(socket, 19);
 
         if (room.ownerId !== user.id) return this.sendError(socket, 20);
 
-        await room.removeParticipant(data.userId);
+        room.participants = room.participants.filter(id => id !== data.userId);
+        
+        await this.db.saveRoom(room);
 
-        socket.emit('Комната обновлена', room.toJSON());
-        socket.broadcast.emit('Комната обновлена', room.toJSON());
+        socket.emit('room_updated', room);
+        socket.broadcast.emit('room_updated', room);
     }
 
     handleDisconnect(socket) {
-        this.users.delete(socket.id);
+        delete this.users[socket.id];
     }
 }
 

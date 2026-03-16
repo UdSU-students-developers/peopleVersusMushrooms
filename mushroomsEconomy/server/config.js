@@ -35,22 +35,22 @@ const CONFIG = {
 
 
     SOCKET: {
-        MESSAGE: 'message',  // шлет сообщение
-        TYPING: 'typing',           // печатает
+        MESSAGE: 'MESSAGE',  // шлет сообщение
+        TYPING: 'TYPING',           // печатает
 
-        REGISTRATION: 'registration',
-        LOGIN: 'login',
-        LOGOUT: 'logout',
+        REGISTRATION: 'REGISTRATION',
+        LOGIN: 'LOGIN',
+        LOGOUT: 'LOGOUT',
 
-         CREATE_ROOM: 'create_room',
-        DELETE_ROOM: 'delete_room',
-        JOIN_ROOM: 'join_room',
-        LEAVE_ROOM: 'leave_room',
-        KICK_USER: 'kick_user',
+        CREATE_ROOM: 'CREATE_ROOM',
+        DELETE_ROOM: 'DELETE_ROOM',
+        JOIN_ROOM: 'JOIN_ROOM',
+        LEAVE_ROOM: 'LEAVE_ROOM',
+        KICK_USER: 'KICK_USER',
         
-        ROOM_LIST: 'room_list',      
-        ROOM_UPDATE: 'room_update',
-        ERROR: 'error',
+        ROOM_LIST: 'ROOM_LIST',      
+        ROOM_UPDATE: 'ROOM_UPDATE',
+        ERROR: 'ERROR',
     },
     
     ECONOMY: {

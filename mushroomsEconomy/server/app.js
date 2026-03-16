@@ -16,18 +16,17 @@ const LobbyManager = require('./application/modules/lobby/LobbyManager');
 
 const { NAME, PORT, DATABASE } = CONFIG;
 
-const db = new DB({ DATABASE });
-const mediator = new Mediator(CONFIG.MEDIATOR);
 const common = new Common();
+const db = new DB({ DATABASE, common });
+const mediator = new Mediator(CONFIG.MEDIATOR);
 const answer = new Answer();
 
 const gameManager = new GameManager( { mediator, db, common, io, answer } );
 const userManager = new UserManager({ mediator, db, common, io, answer });
-const lobbyManager = new LobbyManager({ mediator, common, db, answer });
-lobbyManager.handleConnection(io);
+const lobbyManager = new LobbyManager({ mediator, common, db, io, answer });
 
 app.use(express.static(`${__dirname}/public`));
-app.use('/', new Router(mediator, answer));
+app.use('/', new Router(gameManager,mediator, answer));
 
 function deinit() {
     db.destructor();

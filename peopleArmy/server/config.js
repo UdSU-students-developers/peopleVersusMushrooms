@@ -9,24 +9,33 @@ const CONFIG = {
     MEDIATOR: {
         EVENTS: {
             USER_REGISTERED: "USER_REGISTERED",   // вызывается после успешной регистрации
-            SOCKET_MESSAGE_RECEIVED: "SOCKET_MESSAGE_RECEIVED",  // сообщение получено от клиента
-            SOCKET_BROADCAST_MESSAGE: "SOCKET_BROADCAST_MESSAGE",  // рассылка сообщения всем клиентам
         },
         TRIGGERS: {
             REGISTER: "REGISTER",                 // триггер для регистрации (возвращает результат)
-            SOCKET_HANDLE_MESSAGE: "SOCKET_HANDLE_MESSAGE",  // обработчик сообщения от клиента
-            SOCKET_BROADCAST_TO_ALL: "SOCKET_BROADCAST_TO_ALL",  // рассылать всем клиентам
         },
     },
 
     SOCKET: {
-        EVENTS: {
-            CONNECTION: "connection",
-            DISCONNECT: "disconnect",
-            MESSAGE_FROM_CLIENT: "message_from_client",
-            MESSAGE_TO_CLIENTS: "message_to_clients",
-        },
+        MESSAGE_FROM_CLIENT: "message_from_client",
+        MESSAGE_TO_CLIENTS: "message_to_clients",
     },
+
+    ARMY: {
+        INTERVAL: 100, //ms
+
+        SOLDIER: {
+            HP: 10,
+            SPEED: 1,
+            RANGE: 3, // дальность стрельбы
+            VISIBLE: 5 // дальность видимости
+        },
+        BMP: {
+            HP: 100,
+            SPEED: 3,
+            RANGE: 5, // дальность стрельбы
+            VISIBLE: 3 // дальность видимости
+        },
+    }
 }
 
 module.exports = CONFIG;

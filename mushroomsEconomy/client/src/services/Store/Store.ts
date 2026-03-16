@@ -1,4 +1,4 @@
-import { TUser } from "../server/types";
+import { TUser } from "../Server/types";
 
 const TOKEN = 'token';
 

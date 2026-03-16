@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Server from '../services/server/Server';
+import Server from '../services/Server/Server';
 import Registration from './Registration/Registration';
 import Login from './Login/Login';
 import Chat from './Chat/Chat'

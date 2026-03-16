@@ -6,7 +6,8 @@ const CONFIG = {
 
         },
         TRIGGERS: {
-            MESSAGE: 'message:socket'
+            MESSAGE: 'message:socket',
+            ERROR: 'error',
         }
     },
 

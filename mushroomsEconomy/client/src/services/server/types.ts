@@ -4,4 +4,7 @@ export type TUser = {
     id?: number;
 }
 
-
+export type TError = {
+    code: number;
+    text: string;
+}

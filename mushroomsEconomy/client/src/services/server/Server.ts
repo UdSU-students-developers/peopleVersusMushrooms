@@ -3,7 +3,7 @@ import CONFIG from '../../config';
 import Mediator from '../Mediator/Mediator';
 
 import Store from "../Store/Store";
-import { TUser } from "./types";
+import { TError } from "./types";
 
 import { io, Socket } from "socket.io-client";
 
@@ -20,10 +20,10 @@ class Server {
     mediator: Mediator;
     chatInterval: NodeJS.Timer | null = null;
     socket: Socket;
-    showErrorCb: (text: string) => void = function () { };
+    showErrorCb: (error: TError) => void = () => { };
 
     constructor(props: Tprops) {
-        
+
         this.mediator = props.mediator;
         this.store = props.store;
         this.socket = io(HOST);
@@ -39,6 +39,11 @@ class Server {
         this.mediator.set(
             CONFIG.MEDIATOR.TRIGGERS.MESSAGE,
             (data: { name: string; text: string }) => this.chatMessage(data.name, data.text)
+        )
+
+        this.mediator.set(
+            CONFIG.MEDIATOR.TRIGGERS.ERROR,
+            (error:TError) => this.setError(error)
         )
     }
 
@@ -81,16 +86,19 @@ class Server {
             return body as T;
         } catch (e) {
             console.log("Request exception:", e);
-            this.setError("Unknown error");
+            this.setError({
+                code: 9000,
+                text: 'Unknown error',
+            });
             return null;
         }
     }
 
-    private setError(text: string): void {
-        this.showErrorCb(text);
+    private setError(error: TError): void {
+        this.showErrorCb(error);
     }
 
-    showError(cb: (text: string) => void) {
+    showError(cb: (error: TError) => void) {
         this.showErrorCb = cb;
     }
 
@@ -120,26 +128,26 @@ class Server {
     private handleRegistration(response: any) {
         console.log('Registration response: ', response);
 
-        if (response) {
+        if (!response.error) {
             this.store.setUser({
                 name: response.data.name,
                 token: response.data.token
             });
         } else {
-            this.setError('Ошибка регистрации');
+            this.setError(response.error);
         }
     }
 
     private handleLogin(response: any) {
         console.log('Login response: ', response);
 
-        if (response) {
+        if (!response.error) {
             this.store.setUser({
                 name: response.data.name,
                 token: response.data.token
             });
         } else {
-            this.setError('Ошибка регистрации');
+            this.setError(response.error);
         }
     }
 

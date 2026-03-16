@@ -18,10 +18,21 @@ class ChatManager extends BaseManager {
 
     socketMessageFromClient(data, socket) {
         if (data) {
+        const text = typeof data === 'string' ? data : (data.text ?? '');
+        const timestamp = data.timestamp ?? new Date().toISOString();
+        const payload = {
+            type: 'message',
+            data: { text, timestamp },
+            from: socket.id,
+            timestamp
+        };
             socket.emit(MESSAGE_FROM_CLIENT, 'ok');
-            this.io.emit(MESSAGE_TO_CLIENTS, { text: data });
+            this.io.emit(MESSAGE_TO_CLIENTS, payload);
         }
     }
 }
 
 module.exports = ChatManager;
+
+
+

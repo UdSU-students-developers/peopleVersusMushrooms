@@ -8,29 +8,26 @@ export type TMediator = {
 }
 
 class Mediator {
-    private events: { [key: string]: Function[] } = {}; // about events
-    private triggers: { [key: string]: Function } = {}; // about triggers
+    private events: { [key: string]: Function[] } = {}; 
+    private triggers: { [key: string]: Function } = {}; 
     private EVENTS: TNamesArray;
     private TRIGGERS: TNamesArray;
 
-    constructor(options: TMediator) {
-        const { EVENTS = {}, TRIGGERS = {} } = options;
+    constructor({ EVENTS = {}, TRIGGERS = {} }: TMediator) {
         this.EVENTS   = EVENTS;
         this.TRIGGERS = TRIGGERS;
-        // init events and triggers
-        Object.keys(this.EVENTS  ).forEach(key => this.events[this.EVENTS[key]] = []);
+        
+        Object.keys(this.EVENTS).forEach(key => this.events[this.EVENTS[key]] = []);
         Object.keys(this.TRIGGERS).forEach(key => this.triggers[this.TRIGGERS[key]] = () => { return null; });
     }
 
     /**********/
     /* EVENTS */
     /**********/
-    // get event types
     getEventTypes(): TNamesArray {
         return this.EVENTS;
     }
 
-    // subscribe event
     subscribe(name: string, func: (a: any) => any): void {
         if (this.events[name] && func instanceof Function) {
             this.events[name].push(func);
@@ -38,9 +35,7 @@ class Mediator {
     }
 
     unsubscribe(name: string, _func: (a: any) => any): void {
-        if (!(this.events[name] && _func instanceof Function)) {
-            return;
-        }
+        if (!(this.events[name] && _func instanceof Function)) return;
         const handlerEntry = this.events[name]
             .map((func, i) => ([func, i]))
             .filter(([func]) => func === _func)[0];
@@ -50,18 +45,13 @@ class Mediator {
     }
 
     unsubscribeAll(name: string): void {
-        if (name && this.events[name]) {
-            this.events[name] = [];
-        }
+        if (name && this.events[name]) this.events[name] = [];
     }
 
-    // call event
     call(name: string, data?: any): void {
         if (this.events[name]) {
             this.events[name].forEach(event => {
-                if (event instanceof Function) { 
-                    event(data);
-                }
+                if (event instanceof Function) event(data);
             });
         }
     }
@@ -69,19 +59,14 @@ class Mediator {
     /************/
     /* TRIGGERS */
     /************/
-    // get trigger types
     getTriggerTypes(): TNamesArray {
         return this.TRIGGERS;
     }
 
-    // set trigger
     set(name: string, func: (a: any) => any): void {
-        if (name && func instanceof Function) {
-            this.triggers[name] = func;
-        }
+        if (name && func instanceof Function) this.triggers[name] = func;
     }
 
-    // get trigger value
     get<T>(name: string, data?: any): T | null {
         return (this.triggers[name] && this.triggers[name] instanceof Function) ? this.triggers[name](data) : null;
     }

@@ -17,12 +17,12 @@ const {
     updateMatrixHandler,
 } = require('./handlers');
 
-function Router({ gameManager, answer }) {
+function Router({ mediator, answer }) {
     //Методы для работы с mushroom
-    router.get('/mushroom/getAll', getAllMushroomsHandler(gameManager, answer));
-    router.post('/mushroom/create', createMushroomHandler(gameManager, answer));
-    router.post('/mushroom/update', updateMushroomHandler(gameManager, answer));
-    router.delete('/mushroom/delete', deleteMushroomHandler(gameManager, answer));
+    router.get('/mushroom/getAll', getAllMushroomsHandler(mediator, answer));
+    router.post('/mushroom/create', createMushroomHandler(mediator, answer));
+    router.post('/mushroom/update', updateMushroomHandler(mediator, answer));
+    router.delete('/mushroom/delete', deleteMushroomHandler(mediator, answer));
 
     // Units
     router.get('/unit/getAll', getAllUnitsHandler(mediator, answer));

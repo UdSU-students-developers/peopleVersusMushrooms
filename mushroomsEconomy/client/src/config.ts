@@ -3,20 +3,26 @@ const CONFIG = {
 
     MEDIATOR: {
         EVENTS: {
-
+            LOGIN: 'LOGIN',
         },
         TRIGGERS: {
-            MESSAGE: 'message:socket'
+            MESSAGE: 'MESSAGE:SOCKET',
+
+            SET_STORE: 'SET_STORE',
+            GET_STORE: 'GET_STORE',
+            CLEAR_STORE: 'CLEAR_STORE',
+
+            ERROR: "ERROR",
         }
     },
 
     SOCKET: {
-        MESSAGE: 'message',  // шлет сообщение
-        TYPING: 'typing',           // печатает
+        MESSAGE: 'MESSAGE',  // шлет сообщение
+        TYPING: 'TYPING',    // печатает
 
-        REGISTRATION: 'registration',
-        LOGIN: 'login',
-        LOGOUT: 'logout',
+        REGISTRATION: 'REGISTRATION',
+        LOGIN: 'LOGIN',
+        LOGOUT: 'LOGOUT',
     }
 };
 

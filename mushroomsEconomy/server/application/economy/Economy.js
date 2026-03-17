@@ -108,7 +108,8 @@ class Economy {
 
     update() {
         this.mycelium.forEach(mycelium => mycelium.update());
-        this.printMap();
+        // this.printMap(); 
+        // Включатать только по надобности!
         //...
     }
 }

@@ -4,46 +4,40 @@ import Popup from './components/Popup/Popup';
 
 import Server from './services/Server/Server';
 import Store from './services/Store/Store';
+import useMediator from './services/Mediator/useMediator';
+import useStore from './services/Store/useStore';
 
 import './App.css';
-import Mediator from './services/Mediator/Mediator';
 import CONFIG from './config';
 
-export const MediatorContext = React.createContext<Mediator>(null!);
-export const ServerContext = React.createContext<Server>(null!);
-export const StorageContext = React.createContext<Store>(null!);
+export const MediatorContext = React.createContext<any>(null!);
 
-const App: React.FC = () => {
+function App() {
+  const mediator = useMediator();
+  const store = useStore(mediator);
 
-  const store = new Store();
-  const mediator = new Mediator(CONFIG.MEDIATOR);
   const server = new Server(mediator);
+
+  const pressMeHandler = () => mediator.get(
+    CONFIG.MEDIATOR.TRIGGERS.MESSAGE,
+    { name: 'Vasya', text: 'something' }
+  );
 
   const props = {
     mediator,
     server,
     store,
-  }//Удалить в будущем, реализовать все через контексты
-
-  const pressErrorHandler = () => mediator.get(
-    CONFIG.MEDIATOR.TRIGGERS.ERROR,
-    { code: 'Номер', text: 'текст' }
-  )
+  }
 
   return (
-    <div className="App">
       <MediatorContext.Provider value={mediator}>
-        <ServerContext.Provider value={server}>
-          <StorageContext.Provider value={store}>
+          <div className="App">
+            <button onClick={pressMeHandler}>Press Me</button>
             <div className='app'>
-              <button onClick={pressErrorHandler}>КнопкаТестОшибки</button>
-              <Popup />
-              <PageManager {...props} />
+              <PageManager {...props}/>
             </div>
-          </StorageContext.Provider>
-        </ServerContext.Provider>
+          </div>
       </MediatorContext.Provider>
-    </div>
   );
 }
 

@@ -1,9 +1,9 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { ServerContext } from '../../App';
+import { MediatorContext} from '../../App';
 import Button from '../Button/Button';
+import { TError } from '../../services/Server/types';
 
 import './Popup.scss';
-import { TError } from '../../services/Server/types';
 
 type TInnerButton = {
     isHover?: boolean;
@@ -20,7 +20,7 @@ export type TPopupData = {
 };
 
 const Popup: React.FC = () => {
-    const server = useContext(ServerContext);
+    const server = useContext(MediatorContext);
     const [data, setData] = useState<TPopupData | null>(null);
 
     useEffect(() => {

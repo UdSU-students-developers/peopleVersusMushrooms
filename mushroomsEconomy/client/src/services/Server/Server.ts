@@ -1,9 +1,8 @@
-import CONFIG from '../../config';
-import Store from "../Store/Store";
-import { TError } from "./types";
-
 import { io, Socket } from "socket.io-client";
+import CONFIG from '../../config';
 import Mediator from '../Mediator/Mediator';
+import { TResponse, TUser } from "../Server/types";
+import { TError } from "../Server/types";
 
 const { HOST } = CONFIG;
 
@@ -24,16 +23,6 @@ class Server {
         this.socket.on(CONFIG.SOCKET.REGISTRATION, (data) => this.handleRegistration(data));
         this.socket.on(CONFIG.SOCKET.LOGIN, (data) => this.handleLogin(data));
         this.socket.on(CONFIG.SOCKET.LOGOUT, (data) => this.handleLogout(data));
-
-        this.mediator.set(
-            CONFIG.MEDIATOR.TRIGGERS.MESSAGE,
-            (data: { name: string; text: string }) => this.chatMessage(data.name, data.text)
-        )
-
-        this.mediator.set(
-            CONFIG.MEDIATOR.TRIGGERS.ERROR,
-            (error:TError) => this.setError(error)
-        )
     }
 
     private chatMessage(name: string, text: string): void {

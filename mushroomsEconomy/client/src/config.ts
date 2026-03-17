@@ -12,7 +12,7 @@ const CONFIG = {
             GET_STORE: 'GET_STORE',
             CLEAR_STORE: 'CLEAR_STORE',
 
-            ERROR: "error",
+            ERROR: "ERROR",
         }
     },
 

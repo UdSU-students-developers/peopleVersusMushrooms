@@ -1,5 +1,9 @@
 import React from 'react';
 import PageManager from './pages/PageManager';
+import Popup from './components/Popup/Popup';
+
+import Server from './services/Server/Server';
+import Store from './services/Store/Store';
 import Server from './services/server/Server';
 import useMediator from './services/Mediator/useMediator';
 import useStore from './services/Store/useStore';

@@ -1,7 +1,8 @@
 import { io, Socket } from "socket.io-client";
 import CONFIG from '../../config';
 import Mediator from '../Mediator/Mediator';
-import { TResponse, TUser } from "./types";
+import { TResponse, TUser } from "../Server/types";
+import { TError } from "../Server/types";
 
 const { HOST } = CONFIG;
 
@@ -9,7 +10,7 @@ class Server {
     mediator: Mediator;
     chatInterval: NodeJS.Timer | null = null;
     socket: Socket;
-    showErrorCb: (text: string) => void = function () { };
+    showErrorCb: (error: TError) => void = () => { };
 
     constructor(mediator: Mediator) {
         this.mediator = mediator;
@@ -64,16 +65,19 @@ class Server {
             return body as T;
         } catch (e) {
             console.log("Request exception:", e);
-            this.setError("Unknown error");
+            this.setError({
+                code: 9000,
+                text: 'Unknown error',
+            });
             return null;
         }
     }
 
-    private setError(text: string): void {
-        this.showErrorCb(text);
+    private setError(error: TError): void {
+        this.showErrorCb(error);
     }
 
-    showError(cb: (text: string) => void) {
+    showError(cb: (error: TError) => void) {
         this.showErrorCb = cb;
     }
 
@@ -104,7 +108,7 @@ class Server {
                 }
             });
         } else {
-            this.setError('Ошибка регистрации');
+            this.setError(response.error);
         }
     }
 
@@ -123,7 +127,7 @@ class Server {
             
             this.mediator.call(LOGIN); 
         } else {
-            this.setError('Ошибка авторизации');
+            this.setError({code: 11, text: "Ошибка авторизации"});
         }
     }
 

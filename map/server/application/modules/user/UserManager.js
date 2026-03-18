@@ -49,13 +49,13 @@ class UserManager extends BaseManager {
         
         // валидация
         if (!login || !passwordHash) {
-            return socket.emit(MESSAGES.REGISTRATION, this.Answer.bad(242));
+            return socket.emit(MESSAGES.REGISTRATION, this.answer.bad(242));
         }
 
         // проверка на существование
         const existingUser = await this.db.getUserByLogin(login);
         if (existingUser) {
-            return socket.emit(MESSAGES.REGISTRATION, this.Answer.bad(1003));
+            return socket.emit(MESSAGES.REGISTRATION, this.answer.bad(1003));
         }
 
         // создаем пользователя
@@ -72,7 +72,7 @@ class UserManager extends BaseManager {
         this.socketToUser.set(socket.id, user.guid);
 
         console.log(`Сокет ${socket.id} зарегистрировался как пользак ${user.guid}`);
-        socket.emit(MESSAGES.REGISTRATION, this.Answer.good(user.getSelf()));
+        socket.emit(MESSAGES.REGISTRATION, this.answer.good(user.getSelf()));
     }
 
     async socketLogin(data = {}, socket) {
@@ -80,7 +80,7 @@ class UserManager extends BaseManager {
         
         // валидация
         if (!login || !passwordHash) {
-            return socket.emit(MESSAGES.LOGIN, this.Answer.bad(242));
+            return socket.emit(MESSAGES.LOGIN, this.answer.bad(242));
         }
 
         // создаем временного пользователя для логина
@@ -93,7 +93,7 @@ class UserManager extends BaseManager {
         const loggedInUser = await user.loginUser(login, passwordHash);
         
         if (!loggedInUser) {
-            return socket.emit(MESSAGES.LOGIN, this.Answer.bad(1002));
+            return socket.emit(MESSAGES.LOGIN, this.answer.bad(1002));
         }
 
         // сохраняем
@@ -101,7 +101,7 @@ class UserManager extends BaseManager {
         this.socketToUser.set(socket.id, user.guid);
 
         console.log(`Сокет ${socket.id} авторизован как пользак ${user.guid}`);
-        socket.emit(MESSAGES.LOGIN, this.Answer.good(user.getSelf()));
+        socket.emit(MESSAGES.LOGIN, this.answer.good(user.getSelf()));
     }
 
     async socketLogout(socket) {
@@ -109,7 +109,7 @@ class UserManager extends BaseManager {
         
         if (!user) {
             console.log(`Увы! Неудачная попытка логаута неавторизованного сокета ${socket.id}`);
-            return socket.emit(MESSAGES.LOGOUT, this.Answer.bad(1001));
+            return socket.emit(MESSAGES.LOGOUT, this.answer.bad(1001));
         }
 
         await user.logout();
@@ -119,17 +119,17 @@ class UserManager extends BaseManager {
         this.socketToUser.delete(socket.id);
 
         console.log(`Пользак ${user.guid} вышел (сокет ${socket.id})`);
-        socket.emit(MESSAGES.LOGOUT, this.Answer.good(true));
+        socket.emit(MESSAGES.LOGOUT, this.answer.good(true));
     }
 
     socketCheck(data = {}, socket) {
         const { name, text } = data;
         
         // ок
-        socket.emit(MESSAGES.CHECK, this.Answer.good('ok'));
+        socket.emit(MESSAGES.CHECK, this.answer.good('ok'));
         
         // рассылка всем
-        this.io.emit(MESSAGES.SEND_TO_ALL, this.Answer.good({ 
+        this.io.emit(MESSAGES.SEND_TO_ALL, this.answer.good({ 
             name: name || 'anonymous',
             text: text || '',
             timestamp: Date.now(),

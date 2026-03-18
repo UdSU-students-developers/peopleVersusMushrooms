@@ -46,13 +46,13 @@ class LobbyManager extends BaseManager {
         
         //валидация
         if (!token || !roomName) {
-            return socket.emit(MESSAGES.CREATE_ROOM, this.Answer.bad(242));
+            return socket.emit(MESSAGES.CREATE_ROOM, this.answer.bad(242));
         }
 
         //проверка пользователя
         const user = this.getUserByToken(token);
         if (!user) {
-            return socket.emit(MESSAGES.CREATE_ROOM, this.Answer.bad(1001));
+            return socket.emit(MESSAGES.CREATE_ROOM, this.answer.bad(1001));
         }
 
         //проверка, не в комнате ли уже
@@ -62,11 +62,11 @@ class LobbyManager extends BaseManager {
             if (currentLobby) {
                 //если уже играет
                 if (currentLobby.gameState === 'playing') {
-                    return socket.emit(MESSAGES.CREATE_ROOM, this.Answer.bad(2001));
+                    return socket.emit(MESSAGES.CREATE_ROOM, this.answer.bad(2001));
                 }
                 //если уже создал комнату
                 if (currentLobby.creator === user.guid) {
-                    return socket.emit(MESSAGES.CREATE_ROOM, this.Answer.bad(2002));
+                    return socket.emit(MESSAGES.CREATE_ROOM, this.answer.bad(2002));
                 }
                 //если участник другой комнаты - выходим оттуда
                 await this._leaveRoom(user.guid);
@@ -88,7 +88,7 @@ class LobbyManager extends BaseManager {
 
         console.log(`Сокет ${socket.id} создал комнату ${lobby.guid}`);
         
-        socket.emit(MESSAGES.CREATE_ROOM, this.Answer.good(lobby.getSelf()));
+        socket.emit(MESSAGES.CREATE_ROOM, this.answer.good(lobby.getSelf()));
         this._notifyRoomsListUpdated();
     }
 
@@ -97,29 +97,29 @@ class LobbyManager extends BaseManager {
         
         //валидация
         if (!token || !roomGuid) {
-            return socket.emit(MESSAGES.JOIN_TO_ROOM, this.Answer.bad(242));
+            return socket.emit(MESSAGES.JOIN_TO_ROOM, this.answer.bad(242));
         }
 
         //проверка пользователя
         const user = this.getUserByToken(token);
         if (!user) {
-            return socket.emit(MESSAGES.JOIN_TO_ROOM, this.Answer.bad(1001));
+            return socket.emit(MESSAGES.JOIN_TO_ROOM, this.answer.bad(1001));
         }
 
         //проверка существования комнаты
         const lobby = this.lobbies.get(roomGuid);
         if (!lobby) {
-            return socket.emit(MESSAGES.JOIN_TO_ROOM, this.Answer.bad(2003));
+            return socket.emit(MESSAGES.JOIN_TO_ROOM, this.answer.bad(2003));
         }
 
         //проверка на заполненность
         if (lobby.players.length >= lobby.maxPlayers) {
-            return socket.emit(MESSAGES.JOIN_TO_ROOM, this.Answer.bad(2004));
+            return socket.emit(MESSAGES.JOIN_TO_ROOM, this.answer.bad(2004));
         }
 
         //проверка статуса комнаты
         if (lobby.status !== 'open') {
-            return socket.emit(MESSAGES.JOIN_TO_ROOM, this.Answer.bad(2005));
+            return socket.emit(MESSAGES.JOIN_TO_ROOM, this.answer.bad(2005));
         }
 
         //проверка, не в комнате ли уже
@@ -127,13 +127,13 @@ class LobbyManager extends BaseManager {
         if (currentRoomGuid) {
             //уже в этой комнате
             if (currentRoomGuid === roomGuid) {
-                return socket.emit(MESSAGES.JOIN_TO_ROOM, this.Answer.bad(2005));
+                return socket.emit(MESSAGES.JOIN_TO_ROOM, this.answer.bad(2005));
             }
             
             //проверка, не играет ли в другой
             const currentLobby = this.lobbies.get(currentRoomGuid);
             if (currentLobby && currentLobby.gameState === 'playing') {
-                return socket.emit(MESSAGES.JOIN_TO_ROOM, this.Answer.bad(2001));
+                return socket.emit(MESSAGES.JOIN_TO_ROOM, this.answer.bad(2001));
             }
             
             //выходим из другой комнаты
@@ -151,7 +151,7 @@ class LobbyManager extends BaseManager {
 
         console.log(`Сокет ${socket.id} присоединился к комнате ${roomGuid}`);
         
-        socket.emit(MESSAGES.JOIN_TO_ROOM, this.Answer.good(lobby.getSelf()));
+        socket.emit(MESSAGES.JOIN_TO_ROOM, this.answer.good(lobby.getSelf()));
         this._notifyRoomUpdate(roomGuid);
         this._notifyRoomsListUpdated();
     }
@@ -161,26 +161,26 @@ class LobbyManager extends BaseManager {
         
         //валидация
         if (!token) {
-            return socket.emit(MESSAGES.LEAVE_ROOM, this.Answer.bad(242));
+            return socket.emit(MESSAGES.LEAVE_ROOM, this.answer.bad(242));
         }
 
         //проверка пользователя
         const user = this.getUserByToken(token);
         if (!user) {
-            return socket.emit(MESSAGES.LEAVE_ROOM, this.Answer.bad(1001));
+            return socket.emit(MESSAGES.LEAVE_ROOM, this.answer.bad(1001));
         }
 
         //проверка, что пользователь в комнате
         const roomGuid = this.userToRoom.get(user.guid);
         if (!roomGuid) {
-            return socket.emit(MESSAGES.LEAVE_ROOM, this.Answer.bad(2006));
+            return socket.emit(MESSAGES.LEAVE_ROOM, this.answer.bad(2006));
         }
 
         //проверка существования комнаты
         const lobby = this.lobbies.get(roomGuid);
         if (!lobby) {
             this.userToRoom.delete(user.guid);
-            return socket.emit(MESSAGES.LEAVE_ROOM, this.Answer.bad(2003));
+            return socket.emit(MESSAGES.LEAVE_ROOM, this.answer.bad(2003));
         }
 
         const isCreator = (user.guid === lobby.creator);
@@ -193,7 +193,7 @@ class LobbyManager extends BaseManager {
             }
             this._notifyRoomsListUpdated();
             console.log(`Сокет ${socket.id} (создатель) удалил комнату ${roomGuid}`);
-            return socket.emit(MESSAGES.LEAVE_ROOM, this.Answer.good(true));
+            return socket.emit(MESSAGES.LEAVE_ROOM, this.answer.good(true));
         }
 
         //если не создатель - просто выходим
@@ -211,7 +211,7 @@ class LobbyManager extends BaseManager {
 
         this._notifyRoomsListUpdated();
         console.log(`Сокет ${socket.id} покинул комнату ${roomGuid}`);
-        socket.emit(MESSAGES.LEAVE_ROOM, this.Answer.good(true));
+        socket.emit(MESSAGES.LEAVE_ROOM, this.answer.good(true));
     }
 
    async socketDropFromRoom(data = {}, socket) {
@@ -219,47 +219,47 @@ class LobbyManager extends BaseManager {
         
         //валидация
         if (!token || !targetGuid) {
-            return socket.emit(MESSAGES.DROP_FROM_ROOM, this.Answer.bad(242));
+            return socket.emit(MESSAGES.DROP_FROM_ROOM, this.answer.bad(242));
         }
 
         //проверка админа
         const admin = this.getUserByToken(token);
         if (!admin) {
-            return socket.emit(MESSAGES.DROP_FROM_ROOM, this.Answer.bad(1001));
+            return socket.emit(MESSAGES.DROP_FROM_ROOM, this.answer.bad(1001));
         }
 
         //проверка цели по гуиду
         const target = this.getUserByGuid(targetGuid);
         if (!target) {
-            return socket.emit(MESSAGES.DROP_FROM_ROOM, this.Answer.bad(2016));
+            return socket.emit(MESSAGES.DROP_FROM_ROOM, this.answer.bad(2016));
         }
 
         //проверка, что админ в комнате
         const roomGuid = this.userToRoom.get(admin.guid);
         if (!roomGuid) {
-            return socket.emit(MESSAGES.DROP_FROM_ROOM, this.Answer.bad(2006));
+            return socket.emit(MESSAGES.DROP_FROM_ROOM, this.answer.bad(2006));
         }
 
         //проверка существования комнаты
         const lobby = this.lobbies.get(roomGuid);
         if (!lobby) {
             this.userToRoom.delete(admin.guid);
-            return socket.emit(MESSAGES.DROP_FROM_ROOM, this.Answer.bad(2003));
+            return socket.emit(MESSAGES.DROP_FROM_ROOM, this.answer.bad(2003));
         }
 
         //проверка, что админ - создатель
         if (admin.guid !== lobby.creator) {
-            return socket.emit(MESSAGES.DROP_FROM_ROOM, this.Answer.bad(2010));
+            return socket.emit(MESSAGES.DROP_FROM_ROOM, this.answer.bad(2010));
         }
 
         //проверка, что не кикает сам себя
         if (admin.guid === target.guid) {
-            return socket.emit(MESSAGES.DROP_FROM_ROOM, this.Answer.bad(2007));
+            return socket.emit(MESSAGES.DROP_FROM_ROOM, this.answer.bad(2007));
         }
 
         //проверка, что цель в этой комнате
         if (this.userToRoom.get(target.guid) !== roomGuid) {
-            return socket.emit(MESSAGES.DROP_FROM_ROOM, this.Answer.bad(2009));
+            return socket.emit(MESSAGES.DROP_FROM_ROOM, this.answer.bad(2009));
         }
 
         //кикаем игрока
@@ -269,7 +269,7 @@ class LobbyManager extends BaseManager {
 
         console.log(`Сокет ${socket.id} выгнал игрока ${target.guid} из комнаты ${roomGuid}`);
 
-        socket.emit(MESSAGES.DROP_FROM_ROOM, this.Answer.good(lobby.getSelf()));
+        socket.emit(MESSAGES.DROP_FROM_ROOM, this.answer.good(lobby.getSelf()));
         this._notifyRoomUpdate(roomGuid);
         this._notifyRoomsListUpdated();
     }
@@ -279,41 +279,41 @@ class LobbyManager extends BaseManager {
         
         //валидация
         if (!token) {
-            return socket.emit(MESSAGES.START_GAME, this.Answer.bad(242));
+            return socket.emit(MESSAGES.START_GAME, this.answer.bad(242));
         }
 
         //проверка пользователя
         const user = this.getUserByToken(token);
         if (!user) {
-            return socket.emit(MESSAGES.START_GAME, this.Answer.bad(1001));
+            return socket.emit(MESSAGES.START_GAME, this.answer.bad(1001));
         }
 
         //проверка, что пользователь в комнате
         const roomGuid = this.userToRoom.get(user.guid);
         if (!roomGuid) {
-            return socket.emit(MESSAGES.START_GAME, this.Answer.bad(2006));
+            return socket.emit(MESSAGES.START_GAME, this.answer.bad(2006));
         }
 
         //проверка существования комнаты
         const lobby = this.lobbies.get(roomGuid);
         if (!lobby) {
             this.userToRoom.delete(user.guid);
-            return socket.emit(MESSAGES.START_GAME, this.Answer.bad(2003));
+            return socket.emit(MESSAGES.START_GAME, this.answer.bad(2003));
         }
 
         //проверка, что пользователь - создатель
         if (user.guid !== lobby.creator) {
-            return socket.emit(MESSAGES.START_GAME, this.Answer.bad(2010));
+            return socket.emit(MESSAGES.START_GAME, this.answer.bad(2010));
         }
 
         //проверка статуса комнаты - должна быть закрыта
         if (lobby.status !== 'closed') {
-            return socket.emit(MESSAGES.START_GAME, this.Answer.bad(2015));
+            return socket.emit(MESSAGES.START_GAME, this.answer.bad(2015));
         }
 
         //проверка количества игроков
         if (lobby.players.length < lobby.maxPlayers) {
-            return socket.emit(MESSAGES.START_GAME, this.Answer.bad(2012));
+            return socket.emit(MESSAGES.START_GAME, this.answer.bad(2012));
         }
 
         //проверка статуса всех игроков
@@ -326,7 +326,7 @@ class LobbyManager extends BaseManager {
         }
 
         if (!allReady) {
-            return socket.emit(MESSAGES.START_GAME, this.Answer.bad(2012));
+            return socket.emit(MESSAGES.START_GAME, this.answer.bad(2012));
         }
 
         //начинаем игру
@@ -340,7 +340,7 @@ class LobbyManager extends BaseManager {
 
         console.log(`Сокет ${socket.id} начал игру в комнате ${roomGuid}`);
 
-        socket.emit(MESSAGES.START_GAME, this.Answer.good(lobby.getSelf()));
+        socket.emit(MESSAGES.START_GAME, this.answer.good(lobby.getSelf()));
         this._notifyRoomUpdate(roomGuid);
         this._notifyRoomsListUpdated();
     }
@@ -350,13 +350,13 @@ class LobbyManager extends BaseManager {
         
         //валидация
         if (!token) {
-            return socket.emit(MESSAGES.GET_ROOMS, this.Answer.bad(242));
+            return socket.emit(MESSAGES.GET_ROOMS, this.answer.bad(242));
         }
 
         //проверка пользователя
         const user = this.getUserByToken(token);
         if (!user) {
-            return socket.emit(MESSAGES.GET_ROOMS, this.Answer.bad(1001));
+            return socket.emit(MESSAGES.GET_ROOMS, this.answer.bad(1001));
         }
 
         //собираем комнаты
@@ -367,7 +367,7 @@ class LobbyManager extends BaseManager {
             }
         }
 
-        socket.emit(MESSAGES.GET_ROOMS, this.Answer.good(rooms));
+        socket.emit(MESSAGES.GET_ROOMS, this.answer.good(rooms));
     }
 
     socketDisconnect(socket) {
@@ -438,7 +438,7 @@ class LobbyManager extends BaseManager {
             if (user && user.socketId) {
                 const socket = this.io.sockets.sockets.get(user.socketId);
                 if (socket) {
-                    socket.emit(MESSAGES.ROOM_UPDATED, this.Answer.good(roomInfo));
+                    socket.emit(MESSAGES.ROOM_UPDATED, this.answer.good(roomInfo));
                 }
             }
         }
@@ -453,7 +453,7 @@ class LobbyManager extends BaseManager {
             }
         }
         //оповещаем всех о новом списке комнат
-        this.io.emit(MESSAGES.ROOMS_LIST_UPDATED, this.Answer.good(rooms));
+        this.io.emit(MESSAGES.ROOMS_LIST_UPDATED, this.answer.good(rooms));
     }
 }
 

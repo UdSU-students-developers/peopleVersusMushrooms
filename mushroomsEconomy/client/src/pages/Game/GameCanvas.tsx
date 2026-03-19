@@ -18,16 +18,6 @@ const GameCanvas: React.FC = () => {
     let canvas: Canvas | null = null;
     const CanvasRef = useCanvas(render);
 
-    const setCanvasSize = (canvasInstance: Canvas | null) => {
-        if (canvasInstance) {
-            canvasInstance.WIDTH = window.innerWidth;
-            canvasInstance.HEIGHT = window.innerHeight;
-            canvasInstance.canvas.width = window.innerWidth;
-            canvasInstance.canvas.height = window.innerHeight;
-            render(0); 
-        }
-    };
-
     const [[spritesImage], getSprite] = useSprites();
 
     let mouseDownPosition: TPoint | null = null;
@@ -54,7 +44,7 @@ const GameCanvas: React.FC = () => {
             }
         if (!canvas) return;
         canvas.clear();
-        render(FPS);
+        canvas.render();
     }
 
 
@@ -132,29 +122,18 @@ const GameCanvas: React.FC = () => {
     const keyDown = (event: KeyboardEvent) => {
         if (event.key !== 'Escape') return;
     };
-
-    const INITIAL_WINDOW_WIDTH = WINDOW.WIDTH;
-    const INITIAL_WINDOW_HEIGHT = WINDOW.HEIGHT;
-    const INITIAL_WINDOW_LEFT = WINDOW.LEFT;
-    const INITIAL_WINDOW_TOP = WINDOW.TOP;
-
+    
     useEffect(() => {
         canvas = CanvasRef({
             parentId: GAME_FIELD,
-            WIDTH: window.innerWidth,
-            HEIGHT: window.innerHeight,
+            WIDTH: WINDOW.WIDTH,
+            HEIGHT: WINDOW.HEIGHT,
             WINDOW,
             callbacks: {
                 mouseMove, mouseDown, mouseUp, mouseRightClickDown, mouseClick,
                 mouseLeave, mouseWheel, mouseMiddleDown, mouseMiddleUp, keyDown
             },
         });
-
-        const handleResize = () => {
-            setCanvasSize(canvas);
-        };
-
-        window.addEventListener('resize', handleResize);
 
         canvas.context.imageSmoothingEnabled = false;
         canvas.contextV.imageSmoothingEnabled = false;
@@ -163,15 +142,6 @@ const GameCanvas: React.FC = () => {
         render(0);
 
         return () => {
-            if (WINDOW.WIDTH !== INITIAL_WINDOW_WIDTH) {
-                WINDOW.WIDTH = INITIAL_WINDOW_WIDTH;
-                WINDOW.HEIGHT = INITIAL_WINDOW_HEIGHT;
-                WINDOW.LEFT = INITIAL_WINDOW_LEFT;
-                WINDOW.TOP = INITIAL_WINDOW_TOP;
-            }
-
-            window.removeEventListener('resize', handleResize);
-
             canvas = null;
         };
     }, []);

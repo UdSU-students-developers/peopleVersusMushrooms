@@ -191,7 +191,8 @@ class Canvas {
     }
 
     clear(): void {
-        this.contextV.clearRect(0, 0, this.WIDTH, this.HEIGHT);
+        this.contextV.fillStyle = 'rgb(116, 116, 116)';
+        this.contextV.fillRect(0, 0, this.WIDTH, this.HEIGHT);
     }
 
     clearImage(image: HTMLImageElement): void {
@@ -214,7 +215,7 @@ class Canvas {
         this.contextV.fillText(text, this.xs(x), this.ys(y));
     }
 
-    drawFPS(FPS: string, color = '#fff', font = 'bold 1rem Arial'): void {
+    drawFPS(FPS: string, color = 'rgb(149, 255, 50)', font = 'bold 1rem Arial'): void {
         this.contextV.fillStyle = color;
         this.contextV.font = font;
         this.contextV.fillText(FPS, 12, 36);
@@ -235,38 +236,39 @@ class Canvas {
     }
 
     oval(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    colorInside = 'rgba(0, 0, 0, 1)',
-    widthLine = 1,
-    colorOut = 'rgba(34, 255, 0, 1)'
-): void {
-    const screenX = this.xs(x);
-    const screenY = this.ys(y);
-    const screenWidth = width * this.WIDTH / this.WINDOW.WIDTH;
-    const screenHeight = height * this.HEIGHT / this.WINDOW.HEIGHT;
-    this.contextV.beginPath();
-    this.contextV.ellipse(
-        screenX + screenWidth / 2,
-        screenY + screenHeight / 2,
-        screenWidth / 2,
-        screenHeight / 2,
-        0,
-        0,
-        2 * Math.PI
-    );
- 
-    this.contextV.fillStyle = colorInside;
-    this.contextV.fill();
-   
-    this.contextV.lineWidth = widthLine;
-    this.contextV.strokeStyle = colorOut;
-    this.contextV.stroke();
-   
-    this.contextV.closePath();
-}
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        colorInside = 'rgba(0, 0, 0, 1)',
+        widthLine = 1,
+        colorOut = 'rgba(34, 255, 0, 1)'
+    ): void {
+        const screenX = this.xs(x);
+        const screenY = this.ys(y);
+        const screenWidth = width * this.WIDTH / this.WINDOW.WIDTH;
+        const screenHeight = height * this.HEIGHT / this.WINDOW.HEIGHT;
+        this.contextV.beginPath();
+        this.contextV.ellipse(
+            screenX + screenWidth / 2,
+            screenY + screenHeight / 2,
+            screenWidth / 2,
+            screenHeight / 2,
+            0,
+            0,
+            2 * Math.PI
+        );
+    
+        this.contextV.fillStyle = colorInside;
+        this.contextV.fill();
+    
+        this.contextV.lineWidth = widthLine;
+        this.contextV.strokeStyle = colorOut;
+        this.contextV.stroke();
+    
+        this.contextV.closePath();
+    }
+
     render(): void {
         this.context.clearRect(0, 0, this.WIDTH, this.HEIGHT);
         this.context.drawImage(this.canvasV, 0, 0);

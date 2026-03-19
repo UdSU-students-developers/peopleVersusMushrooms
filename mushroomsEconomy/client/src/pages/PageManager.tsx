@@ -31,7 +31,7 @@ export interface IPageManager {
 }
 
 const PageManager: React.FC<IPageManager> = (propsManager: IPageManager) => {
-    const [page, setPage] = useState<PAGES>(PAGES.LOGIN);
+    const [page, setPage] = useState<PAGES>(PAGES.GAME);
     const { store, mediator, server } = propsManager;
 
     const props = {

@@ -51,8 +51,8 @@ const CONFIG = {
         WINDOW: {
             LEFT: 0,
             TOP: 0,
-            HEIGHT: 10,
-            WIDTH: 20,
+            HEIGHT: 700,
+            WIDTH: 700,
         },
     },
 

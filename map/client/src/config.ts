@@ -1,12 +1,18 @@
 export enum EMESSAGES {
     CHECK = 'CHECK',
     SEND_TO_ALL = 'SEND_TO_ALL',
-    //user sockets
-    LOGIN = 'LOGIN',
-    REGISTRATION = 'REGISTRATION',
-    LOGOUT = 'LOGOUT',
-    GET_TOKEN = 'GET_TOKEN',
-    SHOW_ERROR = 'SHOW_ERROR'
+};
+
+export const MEDIATOR = {
+    EVENTS: {
+        REGISTRATION: 'REGISTRATION',
+        LOGIN: 'LOGIN',
+        LOGOUT: 'LOGOUT',
+        SHOW_ERROR: 'SHOW_ERROR'
+    },
+    TRIGGERS: {
+        GET_TOKEN: 'GET_TOKEN'
+    }
 };
 
 const CONFIG = {

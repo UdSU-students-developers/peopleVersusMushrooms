@@ -7,6 +7,7 @@ import Lobby from './Lobby/Lobby';
 import Store from '../services/Store/Store';
 
 import Mediator from '../services/Mediator/Mediator';
+import { TError } from '../services/server/types';
 
 export enum PAGES {
     LOGIN,
@@ -25,13 +26,20 @@ export interface IPageManager {
     mediator: Mediator
 }
 
-const PageManager: React.FC<IPageManager> = (propsManager: IPageManager) => {
+const PageManager: React.FC<IPageManager> = ({ server, store, mediator }) => {
     const [page, setPage] = useState<PAGES>(PAGES.LOGIN);
 
     const props = {
         setPage,
-        ...propsManager
+        server,
+        store,
+        mediator
     }
+
+    const { SHOW_ERROR } = mediator.getEventTypes();
+    mediator.subscribe(SHOW_ERROR, (data: TError) => {
+        console.log(data);
+    });
 
     return (
         <>

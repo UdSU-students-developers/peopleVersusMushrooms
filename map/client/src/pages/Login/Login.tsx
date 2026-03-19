@@ -1,28 +1,53 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { IBasePage, IPageManager, PAGES } from '../PageManager';
+import { TError } from '../../services/server/types';
 import Button from '../../components/Button/Button';
 import useCheckLogin from './hooks/useCheckLogin';
 import './Login.scss'
 
 const Login: React.FC<IBasePage & IPageManager> = (props) => {
-    const { setPage, server } = props;
+    const { setPage, server, mediator } = props;
     const loginRef = useRef<HTMLInputElement>(null!);
     const passwordRef = useRef<HTMLInputElement>(null!);
-    const { isFormValid, error, setError, checkFilled, showError } = useCheckLogin();
+    const { isFormValid, clientError, setClientError, checkFilled, showError } = useCheckLogin();
+    const [error, setError] = useState<TError | null>(null);
+    const displayError = error?.message || clientError;
 
     const hideErrorOnInput = () => {
-        setError('');
+        setClientError('');
         checkFilled(loginRef.current.value, passwordRef.current.value);
     };
 
     const loginClickHandler = async () => {
+        setError(null);
         const login = loginRef.current.value;
         const password = passwordRef.current.value;
 
         if (!showError(login, password)) return;
         server.login(login, password);
-        setPage(PAGES.LOBBY);
     }
+
+    useEffect(() => {
+        const { LOGIN } = mediator.getEventTypes();
+        const { SHOW_ERROR } = mediator.getEventTypes();
+
+        const loginHandler = () => {
+            setError(null);
+            setPage(PAGES.LOBBY);
+        };
+
+        const serverErrorHandler = (error: TError) => {
+            setError(error);
+        };
+
+        mediator.subscribe(LOGIN, loginHandler);
+        mediator.subscribe(SHOW_ERROR, serverErrorHandler);
+
+        return () => {
+            mediator.unsubscribe(LOGIN, loginHandler);
+            mediator.unsubscribe(SHOW_ERROR, serverErrorHandler);
+        };
+    });
 
     const registrationClickHandler = () => { setPage(PAGES.REGISTRATION) };
 
@@ -55,7 +80,7 @@ const Login: React.FC<IBasePage & IPageManager> = (props) => {
             />
         </div>
 
-        {error && <p id='test-errors-login' className='p-error'>{error}</p>}
+        {displayError && <p id='test-errors-login' className='errors'>{displayError}</p>}
         <Button
             onClick={loginClickHandler}
             text='войти'

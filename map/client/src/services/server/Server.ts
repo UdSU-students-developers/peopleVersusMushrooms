@@ -1,7 +1,7 @@
 import md5 from 'md5';
 import { io, Socket } from 'socket.io-client';
-import CONFIG, { EMESSAGES } from '../../config';
-import { TAnswer, TError, TUser } from "./types";
+import CONFIG, { MEDIATOR, EMESSAGES } from '../../config';
+import { TAnswer, TUser } from "./types";
 import Mediator from '../Mediator/Mediator';
 
 const HOST = CONFIG.HOST;
@@ -26,35 +26,43 @@ class Server {
             this.mediator.call(EMESSAGES.SEND_TO_ALL, data);
         });
 
-        this.socket.on(EMESSAGES.LOGIN, (data: TAnswer<TUser>) => {
-            if (data.result === 'error') {
-                this.mediator.call(EMESSAGES.SHOW_ERROR, data.error?.message);
-                return;
+        this.socket.on(MEDIATOR.EVENTS.LOGIN, (data: TAnswer<TUser>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { LOGIN } = this.mediator.getEventTypes();
+                this.mediator.call(LOGIN, data);
             }
-            this.mediator.call(EMESSAGES.LOGIN, data);
         });
 
-        this.socket.on(EMESSAGES.REGISTRATION, (data: TAnswer<TUser>) => {
-            if (data.result === 'error') {
-                this.mediator.call(EMESSAGES.SHOW_ERROR, data.error?.message);
-                return;
+        this.socket.on(MEDIATOR.EVENTS.REGISTRATION, (data: TAnswer<TUser>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { REGISTRATION } = this.mediator.getEventTypes();
+                this.mediator.call(REGISTRATION, data);
             }
-            this.mediator.call(EMESSAGES.REGISTRATION, data);
         });
 
-        this.socket.on(EMESSAGES.LOGOUT, (data: TAnswer<TUser>) => {
-            if (data.result === 'error') {
-                this.mediator.call(EMESSAGES.SHOW_ERROR, data.error?.message);
-                return;
+        this.socket.on(MEDIATOR.EVENTS.LOGOUT, (data: TAnswer<TUser>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { LOGOUT } = this.mediator.getEventTypes();
+                this.mediator.call(LOGOUT, data);
             }
-            this.mediator.call(EMESSAGES.LOGOUT, data);
         });
+    }
+    _validate(data: any) {
+        if (data.result === "ok") {
+            return data.data;
+        }
+        const { SHOW_ERROR } = this.mediator.getEventTypes();
+        this.mediator.call(SHOW_ERROR, data.error);
+        return null;
     }
 
     private async request<T>(method: string, params: { [key: string]: string | number } = {}): Promise<T | null> {
         try {
             params.method = method;
-            const token = this.mediator.get<string>(EMESSAGES.GET_TOKEN);
+            const token = this.mediator.get<string>(MEDIATOR.TRIGGERS.GET_TOKEN);
             if (token) {
                 params.token = token;
             }
@@ -80,18 +88,17 @@ class Server {
     }
 
     login(login: string, password: string): void {
-        const rnd = Math.round(Math.random() * 100000);
-        const passwordHash = md5(`${md5(`${login}${password}`)}${rnd}`)
-        this.socket.emit(EMESSAGES.LOGIN, { login, passwordHash });
+        const passwordHash = md5(`${login}${password}`);
+        this.socket.emit(MEDIATOR.EVENTS.LOGIN, { login, passwordHash });
     };
 
-    registration(login: string, password: string, nickname: string): void {
+    registration(login: string, password: string): void {
         const passwordHash = md5(`${login}${password}`);
-        this.socket.emit(EMESSAGES.REGISTRATION, { login, passwordHash, nickname });
+        this.socket.emit(MEDIATOR.EVENTS.REGISTRATION, { login, passwordHash });
     }
 
     logout(): void {
-        this.socket.emit(EMESSAGES.LOGOUT);
+        this.socket.emit(MEDIATOR.EVENTS.LOGOUT);
     }
 }
 

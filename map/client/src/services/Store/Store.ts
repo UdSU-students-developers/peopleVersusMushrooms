@@ -1,6 +1,6 @@
 import { TUser } from "../server/types";
 import Mediator from '../Mediator/Mediator';
-import { EMESSAGES } from "../../config";
+import { MEDIATOR } from "../../config";
 
 const TOKEN = 'token';
 
@@ -14,12 +14,12 @@ class Store {
     }
 
     private initMediator(): void {
-        this.mediator.subscribe(EMESSAGES.LOGIN, (data) => this.handleLogin(data));
-        this.mediator.subscribe(EMESSAGES.REGISTRATION, (data) => this.handleRegistration(data));
-        this.mediator.subscribe(EMESSAGES.LOGOUT, (data) => this.handleLogout(data));
-        this.mediator.subscribe(EMESSAGES.SHOW_ERROR, (message: string) => this.handleError(message));
+        this.mediator.subscribe(MEDIATOR.EVENTS.LOGIN, (data) => this.handleLogin(data));
+        this.mediator.subscribe(MEDIATOR.EVENTS.REGISTRATION, (data) => this.handleRegistration(data));
+        this.mediator.subscribe(MEDIATOR.EVENTS.LOGOUT, (data) => this.handleLogout(data));
+        this.mediator.subscribe(MEDIATOR.EVENTS.SHOW_ERROR, (message: string) => this.handleError(message));
 
-        this.mediator.set(EMESSAGES.GET_TOKEN, () => this.getToken());
+        this.mediator.set(MEDIATOR.TRIGGERS.GET_TOKEN, () => this.getToken());
     }
 
     handleLogin(data: TUser): void {

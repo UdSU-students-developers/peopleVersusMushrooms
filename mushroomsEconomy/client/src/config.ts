@@ -3,22 +3,25 @@ const CONFIG = {
 
     MEDIATOR: {
         EVENTS: {
+            // служебные события
+            SHOW_ERROR: 'SHOW_ERROR',
+            SHOW_POPUP: 'SHOW_POPUP',
+            // остальные события
             LOGIN: 'LOGIN',
         },
         TRIGGERS: {
-            MESSAGE: 'MESSAGE:SOCKET',
 
+            // служебные триггеры
             SET_STORE: 'SET_STORE',
             GET_STORE: 'GET_STORE',
             CLEAR_STORE: 'CLEAR_STORE',
-
-            ERROR: "ERROR",
+            // остальные триггеры
+            MESSAGE: 'MESSAGE:SOCKET',
         }
     },
 
     SOCKET: {
         MESSAGE: 'MESSAGE',  // шлет сообщение
-        TYPING: 'TYPING',    // печатает
 
         REGISTRATION: 'REGISTRATION',
         LOGIN: 'LOGIN',

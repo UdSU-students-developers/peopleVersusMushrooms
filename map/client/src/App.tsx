@@ -2,8 +2,8 @@ import Store from './services/Store/Store';
 import Server from './services/server/Server';
 import PageManager from './pages/PageManager';
 import Mediator from './services/Mediator/Mediator';
-import './App.css';
 import { MEDIATOR } from './config';
+import './App.css';
 
 function App() {
   // mediator

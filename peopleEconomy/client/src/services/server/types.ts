@@ -1,6 +1,6 @@
 export type TError = {
     code: number;
-    text: string;
+    message: string;
 }
 
 export type TAnswer<T> = {
@@ -11,7 +11,6 @@ export type TAnswer<T> = {
 
 export type TUser = {
     id?: number;
-    nickname: string;
     guid?: number;
     token: string;
 }

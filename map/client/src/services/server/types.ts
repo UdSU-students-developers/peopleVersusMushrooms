@@ -11,7 +11,6 @@ export type TAnswer<T> = {
 
 export type TUser = {
     id?: number;
-    nickname: string;
     guid?: number;
     token: string;
 }

@@ -8,7 +8,6 @@ import './Registration.scss';
 const Registration: React.FC<IBasePage & IPageManager> = (props) => {
     const { setPage, server, mediator } = props;
     const loginRef = useRef<HTMLInputElement>(null!);
-    const nicknameRef = useRef<HTMLInputElement>(null!);
     const passwordRef = useRef<HTMLInputElement>(null!);
     const confirmPasswordRef = useRef<HTMLInputElement>(null!);
     const { isFormValid, clientError, setClientError, checkFilled, showError } = useChecRegistration();

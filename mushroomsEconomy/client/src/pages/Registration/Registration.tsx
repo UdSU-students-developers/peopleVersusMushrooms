@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { IBasePage, PAGES } from '../PageManager';
+import { ServerContext} from '../../App';
 import './Registration.css';
 
-const Registration: React.FC<IBasePage> = ({ setPage, server, store }) => {
+const Registration: React.FC<IBasePage> = ({ setPage }) => {
+    const server = useContext(ServerContext);
 
     const [password, setPassword] = useState<string>('');
     const [name, setName] = useState<string>('');

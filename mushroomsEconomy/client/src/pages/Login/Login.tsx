@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
-import { IBasePage, PAGES } from '../PageManager'; 
+import React, { useState, useContext } from 'react';
+import { IBasePage, PAGES } from '../PageManager';
+import { ServerContext } from '../../App';
 import './Login.css';
 
-const Login: React.FC<IBasePage> = ({ setPage, server, store }) => {
+const Login: React.FC<IBasePage> = ({ setPage }) => {
+
+    const server = useContext(ServerContext);
 
     const [login, setLogin] = useState<string>('');
     const [password, setPassword] = useState<string>('');

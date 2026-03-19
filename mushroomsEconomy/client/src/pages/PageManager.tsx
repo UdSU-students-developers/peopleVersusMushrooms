@@ -17,24 +17,14 @@ export enum PAGES {
 
 export interface IBasePage {
     setPage: (name: PAGES) => void;
-    server: Server,
-    store: Store,
-    mediator: Mediator
 }
 
-export interface IPageManager {
-    server: Server,
-    store: Store,
-    mediator: Mediator
-}
 
-const PageManager: React.FC<IPageManager> = (propsManager: IPageManager) => {
+const PageManager: React.FC = () => {
     const [page, setPage] = useState<PAGES>(PAGES.LOGIN);
-    const { store, mediator, server } = propsManager;
 
     const props = {
-        setPage,
-        ...propsManager
+        setPage
     }
 
     return (

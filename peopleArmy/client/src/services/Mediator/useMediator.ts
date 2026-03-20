@@ -1,4 +1,3 @@
-// src/services/Mediator/useMediator.ts
 import CONFIG from "../../config";
 import Mediator, { TNamesArray } from "./Mediator";
 

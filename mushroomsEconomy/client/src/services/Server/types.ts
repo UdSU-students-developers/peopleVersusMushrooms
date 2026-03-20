@@ -17,3 +17,11 @@ export type TError = {
     code: number;
     text: string;
 }
+
+export type TMessage = {
+    message: string;
+    author: string;
+    created: string;
+}
+
+export type TMessages = TMessage[];

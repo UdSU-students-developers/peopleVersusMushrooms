@@ -1,15 +1,20 @@
-import { TUser } from "../Server/types";
+import { TUser, TMessages, TMessage } from "../Server/types";
 
 type TData = {
     token: string | null;
     user: TUser | null;
+    messages: TMessages;
     [key: string]: any;
 }
 
 class Store {
+    messages: TMessages = [];
+    chatHash: string = 'empty chat hash';
+
     private data: TData = {
         token: null,
-        user: null
+        user: null,
+        messages: []
     }
 
     set(name: string, value: any) {
@@ -22,6 +27,10 @@ class Store {
 
     clear(name: string) {
         this.data[name] = null;
+    }
+
+    getMessages(): TMessages {
+        return this.messages;
     }
 }
 

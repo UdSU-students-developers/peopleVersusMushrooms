@@ -1,9 +1,13 @@
 const CONFIG = {
     HOST: 'http://localhost:3005', // Адрес сервера
+    CHAT_MAX_MESSAGE_LENGTH: 255,
 
     MEDIATOR: {
         EVENTS: {
             LOGIN: 'LOGIN',
+            NEW_MESSAGE: 'NEW_MESSAGE',
+            MESSAGE_LOADED: 'MESSAGE_LOADED',
+            MESSAGE_SENT: 'MESSAGE_SEND',
         },
         TRIGGERS: {
             MESSAGE: 'MESSAGE:SOCKET',
@@ -18,6 +22,8 @@ const CONFIG = {
 
     SOCKET: {
         MESSAGE: 'MESSAGE',  // шлет сообщение
+        MESSAGES: 'MESSAGES',
+        NEW_MESSAGE: 'NEW_MESSAGE',
         TYPING: 'TYPING',    // печатает
 
         REGISTRATION: 'REGISTRATION',

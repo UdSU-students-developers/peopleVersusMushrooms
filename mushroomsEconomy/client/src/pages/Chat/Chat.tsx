@@ -1,12 +1,16 @@
-import React, { useEffect, useState, useRef, useMemo, KeyboardEvent } from "react";
+import React, { useEffect, useState, useRef, useMemo, KeyboardEvent, useContext } from "react";
 import { IBasePage } from '../PageManager';
 import { TUser, TMessage, TMessages } from "../../services/Server/types";
 import CONFIG from "../../config";
 import Button from "../../components/Button/Button";
 import './Chat.css';
+import { MediatorContext, ServerContext } from "../../App";
 
 const Chat: React.FC<IBasePage> = (props: IBasePage) => {
-    const { setPage, server, store, mediator } = props;
+    const { setPage } = props;
+    const server = useContext(ServerContext);
+    const mediator = useContext(MediatorContext);
+    
     const [messages, setMessages] = useState<TMessages>([]);
     const [_, setHash] = useState<string>('');
     const messageRef = useRef<HTMLInputElement>(null);

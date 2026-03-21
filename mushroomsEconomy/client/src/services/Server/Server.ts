@@ -14,8 +14,7 @@ class Server {
 
     constructor(mediator: Mediator) {
         this.mediator = mediator;
-        const { SHOW_ERROR } = this.mediator.getEventTypes();
-        this.mediator.subscribe(SHOW_ERROR,(data)=> this.handle)
+
         this.socket = io(HOST);
 
         this.socket.on("connect", () => {
@@ -77,13 +76,16 @@ class Server {
             const body = await response.json();
 
             if (body && body.error) {
-                this.setError(body.error);
+
+                const { SHOW_ERROR } = this.mediator.getEventTypes();
+                this.mediator.call(SHOW_ERROR, body.error)
                 return null;
             }
             return body as T;
         } catch (e) {
             console.log("Request exception:", e);
-            this.setError({
+            const { SHOW_ERROR } = this.mediator.getEventTypes();
+            this.mediator.call(SHOW_ERROR, {
                 code: 9000,
                 text: 'Unknown error',
             });
@@ -118,7 +120,8 @@ class Server {
                 }
             });
         } else {
-            this.setError(response.error);
+            const { SHOW_ERROR } = this.mediator.getEventTypes();
+            this.mediator.call(SHOW_ERROR, response.error);
         }
     }
 
@@ -137,7 +140,8 @@ class Server {
 
             this.mediator.call(LOGIN);
         } else {
-            this.setError({ code: 11, text: "Ошибка авторизации" });
+            const { SHOW_ERROR } = this.mediator.getEventTypes();
+            this.mediator.call(SHOW_ERROR, response.error);
         }
     }
 
@@ -153,7 +157,8 @@ class Server {
             const { MESSAGE_SEND } = this.mediator.getEventTypes();
             this.mediator.call(MESSAGE_SEND, response.data.message);
         } else {
-            this.setError(response.error);
+            const { SHOW_ERROR } = this.mediator.getEventTypes();
+            this.mediator.call(SHOW_ERROR, response.error)
         }
     }
 
@@ -171,7 +176,8 @@ class Server {
 
             this.mediator.call(MESSAGE_LOADED, messages);
         } else {
-            this.setError(response.error);
+            const { SHOW_ERROR } = this.mediator.getEventTypes();
+            this.mediator.call(SHOW_ERROR, response.error)
         }
     }
 
@@ -187,7 +193,9 @@ class Server {
 
             this.mediator.call(NEW_MESSAGE, response.data);
         } else {
-            this.setError(response.error);
+            const { SHOW_ERROR } = this.mediator.getEventTypes();
+            this.mediator.call(SHOW_ERROR, response.error)
+
         }
     }
 }

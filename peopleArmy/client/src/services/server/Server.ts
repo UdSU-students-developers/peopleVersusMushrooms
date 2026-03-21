@@ -2,7 +2,7 @@ import CONFIG from '../../config';
 import Store from "../Store/Store";
 import { TUser } from "./types";
 
-const HOST = CONFIG.HOST;
+const HOST = CONFIG.SERVER_URL;
 
 class Server {
     HOST = HOST;

@@ -16,7 +16,7 @@ const { NAME, PORT, DATABASE } = CONFIG;
 // Создаем сокеты в app.js
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:3006",
+        origin: "http://localhost:3000",
     }
 });
 

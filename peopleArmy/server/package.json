@@ -4,9 +4,9 @@
     "expression": "^0.0.1",
     "md5": "^2.3.0",
     "socket.io": "^4.8.3",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^6.0.1"
   },
   "scripts": {
     "start": "node app.js"
-   }
+  }
 }

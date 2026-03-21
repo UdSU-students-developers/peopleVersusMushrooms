@@ -19,7 +19,7 @@ interface Message {
  * Позволяет отправлять и получать сообщения в реальном времени
  */
 const Chat: React.FC<IBasePage> = (props: IBasePage) => {
-    const {mediator} = props;
+    const {mediator, server, store, setPage} = props;
     const [message, setMessage] = useState<string>('');
     const [messages, setMessages] = useState<Message[]>([]);
     const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -29,8 +29,7 @@ const Chat: React.FC<IBasePage> = (props: IBasePage) => {
      * Выполняется при монтировании компонента
      */
     useEffect(() => {
-        // Подключаемся к сокету при монтировании компонента
-        SocketService.connect();
+        // Сокет уже подключен в PageManager, просто проверяем статус
         setIsConnected(SocketService.isConnected());
 
         // Устанавливаем callback для обработки входящих сообщений
@@ -117,12 +116,38 @@ const Chat: React.FC<IBasePage> = (props: IBasePage) => {
         return msg.from ? `Клиент ${msg.from.slice(0, 8)}` : 'Сервер';
     };
 
+    /**
+     * Обработчик выхода из системы
+     */
+    const handleLogout = (): void => {
+        server.logout();
+        
+        const onLogoutResponse = (data: { result: string }) => {
+            if (data.result === 'ok') {
+                store.clearUser();
+                setPage(0);
+            }
+        };
+        
+        server.onLogout(onLogoutResponse);
+        
+        setTimeout(() => {
+            server.offLogout(onLogoutResponse);
+        }, 1000);
+    };
+
     return (
         <div className="socket-chat">
             <div className="socket-chat-header">
                 <h3>Чат через сокеты</h3>
-                <div className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
-                    {isConnected ? 'Подключено' : 'Отключено'}
+                <div className="header-actions">
+                    <span className="user-name">Привет, {store.getUser()?.name}!</span>
+                    <button className="logout-button" onClick={handleLogout}>
+                        Выйти
+                    </button>
+                    <div className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
+                        {isConnected ? 'Подключено' : 'Отключено'}
+                    </div>
                 </div>
             </div>
             

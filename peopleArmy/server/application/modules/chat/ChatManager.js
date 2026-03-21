@@ -1,6 +1,5 @@
 const CONFIG = require('../../../config');
 const BaseManager = require('../BaseManager');
-
 const { MESSAGE_FROM_CLIENT, MESSAGE_TO_CLIENTS } = CONFIG.SOCKET;
 
 class ChatManager extends BaseManager {

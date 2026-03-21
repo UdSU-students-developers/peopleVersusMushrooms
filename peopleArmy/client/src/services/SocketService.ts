@@ -49,6 +49,33 @@ class SocketService {
         });
     }
 
+    emit(event: string, data: any): void {
+        if (!this.socket) {
+            console.error(`[SocketService] Ошибка отправки ${event}: сокет не инициализирован`);
+            return;
+        }
+        
+        if (!this.connected) {
+            console.warn(`[SocketService] Отправка ${event} в очередь: ожидание подключения`);
+            // Пытаемся отправить даже если формально не подключены
+            // Socket.io автоматически буферизирует сообщения
+        }
+        
+        this.socket.emit(event, data);
+    }
+
+    on(event: string, callback: (data: any) => void): void {
+        if (this.socket) {
+            this.socket.on(event, callback);
+        }
+    }
+
+    off(event: string, callback?: (data: any) => void): void {
+        if (this.socket) {
+            this.socket.off(event, callback);
+        }
+    }
+
     /**
      * Отключение от сервера сокетов
      */

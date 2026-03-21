@@ -12,6 +12,19 @@ class DB {
         return this.orm.get('users', { username });
     }
 
+    getUserByGuid(guid) {
+        return new Promise((resolve, reject) => {
+            const query = 'SELECT * FROM users WHERE guid = ?';
+            this.db.get(query, [guid], (err, row) => {
+                if (err) {
+                    console.error('Ошибка при поиске пользователя по GUID:', err);
+                    reject(err);
+                }
+                resolve(row);
+            });
+        });
+    }
+
     updateToken(id, token) {
         return this.orm.update('users', ['token'], [token], { id });
     }

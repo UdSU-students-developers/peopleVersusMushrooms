@@ -33,8 +33,15 @@ class UserManager extends BaseManager {
                         const result = await this.db.addUser(username, password, guid);
 
                         if (result) {
-                            // Отправляем успех только этому клиенту
-                            return socket.emit('REGISTRATION', { result: 'ok' });
+                            // Отправляем успех с данными пользователя
+                            return socket.emit('REGISTRATION', {
+                                result: 'ok',
+                                user: {
+                                    token: guid,
+                                    name: username,
+                                    id: result.lastID || result.id
+                                }
+                            });
                         }
                     }
                 }
@@ -43,7 +50,47 @@ class UserManager extends BaseManager {
                 socket.emit('REGISTRATION', { result: 'error' });
             });
 
-            // Здесь мы позже добавим socket.on('LOGIN') и socket.on('LOGOUT')
+            // Обработчик авторизации
+            socket.on('LOGIN', async (data) => {
+                const { username, password } = data;
+
+                if (username && password) {
+                    console.log(`Попытка входа: ${username}`);
+
+                    // Проверяем в базе
+                    const user = await this.db.getUserByLogin(username);
+
+                    if (user && user.password === password) {
+                        // Пользователь найден и пароль совпадает
+                        return socket.emit('LOGIN', {
+                            result: 'ok',
+                            user: {
+                                token: user.guid,
+                                name: user.username,
+                                id: user.id
+                            }
+                        });
+                    }
+                }
+
+                // Если что-то пошло не так
+                socket.emit('LOGIN', { result: 'error' });
+            });
+
+            // Обработчик выхода
+            socket.on('LOGOUT', async (data) => {
+                const { token } = data;
+
+                console.log(`Попытка выхода пользователя с токеном: ${token}`);
+
+                // Можно добавить дополнительную логику, например:
+                // - Очистка токена в базе
+                // - Логирование выхода
+                // - Отключение сокета и т.д.
+
+                // Подтверждаем успешный выход
+                socket.emit('LOGOUT', { result: 'ok' });
+            });
         });
     }
 }

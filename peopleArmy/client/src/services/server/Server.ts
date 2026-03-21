@@ -1,5 +1,6 @@
 import CONFIG from '../../config';
 import Store from "../Store/Store";
+import SocketService from "../SocketService";
 import { TUser } from "./types";
 
 const HOST = CONFIG.SERVER_URL;
@@ -12,6 +13,43 @@ class Server {
 
     constructor(store: Store) {
         this.store = store;
+    }
+
+    async register(username: string, password: string): Promise<void> {
+        SocketService.emit('REGISTRATION', { username, password });
+    }
+
+    onRegistration(callback: (data: { result: string, user?: TUser }) => void) {
+        SocketService.on('REGISTRATION', callback);
+    }
+
+    offRegistration(callback: (data: { result: string, user?: TUser }) => void) {
+        SocketService.off('REGISTRATION', callback);
+    }
+
+    async login(username: string, password: string): Promise<void> {
+        SocketService.emit('LOGIN', { username, password });
+    }
+
+    onLogin(callback: (data: { result: string, user?: TUser }) => void) {
+        SocketService.on('LOGIN', callback);
+    }
+
+    offLogin(callback: (data: { result: string, user?: TUser }) => void) {
+        SocketService.off('LOGIN', callback);
+    }
+
+    async logout(): Promise<void> {
+        const token = this.store.getToken();
+        SocketService.emit('LOGOUT', { token });
+    }
+
+    onLogout(callback: (data: { result: string }) => void) {
+        SocketService.on('LOGOUT', callback);
+    }
+
+    offLogout(callback: (data: { result: string }) => void) {
+        SocketService.off('LOGOUT', callback);
     }
 
     private async request<T>(
@@ -60,14 +98,6 @@ class Server {
 
     showError(cb: (text: string) => void) {
         this.showErrorCb = cb;
-    }
-
-    async register(username: string, password: string): Promise<boolean> { //Функцию выпилить! Она для примера
-        const user = await this.request<TUser & { username?: string; name?: string; id?: number }>("reg", { username, password });
-        if (!user) return false;
-        const name = user.username ? user.username : user.name;
-        this.store.setUser({ token: user.token, name: name, id: user.id });
-        return true;
     }
 }
 

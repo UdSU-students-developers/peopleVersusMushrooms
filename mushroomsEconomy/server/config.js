@@ -35,12 +35,13 @@ const CONFIG = {
 
 
     SOCKET: {
-        MESSAGE: 'message',  // шлет сообщение
-        TYPING: 'typing',           // печатает
+        MESSAGE: 'MESSAGE',  // шлет сообщение
 
-        REGISTRATION: 'registration',
-        LOGIN: 'login',
-        LOGOUT: 'logout',
+        REGISTRATION: 'REGISTRATION',
+        LOGIN: 'LOGIN',
+        LOGOUT: 'LOGOUT',
+
+        GET_MAP: 'GET_MAP',
     },
     
     ECONOMY: {

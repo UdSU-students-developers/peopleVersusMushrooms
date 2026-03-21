@@ -1,0 +1,399 @@
+<!--АЛАРМ!!! НЕЙРОХРЮЧЕВО, ЧИСТО ДЛЯ ТЕСТОВ-->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Тест сокетов</title>
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+    <h1>🔌 Тестирование сокетов</h1>
+    
+    <div>
+        <h3>Статус: <span id="status">🔴 Отключен</span></h3>
+        <p>Socket ID: <span id="socketId">-</span></p>
+        <p>Токен: <span id="tokenDisplay">-</span></p>
+    </div>
+
+    <hr>
+
+    <div>
+        <h3>📝 Регистрация</h3>
+        <input type="text" id="regLogin" placeholder="Логин" value="testuser">
+        <input type="text" id="regPass" placeholder="Пароль" value="123">
+        <input type="text" id="regNick" placeholder="Никнейм" value="Тестер">
+        <button onclick="testRegistration()">Зарегистрироваться</button>
+    </div>
+
+    <hr>
+
+    <div>
+        <h3>🔑 Авторизация</h3>
+        <input type="text" id="loginLogin" placeholder="Логин" value="testuser">
+        <input type="text" id="loginPass" placeholder="Пароль" value="123">
+        <button onclick="testLogin()">Войти</button>
+    </div>
+
+    <hr>
+
+    <div>
+        <h3>🎮 Лобби</h3>
+        
+        <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+            <h4>Создание комнаты</h4>
+            <input type="text" id="roomName" placeholder="Название комнаты" value="Моя комната">
+            <button onclick="testCreateRoom()">➕ Создать комнату</button>
+        </div>
+
+        <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+            <h4>Присоединение к комнате</h4>
+            <input type="text" id="roomGuid" placeholder="GUID комнаты" value="">
+            <button onclick="testJoinRoom()">🔑 Присоединиться</button>
+        </div>
+
+        <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+            <h4>Действия в комнате</h4>
+            <button onclick="testLeaveRoom()">🚪 Покинуть комнату</button>
+            <button onclick="testStartGame()">▶️ Начать игру</button>
+            <button onclick="testGetRooms()">📋 Список комнат</button>
+        </div>
+
+        <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+            <h4>Выгнать игрока</h4>
+            <input type="text" id="targetGuid" placeholder="GUID игрока" value="">
+            <button onclick="testDropFromRoom()">👢 Выгнать</button>
+        </div>
+    </div>
+
+    <hr>
+
+    <div>
+        <h3>📋 Действия</h3>
+        <button onclick="testCheck()">CHECK (проверка)</button>
+        <button onclick="testLogout()">🚪 Выйти</button>
+        <button onclick="clearLog()">Очистить лог</button>
+    </div>
+
+    <hr>
+
+    <div>
+        <h3>📊 Комнаты:</h3>
+        <div id="roomsList" style="background: #f0f0f0; padding: 10px; min-height: 100px; font-family: monospace;"></div>
+    </div>
+
+    <hr>
+
+    <div>
+        <h3>📊 Лог событий:</h3>
+        <div id="log" style="background: #f0f0f0; padding: 10px; height: 300px; overflow-y: scroll; font-family: monospace;"></div>
+    </div>
+
+    <script>
+        const socket = io('http://localhost:3001');
+        const logDiv = document.getElementById('log');
+        const roomsDiv = document.getElementById('roomsList');
+        const statusSpan = document.getElementById('status');
+        const socketIdSpan = document.getElementById('socketId');
+        const tokenSpan = document.getElementById('tokenDisplay');
+
+        function addLog(message, type = 'info') {
+            const div = document.createElement('div');
+            const colors = {
+                sent: 'blue',
+                received: 'green',
+                error: 'red',
+                info: 'black'
+            };
+            div.style.color = colors[type] || 'black';
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(div);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateRoomsList(rooms) {
+            roomsDiv.innerHTML = '';
+            if (!rooms || rooms.length === 0) {
+                roomsDiv.innerHTML = '<i>Нет доступных комнат</i>';
+                return;
+            }
+            
+            rooms.forEach(room => {
+                const roomDiv = document.createElement('div');
+                roomDiv.style.border = '1px solid #ddd';
+                roomDiv.style.margin = '5px';
+                roomDiv.style.padding = '5px';
+                
+                let playersList = '';
+                room.players.forEach(p => {
+                    playersList += `<br>  • ${p.nickname} (GUID: ${p.guid}) - ${p.status}`;
+                });
+                
+                roomDiv.innerHTML = `
+                    <b>${room.name}</b> (${room.playersCount}/${room.maxPlayers})<br>
+                    GUID: ${room.guid}<br>
+                    Статус: ${room.status} | Игра: ${room.gameState}<br>
+                    Создатель: ${room.creator}<br>
+                    Игроки: ${playersList}
+                `;
+                roomsDiv.appendChild(roomDiv);
+            });
+        }
+
+        // Подключение
+        socket.on('connect', () => {
+            statusSpan.innerHTML = '🟢 Подключен';
+            socketIdSpan.textContent = socket.id;
+            addLog(`✅ Подключено к серверу. ID: ${socket.id}`, 'received');
+        });
+
+        socket.on('disconnect', () => {
+            statusSpan.innerHTML = '🔴 Отключен';
+            socketIdSpan.textContent = '-';
+            tokenSpan.textContent = '-';
+            addLog('❌ Отключено от сервера', 'error');
+        });
+
+        // Обработчики ответов пользователей
+        socket.on('REGISTRATION', (data) => {
+            if (data.result === 'ok') {
+                addLog(`✅ Регистрация успешна: ${JSON.stringify(data.data)}`, 'received');
+            } else {
+                addLog(`❌ Ошибка регистрации: код ${data.error.code} - ${data.error.message}`, 'error');
+            }
+        });
+
+        socket.on('LOGIN', (data) => {
+            if (data.result === 'ok') {
+                addLog(`✅ Авторизация успешна: ${JSON.stringify(data.data)}`, 'received');
+                window.currentUser = data.data;
+                tokenSpan.textContent = data.data.token;
+            } else {
+                addLog(`❌ Ошибка авторизации: код ${data.error.code} - ${data.error.message}`, 'error');
+            }
+        });
+
+        socket.on('LOGOUT', (data) => {
+            if (data.result === 'ok') {
+                addLog(`✅ Выход выполнен`, 'received');
+                window.currentUser = null;
+                tokenSpan.textContent = '-';
+            } else {
+                addLog(`❌ Ошибка выхода: код ${data.error.code} - ${data.error.message}`, 'error');
+            }
+        });
+
+        socket.on('CHECK', (data) => {
+            if (data.result === 'ok') {
+                addLog(`📋 CHECK ответ: ${JSON.stringify(data.data)}`, 'received');
+            }
+        });
+
+        socket.on('SEND_TO_ALL', (data) => {
+            if (data.result === 'ok') {
+                addLog(`📢 Сообщение для всех: ${JSON.stringify(data.data)}`, 'received');
+            }
+        });
+
+        // Обработчики ответов лобби
+        socket.on('CREATE_ROOM', (data) => {
+            if (data.result === 'ok') {
+                addLog(`✅ Комната создана: ${data.data.name} (${data.data.guid})`, 'received');
+                document.getElementById('roomGuid').value = data.data.guid;
+            } else {
+                addLog(`❌ Ошибка создания комнаты: код ${data.error.code} - ${data.error.message}`, 'error');
+            }
+        });
+
+        socket.on('JOIN_ROOM', (data) => {
+            if (data.result === 'ok') {
+                addLog(`✅ Присоединился к комнате: ${data.data.name}`, 'received');
+            } else {
+                addLog(`❌ Ошибка присоединения: код ${data.error.code} - ${data.error.message}`, 'error');
+            }
+        });
+
+        socket.on('LEAVE_ROOM', (data) => {
+            if (data.result === 'ok') {
+                addLog(`✅ Покинул комнату`, 'received');
+            } else {
+                addLog(`❌ Ошибка выхода из комнаты: код ${data.error.code} - ${data.error.message}`, 'error');
+            }
+        });
+
+        socket.on('DROP_FROM_ROOM', (data) => {
+            if (data.result === 'ok') {
+                addLog(`✅ Игрок выгнан`, 'received');
+            } else {
+                addLog(`❌ Ошибка выгона: код ${data.error.code} - ${data.error.message}`, 'error');
+            }
+        });
+
+        socket.on('START_GAME', (data) => {
+            if (data.result === 'ok') {
+                addLog(`✅ Игра началась!`, 'received');
+            } else {
+                addLog(`❌ Ошибка начала игры: код ${data.error.code} - ${data.error.message}`, 'error');
+            }
+        });
+
+        socket.on('GET_ROOMS', (data) => {
+            if (data.result === 'ok') {
+                addLog(`📋 Получен список комнат (${data.data.length})`, 'received');
+                updateRoomsList(data.data);
+            } else {
+                addLog(`❌ Ошибка получения списка: код ${data.error.code} - ${data.error.message}`, 'error');
+            }
+        });
+
+        socket.on('ROOM_UPDATED', (data) => {
+            if (data.result === 'ok') {
+                addLog(`🔄 Комната обновлена`, 'received');
+            }
+        });
+
+        socket.on('ROOMS_LIST_UPDATED', (data) => {
+            if (data.result === 'ok') {
+                addLog(`🔄 Список комнат обновлен`, 'received');
+                updateRoomsList(data.data);
+            }
+        });
+
+        // Тестовые функции пользователей
+        function testRegistration() {
+            const login = document.getElementById('regLogin').value;
+            const password = document.getElementById('regPass').value;
+            const nickname = document.getElementById('regNick').value;
+            
+            const passwordHash = CryptoJS.MD5(password).toString();
+            
+            const data = { login, passwordHash, nickname };
+            addLog(`📤 REGISTRATION: ${JSON.stringify(data)}`, 'sent');
+            socket.emit('REGISTRATION', data);
+        }
+
+        function testLogin() {
+            const login = document.getElementById('loginLogin').value;
+            const password = document.getElementById('loginPass').value;
+            
+            const passwordHash = CryptoJS.MD5(password).toString();
+            
+            const data = { login, passwordHash };
+            addLog(`📤 LOGIN: ${JSON.stringify(data)}`, 'sent');
+            socket.emit('LOGIN', data);
+        }
+
+        function testLogout() {
+            addLog(`📤 LOGOUT`, 'sent');
+            socket.emit('LOGOUT');
+        }
+
+        function testCheck() {
+            const data = { 
+                name: 'Тестер', 
+                text: 'Привет от ' + socket.id 
+            };
+            addLog(`📤 CHECK: ${JSON.stringify(data)}`, 'sent');
+            socket.emit('CHECK', data);
+        }
+
+        // Тестовые функции лобби
+        function testCreateRoom() {
+            if (!window.currentUser) {
+                addLog('⚠️ Сначала нужно авторизоваться!', 'error');
+                return;
+            }
+            
+            const roomName = document.getElementById('roomName').value;
+            const data = { 
+                token: window.currentUser.token,
+                roomName 
+            };
+            addLog(`📤 CREATE_ROOM: ${JSON.stringify(data)}`, 'sent');
+            socket.emit('CREATE_ROOM', data);
+        }
+
+        function testJoinRoom() {
+            if (!window.currentUser) {
+                addLog('⚠️ Сначала нужно авторизоваться!', 'error');
+                return;
+            }
+            
+            const roomGuid = document.getElementById('roomGuid').value;
+            if (!roomGuid) {
+                addLog('⚠️ Введите GUID комнаты!', 'error');
+                return;
+            }
+            
+            const data = { 
+                token: window.currentUser.token,
+                roomGuid 
+            };
+            addLog(`📤 JOIN_ROOM: ${JSON.stringify(data)}`, 'sent');
+            socket.emit('JOIN_ROOM', data);
+        }
+
+        function testLeaveRoom() {
+            if (!window.currentUser) {
+                addLog('⚠️ Сначала нужно авторизоваться!', 'error');
+                return;
+            }
+            
+            const data = { 
+                token: window.currentUser.token
+            };
+            addLog(`📤 LEAVE_ROOM`, 'sent');
+            socket.emit('LEAVE_ROOM', data);
+        }
+
+        function testDropFromRoom() {
+            if (!window.currentUser) {
+                addLog('⚠️ Сначала нужно авторизоваться!', 'error');
+                return;
+            }
+            
+            const targetGuid = document.getElementById('targetGuid').value;
+            if (!targetGuid) {
+                addLog('⚠️ Введите GUID игрока!', 'error');
+                return;
+            }
+            
+            const data = { 
+                token: window.currentUser.token,
+                targetGuid 
+            };
+            addLog(`📤 DROP_FROM_ROOM: ${JSON.stringify(data)}`, 'sent');
+            socket.emit('DROP_FROM_ROOM', data);
+        }
+
+        function testStartGame() {
+            if (!window.currentUser) {
+                addLog('⚠️ Сначала нужно авторизоваться!', 'error');
+                return;
+            }
+            
+            const data = { 
+                token: window.currentUser.token
+            };
+            addLog(`📤 START_GAME`, 'sent');
+            socket.emit('START_GAME', data);
+        }
+
+        function testGetRooms() {
+            if (!window.currentUser) {
+                addLog('⚠️ Сначала нужно авторизоваться!', 'error');
+                return;
+            }
+            
+            const data = { 
+                token: window.currentUser.token
+            };
+            addLog(`📤 GET_ROOMS`, 'sent');
+            socket.emit('GET_ROOMS', data);
+        }
+
+        function clearLog() {
+            logDiv.innerHTML = '';
+        }
+    </script>
+</body>
+</html>

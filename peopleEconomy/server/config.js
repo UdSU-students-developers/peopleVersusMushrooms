@@ -1,19 +1,23 @@
-const CONFIG = {
-    NAME: 'Server',
-    PORT: 300x, //Порт соостветсвующий серверу вашего сервиса
+class CONFIG {
+    static SERVER_PORT = '3009'; // Хост сервера
+    static SERVER_NAME = 'MAP';  // Имя сервера
 
-    DATABASE: {
-        NAME: 'data.db',
-    },
+    static SQLITE_PATH = './application/modules/db/map.db'; // Путь к базе
 
-    MEDIATOR: {
-        EVENTS: {
-            EXAMPLE_EVENT: "EXAMPLE_EVENT",
-        },
-        TRIGGERS: {
-            EXAMPLE_TRIGGER: "EXAMPLE_TRIGGER",
-        },
-    },
+    //ивенты
+    static EVENTS = {
+        //map events
+    }
+
+    //триггеры
+    static TRIGGERS = {
+        //map triggers
+    }
+
+    // сокетные сообщения
+   static MESSAGES = {
+       
+    }
 }
 
 module.exports = CONFIG;

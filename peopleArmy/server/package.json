@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "easystarjs": "^0.4.4",
     "express": "^5.2.1",
     "expression": "^0.0.1",
     "md5": "^2.3.0",
@@ -8,5 +9,5 @@
   },
   "scripts": {
     "start": "node app.js"
-   }
+  }
 }

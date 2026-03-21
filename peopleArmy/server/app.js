@@ -10,6 +10,7 @@ const DB = require('./application/modules/db/DB');
 const Mediator = require('./application/modules/mediator/Mediator');
 const RegistrationManager = require('./application/modules/registration/RegistrationManager')
 const ChatManager = require('./application/modules/chat/ChatManager');
+const ArmyManager = require('./application/modules/army/ArmyManager');
 const { NAME, PORT, DATABASE } = CONFIG;
 
 // Создаем сокеты в app.js
@@ -26,6 +27,7 @@ const mediator = new Mediator(CONFIG.MEDIATOR);
 // Менеджеры создаём здесь, чтобы они зарегистрировали триггеры в медиаторе
 new RegistrationManager({mediator, db, io, common});
 new ChatManager({mediator, db, io, common});
+new ArmyManager({ mediator, db, io, common });
 
 // Пример: подписка на событие "пользователь зарегистрирован"
 mediator.subscribe(mediator.EVENTS.USER_REGISTERED, (user) => {
@@ -38,6 +40,7 @@ app.use(express.static(`${__dirname}/public`));
 app.use('/', router);
 
 function deinit() {
+    armyManager.destructor();
     db.destructor();
     setTimeout(() =>process.exit(), 500);
 }

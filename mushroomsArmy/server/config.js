@@ -8,14 +8,19 @@ const CONFIG = {
 
     MEDIATOR: {
         EVENTS: {
-            REGISTRATION: "REGISTRATION",
-            LOGIN: "LOGIN",
-            LOGOUT: "LOGOUT"
+            EXAMPLE_EVENT: "EXAMPLE_EVENT",
         },
         TRIGGERS: {
             EXAMPLE_TRIGGER: "EXAMPLE_TRIGGER",
         },
     },
+    SOCKET: {
+        EVENTS: {
+            REGISTRATION: "REGISTRATION",
+            LOGIN: "LOGIN",
+            LOGOUT: "LOGOUT"
+        },
+    }
 }
 
 module.exports = CONFIG;

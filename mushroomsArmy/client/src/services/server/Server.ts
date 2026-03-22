@@ -62,7 +62,7 @@ class Server {
         this.socket.emit(CONFIG.SOCKET.REGISTRATION, { 
             name: username, 
             password,
-            confirmPassword 
+            passwordRepeat: confirmPassword 
         });
         return true;
     }

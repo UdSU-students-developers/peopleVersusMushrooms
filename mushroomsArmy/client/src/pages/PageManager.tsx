@@ -3,6 +3,7 @@ import Server from '../services/server/Server';
 import Registration from './Registration/Registration';
 import Login from './Login/Login';
 import Chat from './Chat/Chat'
+import Lobby from './Lobby/Lobby';
 import Store from '../services/Store/Store';
 import CONFIG from '../config';
 import Mediator from '../services/Mediator/Mediator';
@@ -13,6 +14,7 @@ export enum PAGES {
     LOGIN,
     REGISTRATION,
     CHAT,
+    LOBBY,
 }
 
 export interface IBasePage {
@@ -38,6 +40,7 @@ const PageManager: React.FC = () => {
             {page === PAGES.REGISTRATION && <Registration {...props} />}
             {page === PAGES.LOGIN && <Login {...props} />}
             {page === PAGES.CHAT && <Chat {...props} />}
+            {page === PAGES.LOBBY && <Lobby {...props} />}
         </>
     );
 }

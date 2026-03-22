@@ -15,11 +15,9 @@ const CONFIG = {
         },
     },
     SOCKET: {
-        EVENTS: {
-            REGISTRATION: "REGISTRATION",
-            LOGIN: "LOGIN",
-            LOGOUT: "LOGOUT"
-        },
+        REGISTRATION: 'registration',
+        LOGIN: 'login',
+        LOGOUT: 'logout'
     }
 }
 

@@ -6,7 +6,7 @@ import "./Game.css"
 
 const GAME_FIELD = 'game-field';
 
-const Village: React.FC<IBasePage> = (props: IBasePage) => {
+const Game: React.FC<IBasePage> = (props: IBasePage) => {
     const { setPage } = props;
     
     return (
@@ -18,4 +18,4 @@ const Village: React.FC<IBasePage> = (props: IBasePage) => {
 );
 };
 
-export default Village;
+export default Game;

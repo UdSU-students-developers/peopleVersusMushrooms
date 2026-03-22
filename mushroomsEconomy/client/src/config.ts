@@ -33,6 +33,8 @@ const CONFIG = {
             CLEAR_STORE: 'CLEAR_STORE',
             // остальные триггеры
             MESSAGE: 'MESSAGE:SOCKET',
+
+            SET_MAP: "SET_MAP",
         }
     },
 
@@ -45,6 +47,8 @@ const CONFIG = {
         REGISTRATION: 'REGISTRATION',
         LOGIN: 'LOGIN',
         LOGOUT: 'LOGOUT',
+
+        GET_MAP: 'GET_MAP',
     },
 
 

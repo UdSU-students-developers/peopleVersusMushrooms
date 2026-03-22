@@ -3,11 +3,14 @@ import { MediatorContext, ServerContext } from "../App"
 
 export default class Game {
 
+    map = [];
+
     server;
     mediator;
 
     constructor() {
         this.server = useContext(ServerContext);
-        this.mediator = useContext(MediatorContext); // Надо сменить app на конексты и дописать тут штуки для получения и обработки данных
+        this.mediator = useContext(MediatorContext);
     }
+
 }

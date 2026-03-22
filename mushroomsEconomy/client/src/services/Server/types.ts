@@ -24,4 +24,8 @@ export type TMessage = {
     created: string;
 }
 
+export type TMap = {
+    map: number[][];
+}
+
 export type TMessages = TMessage[];

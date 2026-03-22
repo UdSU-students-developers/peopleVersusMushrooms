@@ -1,10 +1,12 @@
 import { io, Socket } from "socket.io-client";
 import CONFIG from '../../config';
 import Mediator from '../Mediator/Mediator';
-import { TMessages, TResponse, TUser } from "../Server/types";
+import { TMap, TMessages, TResponse, TUser } from "../Server/types";
 import { TError } from "../Server/types";
 
 const { HOST } = CONFIG;
+
+//СДЕЛАТЬ ТИПЫ НОРМАЛЬНЫМИ ВЕЗДЕ
 
 class Server {
     mediator: Mediator;
@@ -28,6 +30,15 @@ class Server {
         this.socket.on(CONFIG.SOCKET.MESSAGE, (data) => this.handleSendMessage(data));
         this.socket.on(CONFIG.SOCKET.MESSAGES, (data) => this.handleGetMessage(data));
         this.socket.on(CONFIG.SOCKET.NEW_MESSAGE, (data) => this.handleNewMessage(data));
+        this.socket.on(CONFIG.SOCKET.GET_MAP, (data) => this.handleGetMap(data));
+    }
+
+    requestMap(): void {
+        this.socket.emit(CONFIG.SOCKET.GET_MAP);
+    }
+
+    onGetMap(handler: (map: number[]) => void): void {
+        this.socket.on(CONFIG.SOCKET.GET_MAP, handler);
     }
 
     sendMessage(message: string): void {
@@ -202,6 +213,17 @@ class Server {
             const { SHOW_ERROR } = this.mediator.getEventTypes();
             this.mediator.call(SHOW_ERROR, response.error)
 
+        }
+    }
+
+    handleGetMap(response: TResponse<TMap>) {
+        if (response?.result === 'ok') {
+            const { SET_MAP } = this.mediator.getTriggerTypes()
+            this.mediator.call(SET_MAP, response);
+        }
+        else {
+            const { SHOW_ERROR } = this.mediator.getEventTypes();
+            this.mediator.call(SHOW_ERROR, response.error);
         }
     }
 }

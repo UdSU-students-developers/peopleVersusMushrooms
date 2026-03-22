@@ -1,9 +1,9 @@
 const CONFIG = {
     NAME: 'Server',
-    PORT: 300x, //Порт соостветсвующий серверу вашего сервиса
+    PORT: 3003, //Порт соостветсвующий серверу вашего сервиса
 
     DATABASE: {
-        NAME: 'data.db',
+        NAME: 'mushroomsArmy.db',
     },
 
     MEDIATOR: {
@@ -14,6 +14,11 @@ const CONFIG = {
             EXAMPLE_TRIGGER: "EXAMPLE_TRIGGER",
         },
     },
+    SOCKET: {
+        REGISTRATION: 'registration',
+        LOGIN: 'login',
+        LOGOUT: 'logout'
+    }
 }
 
 module.exports = CONFIG;

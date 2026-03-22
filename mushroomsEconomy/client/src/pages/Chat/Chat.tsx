@@ -1,25 +1,39 @@
-import React, { useEffect, useState, useRef, useMemo, KeyboardEvent, useContext } from "react";
+import React, { useEffect, useState, useRef, KeyboardEvent, useContext } from "react";
+import { MediatorContext, ServerContext } from "../../App";
 import { IBasePage } from '../PageManager';
 import { TUser, TMessage, TMessages } from "../../services/Server/types";
 import CONFIG from "../../config";
 import Button from "../../components/Button/Button";
+
 import './Chat.css';
-import { MediatorContext, ServerContext } from "../../App";
 
 const Chat: React.FC<IBasePage> = (props: IBasePage) => {
     const { setPage } = props;
+
+    const { GET_STORE, SET_STORE } = CONFIG.MEDIATOR.TRIGGERS;
+
     const server = useContext(ServerContext);
     const mediator = useContext(MediatorContext);
     
     const [messages, setMessages] = useState<TMessages>([]);
-    const [_, setHash] = useState<string>('');
+    const [user, setUser] = useState<TUser | null>(null);
     const messageRef = useRef<HTMLInputElement>(null);
-    const user = store.get('user');
 
     useEffect(() => {
-        const messages = store.getMessages();
-        setMessages(messages);
-    }, [store]);
+        if (!mediator) return;
+        
+        const storedUser = mediator.get<TUser | null>(GET_STORE, 'user');
+        setUser(storedUser);
+    }, [mediator]);
+
+    useEffect(() => {
+        if (!mediator) return;
+        
+        const storedMessages = mediator.get<TMessages>(GET_STORE, 'messages');
+        if (storedMessages) {
+            setMessages(storedMessages);
+        }
+    }, [mediator]);
 
     useEffect(() => {
         if (!mediator) return;
@@ -28,10 +42,19 @@ const Chat: React.FC<IBasePage> = (props: IBasePage) => {
 
         const handleNewMessage = (message: TMessage) => {
             setMessages(prev => [...prev, message]);
+            const currentMessages = mediator.get<TMessages>(GET_STORE, 'messages') || [];
+            mediator.get(SET_STORE, { 
+                name: 'messages', 
+                value: [...currentMessages, message] 
+            });
         };
 
-        const handleMessagesLoaded = (messages: TMessages) => {
-            setMessages(messages);
+        const handleMessagesLoaded = (loadedMessages: TMessages) => {
+            setMessages(loadedMessages);
+            mediator.get(SET_STORE, { 
+                name: 'messages', 
+                value: loadedMessages 
+            });
         };
 
         mediator.subscribe(eventTypes.NEW_MESSAGE, handleNewMessage);
@@ -44,12 +67,16 @@ const Chat: React.FC<IBasePage> = (props: IBasePage) => {
             mediator.unsubscribe(eventTypes.MESSAGES_LOADED, handleMessagesLoaded);
         }
 
-    }, [mediator, store]);
+    }, [mediator, server]);
 
     const handleKeyUp = (event: KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter') {
             if (messageRef.current) {
                 const message = messageRef.current.value;
+                if (message.length > CONFIG.CHAT_MAX_MESSAGE_LENGTH) {
+                    alert(`Сообщение не должно превышать ${CONFIG.CHAT_MAX_MESSAGE_LENGTH} символов`);
+                    return;
+                }
                 if (message) {
                     server.sendMessage(message);
                     messageRef.current.value = '';
@@ -62,8 +89,8 @@ const Chat: React.FC<IBasePage> = (props: IBasePage) => {
         if (messageRef.current) {
             const message = messageRef.current.value;
             if (message.length > CONFIG.CHAT_MAX_MESSAGE_LENGTH) {
-                    alert(`Сообщение не должно превышать ${CONFIG.CHAT_MAX_MESSAGE_LENGTH} символов`);
-                    return;
+                alert(`Сообщение не должно превышать ${CONFIG.CHAT_MAX_MESSAGE_LENGTH} символов`);
+                return;
             }
             if (message) {
                 server.sendMessage(message);
@@ -72,23 +99,12 @@ const Chat: React.FC<IBasePage> = (props: IBasePage) => {
         }
     }
 
-    const input = useMemo(() => 
-        <input 
-            id='testInput'
-            ref={messageRef} 
-            onKeyUp={handleKeyUp} 
-            placeholder='сообщение' 
-            className='inputChat'
-        />, 
-    [handleKeyUp]);
-
     const getAuthorColor = (author: string) => {
         let hash = 0;
         for (let i = 0; i < author.length; i++) {
             hash = author.charCodeAt(i) + ((hash << 5) - hash);
         }
         
-        // Генерируем цвет в формате HSL для лучшей читаемости
         const hue = hash % 360;
         return `hsl(${hue}, 70%, 50%)`;
     }

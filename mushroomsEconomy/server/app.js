@@ -12,6 +12,7 @@ const Answer = require('./application/Answer');
 const GameManager = require('./application/modules/game/GameManager');
 const UserManager = require('./application/modules/user/UserManager');
 const Common = require('./application/modules/common/Common');
+const ChatManager = require('./application/modules/chat/ChatManager');
 const LobbyManager = require('./application/modules/lobby/LobbyManager');
 
 const { NAME, PORT, DATABASE } = CONFIG;
@@ -23,6 +24,7 @@ const answer = new Answer();
 
 const gameManager = new GameManager( { mediator, db, common, io, answer } );
 const userManager = new UserManager({ mediator, db, common, io, answer });
+const chatManager = new ChatManager({ mediator, common, io, answer });
 const lobbyManager = new LobbyManager({ mediator, common, db, io, answer });
 
 app.use(express.static(`${__dirname}/public`));

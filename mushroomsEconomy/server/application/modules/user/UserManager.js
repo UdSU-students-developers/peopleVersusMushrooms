@@ -61,7 +61,7 @@ class UserManager extends BaseManager {
             return socket.emit(LOGOUT, this.answer.bad(13));
         }
 
-        const user = this.users.get(guid);
+        const user = this.users[guid];
         await user.logout();
         delete this.users[user.guid];
 

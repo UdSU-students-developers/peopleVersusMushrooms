@@ -36,6 +36,8 @@ const CONFIG = {
 
     SOCKET: {
         MESSAGE: 'MESSAGE',  // шлет сообщение
+        MESSAGES: 'MESSAGES',
+        NEW_MESSAGE: 'NEW_MESSAGE',
         TYPING: 'TYPING',           // печатает
 
         REGISTRATION: 'REGISTRATION',

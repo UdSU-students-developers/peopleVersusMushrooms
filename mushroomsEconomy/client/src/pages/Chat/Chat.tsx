@@ -6,6 +6,7 @@ import CONFIG from "../../config";
 import Button from "../../components/Button/Button";
 
 import './Chat.css';
+import useStore from "../../services/Store/useStore";
 
 const Chat: React.FC<IBasePage> = (props: IBasePage) => {
     const { setPage } = props;
@@ -42,7 +43,12 @@ const Chat: React.FC<IBasePage> = (props: IBasePage) => {
 
         const handleNewMessage = (message: TMessage) => {
             setMessages(prev => [...prev, message]);
-            const currentMessages = mediator.get<TMessages>(GET_STORE, 'messages') || [];
+            let currentMessages = mediator.get<TMessages>(GET_STORE, 'messages') || [];
+
+            if (!Array.isArray(currentMessages)) {
+                currentMessages = [];
+            }
+
             mediator.get(SET_STORE, { 
                 name: 'messages', 
                 value: [...currentMessages, message] 
@@ -57,14 +63,21 @@ const Chat: React.FC<IBasePage> = (props: IBasePage) => {
             });
         };
 
+        const handleLogin = () => {
+            const user = mediator.get<TUser | null>(GET_STORE, 'user');
+            setUser(user);
+        };
+
         mediator.subscribe(eventTypes.NEW_MESSAGE, handleNewMessage);
         mediator.subscribe(eventTypes.MESSAGES_LOADED, handleMessagesLoaded);
+        mediator.subscribe(eventTypes.LOGIN, handleLogin);
 
         server.getMessages();
 
         return () => {
             mediator.unsubscribe(eventTypes.NEW_MESSAGE, handleNewMessage);
             mediator.unsubscribe(eventTypes.MESSAGES_LOADED, handleMessagesLoaded);
+            mediator.unsubscribe(eventTypes.LOGIN, handleLogin);
         }
 
     }, [mediator, server]);

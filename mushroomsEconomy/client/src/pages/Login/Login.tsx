@@ -1,14 +1,31 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { IBasePage, PAGES } from '../PageManager';
-import { ServerContext } from '../../App';
+import { MediatorContext, ServerContext } from '../../App';
 import './Login.css';
 
 const Login: React.FC<IBasePage> = ({ setPage }) => {
 
     const server = useContext(ServerContext);
+    const mediator = useContext(MediatorContext);
 
     const [login, setLogin] = useState<string>('');
     const [password, setPassword] = useState<string>('');
+
+    useEffect(() => {
+        if (!mediator) return;
+
+        const eventTypes = mediator.getEventTypes();
+
+        const handleLogin = () => {
+            setPage(PAGES.CHAT);
+        }
+
+        mediator.subscribe(eventTypes.LOGIN, handleLogin);
+
+        return () => {
+            mediator.unsubscribe(eventTypes.LOGIN, handleLogin);
+        }
+    }, [mediator, setPage]);
 
     const handleLogin = async (e: any) => {
         e.preventDefault();

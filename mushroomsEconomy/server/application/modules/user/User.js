@@ -24,7 +24,7 @@ class User {
         return {
             db: this.db,
             common: this.common,
-            socketId: this.socketId = socketId,
+            socketId: this.socketId,
             id: this.id,
             guid: this.guid,
             name: this.name,
@@ -43,11 +43,11 @@ class User {
 
         const passwordHash = this.hashPassword(password);
 
-        if (userData.password === passwordHash) {
+        if (userData.password_hash === passwordHash) {
             this.id = userData.id;
             this.guid = userData.guid;
             this.name = userData.name;
-            this.passwordHash = userData.passwordHash;
+            this.passwordHash = userData.password_hash;
             this.token = userData.token;
 
             return this;

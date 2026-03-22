@@ -33,8 +33,9 @@ class Server {
     sendMessage(message: string): void {
         const { GET_STORE } = this.mediator.getTriggerTypes();
         const user = this.mediator.get<{ name: string; token: string } | null>(GET_STORE, 'user');
+
         if (user?.name) {
-            this.socket.emit(CONFIG.SOCKET.MESSAGE, { name: user.name, message });
+            this.socket.emit(CONFIG.SOCKET.MESSAGE, { author: user.name, message: message });
         }
     }
 
@@ -108,8 +109,6 @@ class Server {
     }
 
     private handleRegistration(response: any) {
-        console.log('Registration response: ', response);
-
         if (response) {
             const { SET_STORE } = this.mediator.getTriggerTypes();
             this.mediator.get(SET_STORE, {
@@ -126,8 +125,6 @@ class Server {
     }
 
     private handleLogin(response: any) {
-        console.log('Login response: ', response);
-
         if (response?.result === 'ok' && response.data) {
             const { name, token } = response.data;
             const { SET_STORE } = this.mediator.getTriggerTypes();
@@ -183,11 +180,20 @@ class Server {
 
     private handleNewMessage(response: any) {
         if (response?.result === 'ok' && response.data) {
-            const { SET_STORE } = this.mediator.getTriggerTypes();
+            const { SET_STORE, GET_STORE } = this.mediator.getTriggerTypes();
             const { NEW_MESSAGE } = this.mediator.getEventTypes();
 
+            const currentMessages = this.mediator.get(GET_STORE, 'messages');
+            
+            let updatedMessage;
+            if (Array.isArray(currentMessages)) {
+                updatedMessage = [...currentMessages, response.data];
+            } else {
+                updatedMessage = [response.data];
+            }
+
             this.mediator.get(SET_STORE, {
-                name: 'newMessage',
+                name: 'messages',
                 value: response.data
             });
 

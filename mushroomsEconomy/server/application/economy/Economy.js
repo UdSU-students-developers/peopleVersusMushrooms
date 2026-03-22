@@ -66,6 +66,20 @@ class Economy {
         this.mycelium.push(mycelium);
     }
 
+    addWorker(x, y) {
+        const worker = new Worker({
+            x,
+            y,
+            guid: this.guid,
+            callbacks: {
+                checkAround: (x, y) => this.checkAroundMycelium(x, y),
+                extend: (x, y) => this.addMycelium(x, y),
+            },
+        });
+        this.map[y][x] = 1;
+        this.workers.push(worker);
+    }
+
     checkAroundMycelium(x, y) {
         const directions = [
             { dx: 0, dy: -1 },

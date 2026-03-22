@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Server from '../services/server/Server';
 import Registration from './Registration/Registration';
 import Login from './Login/Login';
 import Chat from './Chat/Chat'
 import Store from '../services/Store/Store';
+import CONFIG from '../config';
+import Mediator from '../services/Mediator/Mediator';
+import useStore from '../services/Store/useStore';
 
 
 export enum PAGES {
@@ -20,8 +23,9 @@ export interface IBasePage {
 
 const PageManager: React.FC = () => {
     const [page, setPage] = useState<PAGES>(PAGES.LOGIN);
-    const store = new Store();
-    const server = new Server(store);
+    const mediator = useMemo(() => new Mediator(CONFIG.MEDIATOR), []);
+    const store = useStore(mediator);
+    const server = useMemo(() => new Server(mediator), [mediator]);
 
     const props = {
         setPage,

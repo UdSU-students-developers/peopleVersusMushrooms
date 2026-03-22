@@ -5,11 +5,13 @@ import CONFIG from "../../config";
 import Button from "../../components/Button/Button";
 import './Chat.css';
 import { MediatorContext, ServerContext } from "../../App";
+import useStore from "../../services/Store/useStore";
 
 const Chat: React.FC<IBasePage> = (props: IBasePage) => {
     const { setPage } = props;
     const server = useContext(ServerContext);
     const mediator = useContext(MediatorContext);
+    const store = useStore(mediator);
     
     const [messages, setMessages] = useState<TMessages>([]);
     const [_, setHash] = useState<string>('');

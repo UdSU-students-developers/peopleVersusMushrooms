@@ -21,7 +21,7 @@ export interface IBasePage {
 }
 
 const PageManager: React.FC = () => {
-    const [page, setPage] = useState<PAGES>(PAGES.LOGIN);
+    const [page, setPage] = useState<PAGES>(PAGES.GAME);
 
     const props = {
         setPage,

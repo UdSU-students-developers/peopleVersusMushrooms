@@ -65,7 +65,13 @@ const CONFIG = {
             GROW_LEVEL_UP: 2,
             MAX_LEVEL: 3,
             POWER: 3,
-        }
+        },
+
+        WORKER: {
+            HP: 1,
+            SPEED: 100,
+
+        },
     }
 };
 

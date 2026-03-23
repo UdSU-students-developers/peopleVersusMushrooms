@@ -31,7 +31,7 @@ class Mycelium {
         this.grow += GROW_SPEED;
         if (this.grow >= GROW_LEVEL_UP) {
             this.grow = 0;
-            if (this.level < MAX_LEVEL) {
+            if (this.level <= MAX_LEVEL) {
                 this.level += 1;
             } else {
                 this.extend();
@@ -57,6 +57,7 @@ class Mycelium {
         if (freeCells.length === 0) return;
         const { x, y } = freeCells[Math.floor(Math.random() * freeCells.length)];
         this.callbacks.extend(x, y);
+        //console.log("Вырос");
     }
 
 }

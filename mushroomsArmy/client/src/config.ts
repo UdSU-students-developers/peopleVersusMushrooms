@@ -3,9 +3,7 @@ const CONFIG = {
 
     MEDIATOR: {
         EVENTS: {
-            USER_REGISTERED: 'USER_REGISTERED',
-            USER_LOGGED_IN: 'USER_LOGGED_IN',
-            USER_LOGGED_OUT: 'USER_LOGGED_OUT',
+            SHOW_ERROR: 'SHOW_ERROR',
         },
         TRIGGERS: {
             SET_STORE: 'SET_STORE',

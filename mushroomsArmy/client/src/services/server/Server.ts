@@ -1,38 +1,30 @@
 import { io, Socket } from "socket.io-client";
 import CONFIG from '../../config';
 import Mediator from '../Mediator/Mediator';
-import { TResponse, TUser, TError } from "./types";
-import { validateLogin, validatePassword, validatePasswordMatch, validatePasswordNotLogin } from "../../utils/validation";
+import { TResponse, TUser, TError } from './types';
 
-const { HOST } = CONFIG;
+const { HOST, SOCKET } = CONFIG;
+const { REGISTRATION, LOGIN, LOGOUT } = SOCKET;
 
 class Server {
     mediator: Mediator;
     socket: Socket;
-    showErrorCb: (error: TError) => void = () => { };
 
     constructor(mediator: Mediator) {
         this.mediator = mediator;
         this.socket = io(HOST);
 
         this.socket.on("connect", () => {
-            console.log('[Server] Подключено к серверу');
+            console.log(`[Server] Подключено к серверу ${HOST}`);
+
+            this.socket.on(REGISTRATION, (data) => this.handleRegistration(data));
+            this.socket.on(LOGIN, (data) => this.handleLogin(data));
+            this.socket.on(LOGOUT, (data) => this.handleLogout(data));
         });
-
-        this.socket.on(CONFIG.SOCKET.REGISTRATION, (data) => this.handleRegistration(data));
-        this.socket.on(CONFIG.SOCKET.LOGIN, (data) => this.handleLogin(data));
-        this.socket.on(CONFIG.SOCKET.LOGOUT, (data) => this.handleLogout(data));
     }
 
-    private setError(error: TError): void {
-        this.showErrorCb(error);
-    }
-
-    showError(cb: (error: TError) => void) {
-        this.showErrorCb = cb;
-    }
-
-    async register(username: string, password: string, confirmPassword?: string): Promise<boolean> {
+    register(username: string, password: string, passwordRepeat: string): void {
+        /*
         const loginValidation = validateLogin(username);
         if (!loginValidation.isValid) {
             this.setError({ code: 422, text: loginValidation.error! });
@@ -58,16 +50,17 @@ class Server {
             this.setError({ code: 422, text: notLoginValidation.error! });
             return false;
         }
+        */
 
-        this.socket.emit(CONFIG.SOCKET.REGISTRATION, { 
-            name: username, 
+        this.socket.emit(REGISTRATION, {
+            name: username,
             password,
-            passwordRepeat: confirmPassword 
+            passwordRepeat,
         });
-        return true;
     }
 
     login(username: string, password: string): void {
+        /*
         const loginValidation = validateLogin(username);
         if (!loginValidation.isValid) {
             this.setError({ code: 422, text: loginValidation.error! });
@@ -79,44 +72,45 @@ class Server {
             this.setError({ code: 422, text: passwordValidation.error! });
             return;
         }
+        */
 
-        this.socket.emit(CONFIG.SOCKET.LOGIN, { 
-            name: username, 
-            password 
+        this.socket.emit(LOGIN, {
+            name: username,
+            password
         });
     }
 
-    async logout(): Promise<boolean> {
+    logout(): void {
         const { GET_STORE } = this.mediator.getTriggerTypes();
+        const { SHOW_ERROR } = this.mediator.getEventTypes();
         const user = this.mediator.get<TUser | null>(GET_STORE, 'user');
-        
-        if (!user?.token || !user?.guid) {
-            this.setError({ code: 401, text: 'Пользователь не авторизован' });
-            return false;
+
+        if (!user) {
+            this.mediator.call(SHOW_ERROR, {});
+            return;
         }
 
-        this.socket.emit(CONFIG.SOCKET.LOGOUT, { 
+        this.socket.emit(CONFIG.SOCKET.LOGOUT, {
             token: user.token,
-            guid: user.guid 
+            guid: user.guid
         });
-        return true;
     }
 
-    private handleRegistration(response: TResponse<TUser>) {
+    private handleRegistration(response: TResponse<TUser>): void {
         console.log('[Server] Ответ регистрации:', response);
 
         if (response?.result === 'ok' && response.data) {
             const { SET_STORE } = this.mediator.getTriggerTypes();
-            const { USER_REGISTERED } = this.mediator.getEventTypes();
-            
+            const { USER_REGISTERED, SHOW_ERROR } = this.mediator.getEventTypes();
             this.mediator.get(SET_STORE, {
                 name: 'user',
                 value: response.data
             });
-            
             this.mediator.call(USER_REGISTERED, response.data);
-        } else if (response?.error) {
-            this.setError(response.error);
+            return;
+        } 
+        if (response?.error) {
+            this.mediator.call(SHOW_ERROR, response.error);
         }
     }
 
@@ -125,16 +119,16 @@ class Server {
 
         if (response?.result === 'ok' && response.data) {
             const { SET_STORE } = this.mediator.getTriggerTypes();
-            const { USER_LOGGED_IN } = this.mediator.getEventTypes();
-            
+            const { LOGIN, SHOW_ERROR } = this.mediator.getEventTypes();
+
             this.mediator.get(SET_STORE, {
                 name: 'user',
                 value: response.data
             });
-            
-            this.mediator.call(USER_LOGGED_IN, response.data);
+
+            this.mediator.call(LOGIN, response.data);
         } else if (response?.error) {
-            this.setError(response.error);
+            this.mediator.call(SHOW_ERROR, response.error);
         }
     }
 
@@ -143,28 +137,14 @@ class Server {
 
         if (response?.result === 'ok' && response.data) {
             const { CLEAR_STORE } = this.mediator.getTriggerTypes();
-            const { USER_LOGGED_OUT } = this.mediator.getEventTypes();
-            
+            const { USER_LOGGED_OUT, SHOW_ERROR } = this.mediator.getEventTypes();
+
             this.mediator.get(CLEAR_STORE, 'user');
-            
+
             this.mediator.call(USER_LOGGED_OUT);
         } else if (response?.error) {
-            this.setError(response.error);
+            this.mediator.call(SHOW_ERROR, response.error);
         }
-    }
-
-    /**
-     * Проверка подключения к серверу
-     */
-    isConnected(): boolean {
-        return this.socket.connected;
-    }
-
-    /**
-     * Отключение от сервера
-     */
-    disconnect(): void {
-        this.socket.disconnect();
     }
 }
 

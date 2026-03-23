@@ -1,31 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import { MediatorContext, ServerContext } from "../../App";
 import { IBasePage, PAGES } from '../PageManager';
 import { validateLogin, validatePassword } from '../../utils/validation';
+import { TError } from "../../services";
+
 import './Login.css';
 
-const Login: React.FC<IBasePage> = ({ setPage, server }) => {
+const Login: React.FC<IBasePage> = ({ setPage }) => {
+    const server = useContext(ServerContext);
+    const mediator = useContext(MediatorContext);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState<{ username?: string; password?: string; general?: string }>({});
     const [isLoading, setIsLoading] = useState(false);
-
-    useEffect(() => {
-        const handleLoginSuccess = () => {
-            setPage(PAGES.LOBBY);
-        };
-
-        const handleError = (error: { code: number; text: string }) => {
-            setErrors({ general: error.text });
-            setIsLoading(false);
-        };
-
-        server.mediator.subscribe(server.mediator.getEventTypes().USER_LOGGED_IN, handleLoginSuccess);
-        server.showError(handleError);
-
-        return () => {
-            server.mediator.unsubscribe(server.mediator.getEventTypes().USER_LOGGED_IN, handleLoginSuccess);
-        };
-    }, [server, setPage]);
+    const { LOGIN, SHOW_ERROR } = mediator.getEventTypes();
 
     const validateField = (field: string, value: string) => {
         let error = '';
@@ -51,13 +39,9 @@ const Login: React.FC<IBasePage> = ({ setPage, server }) => {
         validateField('password', value);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        setErrors({});
-
+    const handleSubmit = () => {
         const usernameValidation = validateLogin(username);
         const passwordValidation = validatePassword(password);
-
         if (!usernameValidation.isValid || !passwordValidation.isValid) {
             setErrors({
                 username: usernameValidation.error,
@@ -65,15 +49,31 @@ const Login: React.FC<IBasePage> = ({ setPage, server }) => {
             });
             return;
         }
-
         setIsLoading(true);
         server.login(username, password);
     };
 
+    useEffect(() => {
+        const userLoggedInHandler = () => setPage(PAGES.LOBBY);
+
+        const errorHandler = (error: TError) => {
+            setErrors({ general: error.text });
+            setIsLoading(false);
+        };
+
+        mediator.subscribe(LOGIN, userLoggedInHandler);
+        mediator.subscribe(SHOW_ERROR, errorHandler);
+
+        return () => {
+            mediator.unsubscribe(LOGIN, userLoggedInHandler);
+            mediator.unsubscribe(SHOW_ERROR, errorHandler);
+        };
+    });
+
     return (
         <div className="login">
             <h1>Вход</h1>
-            <form onSubmit={handleSubmit} className="login-form">
+            <div className="login-form">
                 <div className="form-group">
                     <label htmlFor="username">Логин</label>
                     <input
@@ -97,10 +97,14 @@ const Login: React.FC<IBasePage> = ({ setPage, server }) => {
                     {errors.password && <span className="error-text">{errors.password}</span>}
                 </div>
                 {errors.general && <div className="error-general">{errors.general}</div>}
-                <button type="submit" disabled={isLoading} className="login-btn">
+                <button 
+                    disabled={isLoading} 
+                    className="login-btn"
+                    onClick={handleSubmit}
+                >
                     {isLoading ? 'Вход...' : 'Войти'}
                 </button>
-            </form>
+            </div>
             <p className="register-link">
                 Нет аккаунта? <a href="#" onClick={(e) => { e.preventDefault(); setPage(PAGES.REGISTRATION); }}>Зарегистрироваться</a>
             </p>

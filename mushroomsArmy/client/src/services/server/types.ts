@@ -1,11 +1,9 @@
 /**
- * Пользователь
+ * Ошибка сервера
  */
-export type TUser = {
-    token: string;
-    username: string;
-    id?: number;
-    guid?: string;
+export type TError = {
+    code: number;
+    text: string;
 }
 
 /**
@@ -18,11 +16,13 @@ export type TResponse<T> = {
 }
 
 /**
- * Ошибка сервера
+ * Пользователь
  */
-export type TError = {
-    code: number;
-    text: string;
+export type TUser = {
+    token: string;
+    username: string;
+    id?: number;
+    guid?: string;
 }
 
 /**

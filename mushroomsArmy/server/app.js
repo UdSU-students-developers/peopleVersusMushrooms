@@ -19,7 +19,7 @@ const mediator = new Mediator(CONFIG.MEDIATOR);
 const common = new Common();
 const answer = new Answer();
 
-const userManager = new UserManager({ mediator, db, common, io, answer });
+new UserManager({ mediator, db, common, io, answer });
 
 app.use(express.static(`${__dirname}/public`));
 app.use('/', new Router({ answer }));

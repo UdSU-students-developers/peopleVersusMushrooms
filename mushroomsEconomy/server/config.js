@@ -18,21 +18,6 @@ const CONFIG = {
         TRIGGERS: {
             EXAMPLE_TRIGGER: "EXAMPLE_TRIGGER",
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',
-
-            // Mushrooms
-            GET_ALL_MUSHROOMS: "GET_ALL_MUSHROOMS",
-            CREATE_MUSHROOM: "CREATE_MUSHROOM",
-            UPDATE_MUSHROOM: "UPDATE_MUSHROOM",
-            DELETE_MUSHROOM: "DELETE_MUSHROOM",
-
-            // Units
-            GET_ALL_UNITS: "GET_ALL_UNITS",
-            CREATE_UNIT: "CREATE_UNIT",
-            UPDATE_UNIT: "UPDATE_UNIT",
-            DELETE_UNIT: "DELETE_UNIT",
-
-            // Matrix
-            UPDATE_MATRIX: "UPDATE_MATRIX",
         },
     },
 

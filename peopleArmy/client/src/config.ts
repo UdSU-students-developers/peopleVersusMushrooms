@@ -17,9 +17,7 @@ interface MediatorTriggers {
 
 interface Config {
     SERVER_URL: string;
-    SOCKET: {
-        EVENTS: SocketEvents;
-    };
+    SOCKET: SocketEvents;
     MEDIATOR: {
         EVENTS: TNamesArray;
         TRIGGERS: TNamesArray;
@@ -30,12 +28,10 @@ const CONFIG: Config = {
     SERVER_URL: 'http://localhost:3007',
     
     SOCKET: {
-        EVENTS: {
-            CONNECTION: 'connection',
-            DISCONNECT: 'disconnect',
-            MESSAGE_FROM_CLIENT: 'message_from_client',
-            MESSAGE_TO_CLIENTS: 'message_to_clients',
-        },
+        CONNECTION: 'connection',
+        DISCONNECT: 'disconnect',
+        MESSAGE_FROM_CLIENT: 'message_from_client',
+        MESSAGE_TO_CLIENTS: 'message_to_clients',
     },
     MEDIATOR: {
         EVENTS: {

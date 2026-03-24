@@ -1,6 +1,8 @@
 const BaseManager = require('../BaseManager');
 const Common = require('../common/Common');
+const Answer = require('../../Answer');
 const CONFIG = require('../../../config');
+const User = require('./User');
 const {REGISTRATION, LOGIN, LOGOUT} = CONFIG.SOCKET;
 
 
@@ -8,7 +10,9 @@ class UserManager extends BaseManager {
     constructor(options) {
         super(options);
         this.common = new Common();
+        this.answer = Answer;
         this.users = {};
+
         if (!this.io) return;
         this.io.on('connection', (socket) => {
             socket.on(REGISTRATION, (data) => this.socketRegistration(data, socket));
@@ -29,7 +33,7 @@ class UserManager extends BaseManager {
 
         const user = new User({db: this.db, common: this.common, socketId: socket.id});
         await user.registration(name, password);
-        this.users[user.guid] = user;
+        this.users[user.id] = user;
 
         socket.emit(REGISTRATION, this.answer.good(user.getSelf()));
     }
@@ -40,9 +44,9 @@ class UserManager extends BaseManager {
             return socket.emit(LOGIN, this.answer.bad(13));
         }
 
-        const user = new User({ db: this.db, common: this.common, socketId: socket.id });
+        const user = new User(this.db);
         if (await user.login(name, password)) {
-            this.users[user.guid] = user;
+            this.users[user.id] = user;
             socket.emit(LOGIN, this.answer.good(user.getSelf()));
             return;
         }
@@ -58,9 +62,11 @@ class UserManager extends BaseManager {
         }
 
         const user = this.users[guid];
-        await user.logout();
-        delete this.users[user.guid];
+        if (!user || !user.checkToken(token)) {
+            return socket.emit(LOGOUT, this.answer.bad(11));
+        }
 
+        delete this.users[user.id];
         socket.emit(LOGOUT, this.answer.good(true));
     }
 }

@@ -6,6 +6,8 @@ const {
     createUnitHandler,
     setUnitTargetHandler,
     notFoundHandler,
+    useLoginHandler,
+    useLogoutHandler,
 } = require('./handlers');
 
 function Router(mediator) {

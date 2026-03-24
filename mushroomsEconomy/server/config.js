@@ -41,6 +41,7 @@ const CONFIG = {
  
         START_GAME: 'START_GAME',
 		UPDATE_SCENE: 'UPDATE_SCENE',
+        GET_SCENE: 'GET_SCENE',
     },
     
     ECONOMY: {

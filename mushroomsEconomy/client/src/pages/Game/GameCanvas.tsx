@@ -53,11 +53,13 @@ const GameCanvas: React.FC = () => {
     const drawMap = () => {
         if (!canvas) return;
 
-        const { map } = game.get();
+        const { scene } = game.get();
 
-        const tileWorldSize = INITIAL_WINDOW_WIDTH / map.map.length;
+        if (!scene) return
+
+        const tileWorldSize = INITIAL_WINDOW_WIDTH / scene.map.length;
         const tileSizePx = canvas.dec(tileWorldSize);
-        const tiles = createTiles(map.map);
+        const tiles = createTiles(scene.map);
 
         tiles.forEach((tile) => {
             const worldX = tile.coords.x * tileWorldSize;
@@ -111,8 +113,6 @@ const GameCanvas: React.FC = () => {
     };
 
     const mouseClick = async (x: number, y: number) => {
-        const { map } = game.get();
-        console.log(map);
     };
 
     const mouseRightClickDown = (x: number, y: number) => {

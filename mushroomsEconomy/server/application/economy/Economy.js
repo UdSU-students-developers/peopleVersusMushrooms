@@ -6,12 +6,12 @@ const Mycelium = require('./entities/Mycelium');
 const { INTERVAL } = CONFIG.ECONOMY;
 
 class Economy {
-    constructor({ db, common, callbacks: { }, map, guid }) {
+    constructor({ db, common, callbacks: { updated }, map, guid }) {
         this.easyStar = new EasyStar.js();
         this.guid = guid; // совпадает с guid игрока
         this.db = db;
         this.common = common;
-        this.callbacks = callbacks;
+        this.callbacks = { updated };
         // данные экономики
         this.resourceMap; // массив известных ресурсов [{x, y, value}]
         this.buildings = []; // здания
@@ -34,11 +34,14 @@ class Economy {
         this.interval = setInterval(() => this.update(), INTERVAL);
     }
 
+
+    // TEMPORARY
     mapInit(map) { //Временный метод для заглушки
         if (map) {
             this.map = map;
         } else {
             console.log('Карта не передана при создании экономики! Используется заглушка!');
+            this.map = [];
             for (let i = 0; i < 50; i++) {
                 this.map.push([]);
                 for (let j = 0; j < 50; j++) {
@@ -67,28 +70,11 @@ class Economy {
             x,
             y,
             guid: this.common.guid(),
+            callbacks: {
+                getMap: () => this.map,
+                getMycelium: () => this.mycelium,
+            },
         }));
-    }
-
-    checkAroundMycelium(x, y) {
-        const directions = [
-            { dx: 0, dy: -1 },
-            { dx: 0, dy: 1 },
-            { dx: -1, dy: 0 },
-            { dx: 1, dy: 0 },
-            { dx: -1, dy: -1 },
-            { dx: 1, dy: -1 },
-            { dx: -1, dy: 1 },
-            { dx: 1, dy: 1 },
-        ];
-        
-        return directions
-        .map(({ dx, dy }) => ({ x: x + dx, y: y + dy }))
-        .filter(({ x: nx, y: ny }) =>
-                nx >= 0 && nx < this.m &&
-        ny >= 0 && ny < this.n &&
-        this.map[ny][nx] === 0
-    );
     }
 
     destructor() {
@@ -100,6 +86,8 @@ class Economy {
 
     get() {
         return {
+            guid: this.guid,
+            mushrooms: this.mycelium.map(m => m.get()),
             map: this.map,
         }
     }
@@ -113,12 +101,12 @@ class Economy {
 
     // 2. расширить грибницу при возможности
     myceliumExtend(mycelium) {
-        if (mycelium.canExtend(this.map, this.mycelium, this.buildins, this.enemyBuildings)) {
+        if (mycelium.canExtend(this.map, this.mycelium, this.buildings, this.enemyBuildings)) {
             const result = mycelium.extend();
             if (result === null) {
                 return;
             }
-            this.addMycelium({ ...result });
+            this.addMycelium(result.x, result.y);
             this.updated = true;
         }
     }
@@ -132,9 +120,7 @@ class Economy {
         // 2. расширить грибницу при возможности
         this.mycelium.forEach(mycelium => this.myceliumExtend(mycelium));
         /****************/
-        // this.printMap(); 
-        // Включатать только по надобности!
-        //...
+
 
         if (this.updated) {
             this.updated = false;

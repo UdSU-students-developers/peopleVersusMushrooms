@@ -2,7 +2,7 @@ const BaseManager = require("../BaseManager");
 const CONFIG = require("../../../config");
 const Economy = require('../../economy/Economy');
 
-const { GET_MAP } = CONFIG.SOCKET;
+const { GET_SCENE } = CONFIG.SOCKET;
 
 class GameManager extends BaseManager {
     constructor(options) {
@@ -12,7 +12,7 @@ class GameManager extends BaseManager {
 		// sockets
         if (!this.io) return;
         this.io.on('connection', (socket) => {
-            //socket.on(GET_MAP, (data) => this.getMap(data, socket));
+            socket.on(GET_SCENE, (data) => this.socketGetScene(data, socket));
         });
 		// mediator events subscribers
 		this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
@@ -38,7 +38,7 @@ class GameManager extends BaseManager {
             db: this.db,
             common: this.common,
             callbacks: {
-				update: (guid, data) => this.callbackUpdate(guid, data)
+				updated: (data) => this.callbackUpdate(guid, data)
 			},
             map,
             guid,
@@ -54,9 +54,10 @@ class GameManager extends BaseManager {
 		const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
 		if (user) {
 			const economy = this._createEconomy(guid, startPoint, map);	
+            console.log(1111);
 			this.io.to(user.socketId).emit(
 				this.SOCKETS.START_GAME, 
-				this.answer.good(economy.getSelf())
+				this.answer.good(economy.get())
 			);
 			return;
 		}
@@ -65,24 +66,18 @@ class GameManager extends BaseManager {
 	
 	/* SOCKETS */
 
-    getMap(data = {}, socket) {
+    socketGetScene(data = {}, socket) {
         //console.log(data, '\n\n\n\n\n\n');
         const { guid } = data;
-        console.log("Запрос на получение карты");
+        //console.log("Запрос на получение карты");
 
-        if (guid) {
-            const economy = this.createEconomy();
-            const { map } = economy.get();
-            return socket.emit(GET_MAP, this.answer.good({ guid: economy.guid, map }));
-        }
 
         const economy = this.economies[guid];
         if (!economy) {
-            return socket.emit(GET_MAP, this.answer.bad(18));
+            return socket.emit(GET_SCENE, this.answer.bad(18));
         }
 
-        const { map } = economy.get();
-        return socket.emit(GET_MAP, this.answer.good({ guid, map }));
+        socket.emit(GET_SCENE, this.answer.good(economy.get()));
     }
 
 }

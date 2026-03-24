@@ -16,7 +16,6 @@ export const ServerContext = React.createContext<Server>(null!);
 export const GameContext = React.createContext<GameProcess>(null!);
 
 
-const { MEDIATOR } = CONFIG;
 
 const App: React.FC = () => {
     const mediator = useMediator();
@@ -25,17 +24,12 @@ const App: React.FC = () => {
     const game = new GameProcess(server, mediator);
     useStore(mediator);
     
-    const pressMeHandler = () => mediator.get(
-        MEDIATOR.TRIGGERS.MESSAGE,
-        { name: 'Vasya', text: 'something' }
-    );
 
     return (
         <MediatorContext value={mediator}>
             <ServerContext value={server}>
                 <GameContext value={game}>
                     <div className="App">
-                        <button onClick={pressMeHandler}>Press Me</button>
                         <div className='app'>
                             <PageManager />
                         </div>

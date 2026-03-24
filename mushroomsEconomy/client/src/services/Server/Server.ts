@@ -1,7 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import CONFIG from '../../config';
 import Mediator from '../Mediator/Mediator';
-import { TMap, TMessages, TResponse, TUser } from "../Server/types";
+import { TMessages, TResponse, TScene, TUser } from "../Server/types";
 import { TError } from "../Server/types";
 
 const { HOST } = CONFIG;
@@ -213,15 +213,19 @@ class Server {
         this.socket.emit(GET_SCENE, { guid: guid });
     }
 
-    handleGetScene(response: TResponse<TMap>) {
+    handleGetScene(response: TResponse<TScene>): TScene | null {
         console.log(response);
         if (response?.result === 'ok' && response.data) {
-            const { SET_MAP } = this.mediator.getTriggerTypes();
-            this.mediator.get(SET_MAP, response.data);
+            return {
+                guid: response.data.guid,
+                mushrooms: response.data.mushrooms,
+                map: response.data.map
+            }
         }
         else {
             const { SHOW_ERROR } = this.mediator.getEventTypes();
             this.mediator.call(SHOW_ERROR, response.error);
+            return null
         }
     }
 }

@@ -34,8 +34,7 @@ const CONFIG = {
             // остальные триггеры
             MESSAGE: 'MESSAGE:SOCKET',
 
-            SET_MAP: "SET_MAP",
-            GET_SCENE: "GET_SCENE",
+            SET_SCENE: "SET_SCENE",
         }
     },
 

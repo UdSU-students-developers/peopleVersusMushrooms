@@ -39,12 +39,12 @@ class UserManager extends BaseManager {
 
     /* SOCKETS */
     async socketRegistration(data = {}, socket) {
-        const { name, password } = data;
-        if (!name || !password) {
+        const { name, passwordHash } = data;
+        if (!name || !passwordHash) {
             return socket.emit(REGISTRATION, this.answer.bad(13));
         }
         const user = new User({db: this.db, common: this.common, socketId: socket.id});
-        if (await user.registration(name, password)) {
+        if (await user.registration(name, passwordHash)) {
             this.users[user.guid] = user;
             socket.emit(REGISTRATION, this.answer.good(user.getSelf()));
             return;
@@ -54,13 +54,13 @@ class UserManager extends BaseManager {
     }
 
     async socketLogin(data = {}, socket) {
-        const { name, password } = data;
-        if (!name || !password) {
+        const { name, passwordHash } = data;
+        if (!name || !passwordHash) {
             return socket.emit(LOGIN, this.answer.bad(13));
         }
 
         const user = new User({ db: this.db, common: this.common, socketId: socket.id });
-        if (await user.login(name, password)) {
+        if (await user.login(name, passwordHash)) {
             this.users[user.guid] = user;
             socket.emit(LOGIN, this.answer.good(user.getSelf()));
             return;

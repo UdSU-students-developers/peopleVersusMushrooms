@@ -18,7 +18,7 @@ class DB {
     }
 
     async registration(name, guid, passwordHash) {
-        return await this.orm.insert('users', ['name', 'guid', 'password_hash'], [name, guid, passwordHash]);
+        return await this.orm.insert('users', ['name', 'guid', 'passwordHash'], [name, guid, passwordHash]);
     }
 
     async updateToken(id, token) {

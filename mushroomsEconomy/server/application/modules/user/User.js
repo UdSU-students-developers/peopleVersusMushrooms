@@ -47,11 +47,9 @@ class User {
         return md5(Date.now() + Math.random().toString());
     }
 
-    async login(name, password) {
+    async login(name, passwordHash) {
         const userData = await this.db.getUserByName(name);
         if (!userData) return false;
-
-        const passwordHash = md5(password);
 
         if (userData.passwordHash === passwordHash) {
             await this.fillData(userData);
@@ -66,16 +64,15 @@ class User {
         await this.db.updateToken(this.id, null);
     }
 
-    async registration(name, password) {
+    async registration(name, passwordHash) {
         if (await this.db.getUserByName(name)) {
             return false
         }
 
-        const passwordHash = md5(password);
         const guid = this.common.guid();
         await this.db.registration(name, guid, passwordHash);
         
-        return await this.login(name, login);
+        return await this.login(name, passwordHash);
     }
 }
 

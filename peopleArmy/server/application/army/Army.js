@@ -95,11 +95,7 @@ class Army {
             this.map[49][25] = 1;
             this.map[5][25] = 1;
 
-            console.log(`\n===========================`);
-            this.map.forEach(row => {
-                console.log(row.join(' '));
-            });
-            console.log('===========================\n');
+            this.printMap();
         }
     }
 

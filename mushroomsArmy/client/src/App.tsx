@@ -1,8 +1,10 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, { createContext } from 'react';
 import PageManager from './pages/PageManager';
 
 import './App.css';
+
+export const MediatorContext = createContext<any>(null!);
+export const ServerContext = createContext<any>(null!);
 
 function App() {
   return (

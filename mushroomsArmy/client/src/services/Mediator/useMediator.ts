@@ -15,6 +15,14 @@ const useMediator = (): Mediator => {
         // @ts-ignore
         EVENTS_OVERLOAD[key] = SOCKET[key];
     });
+    // @ts-ignore
+    EVENTS_OVERLOAD['ERROR'] = 'ERROR';
+    // @ts-ignore
+    EVENTS_OVERLOAD['USER_REGISTERED'] = 'USER_REGISTERED';
+    // @ts-ignore
+    EVENTS_OVERLOAD['USER_LOGGED_OUT'] = 'USER_LOGGED_OUT';
+    // @ts-ignore
+    EVENTS_OVERLOAD['LOGIN'] = 'LOGIN';
 
     return new Mediator({ 
         EVENTS: EVENTS_OVERLOAD, 

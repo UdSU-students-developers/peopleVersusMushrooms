@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useContext } from "react";
 import { MediatorContext, ServerContext } from "../../App";
-import { IBasePage, PAGES } from '../PageManager';
+import { PAGES } from '../PageManager';
 import { validateLogin, validatePassword } from '../../utils/validation';
 import { TError } from "../../services";
 
 import './Login.css';
 
-const Login: React.FC<IBasePage> = ({ setPage }) => {
+const Login: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     const server = useContext(ServerContext);
     const mediator = useContext(MediatorContext);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState<{ username?: string; password?: string; general?: string }>({});
     const [isLoading, setIsLoading] = useState(false);
-    const { LOGIN, SHOW_ERROR } = mediator.getEventTypes();
+    const { LOGIN, SHOW_ERROR, ERROR } = mediator.getEventTypes();
 
     const validateField = (field: string, value: string) => {
         let error = '';
@@ -63,12 +63,14 @@ const Login: React.FC<IBasePage> = ({ setPage }) => {
 
         mediator.subscribe(LOGIN, userLoggedInHandler);
         mediator.subscribe(SHOW_ERROR, errorHandler);
+        mediator.subscribe(ERROR, errorHandler);
 
         return () => {
             mediator.unsubscribe(LOGIN, userLoggedInHandler);
             mediator.unsubscribe(SHOW_ERROR, errorHandler);
+            mediator.unsubscribe(ERROR, errorHandler);
         };
-    });
+    }, [mediator, setPage]);
 
     return (
         <div className="login">

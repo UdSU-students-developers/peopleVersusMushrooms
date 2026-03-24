@@ -1,8 +1,8 @@
 import React from "react";
-import { IBasePage } from '../PageManager';
+import { PAGES } from '../PageManager';
 import './Chat.css';
 
-const Chat: React.FC<IBasePage> = (props: IBasePage) => {
+const Chat: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     return (
         <div>
             <p>Chat</p>

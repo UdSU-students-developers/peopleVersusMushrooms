@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from "react";
-import { IBasePage, PAGES } from '../PageManager';
+import React, { useState, useEffect, useContext } from "react";
+import { MediatorContext, ServerContext } from "../../App";
+import { PAGES } from '../PageManager';
 import { validateLogin, validatePassword, validatePasswordMatch, validatePasswordNotLogin } from '../../utils/validation';
 import './Registration.css';
 
-const Registration: React.FC<IBasePage> = ({ setPage, server }) => {
+const Registration: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
+    const server = useContext(ServerContext);
+    const mediator = useContext(MediatorContext);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [errors, setErrors] = useState<{ username?: string; password?: string; confirmPassword?: string; general?: string }>({});
+    const [passwordRepeat, setPasswordRepeat] = useState('');
+    const [errors, setErrors] = useState<{ username?: string; password?: string; passwordRepeat?: string; general?: string }>({});
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
@@ -20,13 +23,14 @@ const Registration: React.FC<IBasePage> = ({ setPage, server }) => {
             setIsLoading(false);
         };
 
-        server.mediator.subscribe(server.mediator.getEventTypes().USER_REGISTERED, handleRegistrationSuccess);
-        server.showError(handleError);
+        mediator.subscribe(mediator.getEventTypes().USER_REGISTERED, handleRegistrationSuccess);
+        mediator.subscribe(mediator.getEventTypes().SHOW_ERROR, handleError);
 
         return () => {
-            server.mediator.unsubscribe(server.mediator.getEventTypes().USER_REGISTERED, handleRegistrationSuccess);
+            mediator.unsubscribe(mediator.getEventTypes().USER_REGISTERED, handleRegistrationSuccess);
+            mediator.unsubscribe(mediator.getEventTypes().SHOW_ERROR, handleError);
         };
-    }, [server, setPage]);
+    }, [mediator, setPage]);
 
     const validateField = (field: string, value: string) => {
         let error = '';
@@ -36,7 +40,7 @@ const Registration: React.FC<IBasePage> = ({ setPage, server }) => {
         } else if (field === 'password') {
             const validation = validatePassword(value);
             if (!validation.isValid) error = validation.error!;
-        } else if (field === 'confirmPassword') {
+        } else if (field === 'passwordRepeat') {
             const validation = validatePasswordMatch(password, value);
             if (!validation.isValid) error = validation.error!;
         }
@@ -53,44 +57,41 @@ const Registration: React.FC<IBasePage> = ({ setPage, server }) => {
         const value = e.target.value;
         setPassword(value);
         validateField('password', value);
-        if (confirmPassword) validateField('confirmPassword', confirmPassword);
+        if (passwordRepeat) validateField('passwordRepeat', passwordRepeat);
     };
 
-    const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePasswordRepeatChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
-        setConfirmPassword(value);
-        validateField('confirmPassword', value);
+        setPasswordRepeat(value);
+        validateField('passwordRepeat', value);
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setErrors({});
 
         const usernameValidation = validateLogin(username);
         const passwordValidation = validatePassword(password);
-        const matchValidation = validatePasswordMatch(password, confirmPassword);
+        const matchValidation = validatePasswordMatch(password, passwordRepeat);
         const notLoginValidation = validatePasswordNotLogin(username, password);
 
         if (!usernameValidation.isValid || !passwordValidation.isValid || !matchValidation.isValid || !notLoginValidation.isValid) {
             setErrors({
                 username: usernameValidation.error,
                 password: passwordValidation.error || notLoginValidation.error,
-                confirmPassword: matchValidation.error,
+                passwordRepeat: matchValidation.error,
             });
             return;
         }
 
         setIsLoading(true);
-        const success = await server.register(username, password, confirmPassword);
-        if (!success) {
-            setIsLoading(false);
-        }
+        server.register(username, password, passwordRepeat);
     };
 
     return (
         <div className="registration">
             <h1>Регистрация</h1>
-            <form onSubmit={handleSubmit} className="registration-form">
+            <div className="registration-form">
                 <div className="form-group">
                     <label htmlFor="username">Логин</label>
                     <input
@@ -114,21 +115,21 @@ const Registration: React.FC<IBasePage> = ({ setPage, server }) => {
                     {errors.password && <span className="error-text">{errors.password}</span>}
                 </div>
                 <div className="form-group">
-                    <label htmlFor="confirmPassword">Подтверждение пароля</label>
+                    <label htmlFor="passwordRepeat">Подтверждение пароля</label>
                     <input
                         type="password"
-                        id="confirmPassword"
-                        value={confirmPassword}
-                        onChange={handleConfirmPasswordChange}
-                        className={errors.confirmPassword ? 'error' : ''}
+                        id="passwordRepeat"
+                        value={passwordRepeat}
+                        onChange={handlePasswordRepeatChange}
+                        className={errors.passwordRepeat ? 'error' : ''}
                     />
-                    {errors.confirmPassword && <span className="error-text">{errors.confirmPassword}</span>}
+                    {errors.passwordRepeat && <span className="error-text">{errors.passwordRepeat}</span>}
                 </div>
                 {errors.general && <div className="error-general">{errors.general}</div>}
-                <button type="submit" disabled={isLoading} className="register-btn">
+                <button type="submit" disabled={isLoading} className="register-btn" onClick={handleSubmit}>
                     {isLoading ? 'Регистрация...' : 'Зарегистрироваться'}
                 </button>
-            </form>
+            </div>
             <p className="login-link">
                 Уже есть аккаунт? <a href="#" onClick={(e) => { e.preventDefault(); setPage(PAGES.LOGIN); }}>Войти</a>
             </p>

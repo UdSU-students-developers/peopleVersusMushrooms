@@ -24,34 +24,6 @@ class Server {
     }
 
     register(username: string, password: string, passwordRepeat: string): void {
-        /*
-        const loginValidation = validateLogin(username);
-        if (!loginValidation.isValid) {
-            this.setError({ code: 422, text: loginValidation.error! });
-            return false;
-        }
-
-        const passwordValidation = validatePassword(password);
-        if (!passwordValidation.isValid) {
-            this.setError({ code: 422, text: passwordValidation.error! });
-            return false;
-        }
-
-        if (confirmPassword) {
-            const matchValidation = validatePasswordMatch(password, confirmPassword);
-            if (!matchValidation.isValid) {
-                this.setError({ code: 422, text: matchValidation.error! });
-                return false;
-            }
-        }
-
-        const notLoginValidation = validatePasswordNotLogin(username, password);
-        if (!notLoginValidation.isValid) {
-            this.setError({ code: 422, text: notLoginValidation.error! });
-            return false;
-        }
-        */
-
         this.socket.emit(REGISTRATION, {
             name: username,
             password,
@@ -60,20 +32,6 @@ class Server {
     }
 
     login(username: string, password: string): void {
-        /*
-        const loginValidation = validateLogin(username);
-        if (!loginValidation.isValid) {
-            this.setError({ code: 422, text: loginValidation.error! });
-            return;
-        }
-
-        const passwordValidation = validatePassword(password);
-        if (!passwordValidation.isValid) {
-            this.setError({ code: 422, text: passwordValidation.error! });
-            return;
-        }
-        */
-
         this.socket.emit(LOGIN, {
             name: username,
             password
@@ -81,12 +39,11 @@ class Server {
     }
 
     logout(): void {
-        const { GET_STORE } = this.mediator.getTriggerTypes();
-        const { SHOW_ERROR } = this.mediator.getEventTypes();
-        const user = this.mediator.get<TUser | null>(GET_STORE, 'user');
+        const ERROR = this.mediator.getEventTypes().ERROR;
+        const user = this.mediator.get<TUser | null>(this.mediator.getTriggerTypes().GET_STORE, 'user');
 
         if (!user) {
-            this.mediator.call(SHOW_ERROR, {});
+            this.mediator.call(ERROR, {});
             return;
         }
 
@@ -100,8 +57,9 @@ class Server {
         console.log('[Server] Ответ регистрации:', response);
 
         if (response?.result === 'ok' && response.data) {
-            const { SET_STORE } = this.mediator.getTriggerTypes();
-            const { USER_REGISTERED, SHOW_ERROR } = this.mediator.getEventTypes();
+            const SET_STORE = this.mediator.getTriggerTypes().SET_STORE;
+            const USER_REGISTERED = this.mediator.getEventTypes().USER_REGISTERED;
+            const ERROR = this.mediator.getEventTypes().ERROR;
             this.mediator.get(SET_STORE, {
                 name: 'user',
                 value: response.data
@@ -109,17 +67,15 @@ class Server {
             this.mediator.call(USER_REGISTERED, response.data);
             return;
         } 
-        if (response?.error) {
-            this.mediator.call(SHOW_ERROR, response.error);
-        }
+        this.mediator.call(this.mediator.getEventTypes().ERROR, response.error);
     }
 
     private handleLogin(response: TResponse<TUser>) {
         console.log('[Server] Ответ входа:', response);
 
         if (response?.result === 'ok' && response.data) {
-            const { SET_STORE } = this.mediator.getTriggerTypes();
-            const { LOGIN, SHOW_ERROR } = this.mediator.getEventTypes();
+            const SET_STORE = this.mediator.getTriggerTypes().SET_STORE;
+            const LOGIN = this.mediator.getEventTypes().LOGIN;
 
             this.mediator.get(SET_STORE, {
                 name: 'user',
@@ -127,8 +83,8 @@ class Server {
             });
 
             this.mediator.call(LOGIN, response.data);
-        } else if (response?.error) {
-            this.mediator.call(SHOW_ERROR, response.error);
+        } else {
+            this.mediator.call(this.mediator.getEventTypes().ERROR, response.error);
         }
     }
 
@@ -136,14 +92,14 @@ class Server {
         console.log('[Server] Ответ выхода:', response);
 
         if (response?.result === 'ok' && response.data) {
-            const { CLEAR_STORE } = this.mediator.getTriggerTypes();
-            const { USER_LOGGED_OUT, SHOW_ERROR } = this.mediator.getEventTypes();
+            const CLEAR_STORE = this.mediator.getTriggerTypes().CLEAR_STORE;
+            const USER_LOGGED_OUT = this.mediator.getEventTypes().USER_LOGGED_OUT;
 
             this.mediator.get(CLEAR_STORE, 'user');
 
             this.mediator.call(USER_LOGGED_OUT);
-        } else if (response?.error) {
-            this.mediator.call(SHOW_ERROR, response.error);
+        } else {
+            this.mediator.call(this.mediator.getEventTypes().ERROR, response.error);
         }
     }
 }

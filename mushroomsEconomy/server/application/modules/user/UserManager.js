@@ -17,13 +17,14 @@ class UserManager extends BaseManager {
             socket.on(LOGOUT, (data) => this.socketLogout(data, socket));
             socket.on('disconnect', () => console.log('disconnect', socket.id));
         });
-		// mediator events subscribers
+
+        // mediator events subscribers
 		//...
-		// mediator triggers setters
+        // mediator triggers setters
 		this.mediator.set(this.TRIGGERS.GET_USER_BY_GUID, (guid) => this.triggerGetUserByGuid(guid));
     }
-	
-	/* PRIVATE */
+
+    /* PRIVATE */
 	
 	/* TRIGGERS */
 	triggerGetUserByGuid(guid) {
@@ -35,29 +36,30 @@ class UserManager extends BaseManager {
 	
 	/* EVENTS */
 	//...
-	
-	/* SOCKETS */
+
+    /* SOCKETS */
     async socketRegistration(data = {}, socket) {
-        const { name, password } = data;
-        if (!name || !password) {
+        const { name, passwordHash } = data;
+        if (!name || !passwordHash) {
             return socket.emit(REGISTRATION, this.answer.bad(13));
         }
         const user = new User({db: this.db, common: this.common, socketId: socket.id});
-        if (await user.registration(name, password)) {
-			this.users[user.guid] = user;	
-			socket.emit(REGISTRATION, this.answer.good(user.getSelf()));
-			return;
-		}
+        if (await user.registration(name, passwordHash)) {
+            this.users[user.guid] = user;
+            socket.emit(REGISTRATION, this.answer.good(user.getSelf()));
+            return;
+        }
+
         socket.emit(REGISTRATION, this.answer.bad(17));
     }
 
     async socketLogin(data = {}, socket) {
-        const { name, password } = data;
-        if (!name || !password) {
+        const { name, passwordHash } = data;
+        if (!name || !passwordHash) {
             return socket.emit(LOGIN, this.answer.bad(13));
         }
         const user = new User({ db: this.db, common: this.common, socketId: socket.id });
-        if (await user.login(name, password)) {
+        if (await user.login(name, passwordHash)) {
             this.users[user.guid] = user;
             socket.emit(LOGIN, this.answer.good(user.getSelf()));
             return;
@@ -71,13 +73,14 @@ class UserManager extends BaseManager {
             return socket.emit(LOGOUT, this.answer.bad(13));
         }
         const user = this.users[guid];
-		if (user) {
-			await user.logout();
-			delete this.users[guid];
-			socket.emit(LOGOUT, this.answer.good(true));
-			return;
-		}
-		socket.emit(LOGOUT, this.answer.bad(13));
+        if (user) {
+            await user.logout();
+            delete this.users[guid];
+            socket.emit(LOGOUT, this.answer.good(true));
+            return;
+        }
+
+        socket.emit(LOGOUT, this.answer.bad(19));
     }
 }
 

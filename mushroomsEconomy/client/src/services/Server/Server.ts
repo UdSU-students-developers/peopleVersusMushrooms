@@ -3,6 +3,7 @@ import CONFIG from '../../config';
 import Mediator from '../Mediator/Mediator';
 import { TMap, TMessages, TResponse, TUser } from "../Server/types";
 import { TError } from "../Server/types";
+import md5 from 'md5';
 
 const { HOST } = CONFIG;
 
@@ -98,12 +99,14 @@ class Server {
     }
 
     async register(name: string, password: string): Promise<boolean> {
-        this.socket.emit(CONFIG.SOCKET.REGISTRATION, { name, password });
+        const passwordHash = md5(`${name}${password}`);
+        this.socket.emit(CONFIG.SOCKET.REGISTRATION, { name, passwordHash });
         return true;
     }
 
     login(name: string, password: string): void {
-        this.socket.emit(CONFIG.SOCKET.LOGIN, { name, password });
+        const passwordHash = md5(`${name}${password}`);
+        this.socket.emit(CONFIG.SOCKET.LOGIN, { name, passwordHash });
     }
 
     async logout(name: string, password: string): Promise<boolean> {
@@ -112,8 +115,9 @@ class Server {
     }
 
     private handleRegistration(response: any) {
-        if (response) {
+        if (response?.result === 'ok' && response.data) {
             const { SET_STORE } = this.mediator.getTriggerTypes();
+            const { REGISTRATION } = this.mediator.getEventTypes();
             this.mediator.get(SET_STORE, {
                 name: 'user',
                 value: {
@@ -121,6 +125,8 @@ class Server {
                     token: response.data.token
                 }
             });
+
+            this.mediator.call(REGISTRATION);
         } else {
             const { SHOW_ERROR } = this.mediator.getEventTypes();
             this.mediator.call(SHOW_ERROR, response.error);

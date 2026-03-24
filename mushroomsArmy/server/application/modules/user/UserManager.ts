@@ -1,17 +1,28 @@
-const BaseManager = require('../BaseManager');
-const CONFIG = require('../../../config');
-const User = require('./User');
+import { Socket } from 'socket.io';
+import BaseManager from '../BaseManager';
+import CONFIG from '../../../config';
+import User from './User';
 
 const { REGISTRATION, LOGIN, LOGOUT } = CONFIG.SOCKET;
 
+interface UserManagerOptions {
+    mediator: any;
+    db: any;
+    io: any;
+    answer: any;
+    common: any;
+}
+
 class UserManager extends BaseManager {
-    constructor(options) {
+    private users: { [guid: string]: User };
+
+    constructor(options: UserManagerOptions) {
         super(options);
         this.users = {}; // Ключ guid значение new User
 
         if (!this.io) return;
 
-        this.io.on('connection', (socket) => {
+        this.io.on('connection', (socket: Socket) => {
             socket.on(REGISTRATION, (data) => this.socketRegistration(data, socket));
             socket.on(LOGIN, (data) => this.socketLogin(data, socket));
             socket.on(LOGOUT, (data) => this.socketLogout(data, socket));
@@ -20,7 +31,7 @@ class UserManager extends BaseManager {
         });
     }
 
-    validateLogin(name) {
+    private validateLogin(name: string): boolean {
         // Логин от 3 до 20 символов
         if (!name || name.length < 3 || name.length > 20) {
             return false;
@@ -38,59 +49,67 @@ class UserManager extends BaseManager {
         return true;
     }
 
-    validatePassword(password) {
+    private validatePassword(password: string): boolean {
         // Пароль от 6 до 50 символов
-        return password && password.length >= 6 && password.length <= 50;
+        return !!(password && password.length >= 6 && password.length <= 50);
     }
 
-    async socketRegistration(data = {}, socket) {
+    private async socketRegistration(data: any = {}, socket: Socket): Promise<void> {
         const { name, password, passwordRepeat } = data;
-        
+
         if (!name || !password || !passwordRepeat) {
-            return socket.emit(REGISTRATION, this.answer.bad(13));
+            socket.emit(REGISTRATION, this.answer.bad(13));
+            return;
         }
 
         if (!this.validateLogin(name)) {
-            return socket.emit(REGISTRATION, this.answer.bad(13));
+            socket.emit(REGISTRATION, this.answer.bad(13));
+            return;
         }
 
         if (!this.validatePassword(password)) {
-            return socket.emit(REGISTRATION, this.answer.bad(13));
+            socket.emit(REGISTRATION, this.answer.bad(13));
+            return;
         }
 
         if (password !== passwordRepeat) {
-            return socket.emit(REGISTRATION, this.answer.bad(13));
+            socket.emit(REGISTRATION, this.answer.bad(13));
+            return;
         }
 
         if (await this.db.getUserByName(name)) {
-            return socket.emit(REGISTRATION, this.answer.bad(17));
+            socket.emit(REGISTRATION, this.answer.bad(17));
+            return;
         }
 
         const user = new User({ db: this.db, common: this.common, socketId: socket.id });
         await user.registration(name, password);
-        this.users[user.guid] = user;
+        this.users[user.getSelf().guid!] = user;
 
         socket.emit(REGISTRATION, this.answer.good(user.getSelf()));
     }
 
-    async socketLogin(data = {}, socket) {
+    private async socketLogin(data: any = {}, socket: Socket): Promise<void> {
         const { name, password } = data;
-        
+
         if (!name || !password) {
-            return socket.emit(LOGIN, this.answer.bad(13));
+            socket.emit(LOGIN, this.answer.bad(13));
+            return;
         }
 
         if (!this.validateLogin(name)) {
-            return socket.emit(LOGIN, this.answer.bad(13));
+            socket.emit(LOGIN, this.answer.bad(13));
+            return;
         }
 
         if (!this.validatePassword(password)) {
-            return socket.emit(LOGIN, this.answer.bad(13));
+            socket.emit(LOGIN, this.answer.bad(13));
+            return;
         }
 
         const user = new User({ db: this.db, common: this.common, socketId: socket.id });
         if (await user.login(name, password)) {
-            this.users[user.guid] = user;
+            this.users[user.getSelf().guid!] = user;
             socket.emit(LOGIN, this.answer.good(user.getSelf()));
             return;
         }
@@ -98,21 +117,22 @@ class UserManager extends BaseManager {
         socket.emit(LOGIN, this.answer.bad(11));
     }
 
-    async socketLogout(data = {}, socket) {
+    private async socketLogout(data: any = {}, socket: Socket): Promise<void> {
         const { token, guid } = data;
 
         if (!token) {
-            return socket.emit(LOGOUT, this.answer.bad(13));
+            socket.emit(LOGOUT, this.answer.bad(13));
+            return;
         }
 
         const user = this.users[guid];
         if (user) {
-            await user.logout();
-            delete this.users[user.guid];
+            user.logout();
+            delete this.users[user.getSelf().guid!];
         }
 
         socket.emit(LOGOUT, this.answer.good(true));
     }
 }
 
-module.exports = UserManager;
+export default UserManager;

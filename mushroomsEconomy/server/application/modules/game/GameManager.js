@@ -7,39 +7,70 @@ const { GET_MAP } = CONFIG.SOCKET;
 class GameManager extends BaseManager {
     constructor(options) {
         super(options);
-
-        if (!this.io) return;
-
-        this.io.on('connection', (socket) => {
-            console.log("GameManager connection:", socket.id)
-
-            socket.on(GET_MAP, (data) => this.getMap(data, socket));
-
-            socket.on('GameManager disconnect', () => console.log('disconnect', socket.id));
-        });
-
+		// data
         this.economies = {};
+		// sockets
+        if (!this.io) return;
+        this.io.on('connection', (socket) => {
+            //socket.on(GET_MAP, (data) => this.getMap(data, socket));
+        });
+		// mediator events subscribers
+		this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
+		// mediator triggers setters
+		//...
     }
-
-    createEconomy({ map } = {}) {
-        const guid = this.common.guid();
+	
+	/* PRIVATE */
+	callbackUpdate(guid, data) {
+		const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
+		if (user) {
+			this.io.to(user.socketId).emit(
+				this.SOCKETS.UPDATE_SCENE, 
+				this.answer.good(data)
+			);
+			return;
+		}
+		this.io.to(user.socketId).emit(this.SOCKETS.UPDATE_SCENE, this.answer.bad(16));		
+	}
+	
+    _createEconomy(guid, startPoint, map) {
         this.economies[guid] = new Economy({
             db: this.db,
             common: this.common,
-            callbacks: {},
+            callbacks: {
+				update: (guid, data) => this.callbackUpdate(guid, data)
+			},
             map,
             guid,
         });
-
         return this.economies[guid];
     }
+	
+	/* TRIGGERS */
+	
+	/* EVENTS */
+	eventStartGame(data = {}) {
+		const { guid, startPoint, map } = data;
+		const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
+		if (user) {
+			const economy = this._createEconomy(guid, startPoint, map);	
+			this.io.to(user.socketId).emit(
+				this.SOCKETS.START_GAME, 
+				this.answer.good(economy.getSelf())
+			);
+			return;
+		}
+		this.io.to(user.socketId).emit(this.SOCKETS.START_GAME, this.answer.bad(16));		
+	}
+	
+	/* SOCKETS */
 
-    getMap(data, socket) {
+    getMap(data = {}, socket) {
         //console.log(data, '\n\n\n\n\n\n');
         const { guid } = data;
         console.log("Запрос на получение карты");
 
-        if (guid == '') {
+        if (guid) {
             const economy = this.createEconomy();
             const { map } = economy.get();
             return socket.emit(GET_MAP, this.answer.good({ guid: economy.guid, map }));

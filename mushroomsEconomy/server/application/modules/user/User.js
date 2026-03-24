@@ -13,7 +13,7 @@ class User {
         this.token;
     }
 
-    async get() {
+    get() {
         return {
             name: this.name,
             guid: this.guid
@@ -26,6 +26,17 @@ class User {
             name: this.name,
             token: this.token
         }
+    }
+    
+    async fillData(data) {
+        this.id = data.id;
+        this.guid = data.guid;
+        this.name = data.name;
+        this.passwordHash = data.passwordHash;
+        // update token
+        const token = this.generateToken();
+        await this.db.updateToken(data.id, token);
+        this.token = token;		
     }
 
     async fillData(data) {
@@ -45,6 +56,11 @@ class User {
     
     generateToken() {
         return md5(Date.now() + Math.random().toString());
+    }	
+
+    async logout() {
+        this.token = null;
+        await this.db.updateToken(this.id, null);
     }
 
     async login(name, passwordHash) {

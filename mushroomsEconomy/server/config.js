@@ -12,6 +12,8 @@ const CONFIG = {
     MEDIATOR: {
         EVENTS: {
             EXAMPLE_EVENT: "EXAMPLE_EVENT",
+			
+			START_GAME: 'START_GAME',
         },
         TRIGGERS: {
             EXAMPLE_TRIGGER: "EXAMPLE_TRIGGER",
@@ -34,7 +36,6 @@ const CONFIG = {
         },
     },
 
-
     SOCKET: {
         MESSAGE: 'MESSAGE',  // шлет сообщение
         MESSAGES: 'MESSAGES',
@@ -53,8 +54,8 @@ const CONFIG = {
         DROP_FROM_ROOM: 'DROP_FROM_ROOM',
         GET_ROOMS: 'GET_ROOMS',
  
-        ERROR: 'ERROR',
-        GET_MAP: 'GET_MAP',
+        START_GAME: 'START_GAME',
+		UPDATE_SCENE: 'UPDATE_SCENE',
     },
     
     ECONOMY: {

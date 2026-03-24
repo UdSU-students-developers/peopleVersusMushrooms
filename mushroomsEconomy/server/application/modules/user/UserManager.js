@@ -7,10 +7,10 @@ const { REGISTRATION, LOGIN, LOGOUT } = CONFIG.SOCKET;
 class UserManager extends BaseManager {
     constructor(options) {
         super(options);
+		// data
         this.users = {}; // Ключ guid значение new User
-
+		// sockets
         if (!this.io) return;
-
         this.io.on('connection', (socket) => {
             socket.on(REGISTRATION, (data) => this.socketRegistration(data, socket));
             socket.on(LOGIN, (data) => this.socketLogin(data, socket));
@@ -58,24 +58,20 @@ class UserManager extends BaseManager {
         if (!name || !passwordHash) {
             return socket.emit(LOGIN, this.answer.bad(13));
         }
-
         const user = new User({ db: this.db, common: this.common, socketId: socket.id });
         if (await user.login(name, passwordHash)) {
             this.users[user.guid] = user;
             socket.emit(LOGIN, this.answer.good(user.getSelf()));
             return;
         }
-
         socket.emit(LOGIN, this.answer.bad(11));
     }
 
     async socketLogout(data = {}, socket) {
         const { token, guid } = data;
-
         if (!token) {
             return socket.emit(LOGOUT, this.answer.bad(13));
         }
-
         const user = this.users[guid];
         if (user) {
             await user.logout();

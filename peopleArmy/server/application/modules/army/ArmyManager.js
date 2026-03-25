@@ -12,10 +12,26 @@ class ArmyManager extends BaseManager {
             buildings: [],
             common: this.common,
             guid: null,
+            callbacks: {
+                
+                onUpdate: (units) => this.io.emit('ARMY_STATE', units.map(u => u.get())),
+            },
         });
 
         this.mediator.set(this.TRIGGERS.SET_UNIT_TARGET, (data) => this.setUnitTarget(data));
         this.mediator.set(this.TRIGGERS.CREATE_UNIT, (data) => this.createUnit(data));
+
+        if (!this.io) return;
+        this.io.on('connection', (socket) => {
+            console.log(`[Army] Клиент подключился: ${socket.id}`);
+
+            socket.on('CREATE_UNIT', (data) => this.createUnit(data));
+            socket.on('SET_UNIT_TARGET', (data) => this.setUnitTarget(data));
+
+            socket.on('disconnect', () => {
+                console.log(`[Army] Клиент отключился: ${socket.id}`);
+            });
+        });
     }
 
     /**
@@ -26,7 +42,7 @@ class ArmyManager extends BaseManager {
         const guid = data?.guid;
         const rawTx = data?.targetX
         const rawTy = data?.targetY
-        if ( guid === null || rawTx === undefined || rawTy === null) {
+        if (guid === null || rawTx === undefined || rawTy === null) {
             return { ok: false, error: 'BAD_PAYLOAD' };
         }
         const tx = Number(rawTx);

@@ -10,16 +10,12 @@ class CONFIG {
     }
     //ивенты
     static EVENTS = {
-        LOGOUT: 'LOGOUT', // в т.ч. и дисконект
+        //map events
     }
 
- 
+    //триггеры
     static TRIGGERS = {
-        //triggers
-        GET_USER_BY_GUID: 'GET_USER_BY_GUID',
-        //handlers
-        GET_VISIBILITY_HANDLER: 'GET_VISIBILITY_HANDLER',
-        GET_RESOURSE_VISIBILITY_HANDLER: 'GET_RESOURSE_VISIBILITY_HANDLER',
+        //map triggers
     }
 
     // сокетные сообщения

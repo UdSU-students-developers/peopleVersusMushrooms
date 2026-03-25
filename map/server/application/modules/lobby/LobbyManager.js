@@ -1,4 +1,4 @@
-const { MESSAGES } = require("../../../config");
+const { MESSAGES, ROOM_SIZE } = require("../../../config");
 const BaseManager = require("../BaseManager");
 const Lobby = require("./Lobby");
 
@@ -6,24 +6,30 @@ class LobbyManager extends BaseManager {
     constructor(options) {
         super(options);
         
-        this.lobbies = {}; 
+        this.lobbies = new Map(); 
+        this.userToRoom = new Map();
+        this.userManager = options.userManager;
 
         if (!this.io) return;
 
         this.io.on('connection', (socket) => {
+            console.log(`Пользователь подключился к LobbyManager с id ${socket.id}`);
+
             socket.on(MESSAGES.CREATE_ROOM, (data) => this.socketCreateRoom(data, socket));
             socket.on(MESSAGES.JOIN_TO_ROOM, (data) => this.socketJoinToRoom(data, socket));
             socket.on(MESSAGES.LEAVE_ROOM, (data) => this.socketLeaveRoom(data, socket));
             socket.on(MESSAGES.DROP_FROM_ROOM, (data) => this.socketDropFromRoom(data, socket));
             socket.on(MESSAGES.START_GAME, (data) => this.socketStartGame(data, socket));
             socket.on(MESSAGES.GET_ROOMS, (data) => this.socketGetRooms(data, socket));
+            socket.on('disconnect', () => this.socketDisconnect(socket));
         });
-
-        // mediator events
-        this.mediator.subscribe(this.EVENTS.LOGOUT, (guid) => this.eventLogout(guid));
     }
 
     // ============ ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ============
+
+    getUserByToken(token) {
+        return this.userManager ? this.userManager.getUserByToken(token) : null;
+    }
 
     getUserByGuid(guid) {
         return this.userManager ? this.userManager.getUserByGuid(guid) : null;
@@ -33,51 +39,58 @@ class LobbyManager extends BaseManager {
         return this.userManager ? this.userManager.getUserBySocketId(socketId) : null;
     }
 
-    _destroyLobby(lobby) {
-        // по guid игроков взять пользователей из UserManager
-        // и разослать им сообщение об уничтожении комнаты
-        // ОСТАЛЬНЫМ guid-ам разослать сообщения в соотвествующие микросервисы
-        //...
-
-        delete this.lobbies[lobby.creatorGuid];
-    }
-
     // ============ СОКЕТ МЕТОДЫ ============
 
-    // ВЕЗДЕ ТОКЕН ПОМЕНЯТЬ НА ГУИД
-
-    /*
     async socketCreateRoom(data = {}, socket) {
-        const { guid, roomName, role } = data;
+        const { token, roomName } = data;
         
         //валидация
-        if (!guid || !roomName) {
+        if (!token || !roomName) {
             return socket.emit(MESSAGES.CREATE_ROOM, this.answer.bad(242));
         }
 
-        
         //проверка пользователя
-        const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
+        const user = this.getUserByToken(token);
         if (!user) {
             return socket.emit(MESSAGES.CREATE_ROOM, this.answer.bad(1001));
         }
 
-        const lobby = Object.values(this.lobbies).find(lobby => lobby.isGuidInRoom(user.guid));
-        if (lobby) {
-            this._destroyLobby(lobby);
+        //проверка, не в комнате ли уже
+        const currentRoomGuid = this.userToRoom.get(user.guid);
+        if (currentRoomGuid) {
+            const currentLobby = this.lobbies.get(currentRoomGuid);
+            if (currentLobby) {
+                //если уже играет
+                if (currentLobby.gameState === 'playing') {
+                    return socket.emit(MESSAGES.CREATE_ROOM, this.answer.bad(2001));
+                }
+                //если уже создал комнату
+                if (currentLobby.creator === user.guid) {
+                    return socket.emit(MESSAGES.CREATE_ROOM, this.answer.bad(2002));
+                }
+                //если участник другой комнаты - выходим оттуда
+                await this._leaveRoom(user.guid);
+            } else {
+                this.userToRoom.delete(user.guid);
+            }
         }
 
         //создаем комнату
-        const lobbies[user.guid] = new Lobby({ 
-            creatorGuid: user.guid,
+        const lobby = new Lobby({ 
+            creator: user, 
             roomName, 
-            role,
+            maxPlayers: ROOM_SIZE.MAX,
             common: this.common
         });
 
-        socket.emit(MESSAGES.CREATE_ROOM, this.answer.good(true));
+        this.lobbies.set(lobby.guid, lobby);
+        this.userToRoom.set(user.guid, lobby.guid);
+
+        console.log(`Сокет ${socket.id} создал комнату ${lobby.guid}`);
+        
+        socket.emit(MESSAGES.CREATE_ROOM, this.answer.good(lobby.getSelf()));
         this._notifyRoomsListUpdated();
-    }*/
+    }
 
     async socketJoinToRoom(data = {}, socket) {
         const { token, roomGuid } = data;
@@ -433,9 +446,14 @@ class LobbyManager extends BaseManager {
 
     //рассылка инфы о изменение списка доступных комнат
     _notifyRoomsListUpdated() {
-        this.io.emit(MESSAGES.ROOMS_LIST_UPDATED, this.answer.good(
-            Object.values(lobby => lobby.get())
-        ));
+        const rooms = [];
+        for (const lobby of this.lobbies.values()) {
+            if (lobby.status === 'open' || lobby.status === 'closed') {
+                rooms.push(lobby.get());
+            }
+        }
+        //оповещаем всех о новом списке комнат
+        this.io.emit(MESSAGES.ROOMS_LIST_UPDATED, this.answer.good(rooms));
     }
 }
 

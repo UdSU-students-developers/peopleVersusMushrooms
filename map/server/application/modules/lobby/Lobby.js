@@ -1,16 +1,17 @@
 class Lobby {
-    constructor({ creatorGuid, roomName, common, role = 'spectator' }) {
-        this.guid = common.guid();
+    constructor({ creator, roomName, maxPlayers, common }) {
+        this.common = common;
+        this.guid = common.guidRoom();
         this.name = roomName;
-        this.creatorGuid = creatorGuid;
+        this.creator = creator.guid;
         this.creatorId = creator.id;
-        this.playersGuilds = {
-            spectator: null,
-            peopleArmy: null,
-            peopleEconomy: null,
-            mushroomArmy: null,
-            mushroomEconomy: null,
-        }
+        this.maxPlayers = maxPlayers;
+        this.players = [creator]; // массив объектов User
+        this.playersMap = new Map(); // user.guid -> { user, status }
+        this.playersMap.set(creator.guid, { user: creator, status: 'ready' });
+        
+        this.status = maxPlayers === 1 ? 'closed' : 'open';
+        this.gameState = 'waiting';
     }
 
     //получить информацию о комнате 
@@ -18,62 +19,77 @@ class Lobby {
         return {
             guid: this.guid,
             name: this.name,
-            creatorGuid: this.creatorGuid,
-            playersGuilds: Object.values(this.playerGuilds).map(player => player.get()),
+            creator: this.creator,
+            status: this.status,
+            gameState: this.gameState,
+            playersCount: this.players.length,
+            maxPlayers: this.maxPlayers,
+            players: Array.from(this.playersMap.values()).map(p => ({
+                guid: p.user.guid,
+                nickname: p.user.nickname,
+                status: p.status
+            })),
+        };
+    }
+
+    //получить детальную информацию (для тех, кто в комнате) - ???
+    getSelf() {
+        return {
+            guid: this.guid,
+            name: this.name,
+            creator: this.creator,
+            status: this.status,
+            gameState: this.gameState,
+            playersCount: this.players.length,
+            maxPlayers: this.maxPlayers,
+            players: Array.from(this.playersMap.values()).map(p => ({
+                guid: p.user.guid,
+                nickname: p.user.nickname,
+                token: p.user.token,
+                status: p.status
+            })),
         };
     }
 
     //добавить игрока
-    addPlayer(guid, role) {
-        if (guid && role && this.playerGuilds[role] === null) {
-            if (guid === this.creatorGuid) {
-                return false;
-            }
-            for (let value of this.playersGuilds) {
-                if (value === guid) {
-                    return false;
-                }
-            }
-            this.playerGuilds[role] = new Player(guid, role);
-            return true;
-        }
-        return false;
+    addPlayer(user) {
+        this.players.push(user);
+        this.playersMap.set(user.guid, { user, status: 'ready' });
     }
 
     //удалить игрока
-    removePlayer(guid) {
-        for (let key in this.playersGuilds) {
-            if (this.playersGuilds[key]?.guid === guid) {
-                this.playersGuilds[key] = null;
-                return true;
-            }
+    removePlayer(userGuid) {
+        this.players = this.players.filter(p => p.guid !== userGuid);
+        this.playersMap.delete(userGuid);
+    }
+
+    //установить создателя
+    setCreator(userGuid) {
+        this.creator = userGuid;
+    }
+
+    //установить статус комнаты (open/closed)
+    setStatus(status) {
+        this.status = status;
+    }
+
+    //установить состояние игры (waiting/playing/finished?)
+    setGameState(state) {
+        this.gameState = state;
+    }
+
+    //установить статус игрока (ready/started)
+    setPlayerStatus(userGuid, status) {
+        const player = this.playersMap.get(userGuid);
+        if (player) {
+            player.status = status;
         }
-        return false;
     }
 
-
-    //установить статус игрока
-    setPlayerReady(guid) {
-        let result = false;
-        Object.values(this.playersGuilds).forEach(player => {
-            if (player?.guid === guid) {
-                player.setReady();
-                result = true;
-            }
-        });
-        return result;
-    }
-
-    canStarted() {
-        return (this.playersGuilds.spectator === null || this.playersGuilds.spectator.isReady()) ||
-        (this.playersGuilds.peopleArmy === null || this.playersGuilds.peopleArmy.isReady()) ||
-        (this.playersGuilds.peopleEconomy === null || this.playersGuilds.peopleEconomy.isReady()) ||
-        (this.playersGuilds.mushroomArmy === null || this.playersGuilds.mushroomArmy.isReady()) ||
-        (this.playersGuilds.mushroomEconomy === null || this.playersGuilds.mushroomEconomy.isReady());
-    }
-
-    isGuidInRoom(guid) {
-        return Object.values(this.playersGuilds).findIndex(player => player?.guid === guid) > -1;
+    //получить статус игрока
+    getPlayerStatus(userGuid) {
+        const player = this.playersMap.get(userGuid);
+        return player ? player.status : null;
     }
 }
 

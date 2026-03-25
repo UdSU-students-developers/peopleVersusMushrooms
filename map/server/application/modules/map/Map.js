@@ -4,8 +4,7 @@ const MAP_CONFIG = require('./MapConfig');
 const libnoise = require('libnoise').libnoise;
 
 class Map {
-    constructor(guid, width = 50, height = 50) {
-        this.guid = guid; // это guid лобби (комнаты)
+    constructor(width = 50, height = 50) {
         this.map = [];
         this.width = width;
         this.height = height;

@@ -123,6 +123,7 @@ class Army {
             unit.move(this.map);
             console.log('Координаты юнита (guid: ', unit.guid, '): ', unit.x, unit.y);
         });
+        this.callbacks.onUpdate?.(this.units);
         // this.printMap();
     }
 }

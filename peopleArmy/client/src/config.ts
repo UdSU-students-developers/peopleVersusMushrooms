@@ -41,9 +41,9 @@ const CONFIG: Config = {
         REGISTRATION: 'registration',
         LOGIN: 'login',
         LOGOUT: 'logout',
-        ARMY_STATE: 'army_state',
-        CREATE_UNIT: 'create_unit',
-        SET_UNIT_TARGET: 'set_unit_target',
+        ARMY_STATE: 'ARMY_STATE',
+        CREATE_UNIT: 'CREATE_UNIT',
+        SET_UNIT_TARGET: 'SET_UNIT_TARGET',
 
     },
     MEDIATOR: {

@@ -21,7 +21,7 @@ const Registration: React.FC<IBasePage> = (props: IBasePage) => {
                 const token = userData?.token ?? null;
                 mediator.get(CONFIG.MEDIATOR.TRIGGERS.SET_STORE, { name: 'user', value: userData });
                 mediator.get(CONFIG.MEDIATOR.TRIGGERS.SET_STORE, { name: 'token', value: token });
-                setPage(PAGES.CHAT);
+                setPage(PAGES.ARMY);
                 return;
             }
             setError(response.error || 'Ошибка регистрации');

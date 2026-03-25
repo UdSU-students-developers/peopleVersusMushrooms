@@ -44,6 +44,12 @@ const CONFIG: Config = {
             TEST_EVENT: 'TEST_EVENT',
         },
         TRIGGERS: {
+            // used by client Store service
+            SET_STORE: 'SET_STORE',
+            GET_STORE: 'GET_STORE',
+            CLEAR_STORE: 'CLEAR_STORE',
+
+            // kept for existing experiments
             TEST_TRIGGER: 'TEST_TRIGGER',
         },
     },

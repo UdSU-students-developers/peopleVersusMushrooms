@@ -121,7 +121,7 @@ class Army {
         this.units.forEach((unit) => {
             this.calculateUnitPath(unit);
             unit.move(this.map);
-            console.log('Координаты юнита: ', unit.x, unit.y);
+            console.log('Координаты юнита (guid: ', unit.guid, '): ', unit.x, unit.y);
         });
         // this.printMap();
     }

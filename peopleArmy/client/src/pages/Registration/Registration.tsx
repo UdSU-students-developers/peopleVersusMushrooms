@@ -5,7 +5,7 @@ import CONFIG from '../../config';
 import './Registration.css';
 
 const Registration: React.FC<IBasePage> = (props: IBasePage) => {
-    const { setPage } = props;
+    const { setPage, mediator } = props;
     const [name, setName] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -17,7 +17,10 @@ const Registration: React.FC<IBasePage> = (props: IBasePage) => {
 
         client.on(CONFIG.SOCKET.REGISTRATION, (response: any) => {
             if (response.result === 'ok') {
-                localStorage.setItem('user', JSON.stringify(response.data));
+                const userData = response?.data ?? null;
+                const token = userData?.token ?? null;
+                mediator.get(CONFIG.MEDIATOR.TRIGGERS.SET_STORE, { name: 'user', value: userData });
+                mediator.get(CONFIG.MEDIATOR.TRIGGERS.SET_STORE, { name: 'token', value: token });
                 setPage(PAGES.CHAT);
                 return;
             }
@@ -29,7 +32,7 @@ const Registration: React.FC<IBasePage> = (props: IBasePage) => {
             client.disconnect();
             setSocket(null);
         };
-    }, [setPage]);
+    }, [setPage, mediator]);
 
     const register = () => {
         setError('');

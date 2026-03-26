@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { IBasePage } from '../PageManager';
 import CONFIG from '../../config';
-import Common from '../Common/Common';
+import Common from '../../services/Common/Common';
 
 const CELL = 12; // размер клетки в пикселях, карта 50x50 → canvas 600x600
 const common = new Common();

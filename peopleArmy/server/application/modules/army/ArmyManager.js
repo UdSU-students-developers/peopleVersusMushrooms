@@ -7,17 +7,35 @@ class ArmyManager extends BaseManager {
     constructor(options) {
         super(options);
 
-        this.army = new Army({
-            map: null,
-            buildings: [],
-            common: this.common,
-            guid: null,
-        });
+        this.army = {};
 
+        // sockets
+        if (!this.io) return;
+        this.io.on('connection', (socket) => {
+        });
+        // mediator event subscribers
+        this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
+        // mediator trigger setters
         this.mediator.set(this.TRIGGERS.SET_UNIT_TARGET, (data) => this.setUnitTarget(data));
         this.mediator.set(this.TRIGGERS.CREATE_UNIT, (data) => this.createUnit(data));
     }
 
+    destructor() {
+        this.army.destructor();
+    }
+
+    /* PRIVATE */
+    updateArmyCallback(guid, data) {
+        const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
+        if (user) {
+            this.io.to(user.socketId).emit(
+                this.SOCKETS.UPDATE_ARMY,
+                this.answer.good(data)
+            )
+        }
+    }
+
+    /* TRIGGERS */
     /**
      * mediator.get(SET_UNIT_TARGET, { guid, targetX, targetY }) — alias: unitGuid, x, y
      * @returns {{ ok: true, data: object } | { ok: false, error: string }}
@@ -26,7 +44,7 @@ class ArmyManager extends BaseManager {
         const guid = data?.guid;
         const rawTx = data?.targetX
         const rawTy = data?.targetY
-        if ( guid === null || rawTx === undefined || rawTy === null) {
+        if (guid === null || rawTx === undefined || rawTy === null) {
             return { ok: false, error: 'BAD_PAYLOAD' };
         }
         const tx = Number(rawTx);
@@ -69,9 +87,24 @@ class ArmyManager extends BaseManager {
         return { ok: true, data: unit.get() };
     }
 
-    destructor() {
-        this.army.destructor();
+    /* EVENTS */
+    eventStartGame({ guid, map, buildings }) {
+        const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
+        if (user) {
+            this.army[guid] = new Army({
+                map,
+                buildings,
+                common: this.common,
+                guid,
+                callbacks: {
+                    update: (guid, data) => this.updateArmyCallback(guid, data)
+                }
+            });
+        }
     }
+
+    /* SOCKETS */
+    //...
 }
 
 module.exports = ArmyManager;

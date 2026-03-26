@@ -5,6 +5,7 @@ const app = express();
 const server = http.createServer(app);
 const CONFIG = require('./config');
 const Router = require('./application/router/Router');
+const Answer = require('./application/Answer');
 const Common = require('./application/modules/common/Common');
 const DB = require('./application/modules/db/DB');
 const Mediator = require('./application/modules/mediator/Mediator');
@@ -20,24 +21,18 @@ const io = new Server(server, {
     }
 });
 
+const answer = new Answer();
 const common = new Common();
 const db = new DB({ DATABASE });
 const mediator = new Mediator(CONFIG.MEDIATOR);
 
 // Менеджеры создаём здесь, чтобы они зарегистрировали триггеры в медиаторе
-new UserManager({mediator, db, io, common});
-new ChatManager({mediator, db, io, common});
-new ArmyManager({ mediator, db, io, common });
-
-// Пример: подписка на событие "пользователь зарегистрирован"
-mediator.subscribe(mediator.EVENTS.USER_REGISTERED, (user) => {
-    console.log(`[Mediator] Новый пользователь: ${user.username}`);
-});
-
-const router = new Router(mediator);
+new UserManager({mediator, db, io, common, answer});
+new ChatManager({mediator, db, io, common, answer});
+new ArmyManager({ mediator, db, io, common, answer });
 
 app.use(express.static(`${__dirname}/public`));
-app.use('/', router);
+app.use('/', new Router(mediator, answer));
 
 function deinit() {
     armyManager.destructor();

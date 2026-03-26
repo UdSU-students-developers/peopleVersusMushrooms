@@ -1,6 +1,4 @@
-const Answer = require('../../Answer');
-
-module.exports = (mediator) => {
+module.exports = (mediator, answer) => {
     return (req, res) => {
         const { guid, targetX, targetY } = req.params;
         const result = mediator.get(mediator.TRIGGERS.SET_UNIT_TARGET, {
@@ -10,11 +8,11 @@ module.exports = (mediator) => {
         });
         if (!result?.ok) {
             if (result?.error === 'UNIT_NOT_FOUND') {
-                return res.status(404).json(Answer.bad(404));
+                return res.status(404).json(answer.bad(404));
             }
-            return res.status(400).json(Answer.bad(400));
+            return res.status(400).json(answer.bad(400));
         }
         console.log('setUnitTargetHandler', guid, targetX, targetY);
-        res.json(Answer.good(result.data));
+        res.json(answer.good(result.data));
     };
 };

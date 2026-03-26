@@ -58,7 +58,7 @@ const CONFIG = {
     
     ECONOMY: {
         INTERVAL: 200, //ms
-
+        MAX_ATTEMPTS: 10, // Для юнитов количество повторений при застревании 
         MYCELIUM: {
             HP: 1,
             GROW_SPEED: 100,

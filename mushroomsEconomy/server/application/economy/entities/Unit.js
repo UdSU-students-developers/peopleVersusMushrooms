@@ -1,3 +1,5 @@
+import CONFIG from "../../../config";
+
 class Unit {
     constructor({ x, y, guid, map, easystar }) {
         this.x = x;
@@ -22,7 +24,7 @@ class Unit {
 
     findPath(targetX, targetY) {
         let attempts = 0;
-        const maxAttempts = 10;
+        const maxAttempts = CONFIG.ECONOMY.MAX_ATTEMPTS;
 
         return new Promise((resolve) => {
             const attemptFindPath = () => {

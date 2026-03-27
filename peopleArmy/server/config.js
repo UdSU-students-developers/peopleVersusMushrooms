@@ -12,6 +12,8 @@ const CONFIG = {
         },
         TRIGGERS: {
             REGISTER: "REGISTER",                 // триггер для регистрации (возвращает результат)
+            LOGIN: "LOGIN",                       // триггер для логина (возвращает пользователя)
+            LOGOUT: "LOGOUT",                     // триггер для логаута (возвращает true/false)
             SET_UNIT_TARGET: "SET_UNIT_TARGET",   // задать юниту цель движения (см. ArmyManager)
             CREATE_UNIT: "CREATE_UNIT",           // создать юнита (см. ArmyManager)
         },
@@ -20,6 +22,9 @@ const CONFIG = {
     SOCKET: {
         MESSAGE_FROM_CLIENT: "message_from_client",
         MESSAGE_TO_CLIENTS: "message_to_clients",
+        REGISTRATION: "registration",
+        LOGIN: "login",
+        LOGOUT: "logout",
     },
 
     ARMY: {

@@ -23,10 +23,10 @@ class ArmyManager extends BaseManager {
      * @returns {{ ok: true, data: object } | { ok: false, error: string }}
      */
     setUnitTarget(data) {
-        const guid = data?.guid ?? data?.unitGuid;
-        const rawTx = data?.targetX ?? data?.x;
-        const rawTy = data?.targetY ?? data?.y;
-        if (guid === undefined || guid === null || rawTx === undefined || rawTy === null) {
+        const guid = data?.guid;
+        const rawTx = data?.targetX
+        const rawTy = data?.targetY
+        if ( guid === null || rawTx === undefined || rawTy === null) {
             return { ok: false, error: 'BAD_PAYLOAD' };
         }
         const tx = Number(rawTx);
@@ -52,7 +52,7 @@ class ArmyManager extends BaseManager {
         const x = Number(data?.x);
         const y = Number(data?.y);
         const type = String(data?.type ?? 'soldier').toLowerCase();
-        if (guid === undefined || guid === null || data?.x === undefined || data?.y === undefined) {
+        if (guid === null || data?.x === undefined || data?.y === undefined) {
             return { ok: false, error: 'BAD_PAYLOAD' };
         }
         if (!Number.isFinite(x) || !Number.isFinite(y)) {

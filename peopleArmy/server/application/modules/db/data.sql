@@ -1,6 +1,7 @@
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL,
-    password TEXT NOT NULL
+    password TEXT NOT NULL,
+    guid TEXT
   );
   ALTER TABLE users ADD COLUMN token TEXT;

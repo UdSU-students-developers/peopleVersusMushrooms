@@ -1,4 +1,6 @@
 const md5 = require('md5');
+const Common = require('../common/Common');
+const common = new Common();
 
 /**
  * Модель текущего пользователя (сессия/активная запись).
@@ -9,6 +11,7 @@ class User {
         this.db = db;
         this.username = undefined;
         this.id = undefined;
+        this.guid = undefined;
         this.token = undefined;
     }
 
@@ -16,6 +19,7 @@ class User {
         return {
             username: this.username,
             id: this.id,
+            guid: this.guid,
         };
     }
 
@@ -26,10 +30,23 @@ class User {
         };
     }
 
-    init({ id, username, token }) {
+    init({ id, username, guid, token }) {
         this.username = username;
         this.id = id;
+        this.guid = guid;
         this.token = token;
+    }
+
+    async registration(username, password) {
+        const guid = common.guid();
+        const token = md5(`${Date.now()}-${Math.random()}`);
+        const result = await this.db.orm.insert(
+            'users',
+            ['username', 'password', 'token', 'guid'],
+            [username, password, token, guid],
+        );
+        this.init({ id: result.id, username, guid, token });
+        return true;
     }
 
     async login(username, password) {
@@ -39,7 +56,7 @@ class User {
 
         const token = md5(`${Date.now()}-${Math.random()}`);
         await this.db.updateToken(data.id, token);
-        this.init({ ...data, token });
+        this.init({ ...data, guid: data.guid ?? String(data.id), token });
         return true;
     }
 

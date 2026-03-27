@@ -95,11 +95,7 @@ class Army {
             this.map[49][25] = 1;
             this.map[5][25] = 1;
 
-            console.log(`\n===========================`);
-            this.map.forEach(row => {
-                console.log(row.join(' '));
-            });
-            console.log('===========================\n');
+            this.printMap();
         }
     }
 
@@ -125,7 +121,7 @@ class Army {
         this.units.forEach((unit) => {
             this.calculateUnitPath(unit);
             unit.move(this.map);
-            console.log('Координаты юнита: ', unit.x, unit.y);
+            console.log('Координаты юнита (guid: ', unit.guid, '): ', unit.x, unit.y);
         });
         // this.printMap();
     }

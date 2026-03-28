@@ -1,4 +1,4 @@
-class Lobby {
+class Room {
     constructor({ creatorGuid, roomName, common }) {
         this.guid = common.guid();
         this.name = roomName;
@@ -41,4 +41,4 @@ class Lobby {
 
 }
 
-module.exports = Lobby;
+module.exports = Room;

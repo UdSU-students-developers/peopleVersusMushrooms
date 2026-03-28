@@ -1,15 +1,14 @@
 const CONFIG = require('../../../config');
 const BaseManager = require('../BaseManager');
-const Lobby = require('./Lobby');
+const Room = require('./Room');
 
-class LobbyManager extends BaseManager {
+class RoomManager extends BaseManager {
     constructor(options) {
         super(options);
 
         this.users = {};
-        this.lobbies = {}; 
+        this.lobbies = {};
         this.userToRoom = {}; 
-
         this.init();
     }
 
@@ -19,24 +18,24 @@ class LobbyManager extends BaseManager {
 
     handleConnection(io) {
         io.on('connection', (socket) => {
-            console.log(`LobbyManager: Client connected: ${socket.id}`);
+            console.log(`RoomManager: Client connected: ${socket.id}`);
 
             socket.on(CONFIG.SOCKET.CREATE_ROOM, (data) => this.handleCreateRoom(socket, data));
             socket.on(CONFIG.SOCKET.JOIN_ROOM, (data) => this.handleJoinRoom(socket, data));
             socket.on(CONFIG.SOCKET.LEAVE_ROOM, (data) => this.handleLeaveRoom(socket, data));
             socket.on(CONFIG.SOCKET.DROP_FROM_ROOM, (data) => this.handleKickUser(socket, data));
             socket.on(CONFIG.SOCKET.GET_ROOMS, (data) => this.handleGetRooms(socket, data));
-            
+
             socket.on('disconnect', () => this.handleDisconnect(socket));
         });
     }
-    
+
     sendError(socket, code) {
         const message = this.answer.bad(code);
         socket.emit(CONFIG.SOCKET.ERROR, { code, message });
     }
 
-    getUser(socket) { 
+    getUser(socket) {
         return this.users[socket.id];
     }
 
@@ -49,42 +48,42 @@ class LobbyManager extends BaseManager {
             this._leaveRoom(user.id, socket);
         }
 
-        const lobby = new Lobby({ 
-            creatorGuid: user.id, 
-            roomName: data.name, 
-            common: this.common 
+        const room = new Room({ 
+            creatorGuid: user.id,
+            roomName: data.name,
+            common: this.common
         });
 
-        this.lobbies[lobby.guid] = lobby;
-        this.userToRoom[user.id] = lobby.guid;
+        this.lobbies[room.guid] = room;
+        this.userToRoom[user.id] = room.guid;
 
-        socket.join(lobby.guid);
+        socket.join(room.guid);
 
-        socket.emit('room_created', lobby.get());
+        socket.emit('room_created', room.get());
         this._notifyRoomsListUpdated();
     }
 
     handleJoinRoom(socket, data) {
         const user = this.getUser(socket);
         if (!user) return this.sendError(socket, 17);
-        
-        const { roomId } = data;
-        const lobby = this.lobbies[roomId];
-        
-        if (!lobby) return this.sendError(socket, 19);
 
-        if (lobby.isGuidInRoom(user.id)) return;
+        const { roomId } = data;
+        const room = this.lobbies[roomId];
+
+        if (!room) return this.sendError(socket, 19);
+
+        if (room.isGuidInRoom(user.id)) return;
 
         if (this.userToRoom[user.id]) {
             this._leaveRoom(user.id, socket);
         }
 
-        if (lobby.addPlayer(user.id)) {
-            this.userToRoom[user.id] = lobby.guid;
-            
-            socket.join(lobby.guid);
+        if (room.addPlayer(user.id)) {
+            this.userToRoom[user.id] = room.guid;
 
-            this._notifyRoomUpdate(lobby.guid);
+            socket.join(room.guid);
+
+            this._notifyRoomUpdate(room.guid);
             this._notifyRoomsListUpdated();
         }
     }
@@ -93,7 +92,7 @@ class LobbyManager extends BaseManager {
         const user = this.getUser(socket);
         if (!user) return this.sendError(socket, 17);
 
-        this._leaveRoom(user.id);
+        this._leaveRoom(user.id, socket); 
         socket.emit('room_updated', { status: 'left' });
     }
 
@@ -101,15 +100,15 @@ class LobbyManager extends BaseManager {
         const admin = this.getUser(socket);
         if (!admin) return this.sendError(socket, 17);
 
-        const { targetGuid, roomId, userID } = data;
-        const lobby = this.lobbies[roomId];
+        const { targetGuid, roomId } = data;
+        const room = this.lobbies[roomId];
 
-        if (!lobby) return this.sendError(socket, 19);
-        if (lobby.creatorGuid !== admin.id) return this.sendError(socket, 20);
+        if (!room) return this.sendError(socket, 19);
+        if (room.creatorGuid !== admin.id) return this.sendError(socket, 20);
 
-        if (lobby.removePlayer(targetGuid)) {
+        if (room.removePlayer(targetGuid)) {
             delete this.userToRoom[targetGuid];
-            this._notifyRoomUpdate(lobby.guid);
+            this._notifyRoomUpdate(room.guid);
         }
     }
 
@@ -130,28 +129,28 @@ class LobbyManager extends BaseManager {
         const roomGuid = this.userToRoom[userGuid];
         if (!roomGuid) return;
 
-        const lobby = this.lobbies[roomGuid];
-        if (!lobby) {
+        const room = this.lobbies[roomGuid];
+        if (!room) {
             delete this.userToRoom[userGuid];
             return;
         }
 
-        lobby.removePlayer(userGuid);
+        room.removePlayer(userGuid);
         delete this.userToRoom[userGuid];
 
         if (socket) {
             socket.leave(roomGuid);
         }
 
-        if (userGuid === lobby.creatorGuid || lobby.players.size === 0) {
-            this._destroyLobby(lobby);
+        if (userGuid === room.creatorGuid || room.players.size === 0) {
+            this._destroyRoom(room); 
         } else {
             this._notifyRoomUpdate(roomGuid);
         }
     }
 
-    _destroyLobby(lobby) {
-        delete this.lobbies[lobby.guid];
+    _destroyRoom(room) { 
+        delete this.lobbies[room.guid];
         this._notifyRoomsListUpdated();
     }
 
@@ -160,11 +159,11 @@ class LobbyManager extends BaseManager {
     }
 
     _notifyRoomUpdate(roomGuid) {
-        const lobby = this.lobbies[roomGuid];
-        if (!lobby) return;
+        const room = this.lobbies[roomGuid];
+        if (!room) return;
 
-        const data = lobby.get();
-        
+        const data = room.get();
+
         this.io.to(roomGuid).emit('room_updated', data);
     }
 
@@ -174,4 +173,4 @@ class LobbyManager extends BaseManager {
     }
 }
 
-module.exports = LobbyManager;
+module.exports = RoomManager;

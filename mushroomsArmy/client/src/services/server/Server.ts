@@ -125,15 +125,11 @@ class Server {
     private handleLogout(response: TResponse<boolean>) {
         console.log('[Server] Ответ выхода:', response);
 
-        if (response?.result === 'ok' && response.data) {
-            const CLEAR_STORE = this.mediator.getTriggerTypes().CLEAR_STORE;
-            const USER_LOGGED_OUT = this.mediator.getEventTypes().USER_LOGGED_OUT;
+        const CLEAR_STORE = this.mediator.getTriggerTypes().CLEAR_STORE;
+        const USER_LOGGED_OUT = this.mediator.getEventTypes().USER_LOGGED_OUT;
 
-            this.mediator.get(CLEAR_STORE, 'user');
-            this.mediator.call(USER_LOGGED_OUT);
-        } else {
-            this.mediator.call(this.mediator.getEventTypes().ERROR, response.error);
-        }
+        this.mediator.get(CLEAR_STORE, 'user');
+        this.mediator.call(USER_LOGGED_OUT);
     }
 
     private handleLobbyStart(response: TResponse<boolean>) {

@@ -4,39 +4,32 @@ class Room {
         this.name = roomName;
         this.creatorGuid = creatorGuid;
         
-        this.players = new Set([creatorGuid]); 
+        this.participants = new Set(); 
     }
 
     get() {
         return {
-            id: this.guid,
+            guid: this.guid,
             name: this.name,
             creatorGuid: this.creatorGuid,
-            status: this.status,
-            participants: Array.from(this.players) 
+            participants: this.participants,
         };
     }
 
     addPlayer(guid) {
-        if (!guid) return false;
-        
-        if (this.players.has(guid)) return false;
-
-        this.players.add(guid);
-        
+        if (!guid) return; 
+        this.participants.add(guid);
         return true;
     }
 
     removePlayer(guid) {
-        if (this.players.has(guid)) {
-            this.players.delete(guid);
-            return true;
-        }
-        return false;
+        if (!this.participants.has(guid)) return;
+        participants.delete(guid);
+        return true;
     }
 
     isGuidInRoom(guid) {
-        return this.players.has(guid);
+        return this.participants.has(guid);
     }
 
 }

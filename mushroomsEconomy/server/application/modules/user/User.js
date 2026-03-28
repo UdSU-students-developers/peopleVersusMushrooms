@@ -13,7 +13,7 @@ class User {
         this.token;
     }
 
-    async get() {
+    get() {
         return {
             name: this.name,
             guid: this.guid
@@ -22,68 +22,73 @@ class User {
 
     getSelf() {
         return {
-            db: this.db,
-            common: this.common,
-            socketId: this.socketId = socketId,
-            id: this.id,
             guid: this.guid,
             name: this.name,
-            passwordHash: this.passwordHash,
             token: this.token
         }
+    }
+    
+    async fillData(data) {
+        this.id = data.id;
+        this.guid = data.guid;
+        this.name = data.name;
+        this.passwordHash = data.passwordHash;
+        // update token
+        const token = this.generateToken();
+        await this.db.updateToken(data.id, token);
+        this.token = token;		
+    }
+
+    async fillData(data) {
+        this.id = data.id;
+		this.guid = data.guid;
+		this.name = data.name;
+		this.passwordHash = data.passwordHash;
+		// update token
+		const token = this.generateToken();
+		await this.db.updateToken(data.id, token);
+		this.token = token;
     }
 
     isLogin() {
         return this.socketId && this.token;
     }
-
-    async login(name, password) {
-        const userData = await this.db.getUserByName(name);
-        if (!userData) return null;
-
-        const passwordHash = this.hashPassword(password);
-
-        if (userData.password === passwordHash) {
-            this.id = userData.id;
-            this.guid = userData.guid;
-            this.name = userData.name;
-            this.passwordHash = userData.passwordHash;
-            this.token = userData.token;
-
-            return this;
-        }
-
-        return null;
-    }
-    
-    logout() {
-        this.token = null;
-    }
-
-    async registration(name, password) {
-        const passwordHash = this.hashPassword(password);
-        const token = this.generateToken();
-        const guid = this.common.guid();
-
-        const userData = await this.db.registration(name, guid, passwordHash, token);
-
-        if (userData) {
-            this.id = userData.id;
-            this.guid = userData.guid;
-            this.name = userData.name;
-            this.passwordHash = userData.passwordHash;
-            this.token = userData.token;
-        }
-
-        return this;
-    }
-
-    hashPassword(password) {
-        return md5(password);
-    }
     
     generateToken() {
         return md5(Date.now() + Math.random().toString());
+    }	
+
+    async logout() {
+        this.token = null;
+        await this.db.updateToken(this.id, null);
+    }
+
+    async login(name, passwordHash) {
+        const userData = await this.db.getUserByName(name);
+        if (!userData) return false;
+
+        if (userData.passwordHash === passwordHash) {
+            await this.fillData(userData);
+            return true;
+        }
+
+        return false;
+    }
+    
+    async logout() {
+        this.token = null;
+        await this.db.updateToken(this.id, null);
+    }
+
+    async registration(name, passwordHash) {
+        if (await this.db.getUserByName(name)) {
+            return false
+        }
+
+        const guid = this.common.guid();
+        await this.db.registration(name, guid, passwordHash);
+        
+        return await this.login(name, passwordHash);
     }
 }
 

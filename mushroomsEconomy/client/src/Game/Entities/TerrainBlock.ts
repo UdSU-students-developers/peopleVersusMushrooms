@@ -4,20 +4,22 @@ export default class TerrainBlock {
     coords:TPoint;
     sprite: number[];
 
-    constructor(id:number, coords:TPoint, type: string) {
+    constructor(coords:TPoint, type: number) {
         this.coords = coords;
         this.sprite = this.getTerrainSprite(type);
     }
 
-    getTerrainSprite(type: string): number[] {
+    getTerrainSprite(type: number): number[] {
         switch (type) {
-            case "grow":
+            case 0: //grass
                 return [1];
-            case "water":
-                return [5];
+            case 1: //water
+                return [2];
+            case 2: //stone
+                return [3];
             default:
                 console.log("Спрайт не определён");
-                return [10];
+                return [7];
         }
     }
 }

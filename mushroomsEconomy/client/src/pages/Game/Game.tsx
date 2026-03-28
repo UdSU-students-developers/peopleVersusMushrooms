@@ -1,21 +1,22 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { IBasePage } from '../PageManager';
 import GameCanvas from './GameCanvas';
 
 import "./Game.css"
+import { MediatorContext, ServerContext } from '../../App';
 
 const GAME_FIELD = 'game-field';
 
-const Village: React.FC<IBasePage> = (props: IBasePage) => {
+const Game: React.FC<IBasePage> = (props: IBasePage) => {
     const { setPage } = props;
-    
+
     return (
     <div className='game'>
         <div>
-            <GameCanvas />
+                 <GameCanvas />
         </div>
     </div>
 );
 };
 
-export default Village;
+export default Game;

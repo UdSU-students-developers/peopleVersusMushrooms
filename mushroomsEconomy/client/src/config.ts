@@ -20,8 +20,6 @@ const CONFIG = {
             SHOW_ERROR: 'SHOW_ERROR',
             SHOW_POPUP: 'SHOW_POPUP',
             // остальные события
-            LOGIN: 'LOGIN',
-            NEW_MESSAGE: 'NEW_MESSAGE',
             MESSAGE_LOADED: 'MESSAGE_LOADED',
             MESSAGE_SENT: 'MESSAGE_SEND',
         },
@@ -33,6 +31,7 @@ const CONFIG = {
             CLEAR_STORE: 'CLEAR_STORE',
             // остальные триггеры
             MESSAGE: 'MESSAGE:SOCKET',
+
         }
     },
 
@@ -40,29 +39,46 @@ const CONFIG = {
         MESSAGE: 'MESSAGE',  // шлет сообщение
         MESSAGES: 'MESSAGES',
         NEW_MESSAGE: 'NEW_MESSAGE',
-        TYPING: 'TYPING',    // печатает
+        TYPING: 'TYPING',           // печатает
 
         REGISTRATION: 'REGISTRATION',
         LOGIN: 'LOGIN',
         LOGOUT: 'LOGOUT',
+
+        CREATE_ROOM: 'CREATE_ROOM',
+        DELETE_ROOM: 'DELETE_ROOM',
+        JOIN_ROOM: 'JOIN_ROOM',
+        LEAVE_ROOM: 'LEAVE_ROOM',
+        KICK_USER: 'KICK_USER',
+        DROP_FROM_ROOM: 'DROP_FROM_ROOM',
+        GET_ROOMS: 'GET_ROOMS',
+ 
+        START_GAME: 'START_GAME',
+		UPDATE_SCENE: 'UPDATE_SCENE',
     },
 
 
     GRAPHICS: {
-        MIN_ZOOM: 1,
-        MAX_ZOOM: 45,
+        MIN_ZOOM: 100,
+        MAX_ZOOM: 45000,
         ZOOM_FACTOR: 0.1,
 
         BORDER_PADDING: 2,
 
-        SPRITE_SIZE: 8, // размер спрайта в пикселях
-        LINE_OF_SPRITES: 110, // количество спрайтов в карте спрайтов
+        SPRITE_SIZE: 32, // размер спрайта в пикселях
+        LINE_OF_SPRITES: 32, // количество ЛИНИЙ спрайтов в карте спрайтов
 
         WINDOW: {
             LEFT: 0,
             TOP: 0,
             HEIGHT: 700,
             WIDTH: 700,
+        },
+
+        MAP: {
+            GRASS: 0,
+            WATER: 1,
+            STONE: 2,
         },
     },
 

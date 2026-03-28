@@ -1,16 +1,38 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { IBasePage, PAGES } from '../PageManager';
-import { ServerContext} from '../../App';
+import { MediatorContext, ServerContext} from '../../App';
 import './Registration.css';
 
 const Registration: React.FC<IBasePage> = ({ setPage }) => {
     const server = useContext(ServerContext);
+    const mediator = useContext(MediatorContext);
 
     const [password, setPassword] = useState<string>('');
+    const [confirmPassword, setConfirmPassword] = useState<string>('');
     const [name, setName] = useState<string>('');
+
+    useEffect(() => {
+            if (!mediator) return;
+    
+            const eventTypes = mediator.getEventTypes();
+    
+            const handleRegister = () => {
+                setPage(PAGES.CHAT);
+            }
+    
+            mediator.subscribe(eventTypes.REGISTRATION, handleRegister);
+    
+            return () => {
+                mediator.unsubscribe(eventTypes.REGISTRATION, handleRegister);
+            }
+        }, [mediator, setPage]);
 
     const handleRegister = async (e: any) => {
         e.preventDefault();
+        if (password !== confirmPassword) {
+            alert('Пароли не совпадают');
+            return;
+        }
         await server.register(name, password);
     };
 
@@ -20,13 +42,15 @@ const Registration: React.FC<IBasePage> = ({ setPage }) => {
 
             <form onSubmit={handleRegister}>
                 <input
-                    placeholder="Ваше имя"
+                    id="testing-registration-name"
+                    placeholder="Логин"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
                 />
 
                 <input
+                    id="testing-registration-password"
                     type="password"
                     placeholder="Придумайте пароль"
                     value={password}
@@ -34,13 +58,23 @@ const Registration: React.FC<IBasePage> = ({ setPage }) => {
                     required
                 />
 
-                <button type="submit">
+                <input
+                    id="testing-registration-confirm-password"
+                    type="password"
+                    placeholder="Подтвердите пароль"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                />
+
+                <button id="testing-registration-submit" type="submit">
                     Зарегистрироваться
                 </button>
             </form>
 
             <p
-                className="switch-mode"
+                id="testing-registration-switch-to-login"
+                className="registration-switch"
                 onClick={() => setPage(PAGES.LOGIN)}
             >
                 Уже есть аккаунт? Войти

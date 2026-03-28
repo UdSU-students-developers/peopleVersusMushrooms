@@ -1,19 +1,29 @@
 import React, { useEffect, useContext } from 'react';
 import CONFIG from '../../config';
+import { GameContext } from '../../App';
 import { TPoint } from '../../config';
+import { TMushroom } from '../../services/Server/types';
 import Canvas from '../../services/Canvas/Canvas';
 import useCanvas from '../../services/Canvas/useCanvas';
 import useSprites from '../Hooks/useSprite';
 import TerrainBlock from '../../Game/Entities/TerrainBlock';
+import Mushroom from '../../Game/Entities/Mushroom';
 
 import "./Game.css";
 
 const GAME_FIELD = 'game-field';
 
-const { WINDOW, BORDER_PADDING, MIN_ZOOM, MAX_ZOOM, ZOOM_FACTOR } = CONFIG.GRAPHICS;
+const { BORDER_PADDING, MIN_ZOOM, MAX_ZOOM, ZOOM_FACTOR } = CONFIG.GRAPHICS;
+
+const INITIAL_WINDOW_WIDTH = CONFIG.GRAPHICS.WINDOW.WIDTH;
+const INITIAL_WINDOW_HEIGHT = CONFIG.GRAPHICS.WINDOW.HEIGHT;
+const INITIAL_WINDOW_LEFT = CONFIG.GRAPHICS.WINDOW.LEFT;
+const INITIAL_WINDOW_TOP = CONFIG.GRAPHICS.WINDOW.TOP;
 
 const GameCanvas: React.FC = () => {
-    
+
+    const { WINDOW } = CONFIG.GRAPHICS;
+    const game = useContext(GameContext);
 
     let canvas: Canvas | null = null;
     const CanvasRef = useCanvas(render);
@@ -28,25 +38,106 @@ const GameCanvas: React.FC = () => {
     let windowStartPosition: { LEFT: number, TOP: number } | null = null;
     let animationTime = 0;
 
+    const createTiles = (matrix: number[][]): TerrainBlock[] => {
+        const tiles: TerrainBlock[] = [];
 
-    const drawSprites = (canvas: Canvas, item: TerrainBlock, coords: TPoint[]) => {
-        item.sprite.forEach((sprite, i) => {
-            const spriteData = getSprite(sprite);
-            canvas.spriteFull(spritesImage, coords[i].x, coords[i].y, spriteData[0], spriteData[1], spriteData[2]);
+
+        for (let rowIndex = 0; rowIndex < matrix.length; rowIndex++) {
+            const row = matrix[rowIndex];
+            
+            for (let colIndex = 0; colIndex < row.length; colIndex++) {
+                const position = { x: colIndex, y: rowIndex };
+                const tileType = matrix[rowIndex][colIndex];
+                
+                tiles.push(new TerrainBlock(position, tileType));
+            }
+        }
+
+        return tiles;
+    };
+
+    const createMushroomTiles = (mushrooms: TMushroom[]): Mushroom[] => {
+        const newMushrooms: Mushroom[] = [];
+
+        mushrooms.forEach( (mushroom) => {
+            newMushrooms.push(new Mushroom(mushroom.guid, mushroom.coords, mushroom.level))
+        })
+
+        return newMushrooms;
+    };
+
+    const drawMap = () => {
+        if (!canvas) return;
+        
+        const { scene } = game.get();
+        
+        if (!scene) return
+
+        const tileWorldSize = INITIAL_WINDOW_WIDTH / scene.map.length;
+        const tileSizePx = canvas.dec(tileWorldSize);
+        const tiles = createTiles(scene.map);
+
+        tiles.forEach((tile) => {
+            const worldX = tile.coords.x * tileWorldSize;
+            const worldY = tile.coords.y * tileWorldSize;
+
+            tile.sprite.forEach((spriteId) => {
+                const [sx, sy, sSize] = getSprite(spriteId);
+                if (!canvas) return; //Без 2 проверки ругалось
+                canvas.contextV.drawImage(
+                    spritesImage,
+                    sx, sy, sSize, sSize,
+                    canvas.xs(worldX), canvas.ys(worldY), tileSizePx, tileSizePx
+                );
+            });
         });
     };
 
+    const drawMushrooms = () => {
+        if (!canvas) return;
+        
+        const { scene } = game.get();
+        
+        if (!scene) return
+
+        const tileWorldSize = INITIAL_WINDOW_WIDTH / scene.map.length;
+        const tileSizePx = canvas.dec(tileWorldSize);
+        const mushroomTiles = createMushroomTiles(scene.mushrooms);
+
+        mushroomTiles.forEach((mushroomTile) => {
+            const worldX = mushroomTile.coords.x * tileWorldSize;
+            const worldY = mushroomTile.coords.y * tileWorldSize;
+
+            mushroomTile.sprite.forEach((spriteId) => {
+                const [sx, sy, sSize] = getSprite(spriteId);
+                if (!canvas) return; //Без 2 проверки ругалось
+                canvas.contextV.drawImage(
+                    spritesImage,
+                    sx, sy, sSize, sSize,
+                    canvas.xs(worldX), canvas.ys(worldY), tileSizePx, tileSizePx
+                );
+            });
+        });
+    };
+
+    const drawScene = () => {
+        drawMap();
+        drawMushrooms();
+    }
+
     function render(FPS: number) {
+        if (!canvas) return;
+
         if (FPS > 0) {
             animationTime += (1 / FPS);
         } else {
             animationTime += (1 / 60);
-            }
-        if (!canvas) return;
+        }
+
         canvas.clear();
+        drawScene();
         canvas.render();
     }
-
 
     const mouseDown = (x: number, y: number) => {
         mouseDownPosition = { x, y };
@@ -58,10 +149,9 @@ const GameCanvas: React.FC = () => {
         if (isMiddleMouseDragging && middleMouseStartScreenPosition && windowStartPosition && canvas && screenX !== undefined && screenY !== undefined) {
             const deltaX = (screenX - middleMouseStartScreenPosition.x) / canvas.WIDTH * WINDOW.WIDTH;
             const deltaY = (screenY - middleMouseStartScreenPosition.y) / canvas.HEIGHT * WINDOW.HEIGHT;
-            
+
             WINDOW.LEFT = windowStartPosition.LEFT - deltaX;
             WINDOW.TOP = windowStartPosition.TOP - deltaY;
-            
         }
     };
 
@@ -71,14 +161,12 @@ const GameCanvas: React.FC = () => {
     };
 
     const mouseClick = async (x: number, y: number) => {
-        return
     };
 
     const mouseRightClickDown = (x: number, y: number) => {
     };
 
     const mouseLeave = () => {
-        console.log('Мышь покинула канвас');
         wasDragging = false;
         isMiddleMouseDragging = false;
         middleMouseStartScreenPosition = null;
@@ -87,22 +175,19 @@ const GameCanvas: React.FC = () => {
 
     const mouseWheel = (delta: number, x: number, y: number) => {
         if (!canvas) return;
-        
+
         const zoomAmount = delta > 0 ? 1 + ZOOM_FACTOR : 1 - ZOOM_FACTOR;
         const newWidth = WINDOW.WIDTH * zoomAmount;
         const newHeight = WINDOW.HEIGHT * zoomAmount;
-        
-        // Ограничение зума
+
         if (newHeight < MIN_ZOOM || newHeight > MAX_ZOOM) return;
-        
-        // Масштабирование относительно точки курсора
+
         const scale = newWidth / WINDOW.WIDTH;
         WINDOW.LEFT = x - (x - WINDOW.LEFT) * scale;
         WINDOW.TOP = y - (y - WINDOW.TOP) * scale;
-        
+
         WINDOW.WIDTH = newWidth;
         WINDOW.HEIGHT = newHeight;
-        
     };
 
     const mouseMiddleDown = (x: number, y: number, screenX?: number, screenY?: number) => {
@@ -122,8 +207,9 @@ const GameCanvas: React.FC = () => {
     const keyDown = (event: KeyboardEvent) => {
         if (event.key !== 'Escape') return;
     };
-    
+
     useEffect(() => {
+
         canvas = CanvasRef({
             parentId: GAME_FIELD,
             WIDTH: WINDOW.WIDTH,
@@ -138,17 +224,23 @@ const GameCanvas: React.FC = () => {
         canvas.context.imageSmoothingEnabled = false;
         canvas.contextV.imageSmoothingEnabled = false;
 
-
         render(0);
 
         return () => {
+            if (WINDOW.WIDTH !== INITIAL_WINDOW_WIDTH) {
+                WINDOW.WIDTH = INITIAL_WINDOW_WIDTH;
+                WINDOW.HEIGHT = INITIAL_WINDOW_HEIGHT;
+                WINDOW.LEFT = INITIAL_WINDOW_LEFT;
+                WINDOW.TOP = INITIAL_WINDOW_TOP;
+            }
+
             canvas = null;
         };
     }, []);
 
     return (
         <div id={GAME_FIELD} className={GAME_FIELD}></div>
-    )
+    );
 };
 
 export default GameCanvas;

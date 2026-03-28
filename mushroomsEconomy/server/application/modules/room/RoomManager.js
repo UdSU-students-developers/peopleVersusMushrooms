@@ -7,7 +7,7 @@ class RoomManager extends BaseManager {
         super(options);
 
         this.users = {};
-        this.lobbies = {};
+        this.rooms = {};
         this.userToRoom = {}; 
         this.init();
     }
@@ -32,6 +32,11 @@ class RoomManager extends BaseManager {
 
     sendError(socket, code) {
         socket.emit(CONFIG.SOCKET.ERROR, this.answer.bad(code));
+    }
+
+    socketCreateRoom(socket, data) {
+        this.rooms[socket.id] = new Room(data.guid, data.roomName, this.common);
+        socket.emit
     }
 
 }

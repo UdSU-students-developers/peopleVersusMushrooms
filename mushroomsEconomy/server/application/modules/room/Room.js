@@ -1,7 +1,7 @@
 class Room {
-    constructor({ creatorGuid, roomName, common }) {
+    constructor(creatorGuid, roomName, common) {
         this.guid = common.guid();
-        this.name = roomName;
+        this.roomName = roomName;
         this.creatorGuid = creatorGuid;
         
         this.participants = new Set(); 

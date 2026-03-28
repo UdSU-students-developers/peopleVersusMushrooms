@@ -41,25 +41,24 @@ const CONFIG = {
  
         START_GAME: 'START_GAME',
 		UPDATE_SCENE: 'UPDATE_SCENE',
-        GET_SCENE: 'GET_SCENE',
     },
     
     ECONOMY: {
         INTERVAL: 200, //ms
-        MAX_ATTEMPTS: 10, // Для юнитов количество повторений при застревании 
+
+        MAP: {
+            GRASS: 0,
+            WATER: 1,
+            STONE: 2,
+        },
+
         MYCELIUM: {
             HP: 1,
             GROW_SPEED: 100,
-            GROW_LEVEL_UP: 2,
+            GROW_LEVEL_UP: 2000,
             MAX_LEVEL: 3,
             POWER: 3,
-        },
-
-        WORKER: {
-            HP: 1,
-            SPEED: 100,
-
-        },
+        }
     }
 };
 

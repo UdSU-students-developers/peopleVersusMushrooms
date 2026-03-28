@@ -21,7 +21,6 @@ class LobbyManager extends BaseManager {
         io.on('connection', (socket) => {
             console.log(`LobbyManager: Client connected: ${socket.id}`);
 
-            socket.on(CONFIG.SOCKET.LOGIN, (data) => this.handleLogin(socket, data));
             socket.on(CONFIG.SOCKET.CREATE_ROOM, (data) => this.handleCreateRoom(socket, data));
             socket.on(CONFIG.SOCKET.JOIN_ROOM, (data) => this.handleJoinRoom(socket, data));
             socket.on(CONFIG.SOCKET.LEAVE_ROOM, (data) => this.handleLeaveRoom(socket, data));

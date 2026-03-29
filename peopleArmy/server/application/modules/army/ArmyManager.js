@@ -16,6 +16,7 @@ class ArmyManager extends BaseManager {
 
         this.mediator.set(this.TRIGGERS.SET_UNIT_TARGET, (data) => this.setUnitTarget(data));
         this.mediator.set(this.TRIGGERS.CREATE_UNIT, (data) => this.createUnit(data));
+        this.mediator.set(this.TRIGGERS.GET_ALL_UNITS, () => this.getAllUnits());
     }
 
     /**
@@ -67,6 +68,14 @@ class ArmyManager extends BaseManager {
         console.log('Юнит создан:', unit.get());
         console.log('Армия:', this.army.units);
         return { ok: true, data: unit.get() };
+    }
+
+    /**
+     * mediator.get(GET_ALL_UNITS)
+     * @returns {{ ok: true, data: object[] }}
+     */
+    getAllUnits() {
+        return { ok: true, data: this.army.getAllUnits() };
     }
 
     destructor() {

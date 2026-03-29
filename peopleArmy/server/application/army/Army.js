@@ -108,6 +108,10 @@ class Army {
         console.log('===========================\n');
     }
 
+    getAllUnits() {
+        return this.units.map((unit) => unit.get());
+    }
+
     destructor() {
         if (this.interval) {
             clearInterval(this.interval);

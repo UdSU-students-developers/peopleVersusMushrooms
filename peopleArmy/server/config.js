@@ -16,6 +16,7 @@ const CONFIG = {
             LOGOUT: "LOGOUT",                     // триггер для логаута (возвращает true/false)
             SET_UNIT_TARGET: "SET_UNIT_TARGET",   // задать юниту цель движения (см. ArmyManager)
             CREATE_UNIT: "CREATE_UNIT",           // создать юнита (см. ArmyManager)
+            GET_ALL_UNITS: "GET_ALL_UNITS",       // получить всех юнитов армии (см. ArmyManager)
         },
     },
 

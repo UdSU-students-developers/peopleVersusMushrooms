@@ -15,7 +15,7 @@ const Login: React.FC<IBasePage> = (props: IBasePage) => {
         const client = io(CONFIG.SERVER_URL);
         setSocket(client);
 
-        client.on(CONFIG.SOCKET.LOGIN, (response: any) => {
+        client.on(CONFIG.SOCKETS.LOGIN, (response: any) => {
             if (response.result === 'ok') {
                 const userData = response?.data ?? null;
                 const token = userData?.token ?? null;
@@ -28,7 +28,7 @@ const Login: React.FC<IBasePage> = (props: IBasePage) => {
         });
 
         return () => {
-            client.off(CONFIG.SOCKET.LOGIN);
+            client.off(CONFIG.SOCKETS.LOGIN);
             client.disconnect();
             setSocket(null);
         };
@@ -36,7 +36,7 @@ const Login: React.FC<IBasePage> = (props: IBasePage) => {
 
     const login = () => {
         setError('');
-        socket?.emit(CONFIG.SOCKET.LOGIN, {
+        socket?.emit(CONFIG.SOCKETS.LOGIN, {
             name: name.trim(),
             password: password.trim(),
         });

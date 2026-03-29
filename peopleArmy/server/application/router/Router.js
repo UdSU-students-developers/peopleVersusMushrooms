@@ -8,11 +8,10 @@ const {
     notFoundHandler,
 } = require('./handlers');
 
-function Router(mediator) {
-
-    router.get('/unit/create/:guid/:x/:y', createUnitHandler(mediator));
-    router.get('/unit/all', getAllUnitsHandler(mediator));
-    router.get('/unit/target/:guid/:targetX/:targetY', setUnitTargetHandler(mediator));
+function Router(mediator, answer) {
+    router.get('/unit/create/:guid/:x/:y', createUnitHandler(mediator, answer));
+    router.get('/unit/all', getAllUnitsHandler(mediator, answer));
+    router.get('/unit/target/:guid/:targetX/:targetY', setUnitTargetHandler(mediator, answer));
     router.all('/*path', notFoundHandler);
     return router;
 }

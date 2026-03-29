@@ -8,24 +8,25 @@ const CONFIG = {
 
     MEDIATOR: {
         EVENTS: {
-            USER_REGISTERED: "USER_REGISTERED",   // вызывается после успешной регистрации
+            START_GAME: 'START_GAME',
         },
         TRIGGERS: {
-            REGISTER: "REGISTER",                 // триггер для регистрации (возвращает результат)
-            LOGIN: "LOGIN",                       // триггер для логина (возвращает пользователя)
-            LOGOUT: "LOGOUT",                     // триггер для логаута (возвращает true/false)
+            GET_USER_BY_GUID: 'GET_USER_BY_GUID',
+
             SET_UNIT_TARGET: "SET_UNIT_TARGET",   // задать юниту цель движения (см. ArmyManager)
             CREATE_UNIT: "CREATE_UNIT",           // создать юнита (см. ArmyManager)
             GET_ALL_UNITS: "GET_ALL_UNITS",       // получить всех юнитов армии (см. ArmyManager)
         },
     },
 
-    SOCKET: {
+    SOCKETS: {
         MESSAGE_FROM_CLIENT: "message_from_client",
         MESSAGE_TO_CLIENTS: "message_to_clients",
         REGISTRATION: "registration",
         LOGIN: "login",
         LOGOUT: "logout",
+
+        UPDATE_ARMY: 'UPDATE_ARMY',
     },
 
     ARMY: {

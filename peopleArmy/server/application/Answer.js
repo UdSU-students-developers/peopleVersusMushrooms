@@ -27,7 +27,7 @@ class Answer {
      * @returns {{ result: "ok", data: * }} или объект ошибки, если data нет.
      */
     good(data) {
-        if (data == null) {
+        if (data === null) {
             return this.bad(9000);
         }
         return {
@@ -37,4 +37,4 @@ class Answer {
     }
 }
 
-module.exports = new Answer();
+module.exports = Answer;

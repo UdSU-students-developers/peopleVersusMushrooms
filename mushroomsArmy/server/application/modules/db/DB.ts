@@ -73,7 +73,7 @@ class DB {
     }
 
     async invalidateToken(id: number): Promise<any>{
-        return await this.orm.update('users', ['token', 'token_expiration'], [undefined, undefined], { id });
+        return await this.orm.update('users', ['token', 'token_expiration'], [null, null], { id });
     }
 
     async getUserByValidToken(token: string): Promise<User | null> {

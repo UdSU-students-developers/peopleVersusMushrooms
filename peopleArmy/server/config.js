@@ -30,19 +30,6 @@ const CONFIG = {
 
     ARMY: {
         INTERVAL: 100, //ms
-
-        SOLDIER: {
-            HP: 10,
-            SPEED: 1,
-            RANGE: 3, // дальность стрельбы
-            VISIBLE: 5 // дальность видимости
-        },
-        BMP: {
-            HP: 100,
-            SPEED: 3,
-            RANGE: 5, // дальность стрельбы
-            VISIBLE: 3 // дальность видимости
-        },
     }
 }
 

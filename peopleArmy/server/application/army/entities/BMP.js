@@ -1,11 +1,9 @@
-const CONFIG = require("../../../config");
 const Unit = require("./Unit");
-
-const { HP, SPEED, RANGE, VISIBLE } = CONFIG.ARMY.BMP;
 
 class BMP extends Unit {
     constructor(options) {
         super(options);
+        const { HP, SPEED, RANGE, VISIBLE } = options.stats;
         this.hp = HP;
         this.speed = SPEED;
         this.range = RANGE;

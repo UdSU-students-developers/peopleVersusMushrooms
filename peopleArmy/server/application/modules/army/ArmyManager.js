@@ -9,6 +9,31 @@ class ArmyManager extends BaseManager {
 
         this.army = {};
 
+        this.unitTypesByCode = {};
+        this.unitTypesLoaded = false;
+        this.unitTypesLoadError = null;
+
+        this.db.getUnitTypes((error, rows) => {
+            if (error) {
+                this.unitTypesLoadError = error;
+                this.unitTypesLoaded = true;
+                return;
+            }
+
+            if (rows) {
+                for (const row of rows) {
+                    this.unitTypesByCode[String(row.code).toLowerCase()] = {
+                        HP: row.hp,
+                        SPEED: row.speed,
+                        RANGE: row.unit_range,
+                        VISIBLE: row.visible,
+                    };
+                }
+            }
+
+            this.unitTypesLoaded = true;
+        });
+
         // sockets
         if (!this.io) return;
         this.io.on('connection', (socket) => {
@@ -76,10 +101,20 @@ class ArmyManager extends BaseManager {
         if (!Number.isFinite(x) || !Number.isFinite(y)) {
             return { ok: false, error: 'BAD_PAYLOAD' };
         }
+        if (!this.unitTypesLoaded) {
+            return { ok: false, error: 'UNIT_TYPES_NOT_READY' };
+        }
+        if (this.unitTypesLoadError) {
+            return { ok: false, error: 'UNIT_TYPES_LOAD_FAILED' };
+        }
         if (this.army.units.some((u) => String(u.guid) === String(guid))) {
             return { ok: false, error: 'DUPLICATE_GUID' };
         }
-        const options = { guid, x, y };
+        const stats = this.unitTypesByCode[type];
+        if (!stats) {
+            return { ok: false, error: 'BAD_PAYLOAD' };
+        }
+        const options = { guid, x, y, stats };
         const unit = type === 'bmp' ? new BMP(options) : new Soldier(options);
         this.army.units.push(unit);
         console.log('Юнит создан:', unit.get());

@@ -12,6 +12,14 @@ class DB {
         this.db.close();
     }
 
+    getUnitTypes(callback) {
+        this.db.all(
+            'SELECT code, hp, speed, unit_range, visible FROM unit_types',
+            [],
+            callback
+        );
+    }
+
     getUserByName(username) {
         return this.orm.get('users', { username });
     }

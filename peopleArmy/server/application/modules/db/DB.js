@@ -16,6 +16,10 @@ class DB {
         return this.orm.update('users', ['token'], [token], { id });
     }
 
+    getUnitTypes() {
+        return this.orm.all('unit_types', null);
+    }
+
     destructor() {
         this.db.close();
     }

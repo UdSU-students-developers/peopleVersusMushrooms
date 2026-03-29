@@ -1,13 +1,13 @@
 const Answer = require('../../Answer');
 
 module.exports = (mediator) => {
-    return (req, res) => {
+    return async (req, res) => {
         const { guid, targetX, targetY } = req.params;
-        const result = mediator.get(mediator.TRIGGERS.SET_UNIT_TARGET, {
+        const result = await Promise.resolve(mediator.get(mediator.TRIGGERS.SET_UNIT_TARGET, {
             guid,
             targetX,
             targetY,
-        });
+        }));
         if (!result?.ok) {
             if (result?.error === 'UNIT_NOT_FOUND') {
                 return res.status(404).json(Answer.bad(404));

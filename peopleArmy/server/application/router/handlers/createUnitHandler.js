@@ -1,15 +1,15 @@
 const Answer = require('../../Answer');
 
 module.exports = (mediator) => {
-    return (req, res) => {
+    return async (req, res) => {
         const { guid, x, y } = req.params;
         const type = req.query.type;
-        const result = mediator.get(mediator.TRIGGERS.CREATE_UNIT, {
+        const result = await Promise.resolve(mediator.get(mediator.TRIGGERS.CREATE_UNIT, {
             guid,
             x,
             y,
             type,
-        });
+        }));
         if (!result?.ok) {
             if (result?.error === 'DUPLICATE_GUID') {
                 return res.status(422).json(Answer.bad(422));

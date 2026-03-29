@@ -7,12 +7,25 @@ class ArmyManager extends BaseManager {
     constructor(options) {
         super(options);
 
-        this.army = new Army({
-            map: null,
-            buildings: [],
-            common: this.common,
-            guid: null,
-        });
+        this._unitTypesByCode = new Map();
+
+        this._ready = this.db.getUnitTypes().then((rows) => {
+                for (const row of rows) {
+                    this._unitTypesByCode.set(String(row.code).toLowerCase(), {
+                        HP: row.hp,
+                        SPEED: row.speed,
+                        RANGE: row.unit_range,
+                        VISIBLE: row.visible,
+                    });
+                }
+
+                this.army = new Army({
+                    map: null,
+                    buildings: [],
+                    common: this.common,
+                    guid: null,
+                });
+            })
 
         this.mediator.set(this.TRIGGERS.SET_UNIT_TARGET, (data) => this.setUnitTarget(data));
         this.mediator.set(this.TRIGGERS.CREATE_UNIT, (data) => this.createUnit(data));
@@ -22,7 +35,8 @@ class ArmyManager extends BaseManager {
      * mediator.get(SET_UNIT_TARGET, { guid, targetX, targetY }) — alias: unitGuid, x, y
      * @returns {{ ok: true, data: object } | { ok: false, error: string }}
      */
-    setUnitTarget(data) {
+    async setUnitTarget(data) {
+        await this._ready;
         const guid = data?.guid;
         const rawTx = data?.targetX
         const rawTy = data?.targetY
@@ -47,7 +61,8 @@ class ArmyManager extends BaseManager {
      * type: "soldier" | "bmp" (по умолчанию soldier)
      * @returns {{ ok: true, data: object } | { ok: false, error: string }}
      */
-    createUnit(data) {
+    async createUnit(data) {
+        await this._ready;
         const guid = data?.guid;
         const x = Number(data?.x);
         const y = Number(data?.y);
@@ -61,16 +76,20 @@ class ArmyManager extends BaseManager {
         if (this.army.units.some((u) => String(u.guid) === String(guid))) {
             return { ok: false, error: 'DUPLICATE_GUID' };
         }
-        const options = { guid, x, y };
+        const stats = this._unitTypesByCode.get(type);
+        if (!stats) {
+            return { ok: false, error: 'BAD_PAYLOAD' };
+        }
+        const options = { guid, x, y, stats };
         const unit = type === 'bmp' ? new BMP(options) : new Soldier(options);
         this.army.units.push(unit);
-        console.log('Юнит создан:', unit.get());
-        console.log('Армия:', this.army.units);
         return { ok: true, data: unit.get() };
     }
 
     destructor() {
-        this.army.destructor();
+        if (this.army) {
+            this.army.destructor();
+        }
     }
 }
 

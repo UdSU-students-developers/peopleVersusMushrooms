@@ -49,7 +49,72 @@ class Server {
                 this.mediator.call(LOGOUT, data);
             }
         });
+
+        this.socket.on(MEDIATOR.EVENTS.CREATE_ROOM, (data: TAnswer<any>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { CREATE_ROOM } = this.mediator.getEventTypes();
+                this.mediator.call(CREATE_ROOM, data);
+            }
+        });
+
+        this.socket.on(MEDIATOR.EVENTS.JOIN_TO_ROOM, (data: TAnswer<any>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { JOIN_TO_ROOM } = this.mediator.getEventTypes();
+                this.mediator.call(JOIN_TO_ROOM, data);
+            }
+        });
+
+        this.socket.on(MEDIATOR.EVENTS.LEAVE_ROOM, (data: TAnswer<any>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { LEAVE_ROOM } = this.mediator.getEventTypes();
+                this.mediator.call(LEAVE_ROOM, data);
+            }
+        });
+
+        this.socket.on(MEDIATOR.EVENTS.DROP_FROM_ROOM, (data: TAnswer<any>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { DROP_FROM_ROOM } = this.mediator.getEventTypes();
+                this.mediator.call(DROP_FROM_ROOM, data);
+            }
+        });
+
+        this.socket.on(MEDIATOR.EVENTS.START_GAME, (data: TAnswer<any>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { START_GAME } = this.mediator.getEventTypes();
+                this.mediator.call(START_GAME, data);
+            }
+        });
+
+        this.socket.on(MEDIATOR.EVENTS.GET_ROOMS, (data: TAnswer<any>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { GET_ROOMS } = this.mediator.getEventTypes();
+                this.mediator.call(GET_ROOMS, data);
+            }
+        });
+
+        this.socket.on(MEDIATOR.EVENTS.ROOM_UPDATED, (data: TAnswer<any>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { ROOM_UPDATED } = this.mediator.getEventTypes();
+                this.mediator.call(ROOM_UPDATED, data);
+            }
+        });
+
+        this.socket.on(MEDIATOR.EVENTS.ROOMS_LIST_UPDATED, (data: TAnswer<any>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { ROOMS_LIST_UPDATED } = this.mediator.getEventTypes();
+                this.mediator.call(ROOMS_LIST_UPDATED, data);
+            }
+        });
     }
+
     _validate(data: any) {
         if (data.result === "ok") {
             return data.data;
@@ -99,6 +164,30 @@ class Server {
 
     logout(): void {
         this.socket.emit(MEDIATOR.EVENTS.LOGOUT);
+    }
+
+    createRoom(roomName: string): void {
+        this.socket.emit(MEDIATOR.EVENTS.CREATE_ROOM, { roomName });
+    }
+
+    joinToRoom(roomGuid: string): void {
+        this.socket.emit(MEDIATOR.EVENTS.JOIN_TO_ROOM, { roomGuid });
+    }
+
+    leaveRoom(): void {
+        this.socket.emit(MEDIATOR.EVENTS.LEAVE_ROOM, {});
+    }
+
+    dropFromRoom(targetGuid: string): void {
+        this.socket.emit(MEDIATOR.EVENTS.DROP_FROM_ROOM, { targetGuid });
+    }
+
+    startGame(): void {
+        this.socket.emit(MEDIATOR.EVENTS.START_GAME, {});
+    }
+
+    getRooms(): void {
+        this.socket.emit(MEDIATOR.EVENTS.GET_ROOMS, {});
     }
 }
 

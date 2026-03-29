@@ -1,5 +1,8 @@
+const CONFIG = require('../../../config');
 const BaseManager = require('../BaseManager');
 const User = require('./User');
+
+const { REGISTRATION, LOGIN, LOGOUT } = CONFIG.SOCKETS;
 
 class UserManager extends BaseManager {
     constructor(options) {
@@ -8,9 +11,9 @@ class UserManager extends BaseManager {
         // sockets
         if (!this.io) return;
         this.io.on('connection', (socket) => {
-            socket.on(this.SOCKETS.REGISTRATION, (data) => this.socketRegistration(data, socket));
-            socket.on(this.SOCKETS.LOGIN, (data) => this.socketLogin(data, socket));
-            socket.on(this.SOCKETS.LOGOUT, (data) => this.socketLogout(data, socket));
+            socket.on(REGISTRATION, (data) => this.socketRegistration(data, socket));
+            socket.on(LOGIN, (data) => this.socketLogin(data, socket));
+            socket.on(LOGOUT, (data) => this.socketLogout(data, socket));
         });
         // mediator event subscribers
         //...
@@ -39,7 +42,7 @@ class UserManager extends BaseManager {
             return socket.emit(REGISTRATION, this.answer.bad(13));
         }
         const user = new User({
-            id: this.db,
+            db: this.db,
             common: this.common,
             socketId: socket.id
         });
@@ -57,7 +60,7 @@ class UserManager extends BaseManager {
             return socket.emit(LOGIN, this.answer.bad(13));
         }
         const user = new User({
-            id: this.db,
+            db: this.db,
             common: this.common,
             socketId: socket.id
         });

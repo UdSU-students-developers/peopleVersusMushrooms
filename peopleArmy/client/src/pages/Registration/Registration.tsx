@@ -15,7 +15,7 @@ const Registration: React.FC<IBasePage> = (props: IBasePage) => {
         const client = io(CONFIG.SERVER_URL);
         setSocket(client);
 
-        client.on(CONFIG.SOCKET.REGISTRATION, (response: any) => {
+        client.on(CONFIG.SOCKETS.REGISTRATION, (response: any) => {
             if (response.result === 'ok') {
                 const userData = response?.data ?? null;
                 const token = userData?.token ?? null;
@@ -28,7 +28,7 @@ const Registration: React.FC<IBasePage> = (props: IBasePage) => {
         });
 
         return () => {
-            client.off(CONFIG.SOCKET.REGISTRATION);
+            client.off(CONFIG.SOCKETS.REGISTRATION);
             client.disconnect();
             setSocket(null);
         };
@@ -36,7 +36,7 @@ const Registration: React.FC<IBasePage> = (props: IBasePage) => {
 
     const register = () => {
         setError('');
-        socket?.emit(CONFIG.SOCKET.REGISTRATION, {
+        socket?.emit(CONFIG.SOCKETS.REGISTRATION, {
             name: name.trim(),
             password: password.trim(),
         });

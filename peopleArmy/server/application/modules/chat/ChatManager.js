@@ -1,7 +1,7 @@
 const CONFIG = require('../../../config');
 const BaseManager = require('../BaseManager');
 
-const { MESSAGE_FROM_CLIENT, MESSAGE_TO_CLIENTS } = CONFIG.SOCKET;
+const { MESSAGE_FROM_CLIENT, MESSAGE_TO_CLIENTS } = CONFIG.SOCKETS;
 
 class ChatManager extends BaseManager {
     constructor(options) {
@@ -18,6 +18,7 @@ class ChatManager extends BaseManager {
         const { text, timestamp, guid } = data;
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
         if (user && text && timestamp) {
+            user.socketId = socket.id;
             const payload = {
                 type: 'message',
                 text,

@@ -42,6 +42,19 @@ class User {
         this.token_expiration = undefined;
     }
 
+    static restoreFromData({db, common, socketId }:UserConstructorOptions, userData: User): User {
+        const user = new User({db, common, socketId });
+        
+        user.id = userData.id;
+        user.guid = userData.guid;
+        user.name = userData.name;
+        user.passwordHash = userData.passwordHash;
+        user.token = userData.token;
+        user.token_expiration = userData.token_expiration;
+
+        return user;
+    }
+
     async get(): Promise<{ name?: string; guid?: string }> {
         return {
             name: this.name,

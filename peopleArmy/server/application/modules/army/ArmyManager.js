@@ -46,7 +46,7 @@ class ArmyManager extends BaseManager {
     }
 
     destructor() {
-        this.army.destructor();
+        Object.values(this.army).forEach((army) => army.destructor());
     }
 
     /* PRIVATE */
@@ -62,7 +62,8 @@ class ArmyManager extends BaseManager {
 
     /* TRIGGERS */
     /**
-     * mediator.get(SET_UNIT_TARGET, { guid, targetX, targetY }) — alias: unitGuid, x, y
+     * mediator.get(SET_UNIT_TARGET, { guid, targetX, targetY })
+     * guid — guid пользователя (владелец армии и его юнита)
      * @returns {{ ok: true, data: object } | { ok: false, error: string }}
      */
     setUnitTarget(data) {
@@ -77,7 +78,11 @@ class ArmyManager extends BaseManager {
         if (!Number.isFinite(tx) || !Number.isFinite(ty)) {
             return { ok: false, error: 'BAD_PAYLOAD' };
         }
-        const unit = this.army.units.find((u) => String(u.guid) === String(guid));
+        const army = this.army[guid];
+        if (!army) {
+            return { ok: false, error: 'UNIT_NOT_FOUND' };
+        }
+        const unit = army.units.find((u) => String(u.guid) === String(guid));
         if (!unit) {
             return { ok: false, error: 'UNIT_NOT_FOUND' };
         }
@@ -87,6 +92,7 @@ class ArmyManager extends BaseManager {
 
     /**
      * mediator.get(CREATE_UNIT, { guid, x, y, type? })
+     * guid — guid пользователя (владелец армии)
      * type: "soldier" | "bmp" (по умолчанию soldier)
      * @returns {{ ok: true, data: object } | { ok: false, error: string }}
      */
@@ -107,7 +113,11 @@ class ArmyManager extends BaseManager {
         if (this.unitTypesLoadError) {
             return { ok: false, error: 'UNIT_TYPES_LOAD_FAILED' };
         }
-        if (this.army.units.some((u) => String(u.guid) === String(guid))) {
+        const army = this.army[guid];
+        if (!army) {
+            return { ok: false, error: 'ARMY_NOT_FOUND' };
+        }
+        if (army.units.some((u) => String(u.guid) === String(guid))) {
             return { ok: false, error: 'DUPLICATE_GUID' };
         }
         const stats = this.unitTypesByCode[type];
@@ -116,9 +126,9 @@ class ArmyManager extends BaseManager {
         }
         const options = { guid, x, y, stats };
         const unit = type === 'bmp' ? new BMP(options) : new Soldier(options);
-        this.army.units.push(unit);
+        army.units.push(unit);
         console.log('Юнит создан:', unit.get());
-        console.log('Армия:', this.army.units);
+        console.log('Армия:', army.units);
         return { ok: true, data: unit.get() };
     }
 

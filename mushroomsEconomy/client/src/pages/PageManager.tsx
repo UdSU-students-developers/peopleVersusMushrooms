@@ -3,7 +3,7 @@ import Registration from './Registration/Registration';
 import Login from './Login/Login';
 import Chat from './Chat/Chat'
 import Game from './Game/Game';
-import GameMenu from './Game/GameMenu';
+import GameMenu from './GameMenu/GameMenu';
 
 import CONFIG from '../config';
 

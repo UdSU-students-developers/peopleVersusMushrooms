@@ -70,19 +70,11 @@ export type TSlimePool = {
     ttl: number;
 }
 
-//Данные карты
+// Карта — матрица 50x50 (0=равнина, 1=вода, 2=горы, null=неизвестно)
+export type TMapData = (number | null)[][];
 
-export type TMapData = {
-    grid: number[][];
-    width: number;
-    height: number;
-    cellSize: number;
-    center: { x: number; y: number };
-}
-
-// Снимок состояния игры
-export type TGameState = {
+// Состояние армии (приходит каждые 200мс через game:state)
+export type TArmyState = {
     units: TUnit[];
     slimePools: TSlimePool[];
-    mapData: TMapData;
 }

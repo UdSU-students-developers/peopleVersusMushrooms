@@ -1,7 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import CONFIG from '../../config';
 import Mediator from '../Mediator/Mediator';
-import { TGameState, TResponse, TUser } from './types';
+import { TArmyState, TResponse, TUser } from './types';
 import { authStorage } from '../../utils/authStorage';
 
 const { HOST, SOCKET } = CONFIG;
@@ -145,7 +145,7 @@ class Server {
         }
     }
 
-    private handleGameState(data: TGameState) {
+    private handleGameState(data: TArmyState) {
         const GAME_STATE_UPDATED = this.mediator.getEventTypes().GAME_STATE_UPDATED;
         this.mediator.call(GAME_STATE_UPDATED, data);
     }

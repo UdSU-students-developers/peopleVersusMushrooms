@@ -13,7 +13,7 @@ interface Config {
             ARMY_UPDATE: string;  //  payload: { armyGuid: string, units: Unit[] }
             GAME_TICK: string;  // payload: { tick: number, timestamp: number, deltaTime: number }
             UNIT_DIED: string;  // payload: { unitId: string, armyGuid: string}
-            UNIT_EXPLODED: string; // payload: { unitId: string, position: { x: number, y:number } }
+            UNIT_EXPLODED: string; // payload: { unitId: string, position: {x: number, y:number } }
         };
         TRIGGERS: {
             GET_USER_BY_GUID: string; // payload: { userGuid: string } -> returns: User 
@@ -22,7 +22,7 @@ interface Config {
 
         };
     };
-   SOCKET: {
+    SOCKET: {
         REGISTRATION: string;
         LOGIN: string;
         LOGOUT: string;
@@ -44,7 +44,7 @@ const CONFIG: Config = {
         NAME: 'mushroomsArmy.db',
     },
 
-   MEDIATOR: {
+    MEDIATOR: {
         EVENTS: {
             GAME_START: 'GAME_START',
             ARMY_UPDATE: 'ARMY_UPDATE',

@@ -7,6 +7,10 @@ class DB {
         this.orm = new ORM(this.db);
     }
 
+    destructor() {
+        this.db.close();
+    }
+
     getUserByName(username) {
         return this.orm.get('users', { username });
     }
@@ -15,9 +19,14 @@ class DB {
         return this.orm.update('users', ['token'], [token], { id });
     }
 
-    destructor() {
-        this.db.close();
+    registration(username, password, guid) {
+        this.orm.insert(
+            'users',
+            ['username', 'password', 'guid'],
+            [username, password, guid],
+        );
     }
+
 }
 
 module.exports = DB;

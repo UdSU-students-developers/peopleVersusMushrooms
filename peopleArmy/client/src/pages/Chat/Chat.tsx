@@ -10,7 +10,7 @@ interface Message {
     from: string;
     timestamp: string;
 }
-const Chat: React.FC<IBasePage> = () => {
+const Chat: React.FC<IBasePage> = ({ mediator }) => {
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState<Message[]>([]);
     const [isConnected, setIsConnected] = useState(false);
@@ -22,12 +22,12 @@ const Chat: React.FC<IBasePage> = () => {
 
         client.on('connect', () => setIsConnected(true));
         client.on('disconnect', () => setIsConnected(false));
-        client.on(CONFIG.SOCKET.MESSAGE_TO_CLIENTS, (data) => {
+        client.on(CONFIG.SOCKETS.MESSAGE_TO_CLIENTS, (data) => {
             setMessages((prev) => prev.concat({
                 id: `${Date.now()}-${Math.random()}`,
                 text: data?.data?.text || '',
-                from: data?.from || 'server',
-                timestamp: data?.timestamp || new Date().toISOString(),
+                from: data?.data?.from || 'server',
+                timestamp: data?.data?.timestamp || new Date().toISOString(),
             }));
         });
 
@@ -39,9 +39,13 @@ const Chat: React.FC<IBasePage> = () => {
     const sendMessage = () => {
         const text = message.trim();
         if (!text || !socket) return;
-        socket.emit(CONFIG.SOCKET.MESSAGE_FROM_CLIENT, {
+        const user = mediator.get(CONFIG.MEDIATOR.TRIGGERS.GET_STORE, 'user') as { guid?: string } | null;
+        const guid = user?.guid;
+        if (!guid) return;
+        socket.emit(CONFIG.SOCKETS.MESSAGE_FROM_CLIENT, {
             text,
             timestamp: new Date().toISOString(),
+            guid,
         });
         setMessage('');
     };

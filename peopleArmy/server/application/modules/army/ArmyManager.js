@@ -70,7 +70,7 @@ class ArmyManager extends BaseManager {
         const guid = data?.guid;
         const rawTx = data?.targetX
         const rawTy = data?.targetY
-        if (guid === null || rawTx === undefined || rawTy === null) {
+        if (guid === null || rawTx === undefined || rawTy === undefined) {
             return { ok: false, error: 'BAD_PAYLOAD' };
         }
         const tx = Number(rawTx);

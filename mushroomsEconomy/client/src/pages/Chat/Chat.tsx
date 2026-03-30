@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, KeyboardEvent, useContext } from "react";
 import { MediatorContext, ServerContext } from "../../App";
-import { IBasePage } from '../PageManager';
+import { IBasePage, PAGES } from '../PageManager';
 import { TUser, TMessage, TMessages } from "../../services/Server/types";
 import CONFIG from "../../config";
 import Button from "../../components/Button/Button";
@@ -112,6 +112,10 @@ const Chat: React.FC<IBasePage> = (props: IBasePage) => {
         }
     }
 
+    const handleBackToGame = () => {
+        setPage(PAGES.GAME);
+    };
+
     const getAuthorColor = (author: string) => {
         let hash = 0;
         for (let i = 0; i < author.length; i++) {
@@ -135,6 +139,9 @@ const Chat: React.FC<IBasePage> = (props: IBasePage) => {
                 <div className="user-info">
                     <span>{user.name}</span>
                 </div>
+                <button className="chat-close-btn" onClick={handleBackToGame}>
+                    &times;
+                </button>
             </div>
 
             <div className="chat-messages">

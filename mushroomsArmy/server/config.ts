@@ -9,10 +9,13 @@ interface Config {
     };
     MEDIATOR: {
         EVENTS: {
-            EXAMPLE_EVENT: string;
+            START_GAME: string;  // payload: { guid: string, map: number[][], buildings: any[] }
+            ARMY_UPDATE: string;  // payload: { armyGuid: string, units: Unit[] }
+            UNIT_DIED: string;  // payload: { unitId: string, armyGuid: string }
+            UNIT_EXPLODED: string; // payload: { unitId: string, position: {x: number, y: number} }
         };
         TRIGGERS: {
-            EXAMPLE_TRIGGER: string;
+            GET_USER_BY_GUID: string; // payload: guid -> returns: User
         };
     };
     SOCKET: {
@@ -21,6 +24,8 @@ interface Config {
         LOGOUT: string;
         LOBBY_START: string;
         VALIDATE_TOKEN: string;
+        GAME_STATE: string;      
+        GAME_OVER: string; 
     };
 }
 
@@ -37,10 +42,13 @@ const CONFIG: Config = {
 
     MEDIATOR: {
         EVENTS: {
-            EXAMPLE_EVENT: "EXAMPLE_EVENT",
+            START_GAME: 'START_GAME',
+            ARMY_UPDATE: 'ARMY_UPDATE',
+            UNIT_DIED: 'UNIT_DIED',
+            UNIT_EXPLODED: 'UNIT_EXPLODED'
         },
         TRIGGERS: {
-            EXAMPLE_TRIGGER: "EXAMPLE_TRIGGER",
+            GET_USER_BY_GUID: 'GET_USER_BY_GUID',
         },
     },
     SOCKET: {
@@ -48,7 +56,9 @@ const CONFIG: Config = {
         LOGIN: 'login',
         LOGOUT: 'logout',
         LOBBY_START: 'lobby:start',
-        VALIDATE_TOKEN: 'auth:validate'
+        VALIDATE_TOKEN: 'auth:validate',
+        GAME_STATE: 'game:state',    
+        GAME_OVER: 'game:over' 
     }
 };
 

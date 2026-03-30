@@ -10,7 +10,7 @@ function Router(mediator, answer) {
 
     // ============ MAP ROUTES ============
     // для http методов из MapManager
-    router.get('/getVisibility/:mapGuid/:userGuid', getVisibilityHandler(mediator, answer));
+    //router.get('/getVisibility/:mapGuid/:userGuid', getVisibilityHandler(mediator, answer));
     //еще 4
 
     // ============ NOT FOUND ============

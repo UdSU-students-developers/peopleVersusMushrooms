@@ -2,7 +2,7 @@ class Player {
     constructor(guid, role) {
         this.guid = guid;
         this.role = role;
-        this.ready = ready;
+        this.ready = false;
     }
 
     get() {
@@ -25,3 +25,5 @@ class Player {
         return this.ready;
     }
 }
+
+module.exports = Player;

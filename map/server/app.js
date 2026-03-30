@@ -45,7 +45,7 @@ app.use(express.static('public'));
 
 
 // Создаем роутер
-const router = new Router(mediator);
+const router = new Router(mediator, answer);
 app.use('/', router);
 
 

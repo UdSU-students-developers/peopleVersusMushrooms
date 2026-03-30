@@ -6,7 +6,6 @@ class User {
 
         this.id = null;
         this.login = null;
-        this.nickname = null;
         this.guid = null;
         this.token = null;
     }
@@ -14,14 +13,12 @@ class User {
     get() {
         return {
             guid: this.guid,
-            nickname: this.nickname,
         };
     }
 
     getSelf() {
         return {
             guid: this.guid,
-            nickname: this.nickname,
             token: this.token,
         };
     }
@@ -29,7 +26,6 @@ class User {
     _fillData(userData, token) {
         this.id = userData.id;
         this.login = userData.login;
-        this.nickname = userData.nickname;
         this.guid = userData.guid;
         this.token = token;
     }
@@ -51,14 +47,14 @@ class User {
         return this;
     }
 
-    async registration(login, passwordHash, nickname) {
+    async registration(login, passwordHash) {
         const existingUser = await this.db.getUserByLogin(login);
         if (existingUser) return null;
 
         const guid = this.common.guid();
         const token = this.common.md5(`${Math.random()}`);
 
-        await this.db.createUser(login, passwordHash, nickname, guid, token);
+        await this.db.createUser(login, passwordHash, guid, token);
 
         const userData = await this.db.getUserByGuid(guid);
         this._fillData(userData, token);
@@ -70,7 +66,6 @@ class User {
         await this.db.clearToken(this.guid);
         this.id = null;
         this.login = null;
-        this.nickname = null;
         this.guid = null;
         this.token = null;
         

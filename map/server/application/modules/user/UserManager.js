@@ -17,7 +17,6 @@ class UserManager extends BaseManager {
             socket.on(MESSAGES.LOGOUT, () => this.socketLogout(socket));
             socket.on('disconnect', () => this.socketLogout(socket));
         });
-        //mediator events
         //mediator triggers
         this.mediator.set(this.TRIGGERS.GET_USER_BY_GUID, (guid) => this.triggerGetUserByGuid(guid));
     }
@@ -60,7 +59,7 @@ class UserManager extends BaseManager {
     // ============ SOCKETS ============
 
     async socketRegistration(data = {}, socket) {
-        const { login, passwordHash, nickname } = data;
+        const { login, passwordHash} = data;
         
         // валидация
         if (!login || !passwordHash) {
@@ -74,7 +73,7 @@ class UserManager extends BaseManager {
             socketId: socket.id 
         });
         
-        if (await user.registration(login, passwordHash, nickname)) {
+        if (await user.registration(login, passwordHash)) {
             // сохраняем
             this.users.set(user.guid, user);
             return socket.emit(MESSAGES.REGISTRATION, this.answer.good(user.getSelf()));

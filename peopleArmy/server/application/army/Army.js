@@ -1,4 +1,6 @@
 const CONFIG = require("../../config");
+const Soldier = require("./entities/Soldier");
+const BMP = require("./entities/BMP");
 
 const { INTERVAL } = CONFIG.ARMY;
 
@@ -33,6 +35,25 @@ class Army {
             units: this.units,
             //...
         }
+    }
+
+    /**
+     * Создать юнита в этой армии.
+     * guid юнита генерируется внутри через Common.
+     * @param {{ x: number, y: number, type?: string }} data
+     * @returns {{ ok: true, data: object } | { ok: false, error: string }}
+     */
+    createUnit({ x, y, type = 'soldier' }) {
+        const unitType = String(type).toLowerCase();
+        const guid = this.common.guid();
+
+        const options = { guid, x, y };
+        const unit = unitType === 'bmp' ? new BMP(options) : new Soldier(options);
+
+        this.units.push(unit);
+        console.log('Юнит создан:', unit.get());
+        console.log('Армия:', this.units);
+        return { ok: true, data: unit.get() };
     }
 
     // 1. выстрелить юнитами по врагам

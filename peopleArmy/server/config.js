@@ -13,7 +13,6 @@ const CONFIG = {
         TRIGGERS: {
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',
 
-            SET_UNIT_TARGET: "SET_UNIT_TARGET",   // задать юниту цель движения (см. ArmyManager)
             CREATE_UNIT: "CREATE_UNIT",           // создать юнита (см. ArmyManager)
         },
     },

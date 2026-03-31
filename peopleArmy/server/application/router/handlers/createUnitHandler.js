@@ -9,9 +9,7 @@ module.exports = (mediator, answer) => {
             type,
         });
         if (!result?.ok) {
-            if (result?.error === 'DUPLICATE_GUID') {
-                return res.status(422).json(answer.bad(422));
-            }
+            console.log('CREATE_UNIT error:', result);
             return res.status(400).json(answer.bad(400));
         }
         console.log('createUnitHandler', guid, x, y, type);

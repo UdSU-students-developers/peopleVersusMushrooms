@@ -10,9 +10,9 @@ interface IPlayer {
     status?: string;
 }
 
-interface IRoom {
+interface ILobby {
     guid: number;
-    roomName: string;
+    lobbyName: string;
     creator: number;
     players: IPlayer[];
     maxPlayers: number;
@@ -22,8 +22,8 @@ interface IRoom {
 
 class Store {
     user: TUser | null = null;
-    rooms: IRoom[] = [];
-    currentRoom: IRoom | null = null;
+    lobbies: ILobby[] = [];
+    currentLobby: ILobby | null = null;
     mediator: Mediator;
 
     constructor(mediator: Mediator) {
@@ -36,18 +36,18 @@ class Store {
         this.mediator.subscribe(MEDIATOR.EVENTS.REGISTRATION, (data) => this.handleRegistration(data));
         this.mediator.subscribe(MEDIATOR.EVENTS.LOGOUT, (data) => this.handleLogout(data));
         this.mediator.subscribe(MEDIATOR.EVENTS.SHOW_ERROR, (message: string) => this.handleError(message));
-        this.mediator.subscribe(MEDIATOR.EVENTS.CREATE_ROOM, (data) => this.handleCreateRoom(data));
-        this.mediator.subscribe(MEDIATOR.EVENTS.JOIN_TO_ROOM, (data) => this.handleJoinToRoom(data));
-        this.mediator.subscribe(MEDIATOR.EVENTS.LEAVE_ROOM, (data) => this.handleLeaveRoom(data));
-        this.mediator.subscribe(MEDIATOR.EVENTS.DROP_FROM_ROOM, (data) => this.handleDropFromRoom(data));
+        this.mediator.subscribe(MEDIATOR.EVENTS.CREATE_LOBBY, (data) => this.handleCreateLobby(data));
+        this.mediator.subscribe(MEDIATOR.EVENTS.JOIN_TO_LOBBY, (data) => this.handleJoinToLobby(data));
+        this.mediator.subscribe(MEDIATOR.EVENTS.LEAVE_LOBBY, (data) => this.handleLeaveLobby(data));
+        this.mediator.subscribe(MEDIATOR.EVENTS.DROP_FROM_LOBBY, (data) => this.handleDropFromLobby(data));
         this.mediator.subscribe(MEDIATOR.EVENTS.START_GAME, (data) => this.handleStartGame(data));
-        this.mediator.subscribe(MEDIATOR.EVENTS.GET_ROOMS, (data) => this.handleGetRooms(data));
-        this.mediator.subscribe(MEDIATOR.EVENTS.ROOM_UPDATED, (data) => this.handleRoomUpdated(data));
-        this.mediator.subscribe(MEDIATOR.EVENTS.ROOMS_LIST_UPDATED, (data) => this.handleRoomsListUpdated(data));
+        this.mediator.subscribe(MEDIATOR.EVENTS.GET_LOBBIES, (data) => this.handleGetLobbies(data));
+        this.mediator.subscribe(MEDIATOR.EVENTS.LOBBY_UPDATED, (data) => this.handleLobbyUpdated(data));
+        this.mediator.subscribe(MEDIATOR.EVENTS.LOBBIES_LIST_UPDATED, (data) => this.handleLobbiesListUpdated(data));
 
         this.mediator.set(MEDIATOR.TRIGGERS.GET_TOKEN, () => this.getToken());
-        this.mediator.set(MEDIATOR.TRIGGERS.GET_CURRENT_ROOM, () => this.getCurrentRoom());
-        this.mediator.set(MEDIATOR.TRIGGERS.GET_ROOMS_LIST, () => this.getRoomsList());
+        this.mediator.set(MEDIATOR.TRIGGERS.GET_CURRENT_LOBBY, () => this.getCurrentLobby());
+        this.mediator.set(MEDIATOR.TRIGGERS.GET_LOBBIES_LIST, () => this.getLobbiesList());
         this.mediator.set(MEDIATOR.TRIGGERS.GET_USER, () => this.getUser());
     }
 
@@ -70,8 +70,8 @@ class Store {
     handleLogout(data: TUser): void {
         console.log('Logout:', data);
         this.user = null;
-        this.currentRoom = null;
-        this.rooms = [];
+        this.currentLobby = null;
+        this.lobbies = [];
         localStorage.removeItem(TOKEN);
     }
 
@@ -79,105 +79,105 @@ class Store {
         console.error('Error:', message);
     }
 
-    handleCreateRoom(data: IRoom): void {
-        console.log('Room created:', data);
-        this.currentRoom = data;
-        const existingIndex = this.rooms.findIndex(room => room.guid === data.guid);
+    handleCreateLobby(data: ILobby): void {
+        console.log('Lobby created:', data);
+        this.currentLobby = data;
+        const existingIndex = this.lobbies.findIndex(lobby => lobby.guid === data.guid);
         if (existingIndex === -1) {
-            this.rooms.push(data);
+            this.lobbies.push(data);
         } else {
-            this.rooms[existingIndex] = data;
+            this.lobbies[existingIndex] = data;
         }
     }
 
-    handleJoinToRoom(data: IRoom): void {
-        console.log('Joined to room:', data);
-        this.currentRoom = data;
-        const index = this.rooms.findIndex(room => room.guid === data.guid);
+    handleJoinToLobby(data: ILobby): void {
+        console.log('Joined to lobby:', data);
+        this.currentLobby = data;
+        const index = this.lobbies.findIndex(lobby => lobby.guid === data.guid);
         if (index !== -1) {
-            this.rooms[index] = data;
+            this.lobbies[index] = data;
         }
     }
 
-    handleLeaveRoom(data: any): void {
-        console.log('Left room:', data);
-        this.currentRoom = null;
-        this.mediator.call(MEDIATOR.EVENTS.GET_ROOMS, {});
+    handleLeaveLobby(data: any): void {
+        console.log('Left lobby:', data);
+        this.currentLobby = null;
+        this.mediator.call(MEDIATOR.EVENTS.GET_LOBBIES, {});
     }
 
-    handleDropFromRoom(data: IRoom): void {
-        console.log('Player dropped from room:', data);
-        if (this.currentRoom && this.currentRoom.guid === data.guid) {
-            this.currentRoom = data;
+    handleDropFromLobby(data: ILobby): void {
+        console.log('Player dropped from lobby:', data);
+        if (this.currentLobby && this.currentLobby.guid === data.guid) {
+            this.currentLobby = data;
         }
-        const index = this.rooms.findIndex(room => room.guid === data.guid);
+        const index = this.lobbies.findIndex(lobby => lobby.guid === data.guid);
         if (index !== -1) {
-            this.rooms[index] = data;
+            this.lobbies[index] = data;
         }
     }
 
-    handleStartGame(data: IRoom): void {
+    handleStartGame(data: ILobby): void {
         console.log('Game started:', data);
-        if (this.currentRoom && this.currentRoom.guid === data.guid) {
-            this.currentRoom = data;
+        if (this.currentLobby && this.currentLobby.guid === data.guid) {
+            this.currentLobby = data;
         }
         this.mediator.call(MEDIATOR.EVENTS.GAME_STARTED, data);
     }
 
-    handleGetRooms(data: IRoom[]): void {
-        console.log('Rooms list received:', data);
-        this.rooms = data || [];
+    handleGetLobbies(data: ILobby[]): void {
+        console.log('Lobbies list received:', data);
+        this.lobbies = data || [];
     }
 
-    handleRoomUpdated(data: IRoom): void {
-        console.log('Room updated:', data);
-        if (this.currentRoom && this.currentRoom.guid === data.guid) {
-            this.currentRoom = data;
+    handleLobbyUpdated(data: ILobby): void {
+        console.log('Lobby updated:', data);
+        if (this.currentLobby && this.currentLobby.guid === data.guid) {
+            this.currentLobby = data;
         }
-        const index = this.rooms.findIndex(room => room.guid === data.guid);
+        const index = this.lobbies.findIndex(lobby => lobby.guid === data.guid);
         if (index !== -1) {
-            this.rooms[index] = data;
+            this.lobbies[index] = data;
         }
     }
 
-    handleRoomsListUpdated(data: IRoom[]): void {
-        console.log('Rooms list updated:', data);
-        this.rooms = data || [];
+    handleLobbiesListUpdated(data: ILobby[]): void {
+        console.log('Lobbies list updated:', data);
+        this.lobbies = data || [];
     }
 
     getToken(): string | null {
         return localStorage.getItem(TOKEN);
     }
 
-    getCurrentRoom(): IRoom | null {
-        return this.currentRoom;
+    getCurrentLobby(): ILobby | null {
+        return this.currentLobby;
     }
 
-    getRoomsList(): IRoom[] {
-        return this.rooms;
+    getLobbiesList(): ILobby[] {
+        return this.lobbies;
     }
 
     getUser(): TUser | null {
         return this.user;
     }
 
-    isUserInRoom(): boolean {
-        return this.currentRoom !== null;
+    isUserInLobby(): boolean {
+        return this.currentLobby !== null;
     }
 
-    isUserRoomCreator(): boolean {
-        return this.currentRoom !== null && this.user !== null && this.currentRoom.creator === this.user.guid;
+    isUserLobbyCreator(): boolean {
+        return this.currentLobby !== null && this.user !== null && this.currentLobby.creator === this.user.guid;
     }
 
     canStartGame(): boolean {
-        return this.isUserRoomCreator() &&
-            this.currentRoom !== null &&
-            this.currentRoom.players.length === this.currentRoom.maxPlayers &&
-            this.currentRoom.status === 'closed';
+        return this.isUserLobbyCreator() &&
+            this.currentLobby !== null &&
+            this.currentLobby.players.length === this.currentLobby.maxPlayers &&
+            this.currentLobby.status === 'closed';
     }
 
-    getPlayersInCurrentRoom(): IPlayer[] {
-        return this.currentRoom ? this.currentRoom.players : [];
+    getPlayersInCurrentLobby(): IPlayer[] {
+        return this.currentLobby ? this.currentLobby.players : [];
     }
 }
 

@@ -50,35 +50,35 @@ class Server {
             }
         });
 
-        this.socket.on(MEDIATOR.EVENTS.CREATE_ROOM, (data: TAnswer<any>) => {
+        this.socket.on(MEDIATOR.EVENTS.CREATE_LOBBY, (data: TAnswer<any>) => {
             const result = this._validate(data);
             if (result) {
-                const { CREATE_ROOM } = this.mediator.getEventTypes();
-                this.mediator.call(CREATE_ROOM, data);
+                const { CREATE_LOBBY } = this.mediator.getEventTypes();
+                this.mediator.call(CREATE_LOBBY, data);
             }
         });
 
-        this.socket.on(MEDIATOR.EVENTS.JOIN_TO_ROOM, (data: TAnswer<any>) => {
+        this.socket.on(MEDIATOR.EVENTS.JOIN_TO_LOBBY, (data: TAnswer<any>) => {
             const result = this._validate(data);
             if (result) {
-                const { JOIN_TO_ROOM } = this.mediator.getEventTypes();
-                this.mediator.call(JOIN_TO_ROOM, data);
+                const { JOIN_TO_LOBBY } = this.mediator.getEventTypes();
+                this.mediator.call(JOIN_TO_LOBBY, data);
             }
         });
 
-        this.socket.on(MEDIATOR.EVENTS.LEAVE_ROOM, (data: TAnswer<any>) => {
+        this.socket.on(MEDIATOR.EVENTS.LEAVE_LOBBY, (data: TAnswer<any>) => {
             const result = this._validate(data);
             if (result) {
-                const { LEAVE_ROOM } = this.mediator.getEventTypes();
-                this.mediator.call(LEAVE_ROOM, data);
+                const { LEAVE_LOBBY } = this.mediator.getEventTypes();
+                this.mediator.call(LEAVE_LOBBY, data);
             }
         });
 
-        this.socket.on(MEDIATOR.EVENTS.DROP_FROM_ROOM, (data: TAnswer<any>) => {
+        this.socket.on(MEDIATOR.EVENTS.DROP_FROM_LOBBY, (data: TAnswer<any>) => {
             const result = this._validate(data);
             if (result) {
-                const { DROP_FROM_ROOM } = this.mediator.getEventTypes();
-                this.mediator.call(DROP_FROM_ROOM, data);
+                const { DROP_FROM_LOBBY } = this.mediator.getEventTypes();
+                this.mediator.call(DROP_FROM_LOBBY, data);
             }
         });
 
@@ -90,27 +90,27 @@ class Server {
             }
         });
 
-        this.socket.on(MEDIATOR.EVENTS.GET_ROOMS, (data: TAnswer<any>) => {
+        this.socket.on(MEDIATOR.EVENTS.GET_LOBBIES, (data: TAnswer<any>) => {
             const result = this._validate(data);
             if (result) {
-                const { GET_ROOMS } = this.mediator.getEventTypes();
-                this.mediator.call(GET_ROOMS, data);
+                const { GET_LOBBIES } = this.mediator.getEventTypes();
+                this.mediator.call(GET_LOBBIES, data);
             }
         });
 
-        this.socket.on(MEDIATOR.EVENTS.ROOM_UPDATED, (data: TAnswer<any>) => {
+        this.socket.on(MEDIATOR.EVENTS.LOBBY_UPDATED, (data: TAnswer<any>) => {
             const result = this._validate(data);
             if (result) {
-                const { ROOM_UPDATED } = this.mediator.getEventTypes();
-                this.mediator.call(ROOM_UPDATED, data);
+                const { LOBBY_UPDATED } = this.mediator.getEventTypes();
+                this.mediator.call(LOBBY_UPDATED, data);
             }
         });
 
-        this.socket.on(MEDIATOR.EVENTS.ROOMS_LIST_UPDATED, (data: TAnswer<any>) => {
+        this.socket.on(MEDIATOR.EVENTS.LOBBIES_LIST_UPDATED, (data: TAnswer<any>) => {
             const result = this._validate(data);
             if (result) {
-                const { ROOMS_LIST_UPDATED } = this.mediator.getEventTypes();
-                this.mediator.call(ROOMS_LIST_UPDATED, data);
+                const { LOBBIES_LIST_UPDATED } = this.mediator.getEventTypes();
+                this.mediator.call(LOBBIES_LIST_UPDATED, data);
             }
         });
     }
@@ -166,28 +166,28 @@ class Server {
         this.socket.emit(MEDIATOR.EVENTS.LOGOUT);
     }
 
-    createRoom(roomName: string): void {
-        this.socket.emit(MEDIATOR.EVENTS.CREATE_ROOM, { roomName });
+    createLobby(lobbyName: string): void {
+        this.socket.emit(MEDIATOR.EVENTS.CREATE_LOBBY, { lobbyName });
     }
 
-    joinToRoom(roomGuid: string): void {
-        this.socket.emit(MEDIATOR.EVENTS.JOIN_TO_ROOM, { roomGuid });
+    joinToLobby(lobbyGuid: string): void {
+        this.socket.emit(MEDIATOR.EVENTS.JOIN_TO_LOBBY, { lobbyGuid });
     }
 
-    leaveRoom(): void {
-        this.socket.emit(MEDIATOR.EVENTS.LEAVE_ROOM, {});
+    leaveLobby(): void {
+        this.socket.emit(MEDIATOR.EVENTS.LEAVE_LOBBY, {});
     }
 
-    dropFromRoom(targetGuid: string): void {
-        this.socket.emit(MEDIATOR.EVENTS.DROP_FROM_ROOM, { targetGuid });
+    dropFromLobby(targetGuid: string): void {
+        this.socket.emit(MEDIATOR.EVENTS.DROP_FROM_LOBBY, { targetGuid });
     }
 
     startGame(): void {
         this.socket.emit(MEDIATOR.EVENTS.START_GAME, {});
     }
 
-    getRooms(): void {
-        this.socket.emit(MEDIATOR.EVENTS.GET_ROOMS, {});
+    getLobbies(): void {
+        this.socket.emit(MEDIATOR.EVENTS.GET_LOBBIES, {});
     }
 }
 

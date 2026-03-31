@@ -4,9 +4,9 @@ import Button from "../../components/Button/Button";
 import { TError } from "../../services/server/types";
 import './Lobby.scss';
 
-interface IRoom {
+interface ILobby {
     guid: string;
-    roomName: string;
+    lobbyName: string;
     creator: string;
     players: Array<{ guid: string; name: string }>;
     maxPlayers: number;
@@ -17,61 +17,61 @@ interface IRoom {
 const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
     const { setPage, server, mediator } = props;
     const [error, setError] = useState<TError | null>(null);
-    const [rooms, setRooms] = useState<IRoom[]>([]);
+    const [lobbies, setLobbies] = useState<ILobby[]>([]);
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [roomName, setRoomName] = useState('');
-    const [currentRoom, setCurrentRoom] = useState<IRoom | null>(null);
+    const [lobbyName, setLobbyName] = useState('');
+    const [currentLobby, setCurrentLobby] = useState<ILobby | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     const logoutClickHandler = async () => {
         server.logout();
     }
 
-    const createRoomClickHandler = () => {
+    const createLobbyClickHandler = () => {
         setShowCreateModal(true);
-        setRoomName('');
+        setLobbyName('');
     }
 
-    const confirmCreateRoom = () => {
-        if (roomName.trim()) {
-            server.createRoom(roomName.trim());
+    const confirmCreateLobby = () => {
+        if (lobbyName.trim()) {
+            server.createLobby(lobbyName.trim());
             setShowCreateModal(false);
-            setRoomName('');
+            setLobbyName('');
         }
     }
 
-    const cancelCreateRoom = () => {
+    const cancelCreateLobby = () => {
         setShowCreateModal(false);
-        setRoomName('');
+        setLobbyName('');
     }
 
-    const joinRoomHandler = (roomGuid: string) => {
-        server.joinToRoom(roomGuid);
+    const joinLobbyHandler = (lobbyGuid: string) => {
+        server.joinToLobby(lobbyGuid);
     }
 
-    const leaveRoomHandler = () => {
-        server.leaveRoom();
+    const leaveLobbyHandler = () => {
+        server.leaveLobby();
     }
 
     const startGameHandler = () => {
         server.startGame();
     }
 
-    const getRoomsHandler = () => {
+    const getLobbiesHandler = () => {
         setIsLoading(true);
-        server.getRooms();
+        server.getLobbies();
     }
 
     useEffect(() => {
         const {
             LOGOUT,
             SHOW_ERROR,
-            CREATE_ROOM,
-            JOIN_TO_ROOM,
-            LEAVE_ROOM,
-            GET_ROOMS,
-            ROOM_UPDATED,
-            ROOMS_LIST_UPDATED,
+            CREATE_LOBBY,
+            JOIN_TO_LOBBY,
+            LEAVE_LOBBY,
+            GET_LOBBIES,
+            LOBBY_UPDATED,
+            LOBBIES_LIST_UPDATED,
             START_GAME
         } = mediator.getEventTypes();
 
@@ -85,38 +85,38 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
             setIsLoading(false);
         };
 
-        const createRoomHandler = (data: any) => {
+        const createLobbyHandler = (data: any) => {
             console.log('Комната создана:', data);
-            setCurrentRoom(data.data);
+            setCurrentLobby(data.data);
             setIsLoading(false);
         };
 
-        const joinToRoomHandler = (data: any) => {
+        const joinToLobbyHandler = (data: any) => {
             console.log('Присоединились к комнате:', data);
-            setCurrentRoom(data.data);
+            setCurrentLobby(data.data);
             setIsLoading(false);
         };
 
-        const leaveRoomHandler = (data: any) => {
+        const leaveLobbyHandler = (data: any) => {
             console.log('Покинули комнату:', data);
-            setCurrentRoom(null);
+            setCurrentLobby(null);
             setIsLoading(false);
         };
 
-        const getRoomsHandler = (data: any) => {
+        const getLobbiesHandler = (data: any) => {
             console.log('Список комнат:', data);
-            setRooms(data.data || []);
+            setLobbies(data.data || []);
             setIsLoading(false);
         };
 
-        const roomUpdatedHandler = (data: any) => {
+        const lobbyUpdatedHandler = (data: any) => {
             console.log('Комната обновлена:', data);
-            setCurrentRoom(data.data);
+            setCurrentLobby(data.data);
         };
 
-        const roomsListUpdatedHandler = (data: any) => {
+        const lobbiesListUpdatedHandler = (data: any) => {
             console.log('Список комнат обновлен:', data);
-            setRooms(data.data || []);
+            setLobbies(data.data || []);
         };
 
         const startGameHandler = (data: any) => {
@@ -125,25 +125,25 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
 
         mediator.subscribe(LOGOUT, logoutHandler);
         mediator.subscribe(SHOW_ERROR, serverErrorHandler);
-        mediator.subscribe(CREATE_ROOM, createRoomHandler);
-        mediator.subscribe(JOIN_TO_ROOM, joinToRoomHandler);
-        mediator.subscribe(LEAVE_ROOM, leaveRoomHandler);
-        mediator.subscribe(GET_ROOMS, getRoomsHandler);
-        mediator.subscribe(ROOM_UPDATED, roomUpdatedHandler);
-        mediator.subscribe(ROOMS_LIST_UPDATED, roomsListUpdatedHandler);
+        mediator.subscribe(CREATE_LOBBY, createLobbyHandler);
+        mediator.subscribe(JOIN_TO_LOBBY, joinToLobbyHandler);
+        mediator.subscribe(LEAVE_LOBBY, leaveLobbyHandler);
+        mediator.subscribe(GET_LOBBIES, getLobbiesHandler);
+        mediator.subscribe(LOBBY_UPDATED, lobbyUpdatedHandler);
+        mediator.subscribe(LOBBIES_LIST_UPDATED, lobbiesListUpdatedHandler);
         mediator.subscribe(START_GAME, startGameHandler);
 
-        server.getRooms();
+        server.getLobbies();
 
         return () => {
             mediator.unsubscribe(LOGOUT, logoutHandler);
             mediator.unsubscribe(SHOW_ERROR, serverErrorHandler);
-            mediator.unsubscribe(CREATE_ROOM, createRoomHandler);
-            mediator.unsubscribe(JOIN_TO_ROOM, joinToRoomHandler);
-            mediator.unsubscribe(LEAVE_ROOM, leaveRoomHandler);
-            mediator.unsubscribe(GET_ROOMS, getRoomsHandler);
-            mediator.unsubscribe(ROOM_UPDATED, roomUpdatedHandler);
-            mediator.unsubscribe(ROOMS_LIST_UPDATED, roomsListUpdatedHandler);
+            mediator.unsubscribe(CREATE_LOBBY, createLobbyHandler);
+            mediator.unsubscribe(JOIN_TO_LOBBY, joinToLobbyHandler);
+            mediator.unsubscribe(LEAVE_LOBBY, leaveLobbyHandler);
+            mediator.unsubscribe(GET_LOBBIES, getLobbiesHandler);
+            mediator.unsubscribe(LOBBY_UPDATED, lobbyUpdatedHandler);
+            mediator.unsubscribe(LOBBIES_LIST_UPDATED, lobbiesListUpdatedHandler);
             mediator.unsubscribe(START_GAME, startGameHandler);
         };
     }, [mediator, setPage, server]);
@@ -154,13 +154,13 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
                 <h1>Лобби</h1>
                 <div className="lobby-actions">
                     <Button
-                        onClick={getRoomsHandler}
+                        onClick={getLobbiesHandler}
                         text='Обновить комнаты'
                         className='button-refresh'
                         isDisabled={isLoading}
                     />
                     <Button
-                        onClick={createRoomClickHandler}
+                        onClick={createLobbyClickHandler}
                         text='Создать комнату'
                         className='button-create'
                     />
@@ -174,24 +174,24 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
 
             {error && <p id='test-errors-lobby' className='errors'>{error.message}</p>}
 
-            {currentRoom && (
-                <div className="current-room">
-                    <h2>Текущая комната: {currentRoom.roomName}</h2>
-                    <div className="room-info">
-                        <p>Создатель: {currentRoom.creator}</p>
-                        <p>Игроки: {currentRoom.players.length}/{currentRoom.maxPlayers}</p>
-                        <p>Статус: {currentRoom.status === 'open' ? 'Открыта' : currentRoom.status === 'closed' ? 'Закрыта' : 'В игре'}</p>
+            {currentLobby && (
+                <div className="current-lobby">
+                    <h2>Текущая комната: {currentLobby.lobbyName}</h2>
+                    <div className="lobby-info">
+                        <p>Создатель: {currentLobby.creator}</p>
+                        <p>Игроки: {currentLobby.players.length}/{currentLobby.maxPlayers}</p>
+                        <p>Статус: {currentLobby.status === 'open' ? 'Открыта' : currentLobby.status === 'closed' ? 'Закрыта' : 'В игре'}</p>
                         <div className="players-list">
                             <h3>Игроки:</h3>
                             <ul>
-                                {currentRoom.players.map((player, index) => (
+                                {currentLobby.players.map((player, index) => (
                                     <li key={index}>
-                                        {player.name} {player.guid === currentRoom.creator && '(Создатель)'}
+                                        {player.name} {player.guid === currentLobby.creator && '(Создатель)'}
                                     </li>
                                 ))}
                             </ul>
                         </div>
-                        {currentRoom.creator === currentRoom.players[0]?.guid && currentRoom.players.length === currentRoom.maxPlayers && (
+                        {currentLobby.creator === currentLobby.players[0]?.guid && currentLobby.players.length === currentLobby.maxPlayers && (
                             <Button
                                 onClick={startGameHandler}
                                 text='Начать игру'
@@ -199,7 +199,7 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
                             />
                         )}
                         <Button
-                            onClick={leaveRoomHandler}
+                            onClick={leaveLobbyHandler}
                             text='Покинуть комнату'
                             className='button-leave'
                         />
@@ -207,23 +207,23 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
                 </div>
             )}
 
-            <div className="rooms-list">
+            <div className="lobbies-list">
                 <h2>Доступные комнаты</h2>
                 {isLoading && <p>Загрузка...</p>}
-                {!isLoading && rooms.length === 0 && (
+                {!isLoading && lobbies.length === 0 && (
                     <p>Нет доступных комнат. Создайте первую!</p>
                 )}
-                {!isLoading && rooms.length > 0 && (
-                    <div className="rooms-grid">
-                        {rooms.map((room) => (
-                            <div key={room.guid} className="room-card">
-                                <h3>{room.roomName}</h3>
-                                <p>Создатель: {room.creator}</p>
-                                <p>Игроки: {room.players.length}/{room.maxPlayers}</p>
-                                <p>Статус: {room.status === 'open' ? 'Открыта' : 'Закрыта'}</p>
-                                {room.status === 'open' && room.players.length < room.maxPlayers && (
+                {!isLoading && lobbies.length > 0 && (
+                    <div className="lobbies-grid">
+                        {lobbies.map((lobby) => (
+                            <div key={lobby.guid} className="lobby-card">
+                                <h3>{lobby.lobbyName}</h3>
+                                <p>Создатель: {lobby.creator}</p>
+                                <p>Игроки: {lobby.players.length}/{lobby.maxPlayers}</p>
+                                <p>Статус: {lobby.status === 'open' ? 'Открыта' : 'Закрыта'}</p>
+                                {lobby.status === 'open' && lobby.players.length < lobby.maxPlayers && (
                                     <Button
-                                        onClick={() => joinRoomHandler(room.guid)}
+                                        onClick={() => joinLobbyHandler(lobby.guid)}
                                         text='Присоединиться'
                                         className='button-join'
                                     />
@@ -235,24 +235,24 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
             </div>
 
             {showCreateModal && (
-                <div className="modal-overlay" onClick={cancelCreateRoom}>
+                <div className="modal-overlay" onClick={cancelCreateLobby}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <h2>Создать комнату</h2>
                         <input
                             type="text"
                             placeholder="Название комнаты"
-                            value={roomName}
-                            onChange={(e) => setRoomName(e.target.value)}
+                            value={lobbyName}
+                            onChange={(e) => setLobbyName(e.target.value)}
                             autoFocus
                         />
                         <div className="modal-buttons">
                             <Button
-                                onClick={confirmCreateRoom}
+                                onClick={confirmCreateLobby}
                                 text='Создать'
                                 className='button-confirm'
                             />
                             <Button
-                                onClick={cancelCreateRoom}
+                                onClick={cancelCreateLobby}
                                 text='Отмена'
                                 className='button-cancel'
                             />

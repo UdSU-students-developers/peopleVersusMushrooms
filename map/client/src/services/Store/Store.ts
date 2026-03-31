@@ -1,6 +1,6 @@
 import { TUser } from "../server/types";
 import Mediator from '../Mediator/Mediator';
-import { MEDIATOR } from "../../config";
+import { EMESSAGES, MEDIATOR } from "../../config";
 
 const TOKEN = 'token';
 
@@ -36,19 +36,19 @@ class Store {
         this.mediator.subscribe(MEDIATOR.EVENTS.REGISTRATION, (data) => this.handleRegistration(data));
         this.mediator.subscribe(MEDIATOR.EVENTS.LOGOUT, (data) => this.handleLogout(data));
         this.mediator.subscribe(MEDIATOR.EVENTS.SHOW_ERROR, (message: string) => this.handleError(message));
-        this.mediator.subscribe(MEDIATOR.EVENTS.CREATE_LOBBY, (data) => this.handleCreateLobby(data));
-        this.mediator.subscribe(MEDIATOR.EVENTS.JOIN_TO_LOBBY, (data) => this.handleJoinToLobby(data));
-        this.mediator.subscribe(MEDIATOR.EVENTS.LEAVE_LOBBY, (data) => this.handleLeaveLobby(data));
-        this.mediator.subscribe(MEDIATOR.EVENTS.DROP_FROM_LOBBY, (data) => this.handleDropFromLobby(data));
-        this.mediator.subscribe(MEDIATOR.EVENTS.START_GAME, (data) => this.handleStartGame(data));
-        this.mediator.subscribe(MEDIATOR.EVENTS.GET_LOBBIES, (data) => this.handleGetLobbies(data));
-        this.mediator.subscribe(MEDIATOR.EVENTS.LOBBY_UPDATED, (data) => this.handleLobbyUpdated(data));
-        this.mediator.subscribe(MEDIATOR.EVENTS.LOBBIES_LIST_UPDATED, (data) => this.handleLobbiesListUpdated(data));
+        this.mediator.subscribe(EMESSAGES.CREATE_LOBBY, (data) => this.handleCreateLobby(data));
+        this.mediator.subscribe(EMESSAGES.JOIN_TO_LOBBY, (data) => this.handleJoinToLobby(data));
+        this.mediator.subscribe(EMESSAGES.LEAVE_LOBBY, (data) => this.handleLeaveLobby(data));
+        this.mediator.subscribe(EMESSAGES.DROP_FROM_LOBBY, (data) => this.handleDropFromLobby(data));
+        this.mediator.subscribe(EMESSAGES.START_GAME, (data) => this.handleStartGame(data));
+        this.mediator.subscribe(EMESSAGES.GET_LOBBIES, (data) => this.handleGetLobbies(data));
+        this.mediator.subscribe(EMESSAGES.LOBBY_UPDATED, (data) => this.handleLobbyUpdated(data));
+        this.mediator.subscribe(EMESSAGES.LOBBIES_LIST_UPDATED, (data) => this.handleLobbiesListUpdated(data));
 
         this.mediator.set(MEDIATOR.TRIGGERS.GET_TOKEN, () => this.getToken());
-        this.mediator.set(MEDIATOR.TRIGGERS.GET_CURRENT_LOBBY, () => this.getCurrentLobby());
-        this.mediator.set(MEDIATOR.TRIGGERS.GET_LOBBIES_LIST, () => this.getLobbiesList());
-        this.mediator.set(MEDIATOR.TRIGGERS.GET_USER, () => this.getUser());
+        this.mediator.set(EMESSAGES.GET_CURRENT_LOBBY, () => this.getCurrentLobby());
+        this.mediator.set(EMESSAGES.GET_LOBBIES_LIST, () => this.getLobbiesList());
+        this.mediator.set(EMESSAGES.GET_USER, () => this.getUser());
     }
 
     handleLogin(data: TUser): void {
@@ -102,7 +102,7 @@ class Store {
     handleLeaveLobby(data: any): void {
         console.log('Left lobby:', data);
         this.currentLobby = null;
-        this.mediator.call(MEDIATOR.EVENTS.GET_LOBBIES, {});
+        this.mediator.call(EMESSAGES.GET_LOBBIES, {});
     }
 
     handleDropFromLobby(data: ILobby): void {
@@ -121,7 +121,7 @@ class Store {
         if (this.currentLobby && this.currentLobby.guid === data.guid) {
             this.currentLobby = data;
         }
-        this.mediator.call(MEDIATOR.EVENTS.GAME_STARTED, data);
+        this.mediator.call(EMESSAGES.GAME_STARTED, data);
     }
 
     handleGetLobbies(data: ILobby[]): void {

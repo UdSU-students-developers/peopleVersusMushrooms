@@ -3,6 +3,7 @@ import Registration from './Registration/Registration';
 import Login from './Login/Login';
 import Chat from './Chat/Chat'
 import Game from './Game/Game';
+import GameMenu from './GameMenu/GameMenu';
 
 import CONFIG from '../config';
 
@@ -12,6 +13,7 @@ export enum PAGES {
     REGISTRATION,
     CHAT,
     GAME,
+    GAME_MENU,
 }
 
 export interface IBasePage {
@@ -31,6 +33,7 @@ const PageManager: React.FC = () => {
             {page === PAGES.LOGIN && <Login {...props} />}
             {page === PAGES.CHAT && <Chat {...props} />}
             {page === PAGES.GAME && <Game {...props} />}
+            {page === PAGES.GAME_MENU && <GameMenu {...props} />}
         </>
     );
 }

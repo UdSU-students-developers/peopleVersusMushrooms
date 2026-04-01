@@ -49,7 +49,72 @@ class Server {
                 this.mediator.call(LOGOUT, data);
             }
         });
+
+        this.socket.on(EMESSAGES.CREATE_LOBBY, (data: TAnswer<any>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { CREATE_LOBBY } = this.mediator.getEventTypes();
+                this.mediator.call(CREATE_LOBBY, data);
+            }
+        });
+
+        this.socket.on(EMESSAGES.JOIN_TO_LOBBY, (data: TAnswer<any>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { JOIN_TO_LOBBY } = this.mediator.getEventTypes();
+                this.mediator.call(JOIN_TO_LOBBY, data);
+            }
+        });
+
+        this.socket.on(EMESSAGES.LEAVE_LOBBY, (data: TAnswer<any>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { LEAVE_LOBBY } = this.mediator.getEventTypes();
+                this.mediator.call(LEAVE_LOBBY, data);
+            }
+        });
+
+        this.socket.on(EMESSAGES.DROP_FROM_LOBBY, (data: TAnswer<any>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { DROP_FROM_LOBBY } = this.mediator.getEventTypes();
+                this.mediator.call(DROP_FROM_LOBBY, data);
+            }
+        });
+
+        this.socket.on(EMESSAGES.START_GAME, (data: TAnswer<any>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { START_GAME } = this.mediator.getEventTypes();
+                this.mediator.call(START_GAME, data);
+            }
+        });
+
+        this.socket.on(EMESSAGES.GET_LOBBIES, (data: TAnswer<any>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { GET_LOBBIES } = this.mediator.getEventTypes();
+                this.mediator.call(GET_LOBBIES, data);
+            }
+        });
+
+        this.socket.on(EMESSAGES.LOBBY_UPDATED, (data: TAnswer<any>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { LOBBY_UPDATED } = this.mediator.getEventTypes();
+                this.mediator.call(LOBBY_UPDATED, data);
+            }
+        });
+
+        this.socket.on(EMESSAGES.LOBBIES_LIST_UPDATED, (data: TAnswer<any>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { LOBBIES_LIST_UPDATED } = this.mediator.getEventTypes();
+                this.mediator.call(LOBBIES_LIST_UPDATED, data);
+            }
+        });
     }
+
     _validate(data: any) {
         if (data.result === "ok") {
             return data.data;
@@ -99,6 +164,30 @@ class Server {
 
     logout(): void {
         this.socket.emit(MEDIATOR.EVENTS.LOGOUT);
+    }
+
+    createLobby(lobbyName: string): void {
+        this.socket.emit(EMESSAGES.CREATE_LOBBY, { lobbyName });
+    }
+
+    joinToLobby(lobbyGuid: string): void {
+        this.socket.emit(EMESSAGES.JOIN_TO_LOBBY, { lobbyGuid });
+    }
+
+    leaveLobby(): void {
+        this.socket.emit(EMESSAGES.LEAVE_LOBBY, {});
+    }
+
+    dropFromLobby(targetGuid: string): void {
+        this.socket.emit(EMESSAGES.DROP_FROM_LOBBY, { targetGuid });
+    }
+
+    startGame(): void {
+        this.socket.emit(EMESSAGES.START_GAME, {});
+    }
+
+    getLobbies(): void {
+        this.socket.emit(EMESSAGES.GET_LOBBIES, {});
     }
 }
 

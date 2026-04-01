@@ -1,7 +1,7 @@
 import md5 from 'md5';
 import { io, Socket } from 'socket.io-client';
 import CONFIG, { MEDIATOR, EMESSAGES } from '../../config';
-import { TAnswer, TUser } from "./types";
+import { TAnswer, TMap, TUser } from "./types";
 import Mediator from '../Mediator/Mediator';
 
 const HOST = CONFIG.HOST;
@@ -47,6 +47,14 @@ class Server {
             if (result) {
                 const { LOGOUT } = this.mediator.getEventTypes();
                 this.mediator.call(LOGOUT, data);
+            }
+        });
+
+        this.socket.on(MEDIATOR.EVENTS.GENERATE_MAP, (data: TAnswer<TMap>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { GENERATE_MAP } = this.mediator.getEventTypes();
+                this.mediator.call(GENERATE_MAP, data.data);
             }
         });
     }
@@ -99,6 +107,10 @@ class Server {
 
     logout(): void {
         this.socket.emit(MEDIATOR.EVENTS.LOGOUT);
+    }
+
+    generateMap(): void {
+        this.socket.emit(MEDIATOR.EVENTS.GENERATE_MAP, { width: CONFIG.WIDTH, height: CONFIG.HEIGHT });
     }
 }
 

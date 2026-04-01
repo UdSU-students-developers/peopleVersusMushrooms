@@ -229,7 +229,7 @@ class MapManager extends BaseManager {
         const { guid, width, height, water, mountains, seed, iron, oil } = data;
         const map = new Map(guid, width, height);
         map.generateRelief(water, mountains, seed);
-        map.generateFields(iron, oil);
+        //map.generateFields(iron, oil);
         this.maps[map.guid] = map;
         socket.emit(MESSAGES.GENERATE_MAP, this.answer.good(map.getSelf()));
     }

@@ -29,9 +29,9 @@ const lobbyManager = new LobbyManager({ mediator, db, common, answer, io });
 const mapManager = new MapManager({ mediator, db, common, answer, io })
 
 
-//для тестов
+/*//для тестов
 app.use(express.static('public'));
-
+*/
 app.use((_, res, next) => {
     res.header('Content-Type', 'application/json; charset=utf-8');
     res.header('Access-Control-Allow-Origin', '*');

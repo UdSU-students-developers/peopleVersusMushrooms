@@ -22,9 +22,11 @@ class LobbyManager extends BaseManager {
 
         // mediator events
         this.mediator.subscribe(this.EVENTS.LOGOUT, (guid) => this.eventLogout(guid));
+        this.mediator.subscribe(this.EVENTS.JOIN_TO_LOBBY, (data) => this.eventJoinToLobby(data));
 
         // mediator triggers
         this.mediator.set(this.TRIGGERS.IS_GUID_IN_ANY_LOBBY, (guid) => this.triggerIsGuidInAnyLobby(guid));
+        this.mediator.set(this.TRIGGERS.GET_LOBBIES, (data) => this.triggerGetLobbies(data));
     }
 
     // ============ ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ============
@@ -44,7 +46,7 @@ class LobbyManager extends BaseManager {
         if (!lobby) return;
 
         //оповещаем всех в лобби об уничтожении
-        for (const player of Object.values(lobby.playersGuilds)) {
+        for (const player of Object.values(lobby.playersGuids)) {
             if (player) {
                 const user = this.getUserByGuid(player.guid);
                 if (user && user.socketId) {
@@ -67,7 +69,7 @@ class LobbyManager extends BaseManager {
         const lobbyInfo = lobby.get();
         
         //оповещаем всех в лобби
-        for (const player of Object.values(lobby.playersGuilds)) {
+        for (const player of Object.values(lobby.playersGuids)) {
             if (player) {
                 const user = this.getUserByGuid(player.guid);
                 if (user && user.socketId) {
@@ -82,6 +84,7 @@ class LobbyManager extends BaseManager {
 
     _notifyLobbiesListUpdated() {
         const lobbies = Object.values(this.lobbies).map(lobby => lobby.get());
+        console.log('список лобби:', JSON.stringify(lobbies, null, 2));
         this.io.emit(MESSAGES.LOBBIES_LIST_UPDATED, this.answer.good(lobbies));
     }
 
@@ -106,12 +109,53 @@ class LobbyManager extends BaseManager {
         this._notifyLobbiesListUpdated();
     }
 
+    eventJoinToLobby(data = {}) {
+        const { guid, lobbyGuid, role } = data;
+        
+        
+        const lobby = this.lobbies[lobbyGuid];
+        if (!lobby) {
+            return { error: 2003 };
+        }
+
+        const existingLobby = this.isGuidInAnyLobby(guid);
+        if (existingLobby) {
+            if (existingLobby.guid === lobbyGuid) {
+                return { error: 2005 };
+            }
+            this._destroyLobby(existingLobby.guid);
+        }
+
+        if (!lobby.canJoin()) {
+            return { error: 2004 };
+        }
+
+        if (!lobby.addPlayer(guid, role)) {
+            return { error: 2017 };
+        }
+
+        this._notifyLobbyUpdate(lobbyGuid);
+        this._notifyLobbiesListUpdated();
+
+        const result = lobby.get();
+        return result;
+    }
+
     // ============ TRIGGERS ===========
 
     triggerIsGuidInAnyLobby(guid) {
         const lobby = this.isGuidInAnyLobby(guid);
         return lobby ? lobby : null;
     }
+
+    triggerGetLobbies(data = {}) {
+    const { guid } = data;
+    
+    //доделать
+    
+    const lobbies = Object.values(this.lobbies).map(lobby => lobby.get());
+    return lobbies;
+}
 
     // ============ SOCKETS ============
 
@@ -155,12 +199,6 @@ class LobbyManager extends BaseManager {
         //валидация
         if (!guid || !lobbyGuid) {
             return socket.emit(MESSAGES.JOIN_TO_LOBBY, this.answer.bad(242));
-        }
-
-        //проверка пользователя через медиатор
-        const user = this.getUserByGuid(guid);
-        if (!user) {
-            return socket.emit(MESSAGES.JOIN_TO_LOBBY, this.answer.bad(1001));
         }
 
         //проверка существования лобби
@@ -307,6 +345,11 @@ class LobbyManager extends BaseManager {
         if (!lobby.canStarted()) {
             return socket.emit(MESSAGES.START_GAME, this.answer.bad(2012));
         }
+
+        this.mediator.call(this.EVENTS.START_GAME, {
+            lobbyGuid: lobby.guid,
+            ...lobby.getGuids()
+        });
 
         //убиваем лобби
         this._destroyLobby(lobby.creatorGuid);

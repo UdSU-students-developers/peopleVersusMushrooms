@@ -2,12 +2,16 @@ const express = require('express');
 const router = express.Router();
 const {
     getVisibilityHandler,
-    getResourseVisibilityHandler
+    getResourseVisibilityHandler,
+    useGetLobbiesHandler,
+    useJoinToLobbyHandler,
 } = require('./handlers');
 
 function Router(mediator, answer, common) {
     // ============ LOBBY ROUTES ============
-    // для http методов из LobbyManager
+    router.get('/getLobbies/:guid', useGetLobbiesHandler(mediator, answer, common));
+
+    router.post('/joinToLobby', useJoinToLobbyHandler(mediator, answer, common));
 
     // ============ MAP ROUTES ============
     // для http методов из MapManager

@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const {
+    useStartGameHandler
 } = require('./handlers');
 
-function Router(mediator, answer) {
+function Router(mediator, answer, common) {
     // ============ LOBBY ROUTES ============
-    // для http методов из LobbyManager
+    router.post('/startGame{/:guid}', useStartGameHandler(mediator, answer, common));
 
     // ============ BUILDING ROUTES ============
     // для http методов из BuildingManager

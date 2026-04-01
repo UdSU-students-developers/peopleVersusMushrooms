@@ -38,6 +38,8 @@ class MapManager extends BaseManager {
         this.mediator.set(GET_VISIBILITY_HANDLER, (data) => this.getVisibilityHandler(data));
         //отдавать сервису значения ресурсов по массиву видимостей его разведчиков
         this.mediator.set(GET_RESOURSE_VISIBILITY_HANDLER, (data) => this.getVisibilityHandler(data));
+
+        this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data))
     }
 
     // ============ ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ============
@@ -48,6 +50,35 @@ class MapManager extends BaseManager {
 
     getMapByGuid(guid) {
         return Object.values(this.maps).find(map => map.guid === guid);
+    }
+
+    //EVENTS
+    async eventStartGame(playersGuids) {
+        const guid = playersGuids.lobbyGuid;
+        //создать карту
+        const map = new Map(guid, playersGuids);
+        map.generateRelief();
+        map.generateSources();
+        this.maps[map.guid] = map;
+        
+        //сообщить всем сервисам, что игра началась и сообщить guid карты
+        const result1 = await this.send(
+            `http://localhost:3009/startGame/${playersGuids.peopleEconomy}`,
+            playersGuids
+        );
+        /*
+        const result2 = await this.send(
+            `http://localhost:3007/startGame/${playersGuids.peopleArmy}`,
+            playersGuids
+        );
+        const result3 = await this.send(
+            `http://localhost:3005/startGame/${playersGuids.mushroomEconomy}`,
+            playersGuids
+        );
+        const result4 = await this.send(
+            `http://localhost:3003/startGame/${playersGuids.mushroomArmy}`,
+            playersGuids
+        );*/
     }
 
     //TRIGGERS

@@ -2,7 +2,7 @@ class Player {
     constructor(guid, role) {
         this.guid = guid;
         this.role = role;
-        this.ready = false;
+        this.ready = true;
     }
 
     get() {

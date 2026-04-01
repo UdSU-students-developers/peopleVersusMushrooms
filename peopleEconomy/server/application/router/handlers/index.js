@@ -1,5 +1,5 @@
+const useStartGameHandler = require("./lobbyHandlers/useStartGameHandler");
 
 module.exports = {
-    //для http методов lobby(?)
-    //для http методов map
+    useStartGameHandler,
 };

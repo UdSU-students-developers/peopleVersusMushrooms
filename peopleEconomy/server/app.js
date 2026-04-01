@@ -14,19 +14,7 @@ const Common = require('./application/modules/common/Common.js');
 const Answer = require('./application/router/Answer.js');
 const UserManager = require('./application/modules/user/UserManager.js');
 const LobbyManager = require('./application/modules/lobby/LobbyManager.js');
-const BuildingManager = require('./application/modules/building/BuildingManager.js');
 const { EVENTS, TRIGGERS, SERVER_PORT, SERVER_NAME } = require('./config.js');
-
-/*
-app.use((_, res, next) => {
-    res.header('Content-Type', 'application/json; charset=utf-8');
-    res.header('Access-Control-Allow-Origin', '*');
-    next();
-});
-    
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-*/
 
 // Экз БД
 const db = new DB();
@@ -36,11 +24,24 @@ const common = new Common();
 const answer = new Answer();
 // Создаем менеджеры
 const userManager = new UserManager({ mediator, db, common, answer, io });
-const lobbyManager = new LobbyManager({ mediator, db, common, answer, io, userManager });
-const buildingManager = new BuildingManager({ mediator, db, common, answer, io });
+const lobbyManager = new LobbyManager({ mediator, db, common, answer, io });
+
+
+/*//для тестов
+app.use(express.static('public'));
+*/
+
+app.use((_, res, next) => {
+    res.header('Content-Type', 'application/json; charset=utf-8');
+    res.header('Access-Control-Allow-Origin', '*');
+    next();
+});
+    
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Создаем роутер
-const router = new Router(mediator, answer);
+const router = new Router(mediator, answer, common);
 app.use('/', router);
 
 

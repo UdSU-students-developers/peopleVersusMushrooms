@@ -11,6 +11,10 @@ class Common {
             (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16)
         );
     }
+
+    checkGuid(guid) {
+        return /([a-z 0-9]{8}-[a-z 0-9]{4}-4[a-z 0-9]{3}-[a-z 0-9]{4}-[a-z 0-9]{12})/g.test(guid);
+    }
 }
 
 module.exports = Common;

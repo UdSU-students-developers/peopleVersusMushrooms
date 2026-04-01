@@ -9,13 +9,16 @@ class CONFIG {
 
     //events
     static EVENTS = {
-        LOGOUT: 'LOGOUT', // в т.ч. и дисконект
+        LOGOUT: 'LOGOUT',
+        START_GAME: 'START_GAME',
+        JOIN_TO_LOBBY: 'JOIN_TO_LOBBY',
     }
 
     static TRIGGERS = {
         //triggers
         GET_USER_BY_GUID: 'GET_USER_BY_GUID',
         IS_GUID_IN_ANY_LOBBY: 'IS_GUID_IN_ANY_LOBBY',
+        GET_LOBBIES: 'GET_LOBBIES',
         //handlers
         GET_VISIBILITY_HANDLER: 'GET_VISIBILITY_HANDLER',
         GET_RESOURSE_VISIBILITY_HANDLER: 'GET_RESOURSE_VISIBILITY_HANDLER',

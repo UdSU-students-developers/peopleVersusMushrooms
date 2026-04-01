@@ -4,17 +4,21 @@ class CONFIG {
 
     static SQLITE_PATH = './application/modules/db/peopleEconomy.db'; // Путь к базе
 
+    static MAP_URL = 'http://localhost:3001';
+
     static LOBBY_MAX_SIZE = 5;
 
 
     //events
     static EVENTS = {
         LOGOUT: 'LOGOUT', 
+        START_GAME: 'START_GAME',
     }
 
     static TRIGGERS = {
         //triggers
         GET_USER_BY_GUID: 'GET_USER_BY_GUID',
+        IS_GUID_IN_ANY_LOBBY: 'IS_GUID_IN_ANY_LOBBY',
     }
 
     // сокетные сообщения
@@ -37,6 +41,8 @@ class CONFIG {
         LOBBY_UPDATED: 'LOBBY_UPDATED',
         LOBBIES_LIST_UPDATED: 'LOBBYS_LIST_UPDATED',
         SET_READY: 'SET_READY',
+
+        GAME_STARTED: 'GAME_STARTED',
 
     }
 

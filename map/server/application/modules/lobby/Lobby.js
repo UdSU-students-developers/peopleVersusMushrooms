@@ -73,7 +73,7 @@ class Lobby {
         return true;
     }
 
-    isGuidInRoom(guid) {
+    isGuidInLobby(guid) {
         for (const player of Object.values(this.playersGuilds)) {
             if (player && player.guid === guid) {
                 return true;

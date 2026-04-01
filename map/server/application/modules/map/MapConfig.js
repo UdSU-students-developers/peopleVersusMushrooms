@@ -15,6 +15,11 @@ class MAP_CONFIG {
         SEED: 1
     }
 
+    static SATURATION = {
+        IRON: 1,
+        OIL: 1
+    }
+
     // Типы элементов карты
     static UNIT_TYPES = {
 
@@ -24,9 +29,9 @@ class MAP_CONFIG {
 
     }
 
-    static FIELD_TYPES = {
-        IRON: 'ironField',
-        OIL: 'oilField',
+    static SOURCE_TYPES = {
+        IRON: 'ironSource',
+        OIL: 'oilSource',
     }
 }
 

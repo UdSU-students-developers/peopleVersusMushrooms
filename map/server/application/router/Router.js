@@ -1,16 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const {
-    getVisibilityHandler
+    getVisibilityHandler,
+    getResourseVisibilityHandler
 } = require('./handlers');
 
-function Router(mediator, answer) {
+function Router(mediator, answer, common) {
     // ============ LOBBY ROUTES ============
     // для http методов из LobbyManager
 
     // ============ MAP ROUTES ============
     // для http методов из MapManager
-    //router.get('/getVisibility/:mapGuid/:userGuid', getVisibilityHandler(mediator, answer));
+    router.get('/getVisibility{/:mapGuid}{/:userGuid}{/:visibilityJSON}', getVisibilityHandler(mediator, answer, common));
+    router.get('/getResourseVisibility{/:mapGuid}{/:userGuid}{/:visibilityJSON}', getResourseVisibilityHandler(mediator, answer, common));
+    router.get('/updateEconomyUnitsHandler{/:mapGuid}{/:userGuid}{/:unitsJSON}', getResourseVisibilityHandler(mediator, answer, common));
+
     //еще 4
 
     // ============ NOT FOUND ============

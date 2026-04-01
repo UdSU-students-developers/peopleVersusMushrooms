@@ -22,6 +22,9 @@ class LobbyManager extends BaseManager {
 
         // mediator events
         this.mediator.subscribe(this.EVENTS.LOGOUT, (guid) => this.eventLogout(guid));
+
+        // mediator triggers
+        this.mediator.set(this.TRIGGERS.IS_GUID_IN_ANY_LOBBY, (guid) => this.triggerIsGuidInAnyLobby(guid));
     }
 
     // ============ ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ============
@@ -29,6 +32,11 @@ class LobbyManager extends BaseManager {
     //получение пользака
     getUserByGuid(guid) {
         return this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
+    }
+
+    //найти лобби по гуиду пользака
+    isGuidInAnyLobby(guid) {
+        return Object.values(this.lobbies).find(lobby => lobby.isGuidInLobby(guid));
     }
 
     _destroyLobby(lobbyGuid) {
@@ -82,7 +90,7 @@ class LobbyManager extends BaseManager {
     //обработчик выхода пользователя
     async eventLogout(guid) {
         //находим лобби, где есть этот игрок
-        const lobby = Object.values(this.lobbies).find(l => l.isGuidInRoom(guid));
+        const lobby = this.isGuidInAnyLobby(guid);
         if (!lobby) return;
 
         const isCreator = (guid === lobby.creatorGuid);
@@ -96,6 +104,13 @@ class LobbyManager extends BaseManager {
         }
         this._notifyLobbyUpdate(lobby.guid);
         this._notifyLobbiesListUpdated();
+    }
+
+    // ============ TRIGGERS ===========
+
+    triggerIsGuidInAnyLobby(guid) {
+        const lobby = this.isGuidInAnyLobby(guid);
+        return lobby ? lobby : null;
     }
 
     // ============ SOCKETS ============
@@ -115,7 +130,7 @@ class LobbyManager extends BaseManager {
         }
 
         //проверка, не в лобби ли уже
-        const existingLobby = Object.values(this.lobbies).find(lobby => lobby.isGuidInRoom(user.guid));
+        const existingLobby = this.isGuidInAnyLobby(user.guid);
         if (existingLobby) {
             this._destroyLobby(existingLobby.guid);
         }
@@ -155,7 +170,7 @@ class LobbyManager extends BaseManager {
         }
 
         //проверка, не в лобби ли уже
-        const existingLobby = Object.values(this.lobbies).find(l => l.isGuidInRoom(user.guid));
+        const existingLobby = this.isGuidInAnyLobby(user.guid);
         if (existingLobby) {
             if (existingLobby.guid === lobbyGuid) {
                 return socket.emit(MESSAGES.JOIN_TO_LOBBY, this.answer.bad(2005));
@@ -193,7 +208,7 @@ class LobbyManager extends BaseManager {
         }
 
         //находим лобби, где есть этот игрок
-        const lobby = Object.values(this.lobbies).find(l => l.isGuidInRoom(user.guid));
+        const lobby = this.isGuidInAnyLobby(user.guid);
         if (!lobby) {
             return socket.emit(MESSAGES.LEAVE_LOBBY, this.answer.bad(2006));
         }
@@ -235,7 +250,7 @@ class LobbyManager extends BaseManager {
         }
 
         //находим лобби админа
-        const lobby = Object.values(this.lobbies).find(l => l.isGuidInRoom(creator.guid));
+        const lobby = this.isGuidInAnyLobby(creator.guid);
         if (!lobby) {
             return socket.emit(MESSAGES.DROP_FROM_LOBBY, this.answer.bad(2006));
         }
@@ -251,7 +266,7 @@ class LobbyManager extends BaseManager {
         }
 
         //проверка, что цель в этом лобби
-        if (!lobby.isGuidInRoom(target.guid)) {
+        if (!lobby.isGuidInLobby(target.guid)) {
             return socket.emit(MESSAGES.DROP_FROM_LOBBY, this.answer.bad(2009));
         }
 
@@ -278,7 +293,7 @@ class LobbyManager extends BaseManager {
         }
 
         //находим лобби
-        const lobby = Object.values(this.lobbies).find(l => l.isGuidInRoom(user.guid));
+        const lobby = this.isGuidInAnyLobby(user.guid);
         if (!lobby) {
             return socket.emit(MESSAGES.START_GAME, this.answer.bad(2006));
         }
@@ -333,7 +348,7 @@ class LobbyManager extends BaseManager {
         }
 
         //находим лобби, где есть этот игрок
-        const lobby = Object.values(this.lobbies).find(l => l.isGuidInRoom(user.guid));
+        const lobby = this.isGuidInAnyLobby(user.guid);
         if (!lobby) {
             return socket.emit(MESSAGES.SET_READY, this.answer.bad(2006));
         }
@@ -347,7 +362,6 @@ class LobbyManager extends BaseManager {
         this._notifyLobbyUpdate(lobby.guid);
         this._notifyLobbiesListUpdated();
     }
-
 
 }
 

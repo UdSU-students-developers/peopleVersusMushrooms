@@ -1,5 +1,5 @@
-const getVisibilityHandler = (mediator, answer, common) => {
-    const { GET_VISIBILITY_HANDLER } = mediator.getTriggerTypes();
+const getResourseVisibilityHandler = (mediator, answer, common) => {
+    const { GET_RESOURSE_VISIBILITY_HANDLER } = mediator.getTriggerTypes();
 
     return (req, res) => {
         const { mapGuid, userGuid, visibilityJSON } = req.params;
@@ -25,8 +25,8 @@ const getVisibilityHandler = (mediator, answer, common) => {
                 return res.json(answer.bad(3002));
             }
         });
-        res.json(mediator.get(GET_VISIBILITY_HANDLER, { mapGuid, userGuid, visibility}));
+        res.json(mediator.get(GET_RESOURSE_VISIBILITY_HANDLER, { mapGuid, userGuid, visibility}));
     }
 }
 
-module.exports = getVisibilityHandler;
+module.exports = getResourseVisibilityHandler;

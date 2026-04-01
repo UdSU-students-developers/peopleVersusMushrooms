@@ -12,10 +12,6 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
     const logoutClickHandler = async () => {
         server.logout();
     }
-    const generateMapHandler = () => {
-        setError(null);
-        setPage(PAGES.MAP);
-    };
 
     useEffect(() => {
         const { LOGOUT } = mediator.getEventTypes();
@@ -25,7 +21,6 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
             setError(null);
             setPage(PAGES.LOGIN);
         };
-
 
         const serverErrorHandler = (error: TError) => {
             setError(error);
@@ -37,7 +32,6 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
         return () => {
             mediator.unsubscribe(LOGOUT, logoutHandler);
             mediator.unsubscribe(SHOW_ERROR, serverErrorHandler);
-
         };
     });
 
@@ -45,12 +39,6 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
         <Button
             onClick={logoutClickHandler}
             text='выйти'
-            className='button-logout'
-            id='test-button-logout'
-        />
-        <Button
-            onClick={generateMapHandler}
-            text='мапа'
             className='button-logout'
             id='test-button-logout'
         />

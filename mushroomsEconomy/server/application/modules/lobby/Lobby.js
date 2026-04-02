@@ -1,43 +1,38 @@
 class Lobby {
-    constructor({ creatorGuid, roomName, common }) {
+    constructor({ creatorGuid, common, socket }) {
         this.guid = common.guid();
-        this.name = roomName;
         this.creatorGuid = creatorGuid;
-        
+        this.socketId = socket.id;
         this.players = new Set([creatorGuid]); 
+    }
+
+    destructor() {
+        
     }
 
     get() {
         return {
-            id: this.guid,
-            name: this.name,
-            creatorGuid: this.creatorGuid,
-            status: this.status,
-            participants: Array.from(this.players) 
-        };
+            guid: this.guid,
+            players: this.players,
+        }
+    }
+
+    getSelf() {
+        return {
+            ...this.get(),
+            socketId: this.socketId,
+        }
     }
 
     addPlayer(guid) {
-        if (!guid) return false;
-        
-        if (this.players.has(guid)) return false;
-
         this.players.add(guid);
-        
-        return true;
     }
 
     removePlayer(guid) {
-        if (this.players.has(guid)) {
-            this.players.delete(guid);
-            return true;
-        }
-        return false;
+        this.players.delete(guid);
     }
 
-    isGuidInRoom(guid) {
-        return this.players.has(guid);
-    }
+
 
 }
 

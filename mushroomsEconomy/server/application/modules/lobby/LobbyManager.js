@@ -38,7 +38,11 @@ class LobbyManager extends BaseManager {
     socketCreateLobby(socket, data) {
         const { guid } = data;
 
-        this.lobbies[guid] = new Lobby({guid, common, socket})
+        this.lobbies[guid] = new Lobby({guid, common, socket});
+        this.mediator.call(this.EVENTS.START_GAME, {
+            guid: user.guid,
+            map, //Должно приходить с одноимённого сервиса
+        });
     }
 
     socketJoinLobby(socket, data) {

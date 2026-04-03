@@ -1,38 +1,31 @@
 const CONFIG = require("../../../config");
-const Building = require("./Building");
 
-const { 
-    TYPE, CONSUMPTION, CAPACITY, SIZE,
-    HP, GROW_SPEED, GROW_LEVEL_UP, MAX_LEVEL, PRODUCTION,
-} = CONFIG.ECONOMY.MYCELIUM;
+const { HP, GROW_SPEED, GROW_LEVEL_UP, MAX_LEVEL, POWER } = CONFIG.ECONOMY.MYCELIUM;
 
-class Mycelium extends Building {
-    constructor(options) {
-        super(options);
+class Mycelium {
+    constructor({ x, y, guid, callbacks = {} }) {
+        this.x = x;
+        this.y = y;
+        this.guid = guid;
+        this.callbacks = callbacks;
 
-        // вынести в Building
-        this.type = TYPE;
         this.hp = HP;
-        this.size = SIZE;
-        this.consumption = CONSUMPTION;
-        this.production = PRODUCTION;
-        this.capacity = CAPACITY;
-
-        this.level = 0; // уровень выросших грибочков
+        this.level = 1; // уровень выросших грибочков
         this.grow = 0; // скорость роста
         this.canGrow = true; // может ли расти грибница (не стоит ли на ней здание)
     }
 
     get() {
         return {
-            ...super.get(),
+            guid: this.guid,
             level: this.level,
+            coords: { x: this.x, y: this.y },
         }
     }
 
     update() {
         if (!this.canGrow) {
-            return;
+            return false;
         }
         this.grow += GROW_SPEED;
         if (this.grow >= GROW_LEVEL_UP) {
@@ -40,12 +33,25 @@ class Mycelium extends Building {
             if (this.level < MAX_LEVEL) {
                 this.level += 1;
                 return true;
+            } else {
+                this.canGrow = false;
             }
         }
         return false;
     }
 
-    checkAroundMycelium(x, y) {
+    getPower() {
+        return POWER;
+    }
+
+    checkAroundMycelium(map, mycelium) {
+        const n = map.length;
+        if (!n) return [];
+        const m = map[0].length;
+        if (!m) return [];
+
+        const x = this.x;
+        const y = this.y;
         const directions = [
             { dx: 0, dy: -1 },
             { dx: 0, dy: 1 },
@@ -56,11 +62,6 @@ class Mycelium extends Building {
             { dx: -1, dy: 1 },
             { dx: 1, dy: 1 },
         ];
-
-        const map = this.callbacks.getMap();
-        const mycelium = this.callbacks.getMycelium();
-        const n = map.length;
-        const m = map[0]?.length ?? 0;
 
         return directions
             .map(({ dx, dy }) => ({ x: x + dx, y: y + dy }))
@@ -73,19 +74,23 @@ class Mycelium extends Building {
     }
 
     // породить новую грибницу
-
     canExtend(map, mycelium, buildins, enemyBuildings) {
-        // могу вырасти или нет
-
-        const freeCells = this.checkAroundMycelium(this.x, this.y);
-        return freeCells.length > 0;
+        if (this.level >= MAX_LEVEL) {
+            // могу вырасти или нет
+            const freeCells = this.checkAroundMycelium(map, mycelium);
+            return freeCells.length > 0;
+        }
+        return false;
     }
 
-    extend() {
+    extend(map, mycelium, buildins, enemyBuildings) {
         this.grow = 0;
-        this.level = 0;
-        const freeCells = this.checkAroundMycelium(this.x, this.y);
-        if (freeCells.length === 0) return null;
+        this.level = 1;
+        this.canGrow = true;
+        const freeCells = this.checkAroundMycelium(map, mycelium);
+        if (!freeCells.length) {
+            return null;
+        }
         const { x, y } = freeCells[Math.floor(Math.random() * freeCells.length)];
         return { x, y };
     }

@@ -24,6 +24,7 @@ class DB {
                     SPEED:   row.speed,
                     RANGE:   row.range,
                     VISIBLE: row.visible,
+                    DAMAGE:  row.damage,
                 };
             });
             return types;

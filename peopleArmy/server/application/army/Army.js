@@ -58,12 +58,90 @@ class Army {
         const unit = unitType === 'bmp' ? new BMP(options) : new Soldier(options);
 
         this.units.push(unit);
+        this.setUnitsTarget();
         console.log('Юнит создан:', unit.get());
         console.log('Армия:', this.units);
         return { ok: true, data: unit.get() };
     }
 
     // 1. выстрелить юнитами по врагам
+    getTarget(unit) {
+        const height = this.map.length;
+        const width = this.map[0]?.length || 0;
+
+        if (!height || !width) {
+            return null;
+        }
+
+        const cells = [];
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                if (this.map[y][x] !== 0) {
+                    continue;
+                }
+
+                if (unit.x === x && unit.y === y) {
+                    continue;
+                }
+
+                cells.push({ x, y });
+            }
+        }
+
+        if (!cells.length) {
+            return null;
+        }
+
+        const compareByDistance = (a, b) => {
+            const aDx = Math.abs(a.x - unit.x);
+            const aDy = Math.abs(a.y - unit.y);
+            const bDx = Math.abs(b.x - unit.x);
+            const bDy = Math.abs(b.y - unit.y);
+
+            const aDiagonalDistance = Math.min(aDx, aDy);
+            const bDiagonalDistance = Math.min(bDx, bDy);
+
+            if (aDiagonalDistance !== bDiagonalDistance) {
+                return bDiagonalDistance - aDiagonalDistance;
+            }
+
+            const aDistance = (aDx * aDx) + (aDy * aDy);
+            const bDistance = (bDx * bDx) + (bDy * bDy);
+
+            if (aDistance !== bDistance) {
+                return bDistance - aDistance;
+            }
+
+            if (a.y !== b.y) {
+                return b.y - a.y;
+            }
+
+            return b.x - a.x;
+        };
+
+        const diagonalCells = cells.filter((cell) => cell.x !== unit.x && cell.y !== unit.y);
+        const targetCells = diagonalCells.length ? diagonalCells : cells;
+
+        return targetCells.sort(compareByDistance)[0];
+    }
+
+    setUnitsTarget() {
+        this.units.forEach((unit) => {
+            if (unit.targetX != null && unit.targetY != null) {
+                return;
+            }
+
+            const target = this.getTarget(unit);
+            if (!target) {
+                return;
+            }
+
+            unit.setTarget(target.x, target.y);
+            this.updated = true;
+        });
+    }
+
     shotUnits() {
         //...
     }
@@ -81,6 +159,7 @@ class Army {
     update() {
         // 1. выстрелить юнитами по врагам
         this.shotUnits();
+        this.setUnitsTarget();
         // 2. сходить юнитами
         this.moveUnits();
 

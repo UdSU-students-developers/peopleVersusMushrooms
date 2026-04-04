@@ -1,14 +1,15 @@
 class Unit {
-    constructor({ x, y, guid, map, easystar }) {
+    constructor({ x, y, guid, map, easystar, hp, speed }) {
         this.x = x;
         this.y = y;
         this.guid = guid;
         this.easystar = easystar;
         this.map = map;           // динамическая карта (обновляется извне)
-        this.hp = 1;
-        this.speed = 1;
+        this.hp = hp;
+        this.speed = speed;
         this.isMoving = false;
         this.path = [];
+        this.inertia = 0;
     }
 
     get() {
@@ -45,11 +46,15 @@ class Unit {
             return false;
         }
 
-        // беерем следующую клетку (первая клетка в пути - это обычно текущая позиция)
-        // или берем следующую после текущей
-        let nextStep = this.path[0];
+        this.inertia += this.speed;
 
-        // если первая клетка - это текущая позиция, берем вторую
+        if (this.inertia < 1) {
+            return false;
+        }
+
+        this.inertia -= 1;
+
+        let nextStep = this.path[0];
         if (nextStep.x === this.x && nextStep.y === this.y) {
             this.path.shift();
             nextStep = this.path[0];
@@ -60,19 +65,16 @@ class Unit {
             return false;
         }
 
-        // перемещаем юнита в следующую клетку
+        // перемещаем юнита
         this.x = nextStep.x;
         this.y = nextStep.y;
-
-        // удаляем пройденную клетку из пути
         this.path.shift();
 
-        // если путь закончился, останавливаем движение
         if (this.path.length === 0) {
             this.isMoving = false;
         }
 
-        return true;
+        return true
     }
 
 }

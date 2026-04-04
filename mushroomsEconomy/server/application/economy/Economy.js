@@ -9,11 +9,12 @@ class Economy {
     constructor({ db, common, callbacks: { updated }, map, guid }) {
         this.easyStar = new EasyStar.js();
         this.easyStar.disableDiagonals();
-        
+
         this.guid = guid; // совпадает с guid игрока
         this.db = db;
         this.common = common;
         this.callbacks = { updated };
+        this.map = map;
         // данные экономики
         this.resourceMap; // массив известных ресурсов [{x, y, value}]
         this.buildings = []; // здания
@@ -33,45 +34,6 @@ class Economy {
         this.interval = setInterval(() => this.update(), INTERVAL);
     }
 
-
-    // TEMPORARY
-    mapInit(map) { //Временный метод для заглушки
-        if (map) {
-            this.map = map;
-        } else {
-            console.log('Карта не передана при создании экономики! Используется заглушка!');
-            this.map = [];
-            for (let i = 0; i < 50; i++) {
-                this.map.push([]);
-                for (let j = 0; j < 50; j++) {
-                    this.map[i][j] = 0;
-                }
-            }
-
-            this.map[39][25] = 1;
-            this.map[40][25] = 1;
-            this.map[41][25] = 1;
-            this.map[42][25] = 1;
-            this.map[43][25] = 1;
-            this.map[44][25] = 1;
-            this.map[45][25] = 1;
-            this.map[46][25] = 1;
-            this.map[47][25] = 1;
-            this.map[48][25] = 1;
-            this.map[49][25] = 1;
-            this.map[5][25] = 1;
-        }
-    }
-
-
-    addMycelium(x, y) {
-        this.mycelium.push(new Mycelium({
-            x,
-            y,
-            guid: this.common.guid(),
-        }));
-    }
-
     destructor() {
         if (this.interval) {
             clearInterval(this.interval);
@@ -85,6 +47,14 @@ class Economy {
             mushrooms: this.mycelium.map(m => m.get()),
             map: this.map,
         }
+    }
+
+    addMycelium(x, y) {
+        this.mycelium.push(new Mycelium({
+            x,
+            y,
+            guid: this.common.guid(),
+        }));
     }
 
     // 1. вырасти грибочки
@@ -106,11 +76,11 @@ class Economy {
         }
     }
 
-    setPathsUnits({x, y}) {
-        [...this.workers].forEach(unit => unit.calcPath({x, y}));
+    setPathsUnits({ x, y }) {
+        [...this.workers].forEach(unit => unit.calcPath({ x, y }));
     }
 
-    moveUnits(){
+    moveUnits() {
         [...this.workers].forEach(unit => unit.moveOneStep())
     }
 

@@ -1,13 +1,15 @@
 class Unit {
-    constructor({ x, y, guid, map, easystar }) {
+    constructor({ x, y, guid, map, easystar, hp, speed }) {
         this.x = x;
         this.y = y;
         this.guid = guid;
         this.easystar = easystar;
         this.map = map;           // динамическая карта (обновляется извне)
-        this.hp = 1;
-        this.speed = 1;
+        this.hp = hp;
+        this.speed = speed;
         this.isMoving = false;
+        this.path = [];
+        this.inertia = 0;
     }
 
     get() {
@@ -19,53 +21,62 @@ class Unit {
         };
     }
 
-    findPath(targetX, targetY) {
-        let attempts = 0;
-        const maxAttempts = CONFIG.ECONOMY.MAX_ATTEMPTS;
+    calcPath({ x, y }) {
 
-        return new Promise((resolve) => {
-            const attemptFindPath = () => {
-                attempts++;
-                if (this.easystar.setGrid) this.easystar.setGrid(this.map);
-                this.easystar.findPath(this.x, this.y, targetX, targetY, (path) => {
-                    if (path) {
-                        resolve(path);
-                    } else if (attempts < maxAttempts) {
-                        setTimeout(() => attemptFindPath(), 1000);
-                    } else {
-                        resolve(null);
-                    }
-                });
-                this.easystar.calculate();
-            };
-            attemptFindPath();
+        this.path = null;
+        this.isMoving = false;
+
+        if (this.easystar.setGrid) this.easystar.setGrid(this.map);
+
+        this.easystar.findPath(this.x, this.y, x, y, (path) => {
+            if (path) {
+                this.path = path;
+                this.isMoving = true;
+            } else {
+                this.path = null;
+            }
         });
+        this.easystar.calculate();
     }
 
-    async moveTo(targetX, targetY) {
-        if (this.isMoving) return false;
-        this.isMoving = true;
-
-        const stepDelay = 100 / this.speed;
-
-        while (true) {
-            if (this.x === targetX && this.y === targetY) break;
-
-            const path = await this.findPath(targetX, targetY);
-            if (!path || path.length < 2) break;
-
-            const nextStep = path[1];
-            if (this.map[nextStep.y][nextStep.x] !== 0) break;
-
-            this.x = nextStep.x;
-            this.y = nextStep.y;
-
-            await new Promise(resolve => setTimeout(resolve, stepDelay));
+    moveOneStep() {
+        if (!this.isMoving) return false;
+        if (!this.path || this.path.length === 0) {
+            this.isMoving = false;
+            return false;
         }
 
-        this.isMoving = false;
-        return true;
+        this.inertia += this.speed;
+
+        if (this.inertia < 1) {
+            return false;
+        }
+
+        this.inertia -= 1;
+
+        let nextStep = this.path[0];
+        if (nextStep.x === this.x && nextStep.y === this.y) {
+            this.path.shift();
+            nextStep = this.path[0];
+        }
+
+        if (!nextStep) {
+            this.isMoving = false;
+            return false;
+        }
+
+        // перемещаем юнита
+        this.x = nextStep.x;
+        this.y = nextStep.y;
+        this.path.shift();
+
+        if (this.path.length === 0) {
+            this.isMoving = false;
+        }
+
+        return true
     }
+
 }
 
 module.exports = Unit;

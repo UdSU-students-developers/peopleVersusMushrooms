@@ -38,7 +38,7 @@ class Unit {
     public attackRange: number;
     public fireDamageMultiplier: number = 2;
     protected enemies: Unit [] = [];
-    
+
     private decisionAccumulator: number = 0;
     private readonly DECISION_INTERVAL: number = 0.5; 
 
@@ -59,9 +59,9 @@ class Unit {
 
     update(enemies: Unit[], mapData: MapData, deltaTime: number): void {
         if (!this.isAlive) return;
-
-        this.enemies = enemies;
         
+this.enemies = enemies;
+
         this.decisionAccumulator += deltaTime;
         
         if (this.decisionAccumulator >= this.DECISION_INTERVAL) {
@@ -146,22 +146,22 @@ class Unit {
         this.y = newY;
     }
 
-    takeDamage(amount: number, type: string): void {
-        if (!this.isAlive) return;
+   takeDamage(amount: number, type: string): void {
+    if (!this.isAlive) return;
 
-        // Огонь снимает яд с отравленного юнита
+    // Огонь снимает яд с отравленного юнита
         if (type === 'fire' && (this as any).poisonEffects) {
             (this as any).poisonEffects = [];
         }
 
-        const finalAmount = type === 'fire' ? amount * this.fireDamageMultiplier : amount;
+    const finalAmount = type === 'fire' ? amount * this.fireDamageMultiplier : amount;
 
-        this.hp -= finalAmount;
-        
-        if (this.hp <= 0) {
-            this.die();
-        }
+    this.hp -= finalAmount;
+    
+    if (this.hp <= 0) {
+        this.die();
     }
+}
 
     die(): void {
         this.isAlive = false;

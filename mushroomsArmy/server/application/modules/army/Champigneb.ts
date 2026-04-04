@@ -34,7 +34,7 @@ class Champigneb extends Unit {
             const dy = enemy.y - this.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
             if (distance < this.explosionRadius){
-                enemy.takeDamage(100, 'fire');
+                enemy.takeDamage(this.explosionDamage, 'explosion');
             }
         }
 
@@ -58,15 +58,15 @@ class Champigneb extends Unit {
     }
 
     public takeDamage(amount: number, type: string): void {
-         if (!this.isAlive) return;
+        if (!this.isAlive) return;
 
-        const finalAmount = type === 'fire' ? amount * this.fireDamageMultiplier : amount;
-        
-        this.hp -= finalAmount;
-        
-        if (this.hp <= 0) {
+        // При огненном уроне — немедленный взрыв
+        if (type === 'fire') {
             this.explode();
+            return;
         }
+
+        super.takeDamage(amount, type);
     }
 
     protected onDeath(): void {

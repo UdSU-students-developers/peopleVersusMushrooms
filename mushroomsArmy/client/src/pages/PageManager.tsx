@@ -1,14 +1,9 @@
 import React from 'react';
-//import Server from '../services/server/Server';
 import Registration from './Registration/Registration';
 import Login from './Login/Login';
 import Chat from './Chat/Chat'
 import Lobby from './Lobby/Lobby';
 import Game from './Game/Game';
-import Store from '../services/Store/Store';
-import CONFIG from '../config';
-import Mediator from '../services/Mediator/Mediator';
-import useStore from '../services/Store/useStore';
 import { MediatorContext, ServerContext } from '../App';
 
 

@@ -8,6 +8,7 @@ class Unit {
         this.hp = 1;
         this.speed = 1;
         this.isMoving = false;
+        this.path = [];
     }
 
     get() {
@@ -19,53 +20,61 @@ class Unit {
         };
     }
 
-    findPath(targetX, targetY) {
-        let attempts = 0;
-        const maxAttempts = CONFIG.ECONOMY.MAX_ATTEMPTS;
+    calcPath({ x, y }) {
 
-        return new Promise((resolve) => {
-            const attemptFindPath = () => {
-                attempts++;
-                if (this.easystar.setGrid) this.easystar.setGrid(this.map);
-                this.easystar.findPath(this.x, this.y, targetX, targetY, (path) => {
-                    if (path) {
-                        resolve(path);
-                    } else if (attempts < maxAttempts) {
-                        setTimeout(() => attemptFindPath(), 1000);
-                    } else {
-                        resolve(null);
-                    }
-                });
-                this.easystar.calculate();
-            };
-            attemptFindPath();
+        this.path = null;
+        this.isMoving = false;
+
+        if (this.easystar.setGrid) this.easystar.setGrid(this.map);
+
+        this.easystar.findPath(this.x, this.y, x, y, (path) => {
+            if (path) {
+                this.path = path;
+                this.isMoving = true;
+            } else {
+                this.path = null;
+            }
         });
+        this.easystar.calculate();
     }
 
-    async moveTo(targetX, targetY) {
-        if (this.isMoving) return false;
-        this.isMoving = true;
-
-        const stepDelay = 100 / this.speed;
-
-        while (true) {
-            if (this.x === targetX && this.y === targetY) break;
-
-            const path = await this.findPath(targetX, targetY);
-            if (!path || path.length < 2) break;
-
-            const nextStep = path[1];
-            if (this.map[nextStep.y][nextStep.x] !== 0) break;
-
-            this.x = nextStep.x;
-            this.y = nextStep.y;
-
-            await new Promise(resolve => setTimeout(resolve, stepDelay));
+    moveOneStep() {
+        if (!this.isMoving) return false;
+        if (!this.path || this.path.length === 0) {
+            this.isMoving = false;
+            return false;
         }
 
-        this.isMoving = false;
+        // беерем следующую клетку (первая клетка в пути - это обычно текущая позиция)
+        // или берем следующую после текущей
+        let nextStep = this.path[0];
+
+        // если первая клетка - это текущая позиция, берем вторую
+        if (nextStep.x === this.x && nextStep.y === this.y) {
+            this.path.shift();
+            nextStep = this.path[0];
+        }
+
+        if (!nextStep) {
+            this.isMoving = false;
+            return false;
+        }
+
+        // перемещаем юнита в следующую клетку
+        this.x = nextStep.x;
+        this.y = nextStep.y;
+
+        // удаляем пройденную клетку из пути
+        this.path.shift();
+
+        // если путь закончился, останавливаем движение
+        if (this.path.length === 0) {
+            this.isMoving = false;
+        }
+
         return true;
     }
+
 }
 
 module.exports = Unit;

@@ -82,6 +82,7 @@ class Economy {
     }
 
     setPathsUnits({ x, y }) {
+        //пометка что надо будет сделать массив с юнитами общий
         [...this.workers].forEach(unit => unit.calcPath({ x, y }));
     }
 

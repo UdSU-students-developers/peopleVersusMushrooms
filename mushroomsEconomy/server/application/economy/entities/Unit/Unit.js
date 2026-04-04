@@ -1,18 +1,24 @@
-const CONFIG = require("../../../config");
+const CONFIG = require("../../../../config");
 
 class Unit {
     constructor({ x, y, guid, map, easystar }) {
+        //Описание юнита
         this.x = x;
         this.y = y;
         this.guid = guid;
-        this.easystar = easystar;
-        this.map = map;
         this.hp = 1;
         this.speed = 1;
-        this.isMoving = false;
-        this.path = [];
-        this.inertia = 0;
-        this.target = null;
+
+        //Для просчета пути и перемещения
+        this.easystar = easystar;
+        this.map = map;
+
+        //Для работы методов
+        this.isMoving = false; //Можно ли переместить
+        this.path = []; //Маршрут
+        this.inertia = 0; // Накпление инерции
+        this.target = null; //клетка цели
+        this.pathRequested = false; // флаг, что путь запрошен
     }
 
     get() {
@@ -20,11 +26,14 @@ class Unit {
             x: this.x,
             y: this.y,
             hp: this.hp,
+            speed: this.speed,
             guid: this.guid
         };
     }
 
-    findNearestWalkable(targetX, targetY, maxRadius = CONFIG.ECONOMY.UNIT.RADIUS) {
+    //найти ближайшую проходимую клетку к заданной
+    _findNearestWalkable(targetX, targetY, maxRadius = CONFIG.ECONOMY.UNIT.RADIUS) {
+        
         if (this._isCellWalkable(targetX, targetY)) {
             return { x: targetX, y: targetY };
         }
@@ -32,11 +41,11 @@ class Unit {
         return this._searchNearestWalkable(targetX, targetY, maxRadius);
     }
 
-    _isCellWalkable(x, y) {
+    _isCellWalkable(x, y) { //клетка находится в пределах карты и имеет значение 0
         return this.map[y] && this.map[y][x] === 0;
     }
 
-    _searchNearestWalkable(startX, startY, maxRadius) {
+    _searchNearestWalkable(startX, startY, maxRadius) { //поиск ближайшей проходимой клетки
         const queue = [{ x: startX, y: startY, distance: 0 }];
         const visited = new Set();
 
@@ -52,27 +61,24 @@ class Unit {
         while (queue.length > 0) {
             const { x, y, distance } = queue.shift();
 
-            // Если вышли за пределы радиуса - прекращаем поиск
             if (distance > maxRadius) break;
 
-            // Нашли свободную клетку - возвращаем
             if (this._isCellWalkable(x, y)) {
                 return { x, y };
             }
 
-            // Добавляем соседние клетки для дальнейшего поиска
             this._addNeighborsToQueue(x, y, distance + 1, addToQueue);
         }
 
-        return null; // Свободная клетка не найдена
+        return null;
     }
 
-    _addNeighborsToQueue(x, y, newDistance, addToQueue) {
+    _addNeighborsToQueue(x, y, newDistance, addToQueue) { //Вспомогательный метод верх низ и тд
         const neighbors = [
-            { x: x + 1, y: y },     // право
-            { x: x - 1, y: y },     // лево
-            { x: x, y: y + 1 },     // низ
-            { x: x, y: y - 1 }      // верх
+            { x: x + 1, y: y },
+            { x: x - 1, y: y },
+            { x: x, y: y + 1 },
+            { x: x, y: y - 1 }
         ];
 
         for (const neighbor of neighbors) {
@@ -82,46 +88,49 @@ class Unit {
         }
     }
 
-    _isCellWithinBounds(x, y) {
+    _isCellWithinBounds(x, y) { // клетка существует в матрице
         return this.map[y] && this.map[y][x] !== undefined;
     }
 
-    calcPath({ x, y }) {
-        let corrected = this.findNearestWalkable(x, y);
+    calcPath({ x, y }) { //строит путь
+        let corrected = this._findNearestWalkable(x, y);
         if (!corrected) {
             this.isMoving = false;
             this.path = null;
             this.target = null;
-            return Promise.resolve(false);
+            this.pathRequested = false;
+            return;
         }
+
         this.target = corrected;
+        this.pathRequested = true;
 
         if (this.easystar.setGrid) this.easystar.setGrid(this.map);
 
-        return new Promise((resolve) => {
-            this.easystar.findPath(this.x, this.y, this.target.x, this.target.y, (path) => {
-                if (path) {
-                    this.path = path;
-                    this.isMoving = true;
-                    resolve(true);
-                } else {
-                    this.path = null;
-                    this.isMoving = false;
-                    resolve(false);
-                }
-            });
-            this.easystar.calculate();
+        this.easystar.findPath(this.x, this.y, this.target.x, this.target.y, (path) => {
+            if (path) {
+                this.path = path;
+                this.isMoving = true;
+            } else {
+                this.path = null;
+                this.isMoving = false;
+            }
+            this.pathRequested = false;
         });
+
+        this.easystar.calculate();
     }
 
-    async recalculatePath() {
-        if (!this.target) return false;
-        const success = await this.calcPath(this.target.x, this.target.y);
-        return success;
+    _recalculatePath() { // Перестраивает путь к текущей цели
+        if (!this.target) return;
+        this.calcPath(this.target.x, this.target.y);
     }
 
-    async moveOneStep() {
+    moveOneStep() { // Продвигает юнита на один шаг
         if (!this.isMoving) return false;
+
+        if (this.pathRequested) return false;
+
         if (!this.path || this.path.length === 0) {
             this.isMoving = false;
             return false;
@@ -144,12 +153,10 @@ class Unit {
 
         const isWalkable = this.map[nextStep.y] && this.map[nextStep.y][nextStep.x] === 0;
         if (!isWalkable) {
-            const success = await this.recalculatePath();
-            if (!success) {
-                this.isMoving = false;
-                this.inertia = 0;
-            }
-            return false; // не двигаемся в этом тике, но isMoving может остаться true
+            this._recalculatePath();
+            this.isMoving = false;  
+            this.inertia = 0;
+            return false;
         }
 
         this.inertia -= 1;

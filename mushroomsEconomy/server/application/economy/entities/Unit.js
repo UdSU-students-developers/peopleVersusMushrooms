@@ -1,12 +1,12 @@
 class Unit {
-    constructor({ x, y, guid, map, easystar, hp, speed }) {
+    constructor({ x, y, guid, map, easystar, }) {
         this.x = x;
         this.y = y;
         this.guid = guid;
         this.easystar = easystar;
         this.map = map;           // динамическая карта (обновляется извне)
-        this.hp = hp;
-        this.speed = speed;
+        this.hp = 1;
+        this.speed = 1;
         this.isMoving = false;
         this.path = [];
         this.inertia = 0;

@@ -1,5 +1,8 @@
 const EasyStar = require("easystarjs");
 
+// Количество накопленных очков ходьбы, необходимых для одного шага 
+const WALK_POINTS_PER_STEP = 5;
+
 class Unit {
     constructor({ guid, x, y }) {
         this.guid = guid;
@@ -19,6 +22,8 @@ class Unit {
         this.targetY = null;
         /** Оставшиеся клетки маршрута; path[0] — следующий шаг */
         this.path = [];
+        // Накопленные очки ходьбы 
+        this.walkPoints = 0;
     }
 
     // Задать цель движения юнита
@@ -51,31 +56,38 @@ class Unit {
     }
 
     /**
-    За 1 вызов не больше this.speed клеток по маршруту
-    */
+     * Каждый такт накапливает очки ходьбы (this.speed за такт).
+     * При накоплении WALK_POINTS_PER_STEP делает один шаг и вычитает порог.
+     *   soldier (speed = 1): шаг раз в 5 тактов
+     *   sniper  (speed = 1): шаг раз в 5 тактов
+     *   bmp     (speed = 3): примерно 3 шага за 5 тактов
+     *   partizan(speed = 4): примерно 4 шага за 5 тактов
+     */
     move(map, buildings, units, enemies, enemyBuildings) {
-        this.calculateUnitPath(map, buildings, units, enemies, enemyBuildings)
-        for (let s = 0; s < this.speed && this.path.length > 0; s++) {
-            const next = this.path[0];
-            if (map[next.y][next.x] !== 0) {
-                this.path = [];
-                console.log('Юнит столкнулся с препятствием');
-                return false;
-            }
-            this.x = next.x;
-            this.y = next.y;
-            this.path.shift();
-            return true;
+        this.calculateUnitPath(map, buildings, units, enemies, enemyBuildings);
+
+        this.walkPoints += this.speed;
+
+        if (this.walkPoints < WALK_POINTS_PER_STEP || this.path.length === 0) {
+            return false;
         }
-        /*if (
-            this.targetX != null &&
-            this.targetY != null &&
-            this.x === this.targetX &&
-            this.y === this.targetY
-        ) {
-            this.clearTarget();
-        }*/
-        return false;
+
+        this.walkPoints -= WALK_POINTS_PER_STEP;
+
+        const next = this.path[0];
+
+        if (map[next.y][next.x] !== 0) {
+            this.path = [];
+            this.walkPoints = 0;
+            console.log('Юнит столкнулся с препятствием');
+            return false;
+        }
+
+        this.x = next.x;
+        this.y = next.y;
+        this.path.shift();
+
+        return true;
     }
 
     /** Обновить сетку у EasyStar после изменений this.map (препятствия и т.д.) */

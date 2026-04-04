@@ -6,9 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
   token    TEXT
 );
 
-DROP TABLE IF EXISTS unit_types;
-
-CREATE TABLE unit_types (
+CREATE TABLE IF NOT EXISTS unit_types (
   type    TEXT    PRIMARY KEY,
   hp      INTEGER NOT NULL,
   speed   INTEGER NOT NULL,

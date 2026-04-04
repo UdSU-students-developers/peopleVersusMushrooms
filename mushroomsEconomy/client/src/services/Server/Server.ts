@@ -101,6 +101,10 @@ class Server {
         this.request(CONFIG.SOCKET.MESSAGES, {});
     }
 
+    public startGame(): void {
+        this.request(CONFIG.SOCKET.START_GAME, {});
+    }
+
     // ─── Response handlers ───────────────────────────────────────────────────────
 
     private handleRegistration(response: TResponse<TUser>): void {

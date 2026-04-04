@@ -104,24 +104,28 @@ class Unit {
         if (distance < 0.01) return;
 
         const step = this.speed * deltaTime;
-        const ratio = Math.min(step / distance, 1);
+        if (step >= distance) {
+            this.x = targetX;
+            this.y = targetY;
+            return;
+        }
 
-        const nextX = this.x + dx * ratio;
-        const nextY = this.y + dy * ratio;
+        const stepX = (dx / distance) * step;
+        const stepY = (dy / distance) * step;
 
-        const mapX = Math.floor(nextX);
-        const mapY = Math.floor(nextY);
+        let newX = this.x + stepX;
+        let newY = this.y + stepY;
 
         const map = mapData.map;
-        const tile = map[mapY][mapX];
+        const tile = map[newY][newX];
 
         if (tile === 1) {
             this.die();
             return;
         }
         
-        this.x = nextX;
-        this.y = nextY;
+        this.x = newX;
+        this.y = newY;
     }
 
     takeDamage(amount: number, type: string): void {

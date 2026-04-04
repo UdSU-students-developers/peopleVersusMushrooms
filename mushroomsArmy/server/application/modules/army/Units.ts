@@ -97,7 +97,7 @@ class Unit {
         }
     }
 
-    private moveTo(targetX: number, targetY: number, mapData: MapData, deltaTime: number): void {
+    protected moveTo(targetX: number, targetY: number, mapData: MapData, deltaTime: number): void {
         if (!this.isAlive) return;
 
         const dx = targetX - this.x;

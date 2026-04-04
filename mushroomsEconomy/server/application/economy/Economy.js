@@ -25,9 +25,6 @@ class Economy {
         //...
 
         /* УДОЛИ МЕНЯ */
-        this.n = 50;
-        this.m = 50;
-        this.mapInit(map);
         this.addMycelium(50, 49);
         /**************/
 

@@ -1,200 +1,205 @@
 import { io, Socket } from "socket.io-client";
 import CONFIG from '../../config';
 import Mediator from '../Mediator/Mediator';
-import { TMessages, TResponse, TUser } from "../Server/types";
-import { TError } from "../Server/types";
+import { 
+    TMessages, 
+    TResponse, 
+    TScene, 
+    TUser, 
+    TError, 
+    TMessage 
+} from "../Server/types";
+import md5 from 'md5';
 
 const { HOST } = CONFIG;
 
+interface ServerToClientEvents {
+    [key: string]: (response: any) => void;
+}
+
+interface ClientToServerEvents {
+    [key: string]: (payload: any, callback?: (response: any) => void) => void;
+}
+
 class Server {
-    mediator: Mediator;
-    chatInterval: NodeJS.Timer | null = null;
-    socket: Socket;
-    showErrorCb: (error: TError) => void = () => { };
+    private mediator: Mediator;
+    private socket: Socket<ServerToClientEvents, ClientToServerEvents>;
 
     constructor(mediator: Mediator) {
         this.mediator = mediator;
         this.socket = io(HOST);
+        this.setupSocketListeners();
+    }
 
+    private setupSocketListeners(): void {
         this.socket.on("connect", () => {
             console.log('connect');
+
+            const { SOCKET } = CONFIG;
+
+            this.socket.on(SOCKET.REGISTRATION, (data: TResponse<TUser>) => this.handleRegistration(data));
+            this.socket.on(SOCKET.LOGIN, (data: TResponse<TUser>) => this.handleLogin(data));
+            this.socket.on(SOCKET.LOGOUT, (data: TResponse<null>) => this.handleLogout(data));
+            this.socket.on(SOCKET.MESSAGE, (data: TResponse<{ message: string }>) => this.handleSendMessage(data));
+            this.socket.on(SOCKET.MESSAGES, (data: TResponse<{ messages: TMessages }>) => this.handleGetMessage(data));
+            this.socket.on(SOCKET.NEW_MESSAGE, (data: TResponse<TMessage>) => this.handleNewMessage(data));
+            this.socket.on(SOCKET.START_GAME, (data: TResponse<TScene>) => this.handleStartGame(data));
+            this.socket.on(SOCKET.UPDATE_SCENE, (data: TResponse<TScene>) => this.handleUpdateScene(data));
         });
-
-        this.socket.on(CONFIG.SOCKET.REGISTRATION, (data) => this.handleRegistration(data));
-        this.socket.on(CONFIG.SOCKET.LOGIN, (data) => this.handleLogin(data));
-        this.socket.on(CONFIG.SOCKET.LOGOUT, (data) => this.handleLogout(data));
-
-        this.socket.on(CONFIG.SOCKET.MESSAGE, (data) => this.handleSendMessage(data));
-        this.socket.on(CONFIG.SOCKET.MESSAGES, (data) => this.handleGetMessage(data));
-        this.socket.on(CONFIG.SOCKET.NEW_MESSAGE, (data) => this.handleNewMessage(data));
     }
 
-    sendMessage(message: string): void {
+    private getCredentials(): { guid: string; token: string } | null {
         const { GET_STORE } = this.mediator.getTriggerTypes();
-        const user = this.mediator.get<{ name: string; token: string } | null>(GET_STORE, 'user');
+        const user = this.mediator.get<{ name: string; token: string; guid: string } | null>(GET_STORE, 'user');
+
+        if (!user?.token || !user?.guid) return null;
+
+        return { guid: user.guid, token: user.token };
+    }
+
+    private checkError(response: TResponse<any>): boolean {
+        if (response?.error) {
+            const { SHOW_ERROR } = this.mediator.getEventTypes();
+            this.mediator.call(SHOW_ERROR, response.error);
+            return true;
+        }
+        return false;
+    }
+
+    private request(event: string, payload: object): void {
+        const credentials = this.getCredentials();
+        const fullPayload = credentials ? { ...payload, ...credentials } : payload;
+        this.socket.emit(event, fullPayload);
+    }
+
+    // ─── Public ──────────────────────────────────────────────────────────────
+
+    public register(name: string, password: string): void {
+        const passwordHash = md5(`${name}${password}`);
+        this.request(CONFIG.SOCKET.REGISTRATION, { name, passwordHash });
+    }
+
+    public login(name: string, password: string): void {
+        const passwordHash = md5(`${name}${password}`);
+        this.request(CONFIG.SOCKET.LOGIN, { name, passwordHash });
+    }
+
+    public logout(name: string, password: string): void {
+        this.request(CONFIG.SOCKET.LOGOUT, { name, password });
+    }
+
+    public sendMessage(message: string): void {
+        const { GET_STORE } = this.mediator.getTriggerTypes();
+        const user = this.mediator.get<{ name: string } | null>(GET_STORE, 'user');
+
         if (user?.name) {
-            this.socket.emit(CONFIG.SOCKET.MESSAGE, { name: user.name, message });
+            this.request(CONFIG.SOCKET.MESSAGE, { author: user.name, message });
         }
     }
 
-    getMessages() {
-        this.socket.emit(CONFIG.SOCKET.MESSAGES);
+    public getMessages(): void {
+        this.request(CONFIG.SOCKET.MESSAGES, {});
     }
 
-    private chatMessage(name: string, text: string): void {
-        this.socket.emit(CONFIG.SOCKET.MESSAGE, { name, text });
+    public createLobby(): void {
+        this.request(CONFIG.SOCKET.CREATE_LOBBY, {});
     }
 
-    private async request<T>(
-        method: string,
-        params: { [key: string]: string } = {},
-        queryParams: { [key: string]: string } = {}
-    ): Promise<T | null> {
-        try {
-            const { GET_STORE } = this.mediator.getTriggerTypes();
-            const token = this.mediator.get(GET_STORE, 'token');
-            
-            let url = `${HOST}/${method}`;
-            const paramValues = Object.values(params);
-            if (paramValues.length > 0) {
-                url += "/" + paramValues.join("/");
-            }
-            
-            const queryParts: string[] = [];
-            if (token) {
-                queryParts.push("token=" + token);
-            }
-            for (const key in queryParams) {
-                queryParts.push(key + "=" + queryParams[key]);
-            }
-            if (queryParts.length > 0) {
-                url += "?" + queryParts.join("&");
-            }
+    // ─── Response handlers ───────────────────────────────────────────────────────
 
-            const response = await fetch(url);
-            const body = await response.json();
+    private handleRegistration(response: TResponse<TUser>): void {
+        if (this.checkError(response)) return;
 
-            if (body && body.error) {
-                this.setError(body.error);
-                return null;
-            }
-            return body as T;
-        } catch (e) {
-            console.log("Request exception:", e);
-            this.setError({
-                code: 9000,
-                text: 'Unknown error',
-            });
-            return null;
-        }
-    }
-
-    private setError(error: TError): void {
-        this.showErrorCb(error);
-    }
-
-    showError(cb: (error: TError) => void) {
-        this.showErrorCb = cb;
-    }
-
-    async register(name: string, password: string): Promise<boolean> {
-        this.socket.emit(CONFIG.SOCKET.REGISTRATION, { name, password });
-        return true;
-    }
-
-    login(name: string, password: string): void {
-        this.socket.emit(CONFIG.SOCKET.LOGIN, { name, password });
-    }
-
-    async logout(name: string, password: string): Promise<boolean> {
-        this.socket.emit(CONFIG.SOCKET.LOGOUT, { name, password });
-        return true;
-    }
-
-    private handleRegistration(response: any) {
-        console.log('Registration response: ', response);
-
-        if (response) {
+        if (response.data) {
             const { SET_STORE } = this.mediator.getTriggerTypes();
+            const { REGISTRATION } = this.mediator.getEventTypes();
+
             this.mediator.get(SET_STORE, {
                 name: 'user',
                 value: {
-                    name: response.data.name,
-                    token: response.data.token
+                    name:  response.data.name,
+                    token: response.data.token,
+                    guid:  response.data.guid,
                 }
             });
-        } else {
-            this.setError(response.error);
+
+            this.mediator.call(REGISTRATION);
         }
     }
 
-    private handleLogin(response: any) {
-        console.log('Login response: ', response);
+    private handleLogin(response: TResponse<TUser>): void {
+        if (this.checkError(response)) return;
 
-        if (response?.result === 'ok' && response.data) {
-            const { name, token } = response.data;
+        if (response.data) {
+            const { name, token, guid } = response.data;
             const { SET_STORE } = this.mediator.getTriggerTypes();
             const { LOGIN } = this.mediator.getEventTypes();
-            
-            this.mediator.get(SET_STORE, {
-                name: 'user',
-                value: { name, token }
-            });
-            
-            this.mediator.call(LOGIN); 
-        } else {
-            this.setError({code: 11, text: "Ошибка авторизации"});
+
+            this.mediator.get(SET_STORE, { name: 'user', value: { name, token, guid } });
+            this.mediator.call(LOGIN);
         }
     }
 
-    private handleLogout(response: any) {
-        if (response.data) {
+    private handleLogout(response: TResponse<null>): void {
+        if (this.checkError(response)) return;
+
+        if (response.data !== undefined) {
             const { CLEAR_STORE } = this.mediator.getTriggerTypes();
             this.mediator.get(CLEAR_STORE, 'user');
         }
     }
 
-    private handleSendMessage(response: any) {
-        if (response?.result === 'ok' && response.data) {
+    private handleSendMessage(response: TResponse<{ message: string }>): void {
+        if (this.checkError(response)) return;
+
+        if (response.data) {
             const { MESSAGE_SEND } = this.mediator.getEventTypes();
             this.mediator.call(MESSAGE_SEND, response.data.message);
-        } else {
-            this.setError(response.error);
         }
     }
 
-    private handleGetMessage(response: any) {
-        if (response?.result === 'ok' && response.data) {
+    private handleGetMessage(response: TResponse<{ messages: TMessages }>): void {
+        if (this.checkError(response)) return;
+
+        if (response.data) {
             const { SET_STORE } = this.mediator.getTriggerTypes();
             const { MESSAGE_LOADED } = this.mediator.getEventTypes();
-
             const messages = response.data.messages;
 
-            this.mediator.get(SET_STORE, {
-                name: 'messages',
-                value: messages
-            });
-
+            this.mediator.get(SET_STORE, { name: 'messages', value: messages });
             this.mediator.call(MESSAGE_LOADED, messages);
-        } else {
-            this.setError(response.error);
         }
     }
 
-    private handleNewMessage(response: any) {
-        if (response?.result === 'ok' && response.data) {
-            const { SET_STORE } = this.mediator.getTriggerTypes();
+    private handleNewMessage(response: TResponse<TMessage>): void {
+        if (this.checkError(response)) return;
+
+        if (response.data) {
+            const { SET_STORE, GET_STORE } = this.mediator.getTriggerTypes();
             const { NEW_MESSAGE } = this.mediator.getEventTypes();
 
-            this.mediator.get(SET_STORE, {
-                name: 'newMessage',
-                value: response.data
-            });
+            const currentMessages = this.mediator.get<TMessages>(GET_STORE, 'messages');
+            const updatedMessages = Array.isArray(currentMessages)
+                ? [...currentMessages, response.data]
+                : [response.data];
 
+            this.mediator.get(SET_STORE, { name: 'messages', value: updatedMessages });
             this.mediator.call(NEW_MESSAGE, response.data);
-        } else {
-            this.setError(response.error);
         }
+    }
+
+    private handleStartGame(response: TResponse<TScene>): void {
+        if (this.checkError(response)) return;
+
+        const { START_GAME } = this.mediator.getEventTypes();
+        this.mediator.call(START_GAME, response.data);
+    }
+
+    private handleUpdateScene(response: TResponse<TScene>): void {
+        if (this.checkError(response)) return;
+
+        const { UPDATE_SCENE } = this.mediator.getEventTypes();
+        this.mediator.call(UPDATE_SCENE, response.data);
     }
 }
 

@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { MediatorContext} from '../../App';
+import { MediatorContext } from '../../App';
 import Button from '../Button/Button';
 import { TError } from '../../services/Server/types';
 
@@ -20,7 +20,8 @@ export type TPopupData = {
 };
 
 const Popup: React.FC = () => {
-    const server = useContext(MediatorContext);
+    const mediator = useContext(MediatorContext);
+    const { SHOW_ERROR } = mediator.getEventTypes();
     const [data, setData] = useState<TPopupData | null>(null);
 
     useEffect(() => {
@@ -32,8 +33,12 @@ const Popup: React.FC = () => {
             });
             setTimeout(() => setData(null), 3000);
         }
-    
-        server.showError(showErrorHandler);
+
+        mediator.subscribe(SHOW_ERROR, showErrorHandler);
+
+        return () => {
+            mediator.unsubscribe(SHOW_ERROR, showErrorHandler);
+        }
     });
 
     if (!data) return (<></>);

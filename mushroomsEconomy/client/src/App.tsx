@@ -1,43 +1,44 @@
 import React from 'react';
+
+import Server from './services/Server/Server';
+import Mediator from './services/Mediator/Mediator';
+import GameProcess from './Game/GameProcess';
+
 import PageManager from './pages/PageManager';
 import Popup from './components/Popup/Popup';
 
-import Server from './services/Server/Server';
-import Store from './services/Store/Store';
 import useMediator from './services/Mediator/useMediator';
 import useStore from './services/Store/useStore';
 
 import './App.css';
-import CONFIG from './config';
 
-export const MediatorContext = React.createContext<any>(null!);
+
+export const MediatorContext = React.createContext<Mediator>(null!);
+export const ServerContext = React.createContext<Server>(null!);
+export const GameContext = React.createContext<GameProcess>(null!);
+
 
 function App() {
+
   const mediator = useMediator();
-  const store = useStore(mediator);
-
+  useStore(mediator);
   const server = new Server(mediator);
+  const game = new GameProcess(server, mediator);
 
-  const pressMeHandler = () => mediator.get(
-    CONFIG.MEDIATOR.TRIGGERS.MESSAGE,
-    { name: 'Vasya', text: 'something' }
-  );
-
-  const props = {
-    mediator,
-    server,
-    store,
-  }
 
   return (
+    <div className="App">
       <MediatorContext.Provider value={mediator}>
-          <div className="App">
-            <button onClick={pressMeHandler}>Press Me</button>
+        <ServerContext.Provider value={server}>
+          <GameContext.Provider value={game}>
             <div className='app'>
-              <PageManager {...props}/>
+              <PageManager />
+              <Popup />
             </div>
-          </div>
+          </GameContext.Provider>
+        </ServerContext.Provider>
       </MediatorContext.Provider>
+    </div>
   );
 }
 

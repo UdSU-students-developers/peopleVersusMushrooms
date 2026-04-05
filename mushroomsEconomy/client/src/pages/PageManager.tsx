@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import Server from '../services/Server/Server';
+import React, { useContext, useState } from 'react';
 import Registration from './Registration/Registration';
 import Login from './Login/Login';
 import Chat from './Chat/Chat'
-import Store from '../services/Store/Store';
+import Game from './Game/Game';
+import GameMenu from './GameMenu/GameMenu';
+import StartGame from './StartGame/StartGame'
 
-import Mediator from '../services/Mediator/Mediator';
 import CONFIG from '../config';
 
 
@@ -13,28 +13,20 @@ export enum PAGES {
     LOGIN,
     REGISTRATION,
     CHAT,
+    GAME,
+    GAME_MENU,
+    START_GAME,
 }
 
 export interface IBasePage {
     setPage: (name: PAGES) => void;
-    server: Server,
-    store: Store,
-    mediator: Mediator
 }
 
-export interface IPageManager {
-    server: Server,
-    store: Store,
-    mediator: Mediator
-}
-
-const PageManager: React.FC<IPageManager> = (propsManager: IPageManager) => {
+const PageManager: React.FC = () => {
     const [page, setPage] = useState<PAGES>(PAGES.LOGIN);
-    const { store, mediator, server } = propsManager;
 
     const props = {
         setPage,
-        ...propsManager
     }
 
     return (
@@ -42,6 +34,9 @@ const PageManager: React.FC<IPageManager> = (propsManager: IPageManager) => {
             {page === PAGES.REGISTRATION && <Registration {...props} />}
             {page === PAGES.LOGIN && <Login {...props} />}
             {page === PAGES.CHAT && <Chat {...props} />}
+            {page === PAGES.GAME && <Game {...props} />}
+            {page === PAGES.GAME_MENU && <GameMenu {...props} />}
+            {page === PAGES.START_GAME && <StartGame {... props} />}
         </>
     );
 }

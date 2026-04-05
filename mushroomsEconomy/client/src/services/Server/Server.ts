@@ -101,8 +101,8 @@ class Server {
         this.request(CONFIG.SOCKET.MESSAGES, {});
     }
 
-    public startGame(): void {
-        this.request(CONFIG.SOCKET.START_GAME, {});
+    public createLobby(): void {
+        this.request(CONFIG.SOCKET.CREATE_LOBBY, {});
     }
 
     // ─── Response handlers ───────────────────────────────────────────────────────

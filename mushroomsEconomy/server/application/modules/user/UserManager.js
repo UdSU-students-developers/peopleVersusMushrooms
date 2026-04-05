@@ -62,35 +62,6 @@ class UserManager extends BaseManager {
         if (await user.login(name, passwordHash)) {
             this.users[user.guid] = user;
             socket.emit(LOGIN, this.answer.good(user.getSelf()));
-
-
-            //TEMPORARY
-            const map = [];
-            for (let i = 0; i < 50; i++) {
-                map.push([]);
-                for (let j = 0; j < 50; j++) {
-                    map[i][j] = 0;
-                }
-            }
-            map[39][25] = 1;
-            map[40][25] = 1;
-            map[41][25] = 1;
-            map[42][25] = 1;
-            map[43][25] = 1;
-            map[44][25] = 1;
-            map[45][25] = 1;
-            map[46][25] = 1;
-            map[47][25] = 1;
-            map[48][25] = 1;
-            map[49][25] = 1;
-            map[5][25] = 1;
-
-            this.mediator.call(this.EVENTS.START_GAME, {
-                guid: user.guid,
-                map,
-            });
-            return;
-            //TEMPORARY END
         }
         socket.emit(LOGIN, this.answer.bad(11));
     }

@@ -1,4 +1,4 @@
-const CONFIG = require("../../../config");
+const CONFIG = require("../../../../config");
 
 const { HP, GROW_SPEED, GROW_LEVEL_UP, MAX_LEVEL, POWER } = CONFIG.ECONOMY.MYCELIUM;
 

@@ -2,6 +2,9 @@ const CONFIG = require('../../../config');
 const BaseManager = require('../BaseManager');
 const Lobby = require('./Lobby');
 
+//TEMPORARY
+const Map = require('../map/Map');
+
 const { SOCKET } = CONFIG;
 
 class LobbyManager extends BaseManager {
@@ -32,17 +35,19 @@ class LobbyManager extends BaseManager {
     }
 
     handleDisconnect(socket) {
-        console.log("LobbyManager: Client disconnected:", socket)
+        console.log("LobbyManager: Client disconnected:", socket.id)
     }
 
     socketCreateLobby(socket, data) {
         const { guid } = data;
+        const map = new Map();
 
         this.lobbies[guid] = new Lobby({guid, common, socket});
         this.mediator.call(this.EVENTS.START_GAME, {
-            guid: user.guid,
-            map, //Должно приходить с одноимённого сервиса
+            guid: guid,
+            map: map.generate(), //Должно приходить с одноимённого сервиса
         });
+        console.log("Лобби создалось");
     }
 
     socketJoinLobby(socket, data) {

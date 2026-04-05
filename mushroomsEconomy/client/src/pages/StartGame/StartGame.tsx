@@ -26,7 +26,7 @@ const StartGame: React.FC<IBasePage> = ({ setPage }) => {
 
     const handleStartGame = async (e: any) => {
         e.preventDefault();
-        await server.startGame();
+        await server.createLobby();
     }
 
     return (

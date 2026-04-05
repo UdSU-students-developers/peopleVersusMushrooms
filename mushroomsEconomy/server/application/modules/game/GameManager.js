@@ -38,8 +38,8 @@ class GameManager extends BaseManager {
 			callbacks: {
 				updated: (data) => this.callbackUpdate(guid, data)
 			},
-			map,
-			guid,
+			map: map,
+			guid: guid,
 		});
 		return this.economies[guid];
 	}

@@ -2,6 +2,7 @@ const EasyStar = require('easystarjs');
 const CONFIG = require('../../config');
 
 const Mycelium = require('./entities/Mycelium');
+const Incubator = require('./entities/Incubator');
 
 const { INTERVAL } = CONFIG.ECONOMY;
 
@@ -80,6 +81,15 @@ class Economy {
             this.updated = true;
         }
     }
+ 
+    addLarva(incubator) {
+        if (incubator.canCreateLarva()) {
+            const larva = incubator.createLarva();
+            if (larva === null) return;
+            this.larvae.push(larva);
+            this.updated = true;
+        }
+    }
 
     update() {
 
@@ -92,6 +102,15 @@ class Economy {
         // 2. расширить грибницу при возможности
         this.mycelium.forEach(mycelium => this.myceliumExtend(mycelium));
         /****************/
+
+        /* про инкубатор */
+        // 1. создать личинку
+        this.buildings.forEach(building => {
+            if (building instanceof Incubator) this.addLarva(building);
+        });
+        /****************/
+
+
         if (this.updated) {
             this.updated = false;
             this.callbacks.updated(this.get());

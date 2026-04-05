@@ -87,7 +87,6 @@ export function drawGame(
     ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight);
   });
 
-  // сетка отключена
 }
 
 /**

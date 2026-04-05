@@ -44,7 +44,7 @@ class LobbyManager extends BaseManager {
 
         this.lobbies[guid] = new Lobby({guid, common, socket});
         this.mediator.call(this.EVENTS.START_GAME, {
-            guid: user.guid,
+            guid: guid,
             map: map.generate(), //Должно приходить с одноимённого сервиса
         });
         console.log("Лобби создалось");

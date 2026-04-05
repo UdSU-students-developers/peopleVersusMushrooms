@@ -1,7 +1,7 @@
 const EasyStar = require('easystarjs');
 const CONFIG = require('../../config');
 
-const Mycelium = require('./entities/Mycelium');
+const Mycelium = require('./entities/Buildings/Mycelium');
 
 const { INTERVAL } = CONFIG.ECONOMY;
 

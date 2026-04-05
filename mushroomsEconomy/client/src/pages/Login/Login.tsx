@@ -17,7 +17,7 @@ const Login: React.FC<IBasePage> = ({ setPage }) => {
         const eventTypes = mediator.getEventTypes();
 
         const handleLogin = () => {
-            setPage(PAGES.START_GAME);
+            setPage(PAGES.GAME);
         }
 
         mediator.subscribe(eventTypes.LOGIN, handleLogin);
@@ -27,8 +27,11 @@ const Login: React.FC<IBasePage> = ({ setPage }) => {
         }
     }, [mediator, setPage]);
 
-    const handleLogin = async (e: any) => {
-        e.preventDefault();
+    const handleLogin = async () => {
+        if (!login || !password) {
+            alert('Введите логин и пароль');
+            return;
+        }
         await server.login(login, password);
     };
 
@@ -40,14 +43,13 @@ const Login: React.FC<IBasePage> = ({ setPage }) => {
         <div className="login-container">
             <h2>Вход</h2>
 
-            <form onSubmit={handleLogin}>
+            <div className="login-form">
                 <input
                     id="testing-login-username"
                     type="text"
                     placeholder="Введите логин"
                     value={login}
                     onChange={(e) => setLogin(e.target.value)}
-                    required
                 />
 
                 <input
@@ -56,13 +58,12 @@ const Login: React.FC<IBasePage> = ({ setPage }) => {
                     placeholder="Введите пароль"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    required
                 />
 
-                <button id="testing-login-submit" type="submit">
+                <button id="testing-login-submit" type="button" onClick={handleLogin}>
                     Войти
                 </button>
-            </form>
+            </div>
 
             <p id="testing-login-switch-to-register" className="login-switch" onClick={goToRegister}>
                 Нет аккаунта? Зарегистрироваться

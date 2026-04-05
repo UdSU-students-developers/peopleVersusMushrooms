@@ -1,23 +1,28 @@
-const Entity = require("./Entity");
-
-class Unit extends Entity {
-    constructor({ x, y, type, guid }) {
-        super({ x, y, type });
+class Unit {
+    constructor({ guid, x, y, easystar }) {
         this.guid = guid;
-    }
-
-    move(dx, dy) {
-        this.x += dx;
-        this.y += dy;
+        this.x = x;
+        this.y = y;
+        this.easystar = easystar;      
+        this.hp = 1;
+        this.speed = 1;
     }
 
     get() {
-        const sup = super.get();
         return {
-            ...sup,
-            guid: guid
+            guid: this.guid,
+            x: this.x,
+            y: this.y,
+            hp: this.hp,   
         };
     }
+
+    //передвижение
+    moveTo(newX, newY) {
+
+    }
+    
+    
 }
 
 module.exports = Unit;

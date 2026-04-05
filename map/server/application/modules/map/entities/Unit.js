@@ -5,16 +5,10 @@ class Unit extends Entity {
         super({ x, y, type });
         this.guid = guid;
     }
-
-    move(dx, dy) {
-        this.x += dx;
-        this.y += dy;
-    }
-
+    
     get() {
-        const sup = super.get();
         return {
-            ...sup,
+            ...super.get(),
             guid: guid
         };
     }

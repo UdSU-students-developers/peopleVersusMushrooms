@@ -1,11 +1,13 @@
 const CONFIG = require('../../../config');
-const Field = require('./entities/Field');
 const MAP_CONFIG = require('./MapConfig');
+
 const libnoise = require('libnoise').libnoise;
+
+const Source = require('./entities/Source');
 
 class Map {
     constructor(guid, width = 50, height = 50) {
-        this.guid = guid; // это guid лобби (комнаты)
+        this.guid = guid; // guid создателя лобби
         this.map = [];
         this.width = width;
         this.height = height;
@@ -21,7 +23,7 @@ class Map {
         // Массивы объектов на карте
         this.buildings = [];
         this.units = [];
-        this.fields = [];
+        this.sources = [];
     }
 
     // сгенерировать карту
@@ -64,54 +66,56 @@ class Map {
     }
 
     // iron, oil - [0, 20]
-    generateFields(iron, oil) {
+    generateSources(iron, oil) {
         this.iron = typeof iron === "number" ? iron : MAP_CONFIG.DEFAULTS.IRON;
         this.oil = typeof oil === "number" ? oil : MAP_CONFIG.DEFAULTS.OIL;
         const mapSize = this.width * this.height;
         const ironSize = Math.floor(mapSize * iron / 100);
         const oilSize = Math.floor(mapSize * oil / 100);
-        const positionsSize = ironSize + oilSize;
         const positions = new Set();
-
-        while (positions.size < positionsSize) {
+        
+        while (positions.size < ironSize + oilSize) {
             const pos = Math.floor(Math.random() * mapSize);
             positions.add(pos);
         }
 
+        let c = 0
         positions.forEach(pos => {
             const row = Math.floor(pos / this.width);
             const col = pos % this.width;
-            this.fields.push(new Field({ col, row, type: CONFIG.FIELD_NAMES.IRON }));
+            this.sources.push(
+                (c > ironSize) ?
+                    new Source({ col, row, type: CONFIG.FIELD_NAMES.IRON, saturation: MAP_CONFIG.SATURATION.IRON }) :
+                    new Source({ col, row, type: CONFIG.FIELD_NAMES.OIL, saturation: MAP_CONFIG.SATURATION.OIL })
+            );
+            c++;
         });
     }
 
     get() {
         return {
-            map: this.map,
-            water: this.water,
-            mountains: this.mountains,
-            seed: this.seed,
-            iron: this.iron,
-            oil: this.oil,
             buildings: this.buildings.map(building => building),
             units: this.buildings.map(unit => unit),
-            fields: this.fields.map(field => field),
+            sources: this.sources.map(source => source)
         };
     }
 
-    getEasy() {
+    getSelf() {
         return {
+            map: this.map.map(row => row.map(tile => tile)),
             buildings: this.buildings.map(building => building),
             units: this.buildings.map(unit => unit),
-            fields: this.fields.map(field => field)
-        }
+            sources: this.sources.map(source => source)
+        };
     }
 
     getGen() {
         return {
             water: this.water,
             mountains: this.mountains,
-            seed: this.seed
+            seed: this.seed,
+            iron: this.iron,
+            oil: this.oil
         };
     }
 
@@ -120,8 +124,7 @@ class Map {
             return null;
         const data = {
             units: [],
-            buildings: [],
-            fields: []
+            buildings: []
         };
         this.units.forEach(unit => {
             if (unit.x === x && unit.y === y) {
@@ -129,17 +132,55 @@ class Map {
             }
         });
         this.buildings.forEach(building => {
-            if ((building.x === x || building.x + width === x) &&
-                (building.y === y || building.y + length === x)) {
+            if (building.x <= x && building.x + building.size >= x &&
+                building.y <= y && building.y + building.size >= y) {
                 data.buildings.append(building.get());
             }
         });
-        this.fields.forEach(field => {
-            if (field.x === x && field.y === y) {
-                data.fields.append(field.get());
+        return {
+            relief: this.map[y][x],
+            data
+        };
+    }
+
+    getSourcesTile(x, y) {
+        if (x < 0 || y < 0 || x >= this.width || y >= this.height)
+            return null;
+        const data = {
+            sources: []
+        };
+        this.sources.forEach(sources => {
+            if (sources.x === x && sources.y === y) {
+                data.sources.append(sources.get());
             }
         });
-        return this.map[y][x];
+        return {
+            relief: this.map[y][x],
+            data
+        };
+    }
+
+    //visibility - массив из пар чисел/координат на карте
+    getTilesByVisibility(visibility) {
+        return visibility.map(tile => {
+                return {
+                    x: tile[0],
+                    y: tile[1],
+                    ...this.getTile(tile[0], tile[1]),
+                }
+            }
+        );
+    }
+
+    getTilesBySourcesVisibility(visibility) {
+        return visibility.map(tile => {
+                return {
+                    x: tile[0],
+                    y: tile[1],
+                    ...this.getSourcesTile(tile[0], tile[1]),
+                }
+            }
+        );
     }
 }
 

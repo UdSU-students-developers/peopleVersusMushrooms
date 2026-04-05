@@ -15,4 +15,9 @@ export type TUser = {
     token: string;
 }
 
-
+export type TMap = {
+    guid: string;
+    map: any[];
+    width: number;
+    height: number;
+}

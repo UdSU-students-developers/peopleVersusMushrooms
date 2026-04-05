@@ -15,7 +15,7 @@
   font-weight: 600;
 }
 
-.login-container form {
+.login-container .login-form {
   background: white;
   padding: 30px;
   border-radius: 8px;

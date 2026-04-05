@@ -17,7 +17,7 @@ const Registration: React.FC<IBasePage> = ({ setPage }) => {
             const eventTypes = mediator.getEventTypes();
     
             const handleRegister = () => {
-                setPage(PAGES.GAME);
+                setPage(PAGES.START_GAME);
             }
     
             mediator.subscribe(eventTypes.REGISTRATION, handleRegister);

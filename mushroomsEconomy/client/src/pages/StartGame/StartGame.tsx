@@ -1,11 +1,28 @@
 import React, {useContext, useEffect, useState} from "react";
 import { IBasePage, PAGES } from "../PageManager";
 import { MediatorContext, ServerContext } from "../../App";
+import CONFIG from "../../config";
+
+interface IUser {
+    name: string;
+    guid: string;
+}
 
 const StartGame: React.FC<IBasePage> = ({ setPage }) => {
     const server = useContext(ServerContext);
     const mediator = useContext(MediatorContext);
     const [isStarting, setIsStarting] = useState(false);
+    const [userInfo, setUserInfo] = useState<IUser | null>(null);
+    const { GET_STORE} = CONFIG.MEDIATOR.TRIGGERS;
+
+    useEffect(() => {
+        if (mediator) {
+            const user = mediator.get<IUser | null>(GET_STORE, 'user');
+            if (user) {
+                setUserInfo(user);
+            }
+        }
+    }, [mediator]);
 
     useEffect(() => {
         if (!mediator) return;
@@ -29,15 +46,38 @@ const StartGame: React.FC<IBasePage> = ({ setPage }) => {
         await server.createLobby();
     }
 
+    const handleBackToLogin = () => {
+        setPage(PAGES.LOGIN);
+    }
+
     return (
         <div>
             <div>
-                <p>Нажмите кнопку ниже, чтобы начать игру</p>
-                <form onSubmit={handleStartGame}>
-                    <button id="testing-start-game" type="submit" >
-                        Начать игру
+                <h2>Лобби</h2>
+                <div>
+                    {userInfo ? (
+                        <>
+                            <div>
+                                <span>Игрок:</span>
+                                <span>{userInfo.name}</span>
+                            </div>
+                            <div>
+                                <span>Socket ID:</span>
+                                <span>{userInfo.guid}</span>
+                            </div>
+                        </>
+                    ) : (
+                        <div>Загрузка данных...</div>
+                    )}
+                </div>
+                <div>
+                    <button id="testing-start-game" type="submit" onClick={handleStartGame}>
+                        Создать лобби и начать игру
                     </button>
-                </form>
+                    <button id="testing-back-to-game" onClick={handleBackToLogin}>
+                        Назад
+                    </button>
+                </div>
             </div>
         </div>
     )

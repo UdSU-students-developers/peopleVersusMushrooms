@@ -87,8 +87,7 @@ export function drawGame(
     ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight);
   });
 
-  // 4. Опциональная сетка (поверх всего)
-  drawGrid(ctx, widthCSS, heightCSS, cellW, cellH);
+  // сетка отключена
 }
 
 /**

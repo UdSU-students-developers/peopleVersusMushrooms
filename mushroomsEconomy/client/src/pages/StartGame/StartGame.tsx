@@ -1,7 +1,6 @@
 import React, {useContext, useEffect, useState} from "react";
 import { IBasePage, PAGES } from "../PageManager";
 import { MediatorContext, ServerContext } from "../../App";
-import './StartGame.css';
 
 const StartGame: React.FC<IBasePage> = ({ setPage }) => {
     const server = useContext(ServerContext);
@@ -31,8 +30,8 @@ const StartGame: React.FC<IBasePage> = ({ setPage }) => {
     }
 
     return (
-        <div className="start-game-container">
-            <div className="start-game-content">
+        <div>
+            <div>
                 <p>Нажмите кнопку ниже, чтобы начать игру</p>
                 <form onSubmit={handleStartGame}>
                     <button id="testing-start-game" type="submit" >

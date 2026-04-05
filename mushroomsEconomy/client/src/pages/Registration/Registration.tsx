@@ -25,10 +25,13 @@ const Registration: React.FC<IBasePage> = ({ setPage }) => {
             return () => {
                 mediator.unsubscribe(eventTypes.REGISTRATION, handleRegister);
             }
-        }, [mediator, setPage]);
+    }, [mediator, setPage]);
 
-    const handleRegister = async (e: any) => {
-        e.preventDefault();
+    const handleRegister = async () => {
+        if (!name || !password || !confirmPassword) {
+            alert('Заполните все поля');
+            return;
+        }
         if (password !== confirmPassword) {
             alert('Пароли не совпадают');
             return;
@@ -40,13 +43,12 @@ const Registration: React.FC<IBasePage> = ({ setPage }) => {
         <div className="registration-container">
             <h2>Создание аккаунта</h2>
 
-            <form onSubmit={handleRegister}>
+            <div className="registration-form">
                 <input
                     id="testing-registration-name"
                     placeholder="Логин"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    required
                 />
 
                 <input
@@ -55,7 +57,6 @@ const Registration: React.FC<IBasePage> = ({ setPage }) => {
                     placeholder="Придумайте пароль"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    required
                 />
 
                 <input
@@ -64,13 +65,12 @@ const Registration: React.FC<IBasePage> = ({ setPage }) => {
                     placeholder="Подтвердите пароль"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
                 />
 
-                <button id="testing-registration-submit" type="submit">
+                <button id="testing-registration-submit" type="button" onClick={handleRegister}>
                     Зарегистрироваться
                 </button>
-            </form>
+            </div>
 
             <p
                 id="testing-registration-switch-to-login"

@@ -81,6 +81,15 @@ class Economy {
         }
     }
 
+    setPathsUnits({ x, y }) {
+        //пометка что надо будет сделать массив с юнитами общий
+        [...this.workers].forEach(unit => unit.calcPath({ x, y }));
+    }
+
+    moveUnits() {
+        [...this.workers].forEach(unit => unit.moveOneStep())
+    }
+
     update() {
 
         //console.log(this.mycelium.length);
@@ -91,6 +100,8 @@ class Economy {
         this.mycelium.forEach(mycelium => this.myceliumGrow(mycelium));
         // 2. расширить грибницу при возможности
         this.mycelium.forEach(mycelium => this.myceliumExtend(mycelium));
+        // 3. Переместить юнитов если нужно
+        this.moveUnits();
         /****************/
         if (this.updated) {
             this.updated = false;

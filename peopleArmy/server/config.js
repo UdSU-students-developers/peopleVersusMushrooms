@@ -13,7 +13,6 @@ const CONFIG = {
         TRIGGERS: {
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',
 
-            SET_UNIT_TARGET: "SET_UNIT_TARGET",   // задать юниту цель движения (см. ArmyManager)
             CREATE_UNIT: "CREATE_UNIT",           // создать юнита (см. ArmyManager)
         },
     },
@@ -30,19 +29,6 @@ const CONFIG = {
 
     ARMY: {
         INTERVAL: 100, //ms
-
-        SOLDIER: {
-            HP: 10,
-            SPEED: 1,
-            RANGE: 3, // дальность стрельбы
-            VISIBLE: 5 // дальность видимости
-        },
-        BMP: {
-            HP: 100,
-            SPEED: 3,
-            RANGE: 5, // дальность стрельбы
-            VISIBLE: 3 // дальность видимости
-        },
     }
 }
 

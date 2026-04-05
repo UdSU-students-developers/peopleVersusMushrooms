@@ -62,17 +62,6 @@ class UserManager extends BaseManager {
         if (await user.login(name, passwordHash)) {
             this.users[user.guid] = user;
             socket.emit(LOGIN, this.answer.good(user.getSelf()));
-
-
-            //TEMPORARY
-            const { map } = data;
-
-            this.mediator.call(this.EVENTS.START_GAME, {
-                guid: user.guid,
-                map: map,
-            });
-            return;
-            //TEMPORARY END
         }
         socket.emit(LOGIN, this.answer.bad(11));
     }

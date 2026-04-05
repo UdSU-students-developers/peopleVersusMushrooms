@@ -47,6 +47,7 @@ class LobbyManager extends BaseManager {
             guid: user.guid,
             map: map.generate(), //Должно приходить с одноимённого сервиса
         });
+        console.log("Лобби создалось");
     }
 
     socketJoinLobby(socket, data) {

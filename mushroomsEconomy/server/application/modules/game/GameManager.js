@@ -56,6 +56,7 @@ class GameManager extends BaseManager {
 				this.SOCKETS.START_GAME,
 				this.answer.good(economy.get())
 			);
+			console.log("Экономика создана");
 			return;
 		}
 		this.io.to(user.socketId).emit(this.SOCKETS.START_GAME, this.answer.bad(16));

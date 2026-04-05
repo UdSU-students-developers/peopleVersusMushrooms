@@ -17,7 +17,7 @@ const Login: React.FC<IBasePage> = ({ setPage }) => {
         const eventTypes = mediator.getEventTypes();
 
         const handleLogin = () => {
-            setPage(PAGES.GAME);
+            setPage(PAGES.START_GAME);
         }
 
         mediator.subscribe(eventTypes.LOGIN, handleLogin);

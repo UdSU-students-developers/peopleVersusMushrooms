@@ -1,21 +1,18 @@
 const Entity = require("./Entity");
 
 class Building extends Entity {
-    constructor({ x, y, type, guid, length = 1, width = 1 }) {
+    constructor({ x, y, type, guid, size = 1 }) {
         super({ x, y, type });
-        
+
         this.guid = guid;
-        this.length = length;
-        this.width = width;
+        this.size = size;
     }
 
     get() {
-        const sup = super.get();
         return {
-            ...sup,
+            ...super.get(),
             guid: this.guid,
-            length: this.length,
-            width: this.width
+            size: this.size
         };
     }
 }

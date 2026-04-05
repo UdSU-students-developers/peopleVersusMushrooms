@@ -1,116 +1,130 @@
 class ORM {
-    constructor(db) { //НАСТОЯТЕЛЬНО рекомендуется подредактировать orm так, чтобы передавать нужно было не массив с колонками, а строку
-        this.db = db; //Сейчас: orm.get("users", { id }, ["username", "token", "online"]);
-    }                 //Должно быть: orm.get("users", { id }, "username, token, online");
+    constructor(db) {
+        this.db = db;
+    }
 
-    get(table, params = null, columns = "*", operand = 'AND') {
-        const query = [];
-        const values = [];
-        let sql = `SELECT ${columns} FROM ${table}`
+    async get(table, condition, fields = '*', operand = 'AND') {
+        try {
+            let sql = `SELECT ${fields} FROM ${table}`;
+            const conditions = [];
+            const params = [];
 
-        if (params) {
-            for (let key in params) {
-                query.push(`${key} = ?`);
-                values.push(params[key]);
+            if (condition) {
+                Object.keys(condition).forEach(key => {
+                    conditions.push(`${key} = ?`);
+                    params.push(condition[key]);
+                });
+                sql += ` WHERE ${conditions.join(` ${operand} `)}`;
             }
-            sql += ` WHERE ${query.join(` ${operand} `)}`;
+
+            return await this.db.query(sql, params);
+        } catch (e) {
+            return null;
         }
-        return new Promise((resolve) => {
-            this.db.get(sql, values, function(err, row) {
-                if (err) resolve(null);
-                else resolve(row);
-            });
-        });
     }
 
-    all(table, params = null, columns = "*", operand = 'AND') {
-        const query = [];
-        const values = [];
-        let sql = `SELECT ${columns} FROM ${table}`;
+    async all(table, condition = null, fields = '*', operand = 'AND', orderBy = '', desc = false, limit = '') {
+        try {
+            let sql = `SELECT ${fields} FROM ${table}`;
+            const conditions = [];
+            const params = [];
 
-        if (params) {
-            for (let key in params) {
-                query.push(`${key} = ?`);
-                values.push(params[key]);
+            if (condition) {
+                Object.keys(condition).forEach(key => {
+                    conditions.push(`${key} = ?`);
+                    params.push(condition[key]);
+                });
+                sql += ` WHERE ${conditions.join(` ${operand} `)}`;
             }
-            sql += ` WHERE ${query.join(` ${operand} `)}`;
+
+            if (orderBy) {
+                sql += ` ORDER BY ${orderBy}`;
+                sql += desc ? ' DESC' : ' ASC';
+            }
+
+            if (limit) {
+                sql += ` LIMIT ${limit}`;
+            }
+
+            return await this.db.queryAll(sql, params);
+        } catch (e) {
+            return null;
         }
-
-        return new Promise((resolve, reject) => {
-            this.db.all(
-                sql,
-                values,
-                (err, rows) => {
-                    if (err) reject(err);
-                    else resolve(rows);
-                }
-            );
-        });
     }
 
-    insert(table, columns, values) {
-        const placeholders = columns.map(() => '?').join(', ');
-        const sql = `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`;
+    update(table, condition, field, operand = 'AND') {
+        try {
+            let sql = `UPDATE ${table}`;
+            const fields = [];
+            const conditions = [];
+            const params = [];
 
-        return new Promise((resolve, reject) => {
-            this.db.run(
-                sql,
-                values,
-                function(err) {
-                    if (err) reject(err);
-                    else resolve({ id: this.lastID, changes: this.changes });
-                }
-            );
-        });
-    }
+            if (field) {
+                Object.keys(field).forEach(key => {
+                    fields.push(`${key} = ?`);
+                    params.push(field[key]);
+                });
+                sql += ` SET ${fields.join(', ')}`;
+            }
 
-    update(table, setColumns, setValues, params, operand = 'AND') {
-        const setClauses = setColumns.map(col => `${col} = ?`);
-        const whereClauses = [];
-        const allValues = [...setValues];
-        
-        for (let key in params) {
-            whereClauses.push(`${key} = ?`);
-            allValues.push(params[key]);
+            if (condition) {
+                Object.keys(condition).forEach(key => {
+                    conditions.push(`${key} = ?`);
+                    params.push(condition[key]);
+                });
+                sql += ` WHERE ${conditions.join(` ${operand} `)}`;
+            }
+
+            const result = this.db.execute(sql, params);
+            return result.changes > 0;
+        } catch (e) {
+            return null;
         }
-
-        const sql = `UPDATE ${table} SET ${setClauses.join(', ')} WHERE ${whereClauses.join(` ${operand} `)}`;
-
-        return new Promise((resolve, reject) => {
-            this.db.run(
-                sql,
-                allValues,
-                function(err) {
-                    if (err) reject(err);
-                    else resolve({ changes: this.changes });
-                }
-            );
-        });
     }
 
-    delete(table, params, operand = 'AND') {
-        const whereClauses = [];
-        const values = [];
-        
-        for (let key in params) {
-            whereClauses.push(`${key} = ?`);
-            values.push(params[key]);
+    insert(table, field) {
+        try {
+            let sql = `INSERT INTO ${table}`;
+            const fields = [];
+            const placeholders = [];
+            const params = [];
+
+            if (field) {
+                Object.keys(field).forEach(key => {
+                    fields.push(key);
+                    placeholders.push('?');
+                    params.push(field[key]);
+                });
+                sql += ` (${fields.join(', ')}) VALUES (${placeholders.join(', ')})`;
+            }
+
+            const result = this.db.execute(sql, params);
+            return result.lastID;
+        } catch (e) {
+            return null;
         }
-
-        const sql = `DELETE FROM ${table} WHERE ${whereClauses.join(` ${operand} `)}`;
-
-        return new Promise((resolve, reject) => {
-            this.db.run(
-                sql,
-                values,
-                function(err) {
-                    if (err) reject(err);
-                    else resolve({ changes: this.changes });
-                }
-            );
-        });
     }
 
+    delete(table, condition, operand = 'AND') {
+        try {
+            let sql = `DELETE FROM ${table}`;
+            const conditions = [];
+            const params = [];
+
+            if (condition) {
+                Object.keys(condition).forEach(key => {
+                    conditions.push(`${key} = ?`);
+                    params.push(condition[key]);
+                });
+                sql += ` WHERE ${conditions.join(` ${operand} `)}`;
+            }
+
+            const result = this.db.execute(sql, params);
+            return result.changes > 0;
+        } catch (e) {
+            return null;
+        }
+    }
 }
 
 module.exports = ORM;

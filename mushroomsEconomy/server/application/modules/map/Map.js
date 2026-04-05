@@ -1,4 +1,4 @@
-class Map { 
+class Map {  //TEMPORARY MODULE! УДАЛТЬ ПОСЛЕ ПОЯВЛЕНИЯ СООТВЕТСТВУЮЩЕГО СЕРВИСА
     constructor() {
         this.map = null;
     }

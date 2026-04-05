@@ -1,4 +1,4 @@
-import Unit from "./Units";
+import Unit, { MapData, UnitConstructorOptions } from "./Units";
 
 interface PoisonEffect {
     duration: number;
@@ -19,7 +19,7 @@ class Sporomet extends Unit {
     private aimStartTime: number = 0;
     private currentTarget: Unit | null = null;
 
-    constructor(options: any) {
+    constructor(options: UnitConstructorOptions) {
         super(options);
         this.hp = 30;
         this.maxHp = 30;
@@ -118,7 +118,7 @@ class Sporomet extends Unit {
         }
     }
 
-    public update(enemies: Unit[], mapData: any, deltaTime: number): void {
+    public update(enemies: Unit[], mapData: MapData, deltaTime: number): void {
         if (!this.isAlive) return;
         
         this.updatePoisonEffects(enemies, deltaTime);

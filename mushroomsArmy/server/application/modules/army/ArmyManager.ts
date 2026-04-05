@@ -41,7 +41,7 @@ class ArmyManager extends BaseManager {
 
     private destroyArmy(guid: string): void {
         const army = this.army[guid];
-        if (army && army.destructor) {
+        if (army) {
             army.destructor();
         }
         delete this.army[guid];

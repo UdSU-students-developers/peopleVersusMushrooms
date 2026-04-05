@@ -24,15 +24,6 @@ interface IPageManagerProps {
 
 const PageManager: React.FC<IPageManagerProps> = ({page, setPage, mediator, server}) => {
 
-    /*
-        Удаляю локальные стейты (page, mediator, server), которые были здесь раньше.
-       всё управление идет из App.tsx через пропсы.
-       
-       const [page, setPage] = useState<PAGES>(PAGES.LOGIN);
-       const mediator = useMemo(() => new Mediator(CONFIG.MEDIATOR), []);
-       const server = useMemo(() => new Server(mediator), [mediator]);
-    */
-
     return (
         <MediatorContext.Provider value={mediator}>
             <ServerContext.Provider value={server}>

@@ -6,8 +6,6 @@ import Server from './services/server/Server';
 import CONFIG from './config'
 import useStore from './services/Store/useStore';
 
-//import PageManager from './pages/PageManager';
-
 import './App.css';
 
 export const MediatorContext = createContext<any>(null!);

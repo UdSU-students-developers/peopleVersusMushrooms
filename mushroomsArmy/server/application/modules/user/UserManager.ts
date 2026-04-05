@@ -142,14 +142,19 @@ class UserManager extends BaseManager {
     }
 
     private async socketLobbyStart(data: any = {}, socket: Socket): Promise<void> {
-        const { guid } = data;
+        const { guid, token } = data;
 
-        if (!guid || !this.users[guid]) {
+        if (!guid || !token || !this.users[guid]) {
             socket.emit(LOBBY_START, this.answer.bad(10));
             return;
         }
 
         const user = this.users[guid];
+        if (user.getSelf().token !== token) {
+            socket.emit(LOBBY_START, this.answer.bad(10));
+            return;
+        }
+
         user.setSocketId(socket.id);
 
         // Захардкоженная карта 50×50: 0=равнина, 1=вода, 2=горы

@@ -1,4 +1,4 @@
-interface UnitConstructorOptions {
+export interface UnitConstructorOptions {
     guid: string;
     type: string;
     hp: number;
@@ -7,7 +7,7 @@ interface UnitConstructorOptions {
     x: number;
     y: number;
     attackRange: number;
-    fireDamageMultiplier: number; 
+    fireDamageMultiplier?: number;
 }
 
 export interface UnitState {

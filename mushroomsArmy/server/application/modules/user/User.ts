@@ -33,13 +33,6 @@ class User {
         this.db = db;
         this.common = common;
         this.socketId = socketId;
-        // from DB
-        this.id = undefined;
-        this.guid = undefined;
-        this.name = undefined;
-        this.passwordHash = undefined;
-        this.token = undefined;
-        this.token_expiration = undefined;
     }
 
     static restoreFromData({db, common, socketId }:UserConstructorOptions, userData: User): User {
@@ -53,13 +46,6 @@ class User {
         user.token_expiration = userData.token_expiration;
 
         return user;
-    }
-
-    async get(): Promise<{ name?: string; guid?: string }> {
-        return {
-            name: this.name,
-            guid: this.guid
-        };
     }
 
     setSocketId(socketId: string): void {

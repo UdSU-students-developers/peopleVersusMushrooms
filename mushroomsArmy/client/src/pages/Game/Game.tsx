@@ -97,12 +97,8 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   }, [mediator]);
 
   const handleExitToLobby = () => {
-    setPage(PAGES.LOBBY);
-  };
-
-  const handleGoToLobby = () => {
     setIsGameOver(false);
-    handleExitToLobby();
+    setPage(PAGES.LOBBY);
   };
 
   return (
@@ -124,7 +120,7 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
         <div className="game-overlay">
           <div className="game-overlay-content">
             <h2>Игра окончена</h2>
-            <button onClick={handleGoToLobby}>В лобби</button>
+            <button onClick={handleExitToLobby}>В лобби</button>
           </div>
         </div>
       )}

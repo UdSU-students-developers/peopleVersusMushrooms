@@ -2,6 +2,7 @@ import React, {useContext, useEffect, useState} from "react";
 import { IBasePage, PAGES } from "../PageManager";
 import { MediatorContext, ServerContext } from "../../App";
 import CONFIG from "../../config";
+import "./StartGame.css";
 
 interface IUser {
     name: string;
@@ -51,30 +52,30 @@ const StartGame: React.FC<IBasePage> = ({ setPage }) => {
     }
 
     return (
-        <div>
-            <div>
+        <div className="start-game-page">
+            <div className="start-game-container">
                 <h2>Лобби</h2>
-                <div>
+                <div className="player-info-block">
                     {userInfo ? (
                         <>
-                            <div>
-                                <span>Игрок:</span>
-                                <span>{userInfo.name}</span>
+                            <div className="info-row">
+                                <span className="info-label">Игрок:</span>
+                                <span className="info-value">{userInfo.name}</span>
                             </div>
                             <div>
-                                <span>Socket ID:</span>
-                                <span>{userInfo.guid}</span>
+                                <span className="info-label">Socket ID:</span>
+                                <span className="info-value socket-id">{userInfo.guid}</span>
                             </div>
                         </>
                     ) : (
-                        <div>Загрузка данных...</div>
+                        <div className="info-loading">Загрузка данных...</div>
                     )}
                 </div>
-                <div>
+                <div className="start-game-actions">
                     <button id="testing-start-game" type="submit" onClick={handleStartGame}>
                         Создать лобби и начать игру
                     </button>
-                    <button id="testing-back-to-game" onClick={handleBackToLogin}>
+                    <button className="back-button" id="testing-back-to-game" onClick={handleBackToLogin}>
                         Назад
                     </button>
                 </div>

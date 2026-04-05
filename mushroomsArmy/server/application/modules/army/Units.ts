@@ -1,3 +1,10 @@
+import EasyStar = require('easystarjs');
+
+// Тайл-ID для непроходимых клеток (null в исходной карте → этот номер в EasyStar)
+const BLOCKED_TILE = 3;
+// Грибы проходимы по равнинам (0) и горам (2)
+const ACCEPTABLE_TILES = [0, 2];
+
 export interface UnitConstructorOptions {
     guid: string;
     type: string;
@@ -39,6 +46,11 @@ class Unit {
     public fireDamageMultiplier: number = 2;
     protected enemies: Unit [] = [];
     
+    private easyStar: EasyStar.js;
+    protected path: Array<{x: number, y: number}> = [];
+    private lastTargetTileX: number;
+    private lastTargetTileY: number;
+
     private decisionAccumulator: number = 0;
     private readonly DECISION_INTERVAL: number = 0.5; 
 
@@ -55,6 +67,12 @@ class Unit {
         this.targetX = x;
         this.targetY = y;
         this.isAlive = true;
+
+        this.easyStar = new EasyStar.js();
+        this.easyStar.setAcceptableTiles(ACCEPTABLE_TILES);
+        this.easyStar.enableSync();
+        this.lastTargetTileX = Math.floor(x);
+        this.lastTargetTileY = Math.floor(y);
     }
 
     update(enemies: Unit[], mapData: MapData, deltaTime: number): void {
@@ -100,50 +118,89 @@ class Unit {
     protected moveTo(targetX: number, targetY: number, mapData: MapData, deltaTime: number): void {
         if (!this.isAlive) return;
 
-        const dx = targetX - this.x;
-        const dy = targetY - this.y;
+        this.calculateUnitPath(mapData);
+
+        if (this.path.length === 0) return;
+
+        // Двигаемся к центру следующей клетки пути
+        const next = this.path[0];
+        const dx = (next.x + 0.5) - this.x;
+        const dy = (next.y + 0.5) - this.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (distance < 0.01) return;
+        if (distance < 0.1) {
+            this.path.shift();
+            return;
+        }
 
         const step = this.speed * deltaTime;
-        if (step >= distance) {
-            this.x = targetX;
-            this.y = targetY;
-            return;
+        const move = Math.min(step, distance);
+        this.x += (dx / distance) * move;
+        this.y += (dy / distance) * move;
+    }
+
+    /** Строит числовую сетку для EasyStar: null → BLOCKED_TILE */
+    private buildGrid(map: (number | null)[][]): number[][] {
+        return map.map(row => row.map(tile => tile === null ? BLOCKED_TILE : tile));
+    }
+
+    /**
+     * Ищет путь от текущей позиции до цели через EasyStar.
+     * Возвращает массив клеток или null если путь не найден.
+     */
+    private findPath(mapData: MapData): Array<{x: number, y: number}> | null {
+        const grid = this.buildGrid(mapData.map);
+        this.easyStar.setGrid(grid);
+
+        const height = grid.length;
+        const width = grid[0]?.length ?? 0;
+
+        const startX = Math.floor(this.x);
+        const startY = Math.floor(this.y);
+        const endX = Math.max(0, Math.min(width - 1, Math.round(this.targetX)));
+        const endY = Math.max(0, Math.min(height - 1, Math.round(this.targetY)));
+
+        if (startX < 0 || startX >= width || startY < 0 || startY >= height) return null;
+
+        let result: Array<{x: number, y: number}> | null = null;
+        let calculated = false;
+
+        try {
+            this.easyStar.findPath(startX, startY, endX, endY, (path) => {
+                result = path;
+                calculated = true;
+            });
+        } catch {
+            return null;
         }
 
-        const stepX = (dx / distance) * step;
-        const stepY = (dy / distance) * step;
-
-        let newX = this.x + stepX;
-        let newY = this.y + stepY;
-
-        const map = mapData.map;
-
-        // Округляем до индексов клетки
-        const tileX = Math.floor(newX);
-        const tileY = Math.floor(newY);
-
-        // Проверяем границы карты
-        if (tileY < 0 || tileY >= map.length || tileX < 0 || tileX >= map[0].length) {
-            return;
+        if (!calculated) {
+            const limit = height * width * 4;
+            for (let i = 0; i < limit && !calculated; i++) {
+                this.easyStar.calculate();
+            }
         }
 
-        const tile = map[tileY][tileX];
+        return calculated ? result : null;
+    }
 
-        // Грибы проходят по 0 (равнина) и 2 (горы). Вода (1) — смерть. null — непроходимо.
-        if (tile === 1) {
-            this.die();
-            return;
-        }
+    /** Пересчитывает путь если цель изменилась или путь пустой */
+    private calculateUnitPath(mapData: MapData): void {
+        const endX = Math.max(0, Math.min((mapData.map[0]?.length ?? 50) - 1, Math.round(this.targetX)));
+        const endY = Math.max(0, Math.min((mapData.map.length ?? 50) - 1, Math.round(this.targetY)));
 
-        if (tile === null || tile === undefined) {
-            return;
-        }
-        
-        this.x = newX;
-        this.y = newY;
+        const targetChanged = endX !== this.lastTargetTileX || endY !== this.lastTargetTileY;
+
+        if (!targetChanged && this.path.length > 0) return;
+
+        this.lastTargetTileX = endX;
+        this.lastTargetTileY = endY;
+        this.path = [];
+
+        const p = this.findPath(mapData);
+        if (p === null || p.length < 2) return;
+        // Срезаем первую точку — это текущая позиция юнита
+        this.path = p.slice(1);
     }
 
     takeDamage(amount: number, type: string): void {

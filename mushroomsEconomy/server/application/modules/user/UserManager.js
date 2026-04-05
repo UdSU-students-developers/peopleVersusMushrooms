@@ -61,7 +61,7 @@ class UserManager extends BaseManager {
         const user = new User({ db: this.db, common: this.common, socketId: socket.id });
         if (await user.login(name, passwordHash)) {
             this.users[user.guid] = user;
-            socket.emit(LOGIN, this.answer.good(user.getSelf()));
+            return socket.emit(LOGIN, this.answer.good(user.getSelf()));
         }
         socket.emit(LOGIN, this.answer.bad(11));
     }

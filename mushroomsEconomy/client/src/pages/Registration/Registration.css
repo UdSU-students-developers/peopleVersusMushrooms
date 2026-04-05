@@ -15,7 +15,7 @@
   font-weight: 600;
 }
 
-.registration-container form {
+.registration-container .registration-form {
   background: white;
   padding: 30px;
   border-radius: 8px;

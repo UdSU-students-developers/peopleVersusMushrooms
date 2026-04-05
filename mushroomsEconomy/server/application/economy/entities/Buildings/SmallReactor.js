@@ -4,7 +4,7 @@ class SmallReactor extends Building {
     constructor({type, guid, x, y, callbacks = {}}) {
         super()
     }
-    
+
 }
 
-module.exports = Building;
+module.exports = SmallReactor;

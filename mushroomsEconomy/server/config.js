@@ -14,6 +14,7 @@ const CONFIG = {
             EXAMPLE_EVENT: "EXAMPLE_EVENT",
 
             START_GAME: 'START_GAME',
+            LOAD_GAME: 'LOAD_GAME',
         },
         TRIGGERS: {
             EXAMPLE_TRIGGER: "EXAMPLE_TRIGGER",

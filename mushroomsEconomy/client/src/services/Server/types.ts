@@ -30,9 +30,16 @@ export type TMushroom = {
     coords: TPoint
 }
 
+export type TSmallReactor = {
+    guid: string;
+    coords: TPoint;
+    type: "small_reactor";
+}
+
 export type TScene = {
     guid: string;
     mushrooms: TMushroom[];
+    buildings: (TSmallReactor | number)[]; //number тут временно, загатовка на разные типы
     map: number[][];
 }
 

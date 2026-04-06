@@ -2,12 +2,13 @@ import React, { useEffect, useContext } from 'react';
 import CONFIG from '../../config';
 import { GameContext } from '../../App';
 import { TPoint } from '../../config';
-import { TMushroom } from '../../services/Server/types';
+import { TMushroom, TScene, TSmallReactor } from '../../services/Server/types';
 import Canvas from '../../services/Canvas/Canvas';
 import useCanvas from '../../services/Canvas/useCanvas';
 import useSprites from '../Hooks/useSprite';
 import TerrainBlock from '../../Game/Entities/TerrainBlock';
 import Mushroom from '../../Game/Entities/Mushroom';
+import SmallReactor from '../../Game/Entities/SmallReactor';
 
 import "./Game.css";
 
@@ -66,12 +67,18 @@ const GameCanvas: React.FC = () => {
         return newMushrooms;
     };
 
-    const drawMap = () => {
-        if (!canvas) return;
-        
-        const { scene } = game.get();
-        
-        if (!scene) return
+    const createSmallReactorTiles = (smallReactors: TSmallReactor[]): SmallReactor[] => {
+        const newSmallReactors: SmallReactor[] = [];
+
+        smallReactors.forEach( (smallReactor) => {
+            console.log(111111);
+            newSmallReactors.push(new SmallReactor(smallReactor.guid, smallReactor.coords));
+        })
+        return newSmallReactors;
+    };
+
+    const drawMap = (scene: TScene | null) => {
+        if (!canvas || !scene) return;
 
         const tileWorldSize = INITIAL_WINDOW_WIDTH / scene.map.length;
         const tileSizePx = canvas.dec(tileWorldSize);
@@ -93,12 +100,8 @@ const GameCanvas: React.FC = () => {
         });
     };
 
-    const drawMushrooms = () => {
-        if (!canvas) return;
-        
-        const { scene } = game.get();
-        
-        if (!scene) return
+    const drawMushrooms = (scene: TScene | null) => {
+        if (!canvas || !scene) return;
 
         const tileWorldSize = INITIAL_WINDOW_WIDTH / scene.map.length;
         const tileSizePx = canvas.dec(tileWorldSize);
@@ -120,9 +123,34 @@ const GameCanvas: React.FC = () => {
         });
     };
 
+    const drawSmallReactors = (scene: TScene | null) => {
+        if (!canvas || !scene) return;
+
+        const tileWorldSize = INITIAL_WINDOW_WIDTH / scene.map.length;
+        const tileSizePx = canvas.dec(tileWorldSize);
+        const smallReactorTiles = createSmallReactorTiles(
+            scene.buildings.filter(b => (b as TSmallReactor).type === 'small_reactor') as TSmallReactor[]
+        );
+
+        smallReactorTiles.forEach((smallReactorTile) => {
+            const worldX = smallReactorTile.coords.x * tileWorldSize;
+            const worldY = smallReactorTile.coords.y * tileWorldSize;
+
+            const [sx, sy, sSize] = getSprite(smallReactorTile.sprite[0]);
+            if (!canvas) return; //Без 2 проверки ругалось
+            canvas.contextV.drawImage(
+                spritesImage,
+                sx, sy, sSize, sSize,
+                canvas.xs(worldX), canvas.ys(worldY), tileSizePx, tileSizePx
+            );
+        });
+    }
+
     const drawScene = () => {
-        drawMap();
-        drawMushrooms();
+        const { scene } = game.get();
+        drawMap(scene);
+        drawMushrooms(scene);
+        drawSmallReactors(scene);
     }
 
     function render(FPS: number) {

@@ -40,6 +40,13 @@ class Mycelium {
         return false;
     }
 
+    // сбросить мицелий до 1 уровня (при потреблении реактором)
+    consume() {
+        this.level = 1;
+        this.grow = 0;
+        this.canGrow = true;
+    }
+
     getPower() {
         return POWER;
     }

@@ -2,6 +2,7 @@ const EasyStar = require('easystarjs');
 const CONFIG = require('../../config');
 
 const Mycelium = require('./entities/Buildings/Mycelium');
+const SmallReactor = require('./entities/Buildings/SmallReactor');
 
 const { INTERVAL } = CONFIG.ECONOMY;
 
@@ -21,7 +22,7 @@ class Economy {
         this.map = map;
         // данные экономики
         this.resourceMap; // массив известных ресурсов [{x, y, value}]
-        this.buildings = {}; // здания
+        this.buildings = []; // здания
         this.mycelium = []; // грибница
         this.workers = []; // рабочие
         this.larvae = []; // массив личинок
@@ -31,6 +32,7 @@ class Economy {
 
         /* УДОЛИ МЕНЯ */
         this.addMycelium(25, 25);
+        this.addSmallReactor(24, 25);
         /**************/
 
         // start game proccess
@@ -49,15 +51,22 @@ class Economy {
         return {
             guid: this.guid,
             mushrooms: this.mycelium.map(m => m.get()),
+            buildings: Object.values(this.buildings).map(b => b.get()),
             map: this.map,
         }
     }
 
 
     // Методы добавления объектов
-    
+
     addSmallReactor(x, y) {
-        this.buildings[reactorGuid]
+        const reactorGuid = this.common.guid();
+        this.buildings.push(new SmallReactor({
+            type: CONFIG.ECONOMY.BIO_REACTOR_SMALL.TYPE,
+            guid: reactorGuid,
+            x,
+            y,
+        }));
     }
 
     consumeMucelium() {
@@ -72,7 +81,8 @@ class Economy {
             callbacks: {},
         }));
     }
-    
+
+
     // 1. вырасти грибочки
     myceliumGrow(mycelium) {
         if (mycelium.update()) {
@@ -90,6 +100,15 @@ class Economy {
             this.addMycelium(result.x, result.y);
             this.updated = true;
         }
+    }
+
+    // 3. реакторы потребляют мицелий 3-го уровня (ИЛИ МУХОМОРЫ, УТОЧНИТЬ)
+    reactorsConsume() {
+        this.buildings
+            .filter(b => b instanceof SmallReactor)
+            .forEach(reactor => {
+                reactor.getConsumable(this.mycelium).forEach(mc => mc.consume());
+            });
     }
 
     setPathsUnits({ x, y }) {
@@ -111,7 +130,9 @@ class Economy {
         this.mycelium.forEach(mycelium => this.myceliumGrow(mycelium));
         // 2. расширить грибницу при возможности
         this.mycelium.forEach(mycelium => this.myceliumExtend(mycelium));
-        // 3. Переместить юнитов если нужно
+        // 3. реакторы потребляют мицелий
+        this.reactorsConsume();
+        // 4. Переместить юнитов если нужно
         this.moveUnits();
         /****************/
         if (this.updated) {

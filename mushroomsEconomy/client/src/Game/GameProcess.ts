@@ -19,10 +19,6 @@ export default class GameProcess {
         this.mediator.subscribe(START_GAME, (data: TScene) => this.startGame(data));
         this.mediator.subscribe(UPDATE_SCENE, (data: TScene) => this.updateScene(data));
     }
-
-    getScene(guid: string) {
-        if (!guid) return;
-    }
     
     get () {
         return {

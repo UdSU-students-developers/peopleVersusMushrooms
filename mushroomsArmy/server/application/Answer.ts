@@ -1,8 +1,8 @@
-interface ErrorMessages {
+type TErrorMessages = {
     [key: number]: string;
 }
 
-interface BadResponse {
+type TBadResponse = {
     result: "error";
     error: {
         code: number;
@@ -10,13 +10,15 @@ interface BadResponse {
     };
 }
 
-interface GoodResponse<T = any> {
+type TGoodResponse<T> = {
     result: "ok";
     data: T;
 }
 
+export type TResponse<T> = TGoodResponse<T> | TBadResponse;
+
 class Answer {
-    private errors: ErrorMessages = {
+    private errors: TErrorMessages = {
         10: "Токен истёк или недействителен",
         11: "Ошибка авторизации",
         13: "Передан неполный набор параметров",
@@ -27,7 +29,7 @@ class Answer {
         9000: "Самая страшная ошибка, собирайте вещи и срочно уезжайте в лес пережидать",
     };
 
-    bad(code: number = 9000): BadResponse {
+    bad(code: number = 9000): TBadResponse {
         return {
             result: "error",
             error: {
@@ -37,9 +39,9 @@ class Answer {
         };
     }
 
-    good<T>(data: T): GoodResponse<T> {
+    good<T>(data: T): TResponse<T> {
         if (!data) {
-            return this.bad() as any; // Fallback to bad if no data
+            return this.bad();
         }
         return {
             result: "ok",

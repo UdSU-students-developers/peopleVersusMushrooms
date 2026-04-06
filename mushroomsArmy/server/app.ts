@@ -5,7 +5,7 @@ import { Server as SocketIOServer } from 'socket.io';
 
 import Router from './application/router/Router';
 import DB from './application/modules/db/DB';
-import Mediator from './application/modules/mediator/Mediator';
+import Mediator from './application/modules/Mediator';
 import Answer from './application/Answer';
 import UserManager from './application/modules/user/UserManager';
 import ArmyManager from './application/modules/army/ArmyManager';

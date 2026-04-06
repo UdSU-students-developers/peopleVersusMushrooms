@@ -1,10 +1,13 @@
-import Common from "../common/Common";
-import Champigneb, { SlimePuddle } from "./Champigneb";
-import Sporomet from "./Sporomet";
-import Unit, { MapData, UnitState } from "./Units";
+import Common from "../modules/common/Common";
+import Champigneb, { SlimePuddle } from "./entities/Champigneb";
+import Sporomet from "./entities/Sporomet";
+import Unit, { MapData, UnitState } from "./entities/Units";
+
+export type TMap = (number | null)[][];
 
 export interface ArmyOptions {
-    map: MapData,
+    mapGuid: string;
+    map: TMap,
     buildings: any[],
     guid: string,
     common: Common,
@@ -12,15 +15,15 @@ export interface ArmyOptions {
 }
 
 export interface ArmyState {
-    map: (number | null)[][];
+    map: TMap;
     units: UnitState[];
     slimePuddles: SlimePuddle[];
 }
 
 export class Army {
-
-    public guid: string | undefined;
-    public map: MapData = { map: [] };
+    public mapGuid: string;
+    public guid: string;
+    public map: TMap = [];
     public buildings: any;
     public units: Unit[] = [];
     public enemyUnits: Unit[] = [];
@@ -31,6 +34,7 @@ export class Army {
     constructor(options: ArmyOptions) {
         this.map = options.map;
         this.buildings = options.buildings;
+        this.mapGuid = options.mapGuid;
         this.guid = options.guid;
         this.callbacks = options.callbacks;
         this.create(options.common);
@@ -68,7 +72,7 @@ export class Army {
 
     public getState(): ArmyState {
         return {
-            map: this.map.map,
+            map: this.map,
             units: this.units.map(u => u.getState()),
             slimePuddles: this.units
                 .filter(u => u.type === 'champineb' && !u.isAlive)

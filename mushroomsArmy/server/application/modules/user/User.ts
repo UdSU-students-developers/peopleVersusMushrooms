@@ -20,7 +20,7 @@ interface UserData {
 class User {
     private db: DB;
     private common: Common;
-    private socketId: string;
+    socketId: string;
     // from DB
     private id?: number;
     private guid?: string;

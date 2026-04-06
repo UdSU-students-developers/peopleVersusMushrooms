@@ -1,8 +1,9 @@
 import express, { Router as ExpressRouter } from 'express';
 import { notFoundHandler } from './handlers';
+import Answer from '../Answer';
 
 interface RouterOptions {
-    answer: any;
+    answer: Answer;
 }
 
 function Router({ answer }: RouterOptions): ExpressRouter {

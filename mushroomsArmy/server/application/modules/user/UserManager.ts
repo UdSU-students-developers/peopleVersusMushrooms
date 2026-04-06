@@ -1,5 +1,5 @@
 import { Socket } from 'socket.io';
-import BaseManager from '../BaseManager';
+import BaseManager, { TManagerOptions } from '../BaseManager';
 import CONFIG from '../../../config';
 import User from './User';
 
@@ -7,18 +7,10 @@ const { REGISTRATION, LOGIN, LOGOUT, LOBBY_START, VALIDATE_TOKEN } = CONFIG.SOCK
 const { START_GAME } = CONFIG.MEDIATOR.EVENTS;
 const { GET_USER_BY_GUID } = CONFIG.MEDIATOR.TRIGGERS;
 
-interface UserManagerOptions {
-    mediator: any;
-    db: any;
-    io: any;
-    answer: any;
-    common: any;
-}
-
 class UserManager extends BaseManager {
     private users: { [guid: string]: User };
 
-    constructor(options: UserManagerOptions) {
+    constructor(options: TManagerOptions) {
         super(options);
         this.users = {}; // Ключ guid значение new User
 

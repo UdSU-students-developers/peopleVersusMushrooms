@@ -1,3 +1,4 @@
+import { TMap } from "../Army";
 import Unit, { MapData, UnitConstructorOptions } from "./Units";
 
 interface PoisonEffect {
@@ -118,12 +119,12 @@ class Sporomet extends Unit {
         }
     }
 
-    public update(enemies: Unit[], mapData: MapData, deltaTime: number): void {
+    public update(enemies: Unit[], map: TMap, deltaTime: number): void {
         if (!this.isAlive) return;
         
         this.updatePoisonEffects(enemies, deltaTime);
         
-        super.update(enemies, mapData, deltaTime);
+        super.update(enemies, map, deltaTime);
         
         if (this.isAiming && this.currentTarget && this.currentTarget.isAlive) {
             const currentTime = Date.now() / 1000;

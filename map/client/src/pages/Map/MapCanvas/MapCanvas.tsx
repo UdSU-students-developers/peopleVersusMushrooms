@@ -1,21 +1,17 @@
-import React, { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
+import { MediatorContext, ServerContext } from "../../../App";
 import CONFIG from "../../../config";
 import { Canvas, useCanvas } from "../../../services/canvas";
 import Map from "../Map";
-import Mediator from "../../../services/Mediator/Mediator";
 import { TMap } from "../../../services/server/types";
-import Server from "../../../services/server/Server";
 
 const mapField = 'map-field';
 
-interface IMapCanvas {
-    mediator: Mediator;
-    server: Server;
-}
-
-const MapCanvas: React.FC<IMapCanvas> = ({ mediator, server }) => {
+const MapCanvas: React.FC = () => {
     let map: Map | null = null;
     let canvas: Canvas;
+    const mediator = useContext(MediatorContext);
+    const server = useContext(ServerContext);
     const Canvas = useCanvas(render);
     const { WINDOW } = CONFIG;
 
@@ -52,7 +48,7 @@ const MapCanvas: React.FC<IMapCanvas> = ({ mediator, server }) => {
         if (canvas && map) {
             canvas.clear();
             map.cells.forEach((cell) => {
-                canvas.rect(cell.x*8, cell.y*8, 100, cell.color);
+                canvas.rect(cell.x * 8, cell.y * 8, 100, cell.color);
             });
             canvas.text(WINDOW.LEFT + 20, WINDOW.TOP + 50, String(fps), 'red');
             canvas.render();

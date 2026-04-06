@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
-import { MediatorContext } from "../../App";
-import { IBasePage, IPageManager, PAGES } from '../PageManager';
+import { MediatorContext, ServerContext } from "../../App";
+import { IBasePage, PAGES } from '../PageManager';
 import Button from "../../components/Button/Button";
 import { TError } from "../../services/server/types";
 import './Lobby.scss';
@@ -15,9 +15,10 @@ interface ILobby {
     gameState: 'waiting' | 'playing';
 }
 
-const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
-    const { setPage, server } = props;
+const Lobby: React.FC<IBasePage> = (props) => {
+    const { setPage } = props;
     const mediator = useContext(MediatorContext);
+    const server = useContext(ServerContext);
     const [error, setError] = useState<TError | null>(null);
     const [lobbies, setLobbies] = useState<ILobby[]>([]);
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -36,8 +37,8 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
 
     const confirmCreateLobby = () => {
         if (lobbyName.trim()) {
-            console.log(props.server.user.guid)
-            server.createLobby(props.server.user.guid, lobbyName.trim(), 'spectator');
+            console.log(server.user.guid)
+            server.createLobby(server.user.guid, lobbyName.trim(), 'spectator');
             setLobbyName('');
         }
     }
@@ -48,15 +49,15 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
     }
 
     const joinLobbyHandler = (lobbyGuid: string) => {
-        server.joinToLobby(props.server.user.guid, lobbyGuid, 'spectator');
+        server.joinToLobby(server.user.guid, lobbyGuid, 'spectator');
     }
 
     const leaveLobbyHandler = () => {
-        server.leaveLobby(props.server.user.guid);
+        server.leaveLobby(server.user.guid);
     }
 
     const startGameHandler = () => {
-        server.startGame(props.server.user.guid);
+        server.startGame(server.user.guid);
     }
 
     useEffect(() => {

@@ -21,7 +21,7 @@ class Economy {
         this.map = map;
         // данные экономики
         this.resourceMap; // массив известных ресурсов [{x, y, value}]
-        this.buildings = []; // здания
+        this.buildings = {}; // здания
         this.mycelium = []; // грибница
         this.workers = []; // рабочие
         this.larvae = []; // массив личинок
@@ -53,6 +53,17 @@ class Economy {
         }
     }
 
+
+    // Методы добавления объектов
+    
+    addSmallReactor(x, y) {
+        this.buildings[reactorGuid]
+    }
+
+    consumeMucelium() {
+        
+    }
+
     addMycelium(x, y) {
         this.mycelium.push(new Mycelium({
             x,
@@ -61,7 +72,7 @@ class Economy {
             callbacks: {},
         }));
     }
-
+    
     // 1. вырасти грибочки
     myceliumGrow(mycelium) {
         if (mycelium.update()) {

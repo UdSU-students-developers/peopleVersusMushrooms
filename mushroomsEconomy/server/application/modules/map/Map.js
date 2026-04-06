@@ -8,7 +8,7 @@ class Map {  //TEMPORARY MODULE! УДАЛТЬ ПОСЛЕ ПОЯВЛЕНИЯ СО
         for (let y = 0; y < height; y++) {
             const row = [];
             for (let x = 0; x < width; x++) {
-                row.push(0);
+                row.push(1);
             }
             this.map.push(row);
         }
@@ -17,10 +17,15 @@ class Map {  //TEMPORARY MODULE! УДАЛТЬ ПОСЛЕ ПОЯВЛЕНИЯ СО
         const maxRadius = 10;
 
         for (let i = 0; i < spotsCount; i++) {
-            const cx = Math.floor(Math.random() * width);
-            const cy = Math.floor(Math.random() * height);
+            let cx = Math.floor(Math.random() * width);
+            let cy = Math.floor(Math.random() * height);
 
-            const type = Math.random() > 0.5 ? 1 : 2;
+            if (i == spotsCount) {
+                cx = 25;
+                cy = 25;
+            }
+
+            const type = Math.random() > 0.5 ? 0 : 2;
 
             const currentRadius = Math.floor(Math.random() * (maxRadius - 3)) + 3;
 

@@ -1,8 +1,20 @@
 class ORM {
-    constructor(db) { //НАСТОЯТЕЛЬНО рекомендуется подредактировать orm так, чтобы передавать нужно было не массив с колонками, а строку
-        this.db = db; //Сейчас: orm.get("users", { id }, ["username", "token", "online"]);
-    }                 //Должно быть: orm.get("users", { id }, "username, token, online");
+    /**
+     * Создаёт экземпляр ORM.
+     * @param {object} db — подключение к БД 
+     */
+    constructor(db) { 
+        this.db = db; 
+    }                
 
+    /**
+     * Выбирает одну строку из таблицы (SELECT ... LIMIT 1).
+     * @param {string} table — имя таблицы.
+     * @param {object|null} params — условия WHERE в виде { колонка: значение } (например { id: 1 }).
+     * @param {string|string[]} columns — колонки для выборки: "*" или массив имён колонок.
+     * @param {string} operand — связка условий: "AND" или "OR".
+     * @returns {Promise<object|null>} — одна запись или null при ошибке.
+     */
     get(table, params = null, columns = "*", operand = 'AND') {
         const query = [];
         const values = [];
@@ -23,6 +35,14 @@ class ORM {
         });
     }
 
+    /**
+     * Выбирает все подходящие строки из таблицы (SELECT).
+     * @param {string} table — имя таблицы.
+     * @param {object|null} params — условия WHERE в виде { колонка: значение }.
+     * @param {string|string[]} columns — колонки для выборки: "*" или массив имён колонок.
+     * @param {string} operand — связка условий: "AND" или "OR".
+     * @returns {Promise<object[]>} — массив записей; при ошибке Promise отклоняется.
+     */
     all(table, params = null, columns = "*", operand = 'AND') {
         const query = [];
         const values = [];
@@ -48,6 +68,13 @@ class ORM {
         });
     }
 
+    /**
+     * Вставляет новую строку в таблицу (INSERT).
+     * @param {string} table — имя таблицы.
+     * @param {string[]} columns — массив имён колонок (например ["username", "email"]).
+     * @param {any[]} values — массив значений в том же порядке, что и columns.
+     * @returns {Promise<{id: number, changes: number}>} — lastID и количество изменённых строк; при ошибке Promise отклоняется.
+     */
     insert(table, columns, values) {
         const placeholders = columns.map(() => '?').join(', ');
         const sql = `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`;
@@ -64,6 +91,15 @@ class ORM {
         });
     }
 
+    /**
+     * Обновляет строки в таблице (UPDATE).
+     * @param {string} table — имя таблицы.
+     * @param {string[]} setColumns — колонки, которые нужно обновить.
+     * @param {any[]} setValues — новые значения для setColumns в том же порядке.
+     * @param {object} params — условия WHERE в виде { колонка: значение }.
+     * @param {string} operand — связка условий WHERE: "AND" или "OR".
+     * @returns {Promise<{changes: number}>} — количество обновлённых строк; при ошибке Promise отклоняется.
+     */
     update(table, setColumns, setValues, params, operand = 'AND') {
         const setClauses = setColumns.map(col => `${col} = ?`);
         const whereClauses = [];
@@ -88,6 +124,13 @@ class ORM {
         });
     }
 
+    /**
+     * Удаляет строки из таблицы (DELETE).
+     * @param {string} table — имя таблицы.
+     * @param {object} params — условия WHERE в виде { колонка: значение }.
+     * @param {string} operand — связка условий: "AND" или "OR".
+     * @returns {Promise<{changes: number}>} — количество удалённых строк; при ошибке Promise отклоняется.
+     */
     delete(table, params, operand = 'AND') {
         const whereClauses = [];
         const values = [];

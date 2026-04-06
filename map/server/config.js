@@ -1,0 +1,64 @@
+class CONFIG {
+    static SERVER_PORT = '3001'; // Хост сервера
+    static SERVER_NAME = 'MAP';  // Имя сервера
+
+    static SQLITE_PATH = './application/modules/db/map.db'; // Путь к базе
+
+    static LOBBY_MAX_SIZE = 5;
+
+    static ROLES = {
+        SPECTATOR: 'spectator',
+        PEOPLE_ECONOMY: 'peopleEconomy',
+        PEOPLE_ARMY: 'peopleArmy',
+        MUSHROOM_ECONOMY: 'mushroomEconomy',
+        MUSHROOM_ARMY: 'mushroomArmy',
+    }
+
+    //events
+    static EVENTS = {
+        LOGOUT: 'LOGOUT',
+        START_GAME: 'START_GAME',
+        JOIN_TO_LOBBY: 'JOIN_TO_LOBBY',
+    }
+
+    static TRIGGERS = {
+        //triggers
+        GET_USER_BY_GUID: 'GET_USER_BY_GUID',
+        IS_GUID_IN_ANY_LOBBY: 'IS_GUID_IN_ANY_LOBBY',
+        GET_LOBBIES: 'GET_LOBBIES',
+        //handlers
+        GET_RELIEF_HANDLER: 'GET_RELIEF_HANDLER',
+        GET_VISIBILITY_HANDLER: 'GET_VISIBILITY_HANDLER',
+        GET_RESOURSE_VISIBILITY_HANDLER: 'GET_RESOURSE_VISIBILITY_HANDLER',
+        UPDATE_UNITS_HANDLER: 'UPDATE_UNITS_HANDLER',
+        UPDATE_BUILDINGS_HANDLER: 'UPDATE_BUILDINGS_HANDLER',
+    }
+
+    // сокетные сообщения
+   static MESSAGES = {
+        CHECK: 'CHECK',
+        SEND_TO_ALL: 'SEND_TO_ALL',
+        
+        // user sockets
+        LOGIN: 'LOGIN',
+        REGISTRATION: 'REGISTRATION',
+        LOGOUT: 'LOGOUT',
+        
+        // lobby sockets
+        CREATE_LOBBY: 'CREATE_LOBBY',
+        JOIN_TO_LOBBY: 'JOIN_TO_LOBBY',
+        LEAVE_LOBBY: 'LEAVE_LOBBY',
+        DROP_FROM_LOBBY: 'DROP_FROM_LOBBY',
+        START_GAME: 'START_GAME',
+        GET_LOBBIES: 'GET_LOBBYS',
+        LOBBY_UPDATED: 'LOBBY_UPDATED',
+        LOBBIES_LIST_UPDATED: 'LOBBYS_LIST_UPDATED',
+        SET_READY: 'SET_READY',
+
+        //map sockets
+        GENERATE_MAP: 'GENERATE_MAP',
+        GET_MAP_PARAMS: 'GET_MAP_PARAMS'
+    }
+}
+
+module.exports = CONFIG;

@@ -1,27 +1,51 @@
 const express = require('express');
 const app = express();
-const CONFIG = require('./config');
-const Router = require('./application/router/Router');
-const DB = require('./application/modules/db/DB');
-const Mediator = require('./application/modules/mediator/Mediator');
-const ExampleManager = require('./application/modules/exampleModule/ExampleManager')
-const { NAME, PORT, DATABASE } = CONFIG;
+const server = require('http').createServer(app);
+const io = require('socket.io')(server, {
+    cors: {
+        origin: "http://localhost:3008",
+    }
+});
 
-const db = new DB({ DATABASE });
-const mediator = new Mediator(CONFIG.MEDIATOR);
+const Router = require('./application/router/Router.js');
+const DB = require('./application/modules/db/DB.js');
+const Mediator = require('./application/modules/Mediator.js');
+const Common = require('./application/modules/common/Common.js');
+const Answer = require('./application/router/Answer.js');
+const UserManager = require('./application/modules/user/UserManager.js');
+const LobbyManager = require('./application/modules/lobby/LobbyManager.js');
+const { EVENTS, TRIGGERS, SERVER_PORT, SERVER_NAME } = require('./config.js');
 
-const exampleManager = new ExampleManager(mediator, db);
+// Экз БД
+const db = new DB();
+// Создание медиатора
+const mediator = new Mediator({ EVENTS, TRIGGERS });
+const common = new Common();
+const answer = new Answer();
+// Создаем менеджеры
+const userManager = new UserManager({ mediator, db, common, answer, io });
+const lobbyManager = new LobbyManager({ mediator, db, common, answer, io });
 
-const router = new Router({ exampleManager });
 
-app.use(express.static(`${__dirname}/public`));
+/*//для тестов
+app.use(express.static('public'));
+*/
+
+app.use((_, res, next) => {
+    res.header('Content-Type', 'application/json; charset=utf-8');
+    res.header('Access-Control-Allow-Origin', '*');
+    next();
+});
+    
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Создаем роутер
+const router = new Router(mediator, answer, common);
 app.use('/', router);
 
-function deinit() {
-    db.destrucor();
-    setTimeout(() =>process.exit(), 500);
-}
 
-app.listen(PORT, () => console.log(`${NAME} started at port ${PORT}`));
-
-process.on('SIGNINT', deinit);
+// Запуск сервака
+server.listen(SERVER_PORT, () => {
+    console.log(`Server ${SERVER_NAME} running on port ${SERVER_PORT}`);
+});

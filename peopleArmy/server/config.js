@@ -1,6 +1,6 @@
 const CONFIG = {
-    NAME: 'Server',
-    PORT: 300x, //Порт соостветсвующий серверу вашего сервиса
+    NAME: 'PeoplesArmy',
+    PORT: 3007, //Порт соостветсвующий серверу вашего сервиса
 
     DATABASE: {
         NAME: 'data.db',
@@ -8,12 +8,28 @@ const CONFIG = {
 
     MEDIATOR: {
         EVENTS: {
-            EXAMPLE_EVENT: "EXAMPLE_EVENT",
+            START_GAME: 'START_GAME',
         },
         TRIGGERS: {
-            EXAMPLE_TRIGGER: "EXAMPLE_TRIGGER",
+            GET_USER_BY_GUID: 'GET_USER_BY_GUID',
+
+            CREATE_UNIT: "CREATE_UNIT",           // создать юнита (см. ArmyManager)
         },
     },
+
+    SOCKETS: {
+        MESSAGE_FROM_CLIENT: "message_from_client",
+        MESSAGE_TO_CLIENTS: "message_to_clients",
+        REGISTRATION: "registration",
+        LOGIN: "login",
+        LOGOUT: "logout",
+
+        UPDATE_ARMY: 'UPDATE_ARMY',
+    },
+
+    ARMY: {
+        INTERVAL: 100, //ms
+    }
 }
 
 module.exports = CONFIG;

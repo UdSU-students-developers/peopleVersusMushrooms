@@ -1,7 +1,18 @@
+export type TError = {
+    code: number;
+    message: string;
+}
+
+export type TAnswer<T> = {
+    result: 'ok' | 'error';
+    data?: T;
+    error?: TError;
+}
+
 export type TUser = {
-    token: string;
-    name: string;
     id?: number;
+    guid?: number;
+    token: string;
 }
 
 

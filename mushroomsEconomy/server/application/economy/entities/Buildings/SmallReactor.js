@@ -8,12 +8,14 @@ class SmallReactor extends Building {
         super({ type, guid, x, y, callbacks, hp: HP, size: SIZE, consumption: CONSUMPTION, production: PRODUCTION, capacity: CAPACITY });
 
         this.energy = 0;
+        this.type = "small_reactor";
     }
 
     get() {
         return {
             ...super.get(),
             energy: this.energy,
+            type: this.type,
         };
     }
 

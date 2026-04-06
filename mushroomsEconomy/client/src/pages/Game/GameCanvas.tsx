@@ -71,7 +71,6 @@ const GameCanvas: React.FC = () => {
         const newSmallReactors: SmallReactor[] = [];
 
         smallReactors.forEach( (smallReactor) => {
-            console.log(111111);
             newSmallReactors.push(new SmallReactor(smallReactor.guid, smallReactor.coords));
         })
         return newSmallReactors;
@@ -129,7 +128,7 @@ const GameCanvas: React.FC = () => {
         const tileWorldSize = INITIAL_WINDOW_WIDTH / scene.map.length;
         const tileSizePx = canvas.dec(tileWorldSize);
         const smallReactorTiles = createSmallReactorTiles(
-            scene.buildings.filter(b => (b as TSmallReactor).type === 'small_reactor') as TSmallReactor[]
+            scene.buildings.filter(b => (b as TSmallReactor).type == 'small_reactor') as TSmallReactor[]
         );
 
         smallReactorTiles.forEach((smallReactorTile) => {

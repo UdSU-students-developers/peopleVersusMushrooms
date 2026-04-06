@@ -42,7 +42,10 @@ class LobbyManager extends BaseManager {
         const { guid } = data;
         const map = new Map();
 
-        if (this.lobbies[guid]) this.mediator.call(this.EVENTS.LOAD_GAME, { guid });
+        if (this.lobbies[guid]) {
+            this.mediator.call(this.EVENTS.LOAD_GAME, { guid });
+            return;
+        }
 
         this.lobbies[guid] = new Lobby({
             creatorGuid: guid,

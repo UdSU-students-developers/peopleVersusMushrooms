@@ -2,7 +2,7 @@ const BaseManager = require('../BaseManager');
 const CONFIG = require('../../../config');
 const User = require('./User');
 
-const { REGISTRATION, LOGIN, LOGOUT } = CONFIG.SOCKET;
+const { REGISTRATION, LOGIN, LOGOUT, RECONNECT } = CONFIG.SOCKET;
 
 class UserManager extends BaseManager {
     constructor(options) {
@@ -15,6 +15,7 @@ class UserManager extends BaseManager {
             socket.on(REGISTRATION, (data) => this.socketRegistration(data, socket));
             socket.on(LOGIN, (data) => this.socketLogin(data, socket));
             socket.on(LOGOUT, (data) => this.socketLogout(data, socket));
+            socket.on(RECONNECT, (data) => this.socketReconnect(data, socket));
             socket.on('disconnect', () => console.log('disconnect', socket.id));
         });
 
@@ -80,6 +81,19 @@ class UserManager extends BaseManager {
         }
 
         socket.emit(LOGOUT, this.answer.bad(19));
+    }
+
+    async socketReconnect(data = {}, socket) {
+        const { guid } = data;
+        if (!guid ) {
+            return socket.emit(CONFIG.SOCKET.RECONNECT, this.answer.bad(13));
+        }
+        const user = this.users[guid];
+        if (user) {
+            user.socketId = socket.id;
+            return socket.emit(CONFIG.SOCKET.RECONNECT, this.answer.good(true));
+        }
+        socket.emit(CONFIG.SOCKET.RECONNECT, this.answer.bad(19));
     }
 }
 

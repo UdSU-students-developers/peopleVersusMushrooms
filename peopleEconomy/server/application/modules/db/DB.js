@@ -1,7 +1,7 @@
-const sqlite3 = require('sqlite3');
-const { open } = require('sqlite');
-const CONFIG = require('../../../config.js');
-const ORM = require('./ORM.js');
+const sqlite3 = require('sqlite3').verbose();
+const ORM = require('./ORM');
+
+// Тут используется sqlite3, но вы можете сменить её на другую (лучше так и сделать). Трусов упомянул postgreSQL, поэтому если будете менять, ставьте её
 
 class DB {
     constructor() {

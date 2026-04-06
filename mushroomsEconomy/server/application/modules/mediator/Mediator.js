@@ -13,7 +13,7 @@ class Mediator {
     }
 
     subscribe(name, func) {
-        if (this.events[name] & func instanceof Function) {
+        if (this.events[name] && func instanceof Function) {
             this.events[name].push(func);
         }
     }

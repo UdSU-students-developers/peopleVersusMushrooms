@@ -72,6 +72,7 @@ const CONFIG = {
 
         },
         BIO_REACTOR_SMALL: {
+            TYPE: "small_reactor",
             HP: 20,
             SIZE: 1,
             CONSUMPTION: 1, // потребление ЭНЕРГИИ ИЛИ ЖИРА

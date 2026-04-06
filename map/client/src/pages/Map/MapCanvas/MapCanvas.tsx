@@ -2,7 +2,7 @@ import React, { useContext, useEffect } from "react";
 import { MediatorContext, ServerContext } from "../../../App";
 import CONFIG from "../../../config";
 import { Canvas, useCanvas } from "../../../services/canvas";
-import Map from "../Map";
+import Map from "../../../services/Map/Map";
 import { TMap } from "../../../services/server/types";
 
 const mapField = 'map-field';
@@ -19,9 +19,7 @@ const MapCanvas: React.FC = () => {
     useEffect(() => {
         const { GENERATE_MAP } = mediator.getEventTypes();
 
-        const mapHandler = (mapData: TMap) => {
-            console.log('Карта пришла', mapData);
-
+        const renderMap = (mapData: TMap) => {
             const cells = mapData.map.flatMap((row: any[], y: number) =>
                 row.map((type, x) => ({
                     x,
@@ -35,11 +33,10 @@ const MapCanvas: React.FC = () => {
             map?.setCells(cells);
         };
 
-        mediator.subscribe(GENERATE_MAP, mapHandler);
-        server.generateMap();
-
+        mediator.subscribe(GENERATE_MAP, renderMap);
+        
         return () => {
-            mediator.unsubscribe(GENERATE_MAP, mapHandler);
+            mediator.unsubscribe(GENERATE_MAP, renderMap);
             map?.destructor();
         };
     }, []);

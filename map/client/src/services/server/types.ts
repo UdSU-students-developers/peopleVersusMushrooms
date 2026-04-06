@@ -11,8 +11,21 @@ export type TAnswer<T> = {
 
 export type TUser = {
     id?: number;
-    guid?: number;
+    guid?: string;
     token: string;
+}
+
+export interface IPlayer {
+    guid: string;
+    role: string;
+    ready: boolean;
+}
+
+export interface ILobby {
+    creatorGuid: string;
+    lobbyName: string;
+    players: IPlayer[];
+    gameState: 'waiting' | 'playing';
 }
 
 export type TMap = {

@@ -1,9 +1,6 @@
-const { MESSAGES } = require("../../../config");
+const { MESSAGES, ROLES } = require("../../../config");
 const BaseManager = require("../BaseManager");
 const Map = require("./Map");
-const Building = require("./entities/Building");
-
-const Unit = require("./entities/Unit");
 
 class MapManager extends BaseManager {
     constructor(options) {
@@ -14,25 +11,25 @@ class MapManager extends BaseManager {
         if (!this.io) return;
         this.io.on('connection', (socket) => {
             socket.on(MESSAGES.GENERATE_MAP, (data) => this.socketGenerateMap(data, socket));
-            socket.on(MESSAGES.GET_MAP_GENERATION, (data) => this.socketGetMapGeneration(data, socket));
+            socket.on(MESSAGES.GET_MAP_PARAMS, (data) => this.socketGetMapParams(data, socket));
         });
 
         const {
+            GET_RELIEF_HANDLER,
             GET_VISIBILITY_HANDLER,
             GET_RESOURSE_VISIBILITY_HANDLER,
-            UPDATE_ECONOMY_UNITS_HANDLER,
-            UPDATE_ECONOMY_BUILDINGS_HANDLER,
-            UPDATE_ARMY_UNITS_HANDLER
+            UPDATE_UNITS_HANDLER,
+            UPDATE_BUILDINGS_HANDLER
         } = this.TRIGGERS;
 
+
+        this.mediator.set(GET_RELIEF_HANDLER, (data) => this.getReliefHandler(data));
         // взимодействие с остальными
         // input (это сервисы говорят мне)
         // изменения в экономике (строительство, уничтожение) зданий/труб/грибниц
-        this.mediator.set(UPDATE_ECONOMY_BUILDINGS_HANDLER, (data) => this.updateEconomyBuildingsHandler(data));
-        // изменение в экономике (перемещение и пр.) строителей/разведчиков
-        this.mediator.set(UPDATE_ECONOMY_UNITS_HANDLER, (data) => this.updateEconomyUnitsHandler(data));
-        // изменение в армии (перемещение/создание/уничтожение) юнитов/башен
-        this.mediator.set(UPDATE_ARMY_UNITS_HANDLER, (data) => this.updateArmyUnitsHandler(data));
+        this.mediator.set(UPDATE_BUILDINGS_HANDLER, (data) => this.updateBuildingsHandler(data));
+        // изменение в юнитов (перемещение/создание/уничтожение) юнитов/башен
+        this.mediator.set(UPDATE_UNITS_HANDLER, (data) => this.updateUnitsHandler(data));
         //output (это сервисы могут спросить у меня)
         //отдавать сервису значения на карте по его видимости. Видимость - массив точек карты
         this.mediator.set(GET_VISIBILITY_HANDLER, (data) => this.getVisibilityHandler(data));
@@ -50,6 +47,10 @@ class MapManager extends BaseManager {
 
     getMapByGuid(guid) {
         return Object.values(this.maps).find(map => map.guid === guid);
+    }
+
+    getRoleByGuid(map, userGuid) {
+        return Object.values(map.playerGuids).find(guid => guid === userGuid)
     }
 
     //EVENTS
@@ -85,174 +86,92 @@ class MapManager extends BaseManager {
 
     //HANDLERS
 
-    updateEconomyUnitsHandler(data = {}) {
-        const { mapGuid, userGuid, units } = data;
-
-        // проверяем, что пользак есть в каком-либо лобби
-        const lobby = this.isUserInAnyLobby(userGuid);
-        if (!lobby) return this.answer.bad(3003);
-
-        // проверяем, что пользак - экономика (или спектатор)
-        if (lobby.playersGuilds.peopleArmy === userGuid ||
-            lobby.playersGuilds.mushroomArmy === userGuid) {
-            return this.answer.bad(3006);
-        }
-
-        // проверяем, что гуид карты и создателя комнаты совпадают
-        if (!lobby.creatorGuid === mapGuid) return this.answer.bad(3004);
+    getReliefHandler(data = {}) {
+        const { mapGuid, userGuid } = data;
 
         // проверяем, что карта с таким гуидом есть
         const map = this.maps[mapGuid];
-        if (!map) return this.answer.bad(3005);
+        if (!map) return this.answer.bad(3002);
 
-        // ищем юнита по гуиду
-        for (let unit in units) {
-            const unitIndex = map.units.findIndex(elem => unit.guid === elem.guid);
-            if (unitIndex + 1) {
-                const unitInArray = map.units[unitIndex]
-                // если нашелся и не изменился - считаем убитым
-                if (unit.x === unitInArray.x && unit.y === unitInArray.y) {
-                    map.units.splice(unitIndex, 1);
-                } else {
-                    // если нашелся и изменился - передвинулся
-                    unitInArray.x = unit.x;
-                    unitInArray.y = unit.y;
-                }
-            } else {
-                // не нашли - добавляем
-                map.units.append(new Unit(
-                    unit.x,
-                    unit.y,
-                    unit.type,
-                    unit.guid
-                ));
-            }
-        }
-        return this.answer.good(true);
+        // определяем роль игрока на карте по гуиду
+        const role = this.getRoleByGuid(map, userGuid);
+        if (!role) return this.answer.bad(3003);
+
+        return map.getRelief();
     }
 
-    updateArmyUnitsHandler(data = {}) {
+    updateUnitsHandler(data = {}) {
         const { mapGuid, userGuid, units } = data;
-
-        // проверяем, что пользак есть в каком-либо лобби
-        const lobby = this.isUserInAnyLobby(userGuid);
-        if (!lobby) return this.answer.bad(3003);
-
-        // проверяем, что пользак - армия (или спектатор)
-        if (lobby.playersGuilds.peopleEconomy === userGuid ||
-            lobby.playersGuilds.mushroomEconomy === userGuid) {
-            return this.answer.bad(3007);
-        }
-
-        // проверяем, что гуид карты и создателя комнаты совпадают
-        if (!lobby.creatorGuid === mapGuid) return this.answer.bad(3004);
 
         // проверяем, что карта с таким гуидом есть
         const map = this.maps[mapGuid];
-        if (!map) return this.answer.bad(3005);
+        if (!map) return this.answer.bad(3002);
 
-        // ищем юнита по гуиду
-        for (let unit in units) {
-            const unitIndex = map.units.findIndex(elem => unit.guid === elem.guid);
-            if (unitIndex + 1) {
-                const unitInArray = map.units[unitIndex]
-                // если нашелся и не изменился - считаем убитым
-                if (unit.x === unitInArray.x && unit.y === unitInArray.y) {
-                    map.units.splice(unitIndex, 1);
-                } else {
-                    // если нашелся и изменился - передвинулся
-                    unitInArray.x = unit.x;
-                    unitInArray.y = unit.y;
-                }
-            } else {
-                // не нашли - добавляем
-                map.units.append(new Unit(
-                    unit.x,
-                    unit.y,
-                    unit.type,
-                    unit.guid
-                ));
-            }
-        }
+        // определяем роль игрока на карте по гуиду
+        const role = this.getRoleByGuid(map, userGuid);
+        if (!role) return this.answer.bad(3003);
+
+        // если спектатор - пинаем
+        //if (role === ROLES.SPECTATOR) return this.answer.bad(3004);
+
+        units.forEach(unit => map.updateUnit({ ...unit, role }));
+  
         return this.answer.good(true);
     }
 
-    updateEconomyBuildingshandler(data = {}) {
+    updateBuildingsHandler(data = {}) {
         const { mapGuid, userGuid, buildings } = data;
 
-        // проверяем, что пользак есть в каком-либо лобби
-        const lobby = this.isUserInAnyLobby(userGuid);
-        if (!lobby) return this.answer.bad(3003);
-
-        // проверяем, что пользак - экономика (или спектатор)
-        if (lobby.playersGuilds.peopleArmy === userGuid ||
-            lobby.playersGuilds.mushroomArmy === userGuid) {
-            return this.answer.bad(3006);
-        }
-
-        // проверяем, что гуид карты и создателя комнаты совпадают
-        if (!lobby.creatorGuid === mapGuid) return this.answer.bad(3004);
-
         // проверяем, что карта с таким гуидом есть
         const map = this.maps[mapGuid];
-        if (!map) return this.answer.bad(3005);
+        if (!map) return this.answer.bad(3002);
 
-        // ищем юнита по гуиду
-        for (let building in buildings) {
-            const buildingIndex = map.buildings.findIndex(elem => building.guid === elem.guid);
-            if (buildingIndex + 1) {
-                // если нашелся - уничтожаем
-                map.buildings.splice(buildingIndex, 1);
-            } else {
-                // не нашли - добавляем
-                map.buildings.append(new Building(
-                    building.x,
-                    building.y,
-                    building.type,
-                    building.guid,
-                    building.size ? building.size : 1
-                ));
-            }
-        }
+        // определяем роль игрока на карте по гуиду
+        const role = this.getRoleByGuid(map, userGuid);
+        if (!role) return this.answer.bad(3003);
+
+        // если спектатор - пинаем
+        //if (role === ROLES.SPECTATOR) return this.answer.bad(3004);
+
+        buildings.forEach(building => map.updateUnit({ ...building, role }));
+  
         return this.answer.good(true);
     }
 
     getVisibilityHandler(data = {}) {
-        const { mapGuid, userGuid, visibility } = data;
-
-        // проверяем, что пользак есть в каком-либо лобби
-        const lobby = this.isUserInAnyLobby(userGuid);
-        if (!lobby) return this.answer.bad(3003);
-
-        // проверяем, что гуид карты и создателя комнаты совпадают
-        if (!lobby.creatorGuid === mapGuid) return this.answer.bad(3004);
+        const { mapGuid, userGuid } = data;
 
         // проверяем, что карта с таким гуидом есть
         const map = this.maps[mapGuid];
-        if (!map) return this.answer.bad(3005);
+        if (!map) return this.answer.bad(3002);
 
-        const res = map.getTilesByVisibility(visibility);
+        // определяем роль игрока на карте по гуиду
+        const playerGuids = map.playerGuids;
+        const role = Object.keys(playerGuids).find(role => playerGuids[role] === userGuid);
+        if (!role) return this.answer.bad(3003);
 
-        return this.answer.good(res);
+        // если спектатор - пинаем
+        if (role === ROLES.SPECTATOR) return this.answer.bad(3004);
+
+        return this.answer.good(map.getVisbileEntitiesByRole(role));
     }
 
     getResourseVisibilityHandler(data = {}) {
-        const { mapGuid, userGuid, visibility } = data;
-
-        // проверяем, что пользак есть в каком-либо лобби
-        const lobby = this.isUserInAnyLobby(userGuid);
-        if (!lobby) return this.answer.bad(3003);
-
-        // проверяем, что гуид карты и создателя комнаты совпадают
-        if (!lobby.creatorGuid === mapGuid) return this.answer.bad(3004)
+        const { mapGuid, userGuid } = data;
 
         // проверяем, что карта с таким гуидом есть
         const map = this.maps[mapGuid];
-        if (!map) return this.answer.bad(3005);
+        if (!map) return this.answer.bad(3002);
 
-        const res = map.getTilesBySourcesVisibility(visibility);
+        // определяем роль игрока на карте по гуиду
+        const playerGuids = map.playerGuids;
+        const role = Object.keys(playerGuids).find(role => playerGuids[role] === userGuid);
+        if (!role) return this.answer.bad(3003);
 
-        return this.answer.good(res);
+        // если спектатор - пинаем
+        if (role === ROLES.SPECTATOR) return this.answer.bad(3004);
+
+        return this.answer.good(map.getVisbileSoursesByRole(role));
     }
 
     //SOCKETS
@@ -260,18 +179,20 @@ class MapManager extends BaseManager {
         const { guid, width, height, water, mountains, seed, iron, oil } = data;
         const map = new Map(guid, width, height);
         map.generateRelief(water, mountains, seed);
-        //map.generateFields(iron, oil);
+        map.generateSources(iron, oil);
         this.maps[map.guid] = map;
-        socket.emit(MESSAGES.GENERATE_MAP, this.answer.good(map.getSelf()));
+        socket.emit(
+            MESSAGES.GENERATE_MAP, 
+            this.answer.good({ map: map.getRelief(), ...map.getSelf() })
+        );
     }
 
-    socketGetMapGeneration(data, socket) {
-        const { guid } = data;
-        const map = this.getMapByGuid(guid)
-        if (!map) {
-            socket.emit(MESSAGES.GET_MAP_GENERATION, this.answer.bad(3008));
-        } 
-        socket.emit(MESSAGES.GET_MAP_GENERATION, this.answer.good(map.getGen()));
+    socketGetMapParams(data, socket) {
+        const { mapGuid } = data;
+        const map = this.getMapByGuid(mapGuid)
+        if (!map) socket.emit(MESSAGES.GET_MAP_PARAMS, this.answer.bad(3008));
+
+        socket.emit(MESSAGES.GET_MAP_PARAMS, this.answer.good(map.getGen()));
     }
 }
 

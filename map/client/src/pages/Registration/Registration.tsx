@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
+import { MediatorContext } from "../../App";
 import { IBasePage, IPageManager, PAGES } from '../PageManager';
 import { TError } from '../../services/server/types';
 import Button from '../../components/Button/Button';
@@ -6,7 +7,8 @@ import useChecRegistration from './hooks/useCheckRegistration';
 import './Registration.scss';
 
 const Registration: React.FC<IBasePage & IPageManager> = (props) => {
-    const { setPage, server, mediator } = props;
+    const { setPage, server } = props;
+    const mediator = useContext(MediatorContext);
     const loginRef = useRef<HTMLInputElement>(null!);
     const passwordRef = useRef<HTMLInputElement>(null!);
     const confirmPasswordRef = useRef<HTMLInputElement>(null!);

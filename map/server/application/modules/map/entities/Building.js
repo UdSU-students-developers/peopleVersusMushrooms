@@ -1,19 +1,38 @@
-const Entity = require("./Entity");
+const Unit = require("./Entity");
 
-class Building extends Entity {
-    constructor({ x, y, type, guid, size = 1 }) {
-        super({ x, y, type });
+class Building extends Unit {
+    constructor({ x, y, type, guid, role, size = 1, visibility = 1 }) {
+        super({ x, y, type, guid, role, visibility });
 
-        this.guid = guid;
         this.size = size;
     }
 
     get() {
         return {
             ...super.get(),
-            guid: this.guid,
-            size: this.size
+            size: this.size,
         };
+    }
+
+    getSelf() {
+        return {
+            ...super.getSelf(),
+            size: this.size,
+        };
+    }
+
+    getPos() {
+        return {
+            x: [this.x, this.x + size],
+            y: [this.y, this.y + size]
+        }
+    }
+
+    getVisibleRange() {
+        return {
+            x: [this.x - this.visibility, this.x + this.visibility + this.size],
+            y: [this.y - this.visibility, this.y + this.visibility + this.size],
+        }
     }
 }
 

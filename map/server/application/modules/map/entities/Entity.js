@@ -12,6 +12,13 @@ class Entity {
             type: this.type
         }
     }
+
+    getPos() {
+        return {
+            x: [this.x, this.x],
+            y: [this.y, this.y]
+        }
+    }
 }
 
 module.exports = Entity;

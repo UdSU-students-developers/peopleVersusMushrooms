@@ -1,18 +1,22 @@
+import React, { createContext } from 'react';
+
 import Store from './services/Store/Store';
 import Server from './services/server/Server';
 import PageManager from './pages/PageManager';
+import useMediator from './services/Mediator/useMediator';
 import Mediator from './services/Mediator/Mediator';
-import { MEDIATOR } from './config';
+
 import './App.css';
 
-function App() {
+export const MediatorContext = createContext<Mediator>(null!);
+
+const App: React.FC = () => {
   // mediator
-  const mediator = new Mediator({ EVENTS: MEDIATOR.EVENTS, TRIGGERS: MEDIATOR.TRIGGERS });
+  const mediator = useMediator();
   const store = new Store(mediator);
   const server = new Server(mediator);
 
   const props = {
-    mediator,
     server,
     store,
   }
@@ -20,11 +24,13 @@ function App() {
   server.check('ВАСИЛИЙ', 'Я на такое не подписывался!');
 
   return (
-    <div className="App">
-      <div className='app'>
-        <PageManager {...props} />
+    <MediatorContext value={mediator}>
+      <div className="App">
+        <div className='app'>
+          <PageManager {...props} />
+        </div>
       </div>
-    </div>
+    </MediatorContext>
   );
 }
 

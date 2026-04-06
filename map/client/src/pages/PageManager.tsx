@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
+import { MediatorContext } from '../App';
 import Server from '../services/server/Server';
 import Registration from './Registration/Registration';
 import Login from './Login/Login';
@@ -25,17 +26,16 @@ export interface IBasePage {
 export interface IPageManager {
     server: Server,
     store: Store,
-    mediator: Mediator
 }
 
-const PageManager: React.FC<IPageManager> = ({ server, store, mediator }) => {
+const PageManager: React.FC<IPageManager> = ({ server, store }) => {
+    const mediator = useContext(MediatorContext);
     const [page, setPage] = useState<PAGES>(PAGES.LOGIN);
 
     const props = {
         setPage,
         server,
         store,
-        mediator
     }
 
     const { SHOW_ERROR } = mediator.getEventTypes();

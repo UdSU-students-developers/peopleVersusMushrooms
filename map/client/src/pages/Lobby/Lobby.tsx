@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
+import { MediatorContext } from "../../App";
 import { IBasePage, IPageManager, PAGES } from '../PageManager';
 import Button from "../../components/Button/Button";
 import { TError } from "../../services/server/types";
@@ -15,7 +16,8 @@ interface ILobby {
 }
 
 const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
-    const { setPage, server, mediator } = props;
+    const { setPage, server } = props;
+    const mediator = useContext(MediatorContext);
     const [error, setError] = useState<TError | null>(null);
     const [lobbies, setLobbies] = useState<ILobby[]>([]);
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -55,11 +57,6 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
 
     const startGameHandler = () => {
         server.startGame(props.server.user.guid);
-    }
-
-    const getLobbiesHandler = () => {
-        setIsLoading(true);
-        server.getLobbies(props.server.user.guid);
     }
 
     useEffect(() => {
@@ -151,12 +148,6 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
             <div className="lobby-header">
                 <h1>Лобби</h1>
                 <div className="lobby-actions">
-                    <Button
-                        onClick={getLobbiesHandler}
-                        text='Обновить комнаты'
-                        className='button-refresh'
-                        isDisabled={isLoading}
-                    />
                     <Button
                         onClick={createLobbyClickHandler}
                         text='Создать комнату'

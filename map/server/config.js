@@ -6,6 +6,13 @@ class CONFIG {
 
     static LOBBY_MAX_SIZE = 5;
 
+    static ROLES = {
+        SPECTATOR: 'spectator',
+        PEOPLE_ECONOMY: 'peopleEconomy',
+        PEOPLE_ARMY: 'peopleArmy',
+        MUSHROOM_ECONOMY: 'mushroomEconomy',
+        MUSHROOM_ARMY: 'mushroomArmy',
+    }
 
     //events
     static EVENTS = {
@@ -20,11 +27,11 @@ class CONFIG {
         IS_GUID_IN_ANY_LOBBY: 'IS_GUID_IN_ANY_LOBBY',
         GET_LOBBIES: 'GET_LOBBIES',
         //handlers
+        GET_RELIEF_HANDLER: 'GET_RELIEF_HANDLER',
         GET_VISIBILITY_HANDLER: 'GET_VISIBILITY_HANDLER',
         GET_RESOURSE_VISIBILITY_HANDLER: 'GET_RESOURSE_VISIBILITY_HANDLER',
-        UPDATE_ECONOMY_UNITS_HANDLER: 'UPDATE_ECONOMY_UNITS_HANDLER',
-        UPDATE_ECONOMY_BUILDINGS_HANDLER: 'UPDATE_ECONOMY_BUILDINGS_HANDLER',
-        UPDATE_ARMY_UNITS_HANDLER: 'UPDATE_ARMY_UNITS_HANDLER'
+        UPDATE_UNITS_HANDLER: 'UPDATE_UNITS_HANDLER',
+        UPDATE_BUILDINGS_HANDLER: 'UPDATE_BUILDINGS_HANDLER',
     }
 
     // сокетные сообщения
@@ -50,7 +57,7 @@ class CONFIG {
 
         //map sockets
         GENERATE_MAP: 'GENERATE_MAP',
-        GET_MAP_GENERATION: 'GET_MAP_GENERATION'
+        GET_MAP_PARAMS: 'GET_MAP_PARAMS'
     }
 }
 

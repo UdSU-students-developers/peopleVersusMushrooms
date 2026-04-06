@@ -1,8 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const {
+    getReliefHandler,
     getVisibilityHandler,
     getResourseVisibilityHandler,
+    updateUnitsHandler,
+    updateBuildingsHandler,
     useGetLobbiesHandler,
     useJoinToLobbyHandler,
 } = require('./handlers');
@@ -15,9 +18,13 @@ function Router(mediator, answer, common) {
 
     // ============ MAP ROUTES ============
     // для http методов из MapManager
-    router.get('/getVisibility{/:mapGuid}{/:userGuid}{/:visibilityJSON}', getVisibilityHandler(mediator, answer, common));
-    router.get('/getResourseVisibility{/:mapGuid}{/:userGuid}{/:visibilityJSON}', getResourseVisibilityHandler(mediator, answer, common));
-    router.get('/updateEconomyUnitsHandler{/:mapGuid}{/:userGuid}{/:unitsJSON}', getResourseVisibilityHandler(mediator, answer, common));
+    router.get('/getRelief/{/:mapGuid}{/:userGuid}', getReliefHandler(mediator, answer, common));
+    router.get('/getVisibility{/:mapGuid}{/:userGuid}', getVisibilityHandler(mediator, answer, common));
+    router.get('/getResourseVisibility{/:mapGuid}{/:userGuid}', getResourseVisibilityHandler(mediator, answer, common));
+
+    router.post('/updateUnitsHandler', updateUnitsHandler(mediator, answer, common));
+    router.post('/updateBuildingsHandler', updateBuildingsHandler(mediator, answer, common));
+
 
     //еще 4
 

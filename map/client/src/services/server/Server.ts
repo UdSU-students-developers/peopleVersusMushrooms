@@ -126,7 +126,7 @@ class Server {
         });
     }
 
-    _validate(data: any) {
+    private _validate(data: any) {
         if (data.result === "ok") {
             return data.data;
         }

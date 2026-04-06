@@ -1,14 +1,19 @@
 const getVisibilityHandler = require("./getVisibilityHandler");
 const getResourseVisibilityHandler = require("./getResourseVisibilityHandler");
-const updateEconomyUnitsHandler = require("./updateEconomyUnitsHandler");
 const useGetLobbiesHandler = require("./useGetLobbiesHandler");
 const useJoinToLobbyHandler = require("./useJoinToLobbyHandler");
+const updateUnitsHandler = require("./updateUnitsHandler");
+const getReliefHandler = require("./getReliefHandler");
+const updateBuildingsHandler = require("./updateBuildingsHandler");
 
 module.exports = {
     //для http методов map
+    getReliefHandler,
     getVisibilityHandler,
     getResourseVisibilityHandler,
-    updateEconomyUnitsHandler,
+
+    updateUnitsHandler,
+    updateBuildingsHandler,
 
     useGetLobbiesHandler,
     useJoinToLobbyHandler,

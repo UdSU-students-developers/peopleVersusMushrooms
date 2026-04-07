@@ -1,73 +1,104 @@
-import CONFIG from '../../config';
-import Store from "../Store/Store";
-import { TUser } from "./types";
+import md5 from 'md5';
+import { io, Socket } from 'socket.io-client';
+import CONFIG, { MEDIATOR, EMESSAGES } from '../../config';
+import { TAnswer, TUser } from "./types";
+import Mediator from '../Mediator/Mediator';
 
 const HOST = CONFIG.HOST;
 
 class Server {
-    HOST = HOST;
-    store: Store;
+    socket: Socket;
     chatInterval: NodeJS.Timer | null = null;
-    showErrorCb: (text: string) => void = function() {};
+    mediator: Mediator;
 
-    constructor(store: Store) {
-        this.store = store;
+    constructor(mediator: Mediator) {
+        this.mediator = mediator;
+        this.socket = io(HOST);
+
+        this.socket.on('connect', () => console.log('КОНнЕНКШОН!!! id:', this.socket.id));
+        this.socket.on("disconnect", () => console.log('дисконнект. id:', this.socket.id));
+
+        this.socket.on(EMESSAGES.CHECK, (data: string) => {
+            this.mediator.call(EMESSAGES.CHECK, data);
+        });
+
+        this.socket.on(EMESSAGES.SEND_TO_ALL, (data: { name: string, text: string }) => {
+            this.mediator.call(EMESSAGES.SEND_TO_ALL, data);
+        });
+
+        this.socket.on(MEDIATOR.EVENTS.LOGIN, (data: TAnswer<TUser>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { LOGIN } = this.mediator.getEventTypes();
+                this.mediator.call(LOGIN, data);
+            }
+        });
+
+        this.socket.on(MEDIATOR.EVENTS.REGISTRATION, (data: TAnswer<TUser>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { REGISTRATION } = this.mediator.getEventTypes();
+                this.mediator.call(REGISTRATION, data);
+            }
+        });
+
+        this.socket.on(MEDIATOR.EVENTS.LOGOUT, (data: TAnswer<TUser>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { LOGOUT } = this.mediator.getEventTypes();
+                this.mediator.call(LOGOUT, data);
+            }
+        });
+    }
+    _validate(data: any) {
+        if (data.result === "ok") {
+            return data.data;
+        }
+        const { SHOW_ERROR } = this.mediator.getEventTypes();
+        this.mediator.call(SHOW_ERROR, data.error);
+        return null;
     }
 
-    private async request<T>(
-        method: string,
-        params: { [key: string]: string } = {},
-        queryParams: { [key: string]: string } = {}
-    ): Promise<T | null> {
+    private async request<T>(method: string, params: { [key: string]: string | number } = {}): Promise<T | null> {
         try {
-            const token = this.store.getToken();
-            let url = `${this.HOST}/${method}`;
-            const paramValues = Object.values(params);
-            if (paramValues.length > 0) {
-                url += "/" + paramValues.join("/");
-            }
-            const queryParts: string[] = [];
+            params.method = method;
+            const token = this.mediator.get<string>(MEDIATOR.TRIGGERS.GET_TOKEN);
             if (token) {
-                queryParts.push("token=" + token);
+                params.token = token;
             }
-            for (const key in queryParams) {
-                queryParts.push(key + "=" + queryParams[key]);
+            const response = await fetch(`${HOST}/?${Object.keys(params).map(key => `${key}=${params[key]}`).join('&')}`);
+            const answer: TAnswer<T> = await response.json();
+            if (answer.result === 'ok' && answer.data) {
+                return answer.data;
             }
-            if (queryParts.length > 0) {
-                url += "?" + queryParts.join("&");
-            }
-
-            console.log("Request URL:", url);
-            const response = await fetch(url);
-            const body = await response.json();
-
-            if (body && body.error) {
-                this.setError(body.error);
-                console.error("Server error:", body.error);
-                return null;
-            }
-            return body as T;
+            //answer.error && this.setError(answer.error);
+            return null;
         } catch (e) {
-            console.log("Request exception:", e);
-            this.setError("Unknown error");
+            console.log(e);
+            /*this.setError({
+                code: 9000,
+                text: 'Unknown error',
+            });*/
             return null;
         }
     }
 
-    private setError(text: string): void {
-        this.showErrorCb(text);
+    check(name: string, text: string): void {
+        this.socket.emit(EMESSAGES.CHECK, { name, text });
     }
 
-    showError(cb: (text: string) => void) {
-        this.showErrorCb = cb;
+    login(login: string, password: string): void {
+        const passwordHash = md5(`${login}${password}`);
+        this.socket.emit(MEDIATOR.EVENTS.LOGIN, { login, passwordHash });
+    };
+
+    registration(login: string, password: string): void {
+        const passwordHash = md5(`${login}${password}`);
+        this.socket.emit(MEDIATOR.EVENTS.REGISTRATION, { login, passwordHash });
     }
 
-    async register(username: string, password: string): Promise<boolean> { //Функцию выпилить! Она для примера
-        const user = await this.request<TUser & { username?: string; name?: string; id?: number }>("reg", { username, password });
-        if (!user) return false;
-        const name = user.username ? user.username : user.name;
-        this.store.setUser({ token: user.token, name: name, id: user.id });
-        return true;
+    logout(): void {
+        this.socket.emit(MEDIATOR.EVENTS.LOGOUT);
     }
 }
 

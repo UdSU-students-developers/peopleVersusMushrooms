@@ -1,13 +1,19 @@
+const CONFIG = require('../../config.js');
+
 class BaseManager {
-    constructor (mediator, db) {
+    constructor(options) {
+        const { mediator, db, io, answer, common } = options;
+        
+        this.answer = answer;
         this.mediator = mediator;
         this.db = db;
+        this.io = io;
+        this.common = common;
 
         this.EVENTS = this.mediator.getEventTypes();
         this.TRIGGERS = this.mediator.getTriggerTypes();
+		this.SOCKETS = CONFIG.SOCKET;
     }
-
-
 }
 
 module.exports = BaseManager;

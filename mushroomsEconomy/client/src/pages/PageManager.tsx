@@ -1,32 +1,32 @@
-import React, { useState } from 'react';
-import Server from '../services/server/Server';
+import React, { useContext, useState } from 'react';
 import Registration from './Registration/Registration';
 import Login from './Login/Login';
 import Chat from './Chat/Chat'
-import Store from '../services/Store/Store';
+import Game from './Game/Game';
+import GameMenu from './GameMenu/GameMenu';
+import StartGame from './StartGame/StartGame'
+
+import CONFIG from '../config';
 
 
 export enum PAGES {
     LOGIN,
     REGISTRATION,
     CHAT,
+    GAME,
+    GAME_MENU,
+    START_GAME,
 }
 
 export interface IBasePage {
     setPage: (name: PAGES) => void;
-    server: Server,
-    store: Store,
 }
 
 const PageManager: React.FC = () => {
     const [page, setPage] = useState<PAGES>(PAGES.LOGIN);
-    const store = new Store();
-    const server = new Server(store);
 
     const props = {
         setPage,
-        server,
-        store,
     }
 
     return (
@@ -34,6 +34,9 @@ const PageManager: React.FC = () => {
             {page === PAGES.REGISTRATION && <Registration {...props} />}
             {page === PAGES.LOGIN && <Login {...props} />}
             {page === PAGES.CHAT && <Chat {...props} />}
+            {page === PAGES.GAME && <Game {...props} />}
+            {page === PAGES.GAME_MENU && <GameMenu {...props} />}
+            {page === PAGES.START_GAME && <StartGame {... props} />}
         </>
     );
 }

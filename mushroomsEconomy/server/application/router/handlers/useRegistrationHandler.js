@@ -1,7 +1,11 @@
-module.exports = (exampleManager) => {
+module.exports = (mediator, answer) => {
     return async (req, res) => {
-        const username = req.params.username;
-        const password = req.params.password;
-        res.send(username, password);
+        const { username, password } = req.body;
+        
+        if (!username || !password) {
+            return res.send(answer.bad(13));
+        }
+        
+        res.send(answer.good("Reg"));
     };
 };

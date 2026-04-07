@@ -11,6 +11,7 @@ class MapManager extends BaseManager {
         if (!this.io) return;
         this.io.on('connection', (socket) => {
             socket.on(MESSAGES.GENERATE_MAP, (data) => this.socketGenerateMap(data, socket));
+            socket.on(MESSAGES.UPDATE_MAP, (data) => this.socketUpdateMap(data, socket));
             socket.on(MESSAGES.GET_MAP_PARAMS, (data) => this.socketGetMapParams(data, socket));
         });
 
@@ -18,12 +19,11 @@ class MapManager extends BaseManager {
             GET_RELIEF_HANDLER,
             GET_VISIBILITY_HANDLER,
             GET_RESOURSE_VISIBILITY_HANDLER,
+            GET_GENERATED_MAP,
             UPDATE_UNITS_HANDLER,
             UPDATE_BUILDINGS_HANDLER
         } = this.TRIGGERS;
 
-
-        this.mediator.set(GET_RELIEF_HANDLER, (data) => this.getReliefHandler(data));
         // взимодействие с остальными
         // input (это сервисы говорят мне)
         // изменения в экономике (строительство, уничтожение) зданий/труб/грибниц
@@ -35,8 +35,15 @@ class MapManager extends BaseManager {
         this.mediator.set(GET_VISIBILITY_HANDLER, (data) => this.getVisibilityHandler(data));
         //отдавать сервису значения ресурсов по массиву видимостей его разведчиков
         this.mediator.set(GET_RESOURSE_VISIBILITY_HANDLER, (data) => this.getVisibilityHandler(data));
+        // отдать всю проходимость
+        this.mediator.set(GET_RELIEF_HANDLER, (data) => this.getReliefHandler(data));
 
-        this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data))
+
+        this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
+
+
+        // ДЛЯ ТЕСТОВ
+        this.mediator.set(GET_GENERATED_MAP, (data) => this.getGeneratedMapHandler(data));
     }
 
     // ============ ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ============
@@ -61,7 +68,7 @@ class MapManager extends BaseManager {
         map.generateRelief();
         map.generateSources();
         this.maps[map.guid] = map;
-        
+
         //сообщить всем сервисам, что игра началась и сообщить guid карты
         const result1 = await this.send(
             `http://localhost:3009/startGame/${playersGuids.peopleEconomy}`,
@@ -115,7 +122,8 @@ class MapManager extends BaseManager {
         //if (role === ROLES.SPECTATOR) return this.answer.bad(3004);
 
         units.forEach(unit => map.updateUnit({ ...unit, role }));
-  
+
+        socket.emit(MESSAGES.UPDATE_MAP, this.answer.good(map.getSelf()))
         return this.answer.good(true);
     }
 
@@ -134,7 +142,8 @@ class MapManager extends BaseManager {
         //if (role === ROLES.SPECTATOR) return this.answer.bad(3004);
 
         buildings.forEach(building => map.updateUnit({ ...building, role }));
-  
+
+        socket.emit(MESSAGES.UPDATE_MAP, this.answer.good(map.getSelf()))
         return this.answer.good(true);
     }
 
@@ -174,17 +183,49 @@ class MapManager extends BaseManager {
         return this.answer.good(map.getVisbileSoursesByRole(role));
     }
 
+    getGeneratedMapHandler(data = {}) {
+        const { guid, width, height, water, mountains, seed, iron, oil } = data;
+        const playerGuids = {
+            spectator: null,
+            peopleArmy: null,
+            peopleEconomy: null,
+            mushroomArmy: null,
+            mushroomEconomy: null,
+        };
+        const map = new Map(guid, playerGuids, width, height);
+        map.generateRelief(seed, water, mountains);
+        return map.getRelief();
+    }
+
     //SOCKETS
     socketGenerateMap(data, socket) {
         const { guid, width, height, water, mountains, seed, iron, oil } = data;
-        const map = new Map(guid, width, height);
-        map.generateRelief(water, mountains, seed);
+        const playerGuids = {
+            spectator: null,
+            peopleArmy: null,
+            peopleEconomy: null,
+            mushroomArmy: null,
+            mushroomEconomy: null,
+        };
+        const map = new Map(guid, playerGuids, width, height);
+        map.generateRelief(seed, water, mountains);
         map.generateSources(iron, oil);
         this.maps[map.guid] = map;
         socket.emit(
-            MESSAGES.GENERATE_MAP, 
+            MESSAGES.GENERATE_MAP,
             this.answer.good({ map: map.getRelief(), ...map.getSelf() })
         );
+    }
+
+    socketUpdateMap(data, socket) {
+        const { mapGuid } = data;
+        
+        // проверяем, что карта с таким гуидом есть
+        const map = this.maps[mapGuid];
+        if (!map) 
+            return socket.emit(MESSAGES.UPDATE_MAP, this.answer.bad(3002));
+
+        return socket.emit(MESSAGES.UPDATE_MAP, this.answer.good(map.getSelf()));
     }
 
     socketGetMapParams(data, socket) {

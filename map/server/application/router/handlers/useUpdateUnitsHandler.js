@@ -1,4 +1,4 @@
-const updateUnitsHandler = (mediator, answer, common) => {
+const useUpdateUnitsHandler = (mediator, answer, common) => {
     const { UPDATE_UNITS_HANDLER } = mediator.getTriggerTypes();
 
     return (req, res) => {
@@ -11,8 +11,8 @@ const updateUnitsHandler = (mediator, answer, common) => {
                 return res.json(answer.bad(3001));
             }
 
-        res.json(mediator.get(UPDATE_UNITS_HANDLER, { mapGuid, userGuid, units }));
+        res.json(answer.good(mediator.get(UPDATE_UNITS_HANDLER, { mapGuid, userGuid, units })));
     }
 }
 
-module.exports = updateUnitsHandler;
+module.exports = useUpdateUnitsHandler;

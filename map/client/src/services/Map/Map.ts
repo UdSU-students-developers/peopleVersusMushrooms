@@ -1,4 +1,4 @@
-import { TMap } from "../../services/server/types";
+import { TMap } from "../server/types";
 
 class Map {
     width: number = 0;

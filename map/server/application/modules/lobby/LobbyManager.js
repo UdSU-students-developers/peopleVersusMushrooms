@@ -46,9 +46,9 @@ class LobbyManager extends BaseManager {
         if (!lobby) return;
 
         //оповещаем всех в лобби об уничтожении
-        for (const player of Object.values(lobby.playersGuids)) {
-            if (player) {
-                const user = this.getUserByGuid(player.guid);
+        for (const guid of Object.values(lobby.playersGuids)) {
+            if (guid) {
+                const user = this.getUserByGuid(guid);
                 if (user && user.socketId) {
                     const socket = this.io.sockets.sockets.get(user.socketId);
                     if (socket) {
@@ -69,9 +69,9 @@ class LobbyManager extends BaseManager {
         const lobbyInfo = lobby.get();
         
         //оповещаем всех в лобби
-        for (const player of Object.values(lobby.playersGuids)) {
-            if (player) {
-                const user = this.getUserByGuid(player.guid);
+        for (const guid of Object.values(lobby.playersGuids)) {
+            if (guid) {
+                const user = this.getUserByGuid(guid);
                 if (user && user.socketId) {
                     const socket = this.io.sockets.sockets.get(user.socketId);
                     if (socket) {
@@ -86,6 +86,8 @@ class LobbyManager extends BaseManager {
         const lobbies = Object.values(this.lobbies).map(lobby => lobby.get());
         console.log('список лобби:', JSON.stringify(lobbies, null, 2));
         this.io.emit(MESSAGES.LOBBIES_LIST_UPDATED, this.answer.good(lobbies));
+
+        this.sendToAll('/lobbyUpdated', { lobbies });
     }
 
     // ============ EVENTS ============
@@ -96,16 +98,16 @@ class LobbyManager extends BaseManager {
         const lobby = this.isGuidInAnyLobby(guid);
         if (!lobby) return;
 
-        const isCreator = (guid === lobby.creatorGuid);
+        const isCreator = (guid === lobby.lobbyGuid);
         
         //если создатель выходит - удаляем все лобби
         if (isCreator) {
-            this._destroyLobby(lobby.guid);
+            this._destroyLobby(lobby.lobbyGuid);
         } else {
             //удаляем игрока
             lobby.removePlayer(guid);
         }
-        this._notifyLobbyUpdate(lobby.guid);
+        this._notifyLobbyUpdate(lobby.lobbyGuid);
         this._notifyLobbiesListUpdated();
     }
 
@@ -120,10 +122,10 @@ class LobbyManager extends BaseManager {
 
         const existingLobby = this.isGuidInAnyLobby(guid);
         if (existingLobby) {
-            if (existingLobby.guid === lobbyGuid) {
+            if (existingLobby.lobbyGuid === lobbyGuid) {
                 return { error: 2005 };
             }
-            this._destroyLobby(existingLobby.guid);
+            this._destroyLobby(existingLobby.lobbyGuid);
         }
 
         if (!lobby.canJoin()) {
@@ -176,12 +178,12 @@ class LobbyManager extends BaseManager {
         //проверка, не в лобби ли уже
         const existingLobby = this.isGuidInAnyLobby(user.guid);
         if (existingLobby) {
-            this._destroyLobby(existingLobby.guid);
+            this._destroyLobby(existingLobby.lobbyGuid);
         }
 
         //создаем лобби
         const lobby = new Lobby({ 
-            creatorGuid: user.guid,
+            lobbyGuid: user.guid,
             lobbyName,
             role,
             common: this.common
@@ -210,10 +212,10 @@ class LobbyManager extends BaseManager {
         //проверка, не в лобби ли уже
         const existingLobby = this.isGuidInAnyLobby(user.guid);
         if (existingLobby) {
-            if (existingLobby.guid === lobbyGuid) {
+            if (existingLobby.lobbyGuid === lobbyGuid) {
                 return socket.emit(MESSAGES.JOIN_TO_LOBBY, this.answer.bad(2005));
             }
-            this._destroyLobby(existingLobby.guid);
+            this._destroyLobby(existingLobby.lobbyGuid);
         }
 
         //проверка заполнености
@@ -251,11 +253,11 @@ class LobbyManager extends BaseManager {
             return socket.emit(MESSAGES.LEAVE_LOBBY, this.answer.bad(2006));
         }
 
-        const isCreator = (user.guid === lobby.creatorGuid);
+        const isCreator = (user.guid === lobby.lobbyGuid);
         
         //если создатель выходит - удаляем все лобби
         if (isCreator) {
-            this._destroyLobby(lobby.guid);
+            this._destroyLobby(lobby.lobbyGuid);
             return socket.emit(MESSAGES.LEAVE_LOBBY, this.answer.good(true));
         }
 
@@ -263,7 +265,7 @@ class LobbyManager extends BaseManager {
         lobby.removePlayer(user.guid);
 
         socket.emit(MESSAGES.LEAVE_LOBBY, this.answer.good(true));
-        this._notifyLobbyUpdate(lobby.guid);
+        this._notifyLobbyUpdate(lobby.lobbyGuid);
         this._notifyLobbiesListUpdated();
     }
 
@@ -294,7 +296,7 @@ class LobbyManager extends BaseManager {
         }
 
         //проверка, что админ - создатель
-        if (creator.guid !== lobby.creatorGuid) {
+        if (creator.guid !== lobby.lobbyGuid) {
             return socket.emit(MESSAGES.DROP_FROM_LOBBY, this.answer.bad(2010));
         }
 
@@ -312,7 +314,7 @@ class LobbyManager extends BaseManager {
         lobby.removePlayer(target.guid);
 
         socket.emit(MESSAGES.DROP_FROM_LOBBY, this.answer.good(lobby.get()));
-        this._notifyLobbyUpdate(lobby.guid);
+        this._notifyLobbyUpdate(lobby.lobbyGuid);
         this._notifyLobbiesListUpdated();
     }
 
@@ -337,7 +339,7 @@ class LobbyManager extends BaseManager {
         }
 
         //проверка, что пользователь - создатель
-        if (user.guid !== lobby.creatorGuid) {
+        if (user.guid !== lobby.lobbyGuid) {
             return socket.emit(MESSAGES.START_GAME, this.answer.bad(2010));
         }
 
@@ -347,7 +349,7 @@ class LobbyManager extends BaseManager {
         }
 
         this.mediator.call(this.EVENTS.START_GAME, {
-            lobbyGuid: lobby.guid,
+            lobbyGuid: lobby.lobbyGuiduid,
             ...lobby.getGuids()
         });
 
@@ -402,7 +404,7 @@ class LobbyManager extends BaseManager {
         }
 
         socket.emit(MESSAGES.SET_READY, this.answer.good(true));
-        this._notifyLobbyUpdate(lobby.guid);
+        this._notifyLobbyUpdate(lobby.lobbyGuid);
         this._notifyLobbiesListUpdated();
     }
 

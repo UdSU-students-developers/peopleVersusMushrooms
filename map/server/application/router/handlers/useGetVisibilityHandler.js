@@ -1,4 +1,4 @@
-const getVisibilityHandler = (mediator, answer, common) => {
+const useGetVisibilityHandler = (mediator, answer, common) => {
     const { GET_VISIBILITY_HANDLER } = mediator.getTriggerTypes();
 
     return (req, res) => {
@@ -7,8 +7,8 @@ const getVisibilityHandler = (mediator, answer, common) => {
         if (!(common.checkGuid(mapGuid) && common.checkGuid(userGuid))) {
             return res.json(answer.bad(3001));
         }
-        res.json(mediator.get(GET_VISIBILITY_HANDLER, { mapGuid, userGuid }));
+        res.json(answer.good(mediator.get(GET_VISIBILITY_HANDLER, { mapGuid, userGuid })));
     }
 }
 
-module.exports = getVisibilityHandler;
+module.exports = useGetVisibilityHandler;

@@ -1,21 +1,13 @@
-import React, { useContext } from 'react';
-import { MediatorContext } from '../../App';
-import { IBasePage, IPageManager } from '../PageManager';
+import React from 'react';
 import MapCanvas from './MapCanvas/MapCanvas';
 import './MapPage.scss';
 
 
-const MapPage: React.FC<IBasePage & IPageManager> = (props) => {
-    const { server } = props;
-    const mediator = useContext(MediatorContext);
-
-
+const MapPage: React.FC = () => {
     return (
         <div className='map'>
             <div className="canvas-container">
-                <MapCanvas
-                    mediator={mediator}
-                    server={server} />
+                <MapCanvas />
                 <p>Карта</p>
             </div>
         </div>

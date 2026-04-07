@@ -32,6 +32,18 @@ class SmallReactor extends Building {
         }
         return result;
     }
+
+    consumeMycelium(mycelium) {
+        const consumableList = this.getConsumable(mycelium);
+        
+        for (const mc of consumableList) {
+            const energyGain = mc.getPower();
+            this.energy = Math.min(this.energy + energyGain, this.capacity);
+            mc.consume();
+        }
+        
+        return consumableList.length;
+    }
 }
 
 module.exports = SmallReactor;

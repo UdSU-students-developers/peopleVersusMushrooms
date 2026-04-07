@@ -69,10 +69,6 @@ class Economy {
         }));
     }
 
-    consumeMucelium() {
-        
-    }
-
     addMycelium(x, y) {
         this.mycelium.push(new Mycelium({
             x,
@@ -102,7 +98,6 @@ class Economy {
         }
     }
 
-    // 3. реакторы потребляют мицелий 3-го уровня (ИЛИ МУХОМОРЫ, УТОЧНИТЬ)
     reactorsConsume() {
         this.buildings
             .filter(b => b instanceof SmallReactor)
@@ -118,6 +113,17 @@ class Economy {
 
     moveUnits() {
         [...this.workers].forEach(unit => unit.moveOneStep())
+    }
+
+    reactorsConsume() {
+        this.buildings
+            .filter(b => b instanceof SmallReactor)
+            .forEach(reactor => {
+                const consumedCount = reactor.consumeMycelium(this.mycelium);
+                if (consumedCount > 0) {
+                    this.updated = true;
+                }
+            });
     }
 
     update() {

@@ -32,7 +32,6 @@ class LobbyManager extends BaseManager {
 
     handleDisconnect(socket) {
         //console.log("LobbyManager: Client disconnected:", socket.id)
-        this.mediator.call(this.TRIGGERS.DELETE_USER, )
     }
 	
 	/* TRIGGERS */

@@ -3,6 +3,11 @@ const CONFIG = {
     PORT: 3005,
     CORS: {
         origin: "*",
+        middleware: (_, res, next) => {
+            res.header('Content-Type', 'application/json; charset=utf-8');
+            res.header('Access-Control-Allow-Origin', '*');
+            next();
+        }
     },
 
     MUSHROOMS_ARMY_URL: 'http://localhost:3003',
@@ -19,6 +24,7 @@ const CONFIG = {
         },
         TRIGGERS: {
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',
+            GET_USER_BY_SOCKET_ID: 'GET_USER_BY_SOCKET_ID',
         },
     },
 

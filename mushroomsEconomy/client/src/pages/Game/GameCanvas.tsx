@@ -39,127 +39,70 @@ const GameCanvas: React.FC = () => {
     let windowStartPosition: { LEFT: number, TOP: number } | null = null;
     let animationTime = 0;
 
-    const createTiles = (matrix: number[][]): TerrainBlock[] => {
-        const tiles: TerrainBlock[] = [];
-
-
-        for (let rowIndex = 0; rowIndex < matrix.length; rowIndex++) {
-            const row = matrix[rowIndex];
-            
-            for (let colIndex = 0; colIndex < row.length; colIndex++) {
-                const position = { x: colIndex, y: rowIndex };
-                const tileType = matrix[rowIndex][colIndex];
-                
-                tiles.push(new TerrainBlock(position, tileType));
-            }
-        }
-
-        return tiles;
-    };
-
-    const createMushroomTiles = (mushrooms: TMushroom[]): Mushroom[] => {
-        const newMushrooms: Mushroom[] = [];
-
-        mushrooms.forEach( (mushroom) => {
-            newMushrooms.push(new Mushroom(mushroom.guid, mushroom.coords, mushroom.level))
-        })
-
-        return newMushrooms;
-    };
-
-    const createSmallReactorTiles = (smallReactors: TSmallReactor[]): SmallReactor[] => {
-        const newSmallReactors: SmallReactor[] = [];
-
-        smallReactors.forEach( (smallReactor) => {
-            newSmallReactors.push(new SmallReactor(smallReactor.guid, smallReactor.coords));
-        })
-        return newSmallReactors;
-    };
-
-    const drawMap = (scene: TScene | null) => {
-        if (!canvas || !scene) return;
-
-        const tileWorldSize = INITIAL_WINDOW_WIDTH / scene.map.length;
-        const tileSizePx = canvas.dec(tileWorldSize);
-        const tiles = createTiles(scene.map);
-
-        tiles.forEach((tile) => {
-            const worldX = tile.coords.x * tileWorldSize;
-            const worldY = tile.coords.y * tileWorldSize;
-
-            tile.sprite.forEach((spriteId) => {
-                const [sx, sy, sSize] = getSprite(spriteId);
-                if (!canvas) return; //Без 2 проверки ругалось
-                canvas.contextV.drawImage(
-                    spritesImage,
-                    sx, sy, sSize, sSize,
-                    canvas.xs(worldX), canvas.ys(worldY), tileSizePx, tileSizePx
-                );
-            });
-        });
-    };
-
-    const drawMushrooms = (scene: TScene | null) => {
-        if (!canvas || !scene) return;
-
-        const tileWorldSize = INITIAL_WINDOW_WIDTH / scene.map.length;
-        const tileSizePx = canvas.dec(tileWorldSize);
-        const mushroomTiles = createMushroomTiles(scene.mushrooms);
-
-        mushroomTiles.forEach((mushroomTile) => {
-            const worldX = mushroomTile.coords.x * tileWorldSize;
-            const worldY = mushroomTile.coords.y * tileWorldSize;
-
-            mushroomTile.sprite.forEach((spriteId) => {
-                const [sx, sy, sSize] = getSprite(spriteId);
-                if (!canvas) return; //Без 2 проверки ругалось
-                canvas.contextV.drawImage(
-                    spritesImage,
-                    sx, sy, sSize, sSize,
-                    canvas.xs(worldX), canvas.ys(worldY), tileSizePx, tileSizePx
-                );
-            });
-        });
-    };
-
-    const drawSmallReactors = (scene: TScene | null) => {
-        if (!canvas || !scene) return;
-
-        const tileWorldSize = INITIAL_WINDOW_WIDTH / scene.map.length;
-        const tileSizePx = canvas.dec(tileWorldSize);
-        const smallReactorTiles = createSmallReactorTiles(
-            scene.buildings.filter(b => (b as TSmallReactor).type == 'small_reactor') as TSmallReactor[]
-        );
-
-        smallReactorTiles.forEach((smallReactorTile) => {
-            const worldX = smallReactorTile.coords.x * tileWorldSize;
-            const worldY = smallReactorTile.coords.y * tileWorldSize;
-
-            const [sx, sy, sSize] = getSprite(smallReactorTile.sprite[0]);
-            if (!canvas) return; //Без 2 проверки ругалось
+    const drawTile = (spriteIds: number[], worldX: number, worldY: number, tileSizePx: number) => {
+        if (!canvas) return;
+        for (let i = 0; i < spriteIds.length; i++) {
+            const [sx, sy, sSize] = getSprite(spriteIds[i]);
             canvas.contextV.drawImage(
                 spritesImage,
                 sx, sy, sSize, sSize,
                 canvas.xs(worldX), canvas.ys(worldY), tileSizePx, tileSizePx
             );
-        });
-    }
+        }
+    };
+
+    const drawMap = (scene: TScene, tileWorldSize: number, tileSizePx: number) => {
+        for (let rowIndex = 0; rowIndex < scene.map.length; rowIndex++) {
+            const row = scene.map[rowIndex];
+            for (let colIndex = 0; colIndex < row.length; colIndex++) {
+                const block = new TerrainBlock({ x: colIndex, y: rowIndex }, row[colIndex]);
+                drawTile(block.sprite, colIndex * tileWorldSize, rowIndex * tileWorldSize, tileSizePx);
+            }
+        }
+    };
+
+    const drawMushrooms = (scene: TScene, tileWorldSize: number, tileSizePx: number) => {
+        for (let i = 0; i < scene.mushrooms.length; i++) {
+            const m = scene.mushrooms[i];
+            const mushroom = new Mushroom(m.guid, m.coords, m.level);
+            drawTile(mushroom.sprite, m.coords.x * tileWorldSize, m.coords.y * tileWorldSize, tileSizePx);
+        }
+    };
+
+    const drawSmallReactors = (scene: TScene, tileWorldSize: number, tileSizePx: number) => {
+        if (!canvas) return;
+        for (let i = 0; i < scene.buildings.length; i++) {
+            const b = scene.buildings[i];
+            if ((b as TSmallReactor).type !== 'small_reactor') continue;
+            const sr = b as TSmallReactor;
+            const reactor = new SmallReactor(sr.guid, sr.coords);
+            const [sx, sy, sSize] = getSprite(reactor.sprite[0]);
+            canvas.contextV.drawImage(
+                spritesImage,
+                sx, sy, sSize, sSize,
+                canvas.xs(sr.coords.x * tileWorldSize), canvas.ys(sr.coords.y * tileWorldSize), tileSizePx, tileSizePx
+            );
+        }
+    };
 
     const drawScene = () => {
+        if (!canvas) return;
+
         const { scene } = game.get();
-        drawMap(scene);
-        drawMushrooms(scene);
-        drawSmallReactors(scene);
-    }
+        if (!scene) return;
+
+        const tileWorldSize = INITIAL_WINDOW_WIDTH / scene.map.length;
+        const tileSizePx = canvas.dec(tileWorldSize);
+
+        drawMap(scene, tileWorldSize, tileSizePx);
+        drawMushrooms(scene, tileWorldSize, tileSizePx);
+        drawSmallReactors(scene, tileWorldSize, tileSizePx);
+    };
 
     function render(FPS: number) {
         if (!canvas) return;
 
-        if (FPS > 0) {
-            animationTime += (1 / FPS);
-        } else {
-            animationTime += (1 / 60);
-        }
+        animationTime += FPS > 0 ? 1 / FPS : 1 / 60;
 
         canvas.clear();
         drawScene();
@@ -173,13 +116,10 @@ const GameCanvas: React.FC = () => {
     };
 
     const mouseMove = (x: number, y: number, screenX?: number, screenY?: number) => {
-        if (isMiddleMouseDragging && middleMouseStartScreenPosition && windowStartPosition && canvas && screenX !== undefined && screenY !== undefined) {
-            const deltaX = (screenX - middleMouseStartScreenPosition.x) / canvas.WIDTH * WINDOW.WIDTH;
-            const deltaY = (screenY - middleMouseStartScreenPosition.y) / canvas.HEIGHT * WINDOW.HEIGHT;
+        if (!isMiddleMouseDragging || !middleMouseStartScreenPosition || !windowStartPosition || !canvas || screenX === undefined || screenY === undefined) return;
 
-            WINDOW.LEFT = windowStartPosition.LEFT - deltaX;
-            WINDOW.TOP = windowStartPosition.TOP - deltaY;
-        }
+        WINDOW.LEFT = windowStartPosition.LEFT - (screenX - middleMouseStartScreenPosition.x) / canvas.WIDTH * WINDOW.WIDTH;
+        WINDOW.TOP = windowStartPosition.TOP - (screenY - middleMouseStartScreenPosition.y) / canvas.HEIGHT * WINDOW.HEIGHT;
     };
 
     const mouseUp = (x: number, y: number) => {
@@ -204,15 +144,13 @@ const GameCanvas: React.FC = () => {
         if (!canvas) return;
 
         const zoomAmount = delta > 0 ? 1 + ZOOM_FACTOR : 1 - ZOOM_FACTOR;
-        const newWidth = WINDOW.WIDTH * zoomAmount;
         const newHeight = WINDOW.HEIGHT * zoomAmount;
 
         if (newHeight < MIN_ZOOM || newHeight > MAX_ZOOM) return;
 
-        const scale = newWidth / WINDOW.WIDTH;
-        WINDOW.LEFT = x - (x - WINDOW.LEFT) * scale;
-        WINDOW.TOP = y - (y - WINDOW.TOP) * scale;
-
+        const newWidth = WINDOW.WIDTH * zoomAmount;
+        WINDOW.LEFT = x - (x - WINDOW.LEFT) * zoomAmount;
+        WINDOW.TOP = y - (y - WINDOW.TOP) * zoomAmount;
         WINDOW.WIDTH = newWidth;
         WINDOW.HEIGHT = newHeight;
     };

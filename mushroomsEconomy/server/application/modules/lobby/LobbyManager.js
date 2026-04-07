@@ -11,19 +11,11 @@ class LobbyManager extends BaseManager {
     constructor(options) {
         super(options);
 
-        this.users = {};
         this.lobbies = {};
 
-        this.init();
-    }
-
-    init() {
-        this.handleConnection(this.io);
-    }
-
-    handleConnection(io) {
-        io.on('connection', (socket) => {
-            console.log(`LobbyManager: Client connected: ${socket.id}`);
+		if (!this.io) return;
+        this.io.on('connection', (socket) => {
+            //console.log(`LobbyManager: Client connected: ${socket.id}`);
 
             socket.on(SOCKET.CREATE_LOBBY, (data) => this.socketCreateLobby(socket, data));
             socket.on(SOCKET.JOIN_LOBBY, (data) => this.socketJoinLobby(socket, data));
@@ -32,12 +24,24 @@ class LobbyManager extends BaseManager {
 
             socket.on('disconnect', () => this.handleDisconnect(socket));
         });
+		
+		this.mediator.subscribe(this.EVENTS.LOBBY_UPDATED, (lobbies) => this.eventLobbyUpdated(lobbies));
     }
 
     handleDisconnect(socket) {
         console.log("LobbyManager: Client disconnected:", socket.id)
     }
-
+	
+	/* TRIGGERS */
+	
+	/* EVENTS */
+	eventLobbyUpdated(lobbies) {
+		
+		console.log('я выстрелил в менеджере!!!', lobbies);
+		
+	}
+	
+	/* SOCKETS */
     socketCreateLobby(socket, data) {
         const { guid } = data;
         const map = new Map();

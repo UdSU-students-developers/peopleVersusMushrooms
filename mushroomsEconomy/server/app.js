@@ -2,7 +2,7 @@ const CONFIG = require('./config');
 
 const express = require('express');
 const app = express();
-const server = require('http').createServer();
+const server = require('http').createServer(app);
 const io = require('socket.io')(server, {cors: CONFIG.CORS});
 
 const Router = require('./application/router/Router');
@@ -27,8 +27,17 @@ const userManager = new UserManager({ mediator, db, common, io, answer });
 const chatManager = new ChatManager({ mediator, common, io, answer });
 const lobbyManager = new LobbyManager({ mediator, common, db, io, answer });
 
+
+app.use((_, res, next) => {
+    res.header('Content-Type', 'application/json; charset=utf-8');
+    res.header('Access-Control-Allow-Origin', '*');
+    next();
+});
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.use(express.static(`${__dirname}/public`));
-app.use('/', new Router(gameManager,mediator, answer));
+app.use('/', new Router({ mediator, answer }));
 
 function deinit() {
     db.destructor();

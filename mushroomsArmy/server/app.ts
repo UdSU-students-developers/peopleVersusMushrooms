@@ -26,7 +26,8 @@ new UserManager({ mediator, db, common, io, answer });
 new ArmyManager({ mediator, db, common, io, answer });
 
 app.use(express.static(`${__dirname}/public`));
-app.use('/', Router({ answer }));
+app.use(express.json());
+app.use('/', Router({ answer, mediator }));
 
 function deinit(): void {
     db.destructor();

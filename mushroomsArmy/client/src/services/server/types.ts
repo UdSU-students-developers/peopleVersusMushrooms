@@ -50,8 +50,7 @@ export type TLogoutData = {
     guid: string;
 }
 
-//Юнит на карте
-
+// Юнит на карте (isAlive вычисляется: hp > 0)
 export type TUnit = {
     guid: string;
     type: string;
@@ -59,7 +58,16 @@ export type TUnit = {
     y: number;
     hp: number;
     maxHp: number;
-    isAlive: boolean;
+}
+
+// Здание (цель для армии грибов)
+export type TBuilding = {
+    guid: string;
+    type: string;
+    x: number;
+    y: number;
+    hp: number;
+    maxHp: number;
 }
 
 // Лужа слайма
@@ -77,5 +85,6 @@ export type TMapData = (number | null)[][];
 export type TArmyState = {
     map: (number | null)[][];
     units: TUnit[];
+    buildings: TBuilding[];
     slimePuddles: TSlimePool[];
 }

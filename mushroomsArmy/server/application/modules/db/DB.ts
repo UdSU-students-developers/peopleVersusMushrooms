@@ -1,11 +1,11 @@
 import sqlite3 from 'sqlite3';
 import ORM from './ORM';
 
-interface DatabaseConfig {
+type TDatabaseConfig = {
     NAME: string;
-}
+};
 
-interface User {
+type TDbUser = {
     id?: number;
     name: string;
     guid: string;
@@ -13,7 +13,7 @@ interface User {
     token?: string;
     token_expiration?: string;
     created_at?: string;
-}
+};
 
 // Тут используется sqlite3, но вы можете сменить её на другую (лучше так и сделать). Трусов упомянул postgreSQL, поэтому если будете менять, ставьте её
 
@@ -21,7 +21,7 @@ class DB {
     private db: sqlite3.Database;
     private orm: ORM;
 
-    constructor({ DATABASE }: { DATABASE: DatabaseConfig }) {
+    constructor({ DATABASE }: { DATABASE: TDatabaseConfig }) {
         this.db = new sqlite3.Database(`${__dirname}/${DATABASE.NAME}`);
         this.orm = new ORM(this.db);
         this.initTables();
@@ -52,11 +52,11 @@ class DB {
         });
     }
 
-    async getUserByName(name: string): Promise<User | null> {
+    async getUserByName(name: string): Promise<TDbUser | null> {
         return await this.orm.get('users', { name });
     }
 
-    async getUserByToken(token: string): Promise<User | null> {
+    async getUserByToken(token: string): Promise<TDbUser | null> {
         return await this.orm.get('users', { token });
     }
 
@@ -76,7 +76,7 @@ class DB {
         return await this.orm.update('users', ['token', 'token_expiration'], [null, null], { id });
     }
 
-    async getUserByValidToken(token: string): Promise<User | null> {
+    async getUserByValidToken(token: string): Promise<TDbUser | null> {
         const user = await this.getUserByToken(token);
         
         if (user && user.token_expiration) {

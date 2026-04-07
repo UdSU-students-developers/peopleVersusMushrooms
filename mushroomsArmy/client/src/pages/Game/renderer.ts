@@ -48,7 +48,45 @@ export function drawGame(
     ctx.fill();
   });
 
-  // 3. Отрисовка юнитов (только живых)
+  // 3. Отрисовка зданий (целей армии грибов)
+  (state.buildings ?? []).forEach(building => {
+    if (building.hp <= 0) return;
+
+    const bx = building.x * cellW;
+    const by = building.y * cellH;
+    const bw = cellW * 1.4;
+    const bh = cellH * 1.4;
+    const bOffX = bx - bw / 2 + cellW / 2;
+    const bOffY = by - bh / 2 + cellH / 2;
+
+    // Тело здания
+    ctx.fillStyle = '#c0392b';
+    ctx.fillRect(bOffX, bOffY, bw, bh);
+    ctx.strokeStyle = '#7b241c';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(bOffX, bOffY, bw, bh);
+
+    // Метка типа здания
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${Math.max(8, cellW * 0.4)}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const label = building.type === 'house' ? 'Д' : building.type === 'barracks' ? 'Б' : 'Т';
+    ctx.fillText(label, bx + cellW / 2, by + cellH / 2);
+
+    // Полоска HP
+    const barWidth = bw;
+    const barHeight = 4;
+    const barX = bOffX;
+    const barY = bOffY - 6;
+    ctx.fillStyle = '#d32f2f';
+    ctx.fillRect(barX, barY, barWidth, barHeight);
+    const hpPercent = Math.max(0, Math.min(1, building.hp / building.maxHp));
+    ctx.fillStyle = '#4caf50';
+    ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight);
+  });
+
+  // 4. Отрисовка юнитов (только живых)
   state.units.forEach(unit => {
     if (unit.hp <= 0) return; // мёртвых не рисуем
 

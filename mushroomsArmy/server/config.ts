@@ -7,9 +7,14 @@ interface Config {
     DATABASE: {
         NAME: string;
     };
+    SERVICES: {
+        MAP_URL: string;
+        PEOPLE_ARMY_URL: string;
+        PEOPLE_ECONOMY_URL: string;
+    };
     MEDIATOR: {
         EVENTS: {
-            START_GAME: string;  // payload: { guid: string, map: number[][], buildings: any[] }
+            START_GAME: string;  // payload: { guid: string, map: number[][], buildings: TBuilding[], mapGuid: string }
             ARMY_UPDATE: string;  // payload: { armyGuid: string, units: Unit[] }
             UNIT_DIED: string;  // payload: { unitId: string, armyGuid: string }
             UNIT_EXPLODED: string; // payload: { unitId: string, position: {x: number, y: number} }
@@ -38,6 +43,12 @@ const CONFIG: Config = {
 
     DATABASE: {
         NAME: 'mushroomsArmy.db',
+    },
+
+    SERVICES: {
+        MAP_URL: 'http://localhost:3001',
+        PEOPLE_ARMY_URL: 'http://localhost:3007',
+        PEOPLE_ECONOMY_URL: 'http://localhost:3009',
     },
 
     MEDIATOR: {

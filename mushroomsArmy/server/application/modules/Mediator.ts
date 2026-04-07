@@ -1,9 +1,9 @@
 export type TEvent = { [key: string]: string };
 
-interface MediatorConfig {
+type TMediatorConfig = {
     EVENTS: TEvent;
     TRIGGERS: TEvent;
-}
+};
 
 class Mediator {
     private events: { [key: string]: Function[] };
@@ -11,7 +11,7 @@ class Mediator {
     private EVENTS: TEvent;
     private TRIGGERS: TEvent;
 
-    constructor({ EVENTS, TRIGGERS }: MediatorConfig) {
+    constructor({ EVENTS, TRIGGERS }: TMediatorConfig) {
         this.events = {};
         this.triggers = {};
         this.EVENTS = EVENTS;
@@ -69,7 +69,7 @@ class Mediator {
         }
     }
 
-    get<T, K = undefined>(name: string, data?: K): T {
+    get<T, K = undefined>(name: string, data?: K): T | null {
         return (this.triggers[name] && this.triggers[name] instanceof Function) ? this.triggers[name](data) : null;
     }
 }

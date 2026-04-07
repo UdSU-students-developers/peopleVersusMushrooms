@@ -3,6 +3,7 @@ import Mediator, { TEvent } from './Mediator';
 import DB from './db/DB';
 import Answer, { TResponse } from '../Answer';
 import Common from './common/Common';
+import CONFIG from '../../config';
 
 export type TManagerOptions = {
     mediator: Mediator;
@@ -40,14 +41,13 @@ class BaseManager {
         method = 'POST'
     ): Promise<K | null> {
         try {
-            const params = {
+            const params: RequestInit = {
                 method,
                 headers: {
                     'Content-Type': 'application/json;charset=utf-8'
                 },
-            }
+            };
             if (data) {
-                // @ts-ignore
                 params.body = JSON.stringify(data);
             }
             const res = await fetch(url, params);
@@ -56,26 +56,47 @@ class BaseManager {
                 return answer.data;
             } 
             if (answer.result === 'error') {
-                // обработать ошибку (записывать в БД)
+                await this.logErrorToDB(url, answer.error);
             }
             return null;
         } catch (error) {
-            console.log(error);
-            // обработать ошибку тоже (записывать в БД)
+            console.error(`[BaseManager] Ошибка запроса к ${url}:`, error);
             return null;
         }
+    }
+
+    /** Записывает ошибку в базу данных */
+    private async logErrorToDB(url: string, error: unknown): Promise<void> {
+        // TODO: реализовать запись в таблицу errors при наличии схемы
+        console.error(`[BaseManager] Ошибка от сервиса ${url}:`, error);
     }
 
     sendToMap<T, K = undefined>(
         urlPath: string, 
         mapGuid: string,
         armyGuid: string,
+        data: T | null = null,
+        extraPath?: string
+    ): Promise<K | null> {
+        const extra = extraPath ? `/${extraPath}` : '';
+        return this.send(
+            `${CONFIG.SERVICES.MAP_URL}${urlPath}/${mapGuid}/${armyGuid}${extra}`,
+            data,
+        );
+    }
+
+    sendToPeopleArmy<T, K = undefined>(
+        urlPath: string,
         data: T | null = null
     ): Promise<K | null> {
-        return this.send(
-            `http://localhost:3001${urlPath}/${mapGuid}/${armyGuid}`,
-            data,
-        )
+        return this.send(`${CONFIG.SERVICES.PEOPLE_ARMY_URL}${urlPath}`, data);
+    }
+
+    sendToMushroomsEconomy<T, K = undefined>(
+        urlPath: string,
+        data: T | null = null
+    ): Promise<K | null> {
+        return this.send(`${CONFIG.SERVICES.PEOPLE_ECONOMY_URL}${urlPath}`, data);
     }
 }
 

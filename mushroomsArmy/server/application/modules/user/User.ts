@@ -2,20 +2,30 @@ import md5 from 'md5';
 import DB from '../db/DB';
 import Common from '../common/Common';
 
-interface UserConstructorOptions {
+type TUserConstructorOptions = {
     db: DB;
     common: Common;
     socketId: string;
-}
+};
 
-interface UserData {
+type TUserData = {
     id?: number;
     guid?: string;
     name?: string;
     passwordHash?: string;
     token?: string;
     token_expiration?: string;
-}
+};
+
+/** Данные пользователя из БД (snake_case) */
+type TDbUserRow = {
+    id?: number;
+    guid?: string;
+    name?: string;
+    password_hash?: string;
+    token?: string;
+    token_expiration?: string;
+};
 
 class User {
     private db: DB;
@@ -29,19 +39,19 @@ class User {
     private token?: string;
     private token_expiration?: string;
 
-    constructor({ db, common, socketId }: UserConstructorOptions) {
+    constructor({ db, common, socketId }: TUserConstructorOptions) {
         this.db = db;
         this.common = common;
         this.socketId = socketId;
     }
 
-    static restoreFromData({db, common, socketId }:UserConstructorOptions, userData: User): User {
-        const user = new User({db, common, socketId });
-        
+    static restoreFromData({ db, common, socketId }: TUserConstructorOptions, userData: TDbUserRow): User {
+        const user = new User({ db, common, socketId });
+
         user.id = userData.id;
         user.guid = userData.guid;
         user.name = userData.name;
-        user.passwordHash = userData.passwordHash;
+        user.passwordHash = userData.password_hash;
         user.token = userData.token;
         user.token_expiration = userData.token_expiration;
 
@@ -52,7 +62,7 @@ class User {
         this.socketId = socketId;
     }
 
-    getSelf(): UserData & { db: DB; common: Common; socketId: string } {
+    getSelf(): TUserData & { db: DB; common: Common; socketId: string } {
         return {
             db: this.db,
             common: this.common,

@@ -6,7 +6,7 @@ const BLOCKED_TILE = 3;
 // Грибы проходимы по равнинам (0) и горам (2)
 const ACCEPTABLE_TILES = [0, 2];
 
-export interface UnitConstructorOptions {
+export type TUnitOptions = {
     guid: string;
     type: string;
     hp: number;
@@ -16,21 +16,22 @@ export interface UnitConstructorOptions {
     y: number;
     attackRange: number;
     fireDamageMultiplier?: number;
-}
+};
 
-export interface UnitState {
+export type TUnitState = {
   guid: string;
   type: string;
   x: number;
   y: number;
   hp: number;
   maxHp: number;
-  isAlive: boolean;
-}
+};
 
-export interface MapData {
-  map: (number | null)[][];
-}
+export type TPoisonEffect = {
+    duration: number;
+    damagePerSecond: number;
+    sourceGuid: string;
+};
 
 class Unit {
     public guid: string;
@@ -45,6 +46,7 @@ class Unit {
     public isAlive: boolean;
     public attackRange: number;
     public fireDamageMultiplier: number = 2;
+    public poisonEffects: TPoisonEffect[] = [];
     protected enemies: Unit [] = [];
     
     private easyStar: EasyStar.js;
@@ -55,7 +57,7 @@ class Unit {
     private decisionAccumulator: number = 0;
     private readonly DECISION_INTERVAL: number = 0.5; 
 
-    constructor({guid, type, x, y, hp, maxHp, speed, attackRange, fireDamageMultiplier = 2}: UnitConstructorOptions) {
+    constructor({guid, type, x, y, hp, maxHp, speed, attackRange, fireDamageMultiplier = 2}: TUnitOptions) {
         this.guid = guid;
         this.type = type;
         this.x = x;
@@ -226,7 +228,7 @@ class Unit {
         this.onDeath();
     }
     
-    getState(): UnitState {
+    getState(): TUnitState {
         return {
             guid: this.guid,
             type: this.type,
@@ -234,7 +236,6 @@ class Unit {
             y: this.y,
             hp: this.hp,
             maxHp: this.maxHp,
-            isAlive: this.isAlive,
         };
     }
 

@@ -1,11 +1,5 @@
 import { TMap } from "../Army";
-import Unit, { MapData, UnitConstructorOptions } from "./Units";
-
-interface PoisonEffect {
-    duration: number;
-    damagePerSecond: number;
-    sourceGuid: string;
-}
+import Unit, { TPoisonEffect, TUnitOptions } from "./Units";
 
 class Sporomet extends Unit {
     public retreatRange: number = 4;
@@ -20,7 +14,7 @@ class Sporomet extends Unit {
     private aimStartTime: number = 0;
     private currentTarget: Unit | null = null;
 
-    constructor(options: UnitConstructorOptions) {
+    constructor(options: TUnitOptions) {
         super(options);
         this.hp = 30;
         this.maxHp = 30;
@@ -41,19 +35,12 @@ class Sporomet extends Unit {
         });
     }
 
-    private applyPoisonEffect(enemy: Unit, effect: PoisonEffect): void {
-        let poisonEffects = (enemy as any).poisonEffects as PoisonEffect[] | undefined;
-        
-        if (!poisonEffects) {
-            poisonEffects = [];
-            (enemy as any).poisonEffects = poisonEffects;
-        }
-        
-        const existingEffect = poisonEffects.find(e => e.sourceGuid === effect.sourceGuid);
+    private applyPoisonEffect(enemy: Unit, effect: TPoisonEffect): void {
+        const existingEffect = enemy.poisonEffects.find(e => e.sourceGuid === effect.sourceGuid);
         if (existingEffect) {
             existingEffect.duration = effect.duration;
         } else {
-            poisonEffects.push({ ...effect });
+            enemy.poisonEffects.push({ ...effect });
         }
     }
 
@@ -61,11 +48,8 @@ class Sporomet extends Unit {
         for (const enemy of enemies) {
             if (!enemy.isAlive) continue;
             
-            let poisonEffects = (enemy as any).poisonEffects as PoisonEffect[] | undefined;
-            if (!poisonEffects) continue;
-            
-            for (let i = poisonEffects.length - 1; i >= 0; i--) {
-                const effect = poisonEffects[i];
+            for (let i = enemy.poisonEffects.length - 1; i >= 0; i--) {
+                const effect = enemy.poisonEffects[i];
                 effect.duration -= deltaTime;
                 
                 const damage = effect.damagePerSecond * deltaTime;
@@ -74,7 +58,7 @@ class Sporomet extends Unit {
                 }
                 
                 if (effect.duration <= 0) {
-                    poisonEffects.splice(i, 1);
+                    enemy.poisonEffects.splice(i, 1);
                 }
             }
         }

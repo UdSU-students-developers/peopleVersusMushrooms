@@ -10,30 +10,44 @@ export type TerrainType = 0 | 1 | 2;
 
 /**
  * Игровой юнит (споромёт или шампиньеб)
+ * isAlive вычисляется: hp > 0
  */
-export interface Unit {
+export type Unit = {
   guid: string;               
   x: number;                
   y: number;                
-  type: 'sporomet' | 'shampigneb';
+  type: 'sporomet' | 'champigneb';
   hp: number;               
   maxHp: number;            
-}
+};
+
+/**
+ * Здание (цель для армии грибов)
+ */
+export type Building = {
+  guid: string;
+  type: string;
+  x: number;
+  y: number;
+  hp: number;
+  maxHp: number;
+};
 
 /**
  * Лужа слизи
  */
-export interface SlimePuddle {
+export type SlimePuddle = {
   x: number;               
   y: number;                
   radius: number;          
-}
+};
 
 /**
  * Полное состояние игры
  */
-export interface GameState {
-  map: TerrainType[][];     
-  units: Unit[];            
+export type GameState = {
+  map: TerrainType[][];
+  units: Unit[];
+  buildings: Building[];
   slimePuddles: SlimePuddle[]; 
-}
+};

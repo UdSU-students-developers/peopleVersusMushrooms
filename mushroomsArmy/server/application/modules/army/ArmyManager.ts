@@ -1,11 +1,25 @@
 import BaseManager, { TManagerOptions } from '../BaseManager';
 import CONFIG from '../../../config';
-import { Army, TMap, ArmyState } from '../../army/Army';
+import { Army, TBuilding, TMap, TArmyState } from '../../army/Army';
 import User from '../user/User';
 
 const { GAME_STATE, GAME_OVER } = CONFIG.SOCKET;
 
-type TStartGame = { guid: string; map: TMap; buildings: any[], mapGuid: string };
+type TStartGame = { guid: string; map: TMap; buildings: TBuilding[]; mapGuid: string };
+
+/** Сущность видимости, возвращаемая картой */
+type TVisibleEntity = {
+    guid: string;
+    type: string;
+    x: number;
+    y: number;
+    hp: number;
+    maxHp: number;
+};
+
+type TVisibilityResponse = {
+    entities: TVisibleEntity[];
+};
 
 class ArmyManager extends BaseManager {
     private army: { [guid: string]: Army };
@@ -17,10 +31,34 @@ class ArmyManager extends BaseManager {
 
         // Подписки на события медиатора
         this.mediator.subscribe(this.EVENTS.START_GAME, (data: TStartGame) => this.eventStartGame(data));
+
+        // Триггер: принять урон снаружи (от людей) для юнита армии
+        this.mediator.set('TAKE_DAMAGE_HANDLER', (data: { armyGuid: string; unitGuid: string; amount: number; type: string }) =>
+            this.triggerTakeDamage(data)
+        );
     }
 
     /* ПРИВАТНЫЕ МЕТОДЫ */
-    private async updateArmyCallback(guid: string, armyState: ArmyState) {
+
+    /** Обрабатывает входящий урон по юниту армии (вызывается через HTTP /takeDamage) */
+    private triggerTakeDamage({ armyGuid, unitGuid, amount, type }: {
+        armyGuid: string; unitGuid: string; amount: number; type: string;
+    }): boolean {
+        const army = this.army[armyGuid];
+        if (!army) return false;
+
+        const unit = army.units.find(u => u.guid === unitGuid);
+        if (!unit) return false;
+
+        unit.takeDamage(amount, type);
+
+        // Сигнализируем экономике грибов: нас атакуют
+        this.sendToMushroomsEconomy('/takeDamage', { armyGuid, unitGuid, amount, type });
+
+        return true;
+    }
+
+    private async updateArmyCallback(guid: string, armyState: TArmyState) {
         const user = this.mediator.get<User, string>(this.TRIGGERS.GET_USER_BY_GUID, guid);
         if (!user) return;
 
@@ -31,21 +69,23 @@ class ArmyManager extends BaseManager {
         if (army && army.getAliveUnits().length === 0) {
             this.io.to(user.socketId).emit(GAME_OVER, this.answer.good({ message: 'Все юниты погибли' }));
             this.destroyArmy(guid);
+            return;
         }
 
         const { units, slimePuddles } = armyState;
-        // послать запрос в карту
 
-        const answer = await this.sendToMap(
-            '/updateMushroomArmy', army.mapGuid, army.guid, { units, slimePuddles }
-        );
-        // если ответ хороший, то спросить у карты обновление видимости
-        const visibility = await this.sendToMap(
+        // Послать текущее состояние армии на карту
+        await this.sendToMap('/updateMushroomArmy', army.mapGuid, army.guid, { units, slimePuddles });
+
+        // Запросить у карты список видимых вражеских сущностей
+        const visibility = await this.sendToMap<null, TVisibilityResponse>(
             '/getVisibility', army.mapGuid, army.guid
         );
-        // если видимость пришла хорошей, то обновить видимость армии
-        // и пересчитать цели юнитов (вдруг увидел нового врага или здание)
-        //...
+
+        // Обновить цели армии на основе данных видимости
+        if (visibility?.entities && visibility.entities.length > 0) {
+            army.updateEnemyEntities(visibility.entities);
+        }
     }
 
     private destroyArmy(guid: string): void {
@@ -73,7 +113,7 @@ class ArmyManager extends BaseManager {
             common: this.common,
             guid,
             callbacks: {
-                update: (guid: string, armyState: ArmyState) => this.updateArmyCallback(guid, armyState)
+                update: (guid: string, armyState: TArmyState) => this.updateArmyCallback(guid, armyState)
             }
         });
 

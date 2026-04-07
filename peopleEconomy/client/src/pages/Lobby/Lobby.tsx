@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from "react";
-import { IBasePage, IPageManager, PAGES } from '../PageManager';
+import React, { useContext, useEffect, useState } from "react";
+import { MediatorContext, ServerContext } from "../../App";
+import { IBasePage, PAGES } from '../PageManager';
 import Button from "../../components/Button/Button";
 import { TError } from "../../services/server/types";
 import './Lobby.scss';
 
-const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
-    const { setPage, server, mediator } = props;
+const Lobby: React.FC<IBasePage> = (props) => {
+    const { setPage } = props;
+    const mediator = useContext(MediatorContext);
+    const server = useContext(ServerContext);
     const [error, setError] = useState<TError | null>(null);
-
 
     const logoutClickHandler = async () => {
         server.logout();

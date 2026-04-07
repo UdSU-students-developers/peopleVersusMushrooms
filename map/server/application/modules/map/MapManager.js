@@ -61,7 +61,7 @@ class MapManager extends BaseManager {
         map.generateRelief();
         map.generateSources();
         this.maps[map.guid] = map;
-        
+
         //сообщить всем сервисам, что игра началась и сообщить guid карты
         const result1 = await this.send(
             `http://localhost:3009/startGame/${playersGuids.peopleEconomy}`,
@@ -115,7 +115,7 @@ class MapManager extends BaseManager {
         //if (role === ROLES.SPECTATOR) return this.answer.bad(3004);
 
         units.forEach(unit => map.updateUnit({ ...unit, role }));
-  
+
         return this.answer.good(true);
     }
 
@@ -134,7 +134,7 @@ class MapManager extends BaseManager {
         //if (role === ROLES.SPECTATOR) return this.answer.bad(3004);
 
         buildings.forEach(building => map.updateUnit({ ...building, role }));
-  
+
         return this.answer.good(true);
     }
 
@@ -177,12 +177,19 @@ class MapManager extends BaseManager {
     //SOCKETS
     socketGenerateMap(data, socket) {
         const { guid, width, height, water, mountains, seed, iron, oil } = data;
-        const map = new Map(guid, width, height);
+        const playerGuids = {
+            spectator: null,
+            peopleArmy: null,
+            peopleEconomy: null,
+            mushroomArmy: null,
+            mushroomEconomy: null,
+        };
+        const map = new Map(guid, playerGuids, width, height);
         map.generateRelief(water, mountains, seed);
         map.generateSources(iron, oil);
         this.maps[map.guid] = map;
         socket.emit(
-            MESSAGES.GENERATE_MAP, 
+            MESSAGES.GENERATE_MAP,
             this.answer.good({ map: map.getRelief(), ...map.getSelf() })
         );
     }

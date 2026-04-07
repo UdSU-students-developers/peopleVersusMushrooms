@@ -1,14 +1,15 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { MediatorContext } from "../../App";
-import { IBasePage, IPageManager, PAGES } from '../PageManager';
+import { MediatorContext, ServerContext } from "../../App";
+import { IBasePage,  PAGES } from '../PageManager';
 import { TError } from '../../services/server/types';
 import Button from '../../components/Button/Button';
 import useChecRegistration from './hooks/useCheckRegistration';
 import './Registration.scss';
 
-const Registration: React.FC<IBasePage & IPageManager> = (props) => {
-    const { setPage, server } = props;
+const Registration: React.FC<IBasePage> = (props) => {
+    const { setPage } = props;
     const mediator = useContext(MediatorContext);
+    const server = useContext(ServerContext);
     const loginRef = useRef<HTMLInputElement>(null!);
     const passwordRef = useRef<HTMLInputElement>(null!);
     const confirmPasswordRef = useRef<HTMLInputElement>(null!);

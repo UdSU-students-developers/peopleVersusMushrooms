@@ -1,23 +1,14 @@
 import React, { useEffect, useState, useContext } from "react";
-import { MediatorContext } from "../../App";
-import { IBasePage, IPageManager, PAGES } from '../PageManager';
+import { MediatorContext, ServerContext } from "../../App";
+import { IBasePage, PAGES } from '../PageManager';
 import Button from "../../components/Button/Button";
-import { TError } from "../../services/server/types";
+import { ILobby, TError, TMap } from "../../services/server/types";
 import './Lobby.scss';
 
-interface ILobby {
-    guid: string;
-    lobbyName: string;
-    creator: string;
-    players: Array<{ guid: string; name: string }>;
-    maxPlayers: number;
-    status: 'open' | 'closed' | 'started';
-    gameState: 'waiting' | 'playing';
-}
-
-const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
-    const { setPage, server } = props;
+const Lobby: React.FC<IBasePage> = (props) => {
+    const { setPage } = props;
     const mediator = useContext(MediatorContext);
+    const server = useContext(ServerContext);
     const [error, setError] = useState<TError | null>(null);
     const [lobbies, setLobbies] = useState<ILobby[]>([]);
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -28,7 +19,7 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
     const logoutClickHandler = async () => {
         server.logout();
     }
-
+    
     const createLobbyClickHandler = () => {
         setShowCreateModal(true);
         setLobbyName('');
@@ -36,8 +27,8 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
 
     const confirmCreateLobby = () => {
         if (lobbyName.trim()) {
-            console.log(props.server.user.guid)
-            server.createLobby(props.server.user.guid, lobbyName.trim(), 'spectator');
+            console.log(server.user.guid)
+            server.createLobby(server.user.guid, lobbyName.trim(), 'spectator');
             setLobbyName('');
         }
     }
@@ -48,15 +39,17 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
     }
 
     const joinLobbyHandler = (lobbyGuid: string) => {
-        server.joinToLobby(props.server.user.guid, lobbyGuid, 'spectator');
+        server.joinToLobby(server.user.guid, lobbyGuid, 'spectator');
     }
 
     const leaveLobbyHandler = () => {
-        server.leaveLobby(props.server.user.guid);
+        server.leaveLobby(server.user.guid);
     }
 
     const startGameHandler = () => {
-        server.startGame(props.server.user.guid);
+        server.generateMap();
+        server.startGame(server.user.guid);
+        setPage(PAGES.MAP);
     }
 
     useEffect(() => {
@@ -66,10 +59,10 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
             CREATE_LOBBY,
             JOIN_TO_LOBBY,
             LEAVE_LOBBY,
-            GET_LOBBIES,
             LOBBY_UPDATED,
             LOBBIES_LIST_UPDATED,
-            START_GAME
+            START_GAME,
+            GENERATE_MAP
         } = mediator.getEventTypes();
 
         const logoutHandler = () => {
@@ -84,13 +77,18 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
 
         const createLobbyHandler = (data: any) => {
             console.log('Комната создана:', data);
-            setCurrentLobby(data.data);
+            setCurrentLobby(data);
             setIsLoading(false);
+        };
+
+        const mapHandler = (data: TMap) => {
+            console.log('Карта получена:', data);
+            server.setGeneratedMap(data);
         };
 
         const joinToLobbyHandler = (data: any) => {
             console.log('Присоединились к комнате:', data);
-            setCurrentLobby(data.data);
+            setCurrentLobby(data);
             setIsLoading(false);
         };
 
@@ -100,20 +98,21 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
             setIsLoading(false);
         };
 
-        const getLobbiesHandler = (data: any) => {
+        const getLobbiesHandler = () => {
+            const data = server.getLobbies();
             console.log('Список комнат:', data);
-            setLobbies(data.data || []);
+            setLobbies(data || []);
             setIsLoading(false);
         };
 
         const lobbyUpdatedHandler = (data: any) => {
             console.log('Комната обновлена:', data);
-            setCurrentLobby(data.data);
+            setCurrentLobby(data);
         };
 
         const lobbiesListUpdatedHandler = (data: any) => {
             console.log('Список комнат обновлен:', data);
-            setLobbies(data.data || []);
+            setLobbies(data || []);
         };
 
         const startGameHandler = (data: any) => {
@@ -125,10 +124,11 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
         mediator.subscribe(CREATE_LOBBY, createLobbyHandler);
         mediator.subscribe(JOIN_TO_LOBBY, joinToLobbyHandler);
         mediator.subscribe(LEAVE_LOBBY, leaveLobbyHandler);
-        mediator.subscribe(GET_LOBBIES, getLobbiesHandler);
+        getLobbiesHandler();
         mediator.subscribe(LOBBY_UPDATED, lobbyUpdatedHandler);
         mediator.subscribe(LOBBIES_LIST_UPDATED, lobbiesListUpdatedHandler);
         mediator.subscribe(START_GAME, startGameHandler);
+        mediator.subscribe(GENERATE_MAP, mapHandler);
 
         return () => {
             mediator.unsubscribe(LOGOUT, logoutHandler);
@@ -136,10 +136,11 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
             mediator.unsubscribe(CREATE_LOBBY, createLobbyHandler);
             mediator.unsubscribe(JOIN_TO_LOBBY, joinToLobbyHandler);
             mediator.unsubscribe(LEAVE_LOBBY, leaveLobbyHandler);
-            mediator.unsubscribe(GET_LOBBIES, getLobbiesHandler);
             mediator.unsubscribe(LOBBY_UPDATED, lobbyUpdatedHandler);
             mediator.unsubscribe(LOBBIES_LIST_UPDATED, lobbiesListUpdatedHandler);
             mediator.unsubscribe(START_GAME, startGameHandler);
+            mediator.unsubscribe(GENERATE_MAP, mapHandler);
+
         };
     }, [mediator, setPage, server]);
 
@@ -167,20 +168,19 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
                 <div className="current-lobby">
                     <h2>Текущая комната: {currentLobby.lobbyName}</h2>
                     <div className="lobby-info">
-                        <p>Создатель: {currentLobby.creator}</p>
-                        <p>Игроки: {currentLobby.players.length}/{currentLobby.maxPlayers}</p>
-                        <p>Статус: {currentLobby.status === 'open' ? 'Открыта' : currentLobby.status === 'closed' ? 'Закрыта' : 'В игре'}</p>
+                        <p>Создатель: {currentLobby.players.find(p => p.guid === currentLobby.creatorGuid)?.role}</p>
+                        <p>Игроки: {currentLobby.players.length}/5</p>
                         <div className="players-list">
                             <h3>Игроки:</h3>
                             <ul>
                                 {currentLobby.players.map((player, index) => (
                                     <li key={index}>
-                                        {player.name} {player.guid === currentLobby.creator && '(Создатель)'}
+                                        {player.role} {player.guid === currentLobby.creatorGuid && '(Создатель)'}
                                     </li>
                                 ))}
                             </ul>
                         </div>
-                        {currentLobby.creator === currentLobby.players[0]?.guid && currentLobby.players.length === currentLobby.maxPlayers && (
+                        {currentLobby.creatorGuid === currentLobby.players[0]?.guid && currentLobby.players.length === 5 && (
                             <Button
                                 onClick={startGameHandler}
                                 text='Начать игру'
@@ -205,14 +205,13 @@ const Lobby: React.FC<IBasePage & IPageManager> = (props) => {
                 {!isLoading && lobbies.length > 0 && (
                     <div className="lobbies-grid">
                         {lobbies.map((lobby) => (
-                            <div key={lobby.guid} className="lobby-card">
+                            <div key={lobby.creatorGuid} className="lobby-card">
                                 <h3>{lobby.lobbyName}</h3>
-                                <p>Создатель: {lobby.creator}</p>
-                                <p>Игроки: {lobby.players.length}/{lobby.maxPlayers}</p>
-                                <p>Статус: {lobby.status === 'open' ? 'Открыта' : 'Закрыта'}</p>
-                                {lobby.status === 'open' && lobby.players.length < lobby.maxPlayers && (
+                                <p>Создатель: {lobby.players.find(p => p.guid === lobby.creatorGuid)?.role}</p>
+                                <p>Игроки: {lobby.players.length}/5</p>
+                                {lobby.players.length < 5 && (
                                     <Button
-                                        onClick={() => joinLobbyHandler(lobby.guid)}
+                                        onClick={() => joinLobbyHandler(lobby.creatorGuid)}
                                         text='Присоединиться'
                                         className='button-join'
                                     />

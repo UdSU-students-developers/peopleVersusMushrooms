@@ -2,7 +2,7 @@ const BaseManager = require('../BaseManager');
 const CONFIG = require('../../../config');
 const User = require('./User');
 
-const { REGISTRATION, LOGIN, LOGOUT, RECONNECT } = CONFIG.SOCKET;
+const { REGISTRATION, LOGIN, LOGOUT } = CONFIG.SOCKET;
 
 class UserManager extends BaseManager {
     constructor(options) {
@@ -15,28 +15,36 @@ class UserManager extends BaseManager {
             socket.on(REGISTRATION, (data) => this.socketRegistration(data, socket));
             socket.on(LOGIN, (data) => this.socketLogin(data, socket));
             socket.on(LOGOUT, (data) => this.socketLogout(data, socket));
-            socket.on(RECONNECT, (data) => this.socketReconnect(data, socket));
             socket.on('disconnect', () => console.log('disconnect', socket.id));
         });
 
         // mediator events subscribers
-		//...
+        this.mediator.subscribe(this.EVENTS.DELETE_USER, (guid) => this.eventDeleteUser(guid));
+
         // mediator triggers setters
 		this.mediator.set(this.TRIGGERS.GET_USER_BY_GUID, (guid) => this.triggerGetUserByGuid(guid));
+
     }
 
     /* PRIVATE */
 	
 	/* TRIGGERS */
 	triggerGetUserByGuid(guid) {
-		if (guid && this.users[guid] && this.users[guid].isLogin()) {
-			return this.users[guid];
+        if (guid && this.users[guid] && this.users[guid].isLogin()) {
+            return this.users[guid];
 		}
 		return null;
 	}
+
 	
 	/* EVENTS */
-	//...
+    eventDeleteUser(guid) {
+        if (guid && this.users[guid]) {
+            delete this.users[guid];
+            return true;
+        }
+        return false;
+    }
 
     /* SOCKETS */
     async socketRegistration(data = {}, socket) {
@@ -81,19 +89,6 @@ class UserManager extends BaseManager {
         }
 
         socket.emit(LOGOUT, this.answer.bad(19));
-    }
-
-    async socketReconnect(data = {}, socket) {
-        const { guid } = data;
-        if (!guid ) {
-            return socket.emit(CONFIG.SOCKET.RECONNECT, this.answer.bad(13));
-        }
-        const user = this.users[guid];
-        if (user) {
-            user.socketId = socket.id;
-            return socket.emit(CONFIG.SOCKET.RECONNECT, this.answer.good(true));
-        }
-        socket.emit(CONFIG.SOCKET.RECONNECT, this.answer.bad(19));
     }
 }
 

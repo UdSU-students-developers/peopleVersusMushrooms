@@ -5,19 +5,19 @@ const CONFIG = {
         origin: "*",
     },
 
+    MUSHROOMS_ARMY_URL: 'http://localhost:3003',
+
     DATABASE: {
         NAME: 'data.db',
     },
 
     MEDIATOR: {
         EVENTS: {
-            EXAMPLE_EVENT: "EXAMPLE_EVENT",
+            DELETE_USER: "DELETE_USER",
 
             START_GAME: 'START_GAME',
-            LOAD_GAME: 'LOAD_GAME',
         },
         TRIGGERS: {
-            EXAMPLE_TRIGGER: "EXAMPLE_TRIGGER",
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',
         },
     },
@@ -31,12 +31,16 @@ const CONFIG = {
         REGISTRATION: 'REGISTRATION',
         LOGIN: 'LOGIN',
         LOGOUT: 'LOGOUT',
-        RECONNECT: 'RECONNECT',
 
         CREATE_LOBBY: 'CREATE_LOBBY',
-        DELETE_LOBBY: 'DELETE_LOBBY',
-        JOIN_LOBBY: 'JOIN_LOBBY',
+        JOIN_TO_LOBBY: 'JOIN_TO_LOBBY',
         LEAVE_LOBBY: 'LEAVE_LOBBY',
+        DROP_FROM_LOBBY: 'DROP_FROM_LOBBY',
+        START_GAME: 'START_GAME',
+        GET_LOBBIES: 'GET_LOBBYS',
+        LOBBY_UPDATED: 'LOBBY_UPDATED',
+        LOBBIES_LIST_UPDATED: 'LOBBYS_LIST_UPDATED',
+        SET_READY: 'SET_READY',
 
         START_GAME: 'START_GAME',
         UPDATE_SCENE: 'UPDATE_SCENE',

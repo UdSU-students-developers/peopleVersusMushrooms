@@ -52,27 +52,19 @@ class GameManager extends BaseManager {
 		const { guid, startPoint, map } = data;
 		const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
 		if (user && user.socketId) {
+			if (this.economies[guid]) {
+				this.io.to(user.socketId).emit(
+					this.SOCKETS.START_GAME,
+					this.answer.good(this.economies[guid].get())
+				);
+				return
+			}
 			this.economies[guid] = this._createEconomy(guid, startPoint, map);
 			this.io.to(user.socketId).emit(
 				this.SOCKETS.START_GAME,
 				this.answer.good(this.economies[guid].get())
 			);
 			console.log("Экономика создана");
-			return;
-		}
-		if (user) {
-			this.io.to(user.socketId).emit(this.SOCKETS.START_GAME, this.answer.bad(16));
-		}
-	}
-	
-	eventLoadGame(data = {}) {
-		const { guid } = data;
-		const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
-		if (user && user.socketId && this.economies[guid]) {
-			this.io.to(user.socketId).emit(
-				this.SOCKETS.START_GAME,
-				this.answer.good(this.economies[guid].get())
-			);
 			return;
 		}
 		if (user) {

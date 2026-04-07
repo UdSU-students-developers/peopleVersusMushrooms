@@ -33,6 +33,7 @@ app.use((_, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     next();
 });
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

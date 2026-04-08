@@ -14,6 +14,7 @@ class GameManager extends BaseManager {
 		this.io.on('connection', (socket) => { });
 		// mediator events subscribers
 		this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
+		this.mediator.subscribe(this.EVENTS.LOAD_GAME, (data) => this.eventLoadGame(data));
 		// mediator triggers setters
 		//...
 	}
@@ -50,16 +51,25 @@ class GameManager extends BaseManager {
 	eventStartGame(data = {}) {
 		const { guid, startPoint, map } = data;
 		const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
-		if (user) {
-			const economy = this._createEconomy(guid, startPoint, map);
+		if (user && user.socketId) {
+			if (this.economies[guid]) {
+				this.io.to(user.socketId).emit(
+					this.SOCKETS.START_GAME,
+					this.answer.good(this.economies[guid].get())
+				);
+				return
+			}
+			this.economies[guid] = this._createEconomy(guid, startPoint, map);
 			this.io.to(user.socketId).emit(
 				this.SOCKETS.START_GAME,
-				this.answer.good(economy.get())
+				this.answer.good(this.economies[guid].get())
 			);
 			console.log("Экономика создана");
 			return;
 		}
-		this.io.to(user.socketId).emit(this.SOCKETS.START_GAME, this.answer.bad(16));
+		if (user) {
+			this.io.to(user.socketId).emit(this.SOCKETS.START_GAME, this.answer.bad(16));
+		}
 	}
 
 	/* SOCKETS */

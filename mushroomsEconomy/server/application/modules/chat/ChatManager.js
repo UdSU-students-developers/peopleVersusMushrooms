@@ -15,9 +15,11 @@ class ChatManager extends BaseManager {
             socket.on(MESSAGE, (data) => this.sendMessage(data, socket));
             socket.on(MESSAGES, () => this.getMessages(socket));
 
-            socket.on('disconnect', () => console.log('disconnect', socket.id));
+            socket.on('disconnect', () => this.handleDisconnect(socket));
         });
     }
+
+    handleDisconnect(socket) {};
 
     
     sendMessage(data = {}, socket) {

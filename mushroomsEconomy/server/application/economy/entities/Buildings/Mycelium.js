@@ -40,6 +40,13 @@ class Mycelium {
         return false;
     }
 
+    // сбросить мицелий до 1 уровня (при потреблении реактором)
+    consume() {
+        this.level = 1;
+        this.grow = 0;
+        this.canGrow = true;
+    }
+
     getPower() {
         return POWER;
     }
@@ -68,7 +75,7 @@ class Mycelium {
             .filter(({ x: nx, y: ny }) =>
                 nx >= 0 && nx < m &&
                 ny >= 0 && ny < n &&
-                map[ny][nx] === 0 &&
+                map[ny][nx] === (0 || 1 || 2) && // 0 - земля, 1 - вода, 2 - камень
                 !mycelium.some(mc => mc.x === nx && mc.y === ny)
             );
     }

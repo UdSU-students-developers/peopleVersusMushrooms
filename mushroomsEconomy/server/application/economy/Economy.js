@@ -2,6 +2,7 @@ const EasyStar = require('easystarjs');
 const CONFIG = require('../../config');
 
 const Mycelium = require('./entities/Buildings/Mycelium');
+const SmallReactor = require('./entities/Buildings/SmallReactor');
 
 const { INTERVAL } = CONFIG.ECONOMY;
 
@@ -31,6 +32,7 @@ class Economy {
 
         /* УДОЛИ МЕНЯ */
         this.addMycelium(25, 25);
+        this.addSmallReactor(24, 25);
         /**************/
 
         // start game proccess
@@ -49,8 +51,22 @@ class Economy {
         return {
             guid: this.guid,
             mushrooms: this.mycelium.map(m => m.get()),
+            buildings: Object.values(this.buildings).map(b => b.get()),
             map: this.map,
         }
+    }
+
+
+    // Методы добавления объектов
+
+    addSmallReactor(x, y) {
+        const reactorGuid = this.common.guid();
+        this.buildings.push(new SmallReactor({
+            type: CONFIG.ECONOMY.BIO_REACTOR_SMALL.TYPE,
+            guid: reactorGuid,
+            x,
+            y,
+        }));
     }
 
     addMycelium(x, y) {
@@ -61,6 +77,7 @@ class Economy {
             callbacks: {},
         }));
     }
+
 
     // 1. вырасти грибочки
     myceliumGrow(mycelium) {
@@ -81,6 +98,14 @@ class Economy {
         }
     }
 
+    reactorsConsume() {
+        this.buildings
+            .filter(b => b instanceof SmallReactor)
+            .forEach(reactor => {
+                reactor.getConsumable(this.mycelium).forEach(mc => mc.consume());
+            });
+    }
+
     setPathsUnits({ x, y }) {
         //пометка что надо будет сделать массив с юнитами общий
         [...this.workers].forEach(unit => unit.calcPath({ x, y }));
@@ -88,6 +113,17 @@ class Economy {
 
     moveUnits() {
         [...this.workers].forEach(unit => unit.moveOneStep())
+    }
+
+    reactorsConsume() {
+        this.buildings
+            .filter(b => b instanceof SmallReactor)
+            .forEach(reactor => {
+                const consumedCount = reactor.consumeMycelium(this.mycelium);
+                if (consumedCount > 0) {
+                    this.updated = true;
+                }
+            });
     }
 
     update() {
@@ -100,7 +136,9 @@ class Economy {
         this.mycelium.forEach(mycelium => this.myceliumGrow(mycelium));
         // 2. расширить грибницу при возможности
         this.mycelium.forEach(mycelium => this.myceliumExtend(mycelium));
-        // 3. Переместить юнитов если нужно
+        // 3. реакторы потребляют мицелий
+        this.reactorsConsume();
+        // 4. Переместить юнитов если нужно
         this.moveUnits();
         /****************/
         if (this.updated) {

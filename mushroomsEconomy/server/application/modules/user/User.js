@@ -39,17 +39,6 @@ class User {
         this.token = token;		
     }
 
-    async fillData(data) {
-        this.id = data.id;
-		this.guid = data.guid;
-		this.name = data.name;
-		this.passwordHash = data.passwordHash;
-		// update token
-		const token = this.generateToken();
-		await this.db.updateToken(data.id, token);
-		this.token = token;
-    }
-
     isLogin() {
         return this.socketId && this.token;
     }
@@ -73,11 +62,6 @@ class User {
         }
 
         return false;
-    }
-    
-    async logout() {
-        this.token = null;
-        await this.db.updateToken(this.id, null);
     }
 
     async registration(name, passwordHash) {

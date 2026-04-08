@@ -3,7 +3,15 @@ const CONFIG = {
     PORT: 3005,
     CORS: {
         origin: "*",
+        middleware: (_, res, next) => {
+            res.header('Content-Type', 'application/json; charset=utf-8');
+            res.header('Access-Control-Allow-Origin', '*');
+            next();
+        }
     },
+
+    MAP_URL: 'http://localhost:3001',
+    MUSHROOMS_ARMY_URL: 'http://localhost:3003',
 
     DATABASE: {
         NAME: 'data.db',
@@ -11,13 +19,14 @@ const CONFIG = {
 
     MEDIATOR: {
         EVENTS: {
-            EXAMPLE_EVENT: "EXAMPLE_EVENT",
+            DELETE_USER: "DELETE_USER",
 
+            LOBBY_UPDATED: 'LOBBY_UPDATED',
             START_GAME: 'START_GAME',
         },
         TRIGGERS: {
-            EXAMPLE_TRIGGER: "EXAMPLE_TRIGGER",
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',
+            GET_USER_BY_SOCKET_ID: 'GET_USER_BY_SOCKET_ID',
         },
     },
 
@@ -32,11 +41,15 @@ const CONFIG = {
         LOGOUT: 'LOGOUT',
 
         CREATE_LOBBY: 'CREATE_LOBBY',
-        DELETE_LOBBY: 'DELETE_LOBBY',
-        JOIN_LOBBY: 'JOIN_LOBBY',
+        JOIN_TO_LOBBY: 'JOIN_TO_LOBBY',
         LEAVE_LOBBY: 'LEAVE_LOBBY',
-
+        DROP_FROM_LOBBY: 'DROP_FROM_LOBBY',
+        GET_LOBBIES: 'GET_LOBBYS',
+        LOBBY_UPDATED: 'LOBBY_UPDATED',
+        LOBBIES_LIST_UPDATED: 'LOBBYS_LIST_UPDATED',
+        SET_READY: 'SET_READY',
         START_GAME: 'START_GAME',
+        
         UPDATE_SCENE: 'UPDATE_SCENE',
         GET_SCENE: 'GET_SCENE',
     },
@@ -53,6 +66,7 @@ const CONFIG = {
             CONSUMPTION: 0, // не потребляет энергию (растёт от Солнышка)
             PRODUCTION: 30, // чтобы для непрерывной работы малого реактора было необходимо ДВЕ грибницы
             CAPACITY: 0, // ничего в себе хранить не умеет
+            POWER: 1,
             SIZE: 1,
         },
         // грибница вырастает за 12 секунд
@@ -70,6 +84,7 @@ const CONFIG = {
 
         },
         BIO_REACTOR_SMALL: {
+            TYPE: "small_reactor",
             HP: 20,
             SIZE: 1,
             CONSUMPTION: 1, // потребление ЭНЕРГИИ ИЛИ ЖИРА

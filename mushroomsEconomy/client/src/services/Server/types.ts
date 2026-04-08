@@ -36,11 +36,21 @@ export type TSmallReactor = {
     type: "small_reactor";
 }
 
+export type TLarva = {
+    guid: string;
+    x: number;
+    y: number;
+    coords: { x: number; y: number };
+    hp: number;
+    speed: number;
+};
+
 export type TScene = {
     guid: string;
-    mushrooms: TMushroom[];
+    mushrooms: TMushroom[]; 
     buildings: (TSmallReactor | number)[]; //number тут временно, загатовка на разные типы
     map: number[][];
+    larvae: TLarva[];
 }
 
 export type TMessages = TMessage[];

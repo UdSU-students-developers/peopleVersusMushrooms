@@ -9,6 +9,7 @@ import useSprites from '../Hooks/useSprite';
 import TerrainBlock from '../../Game/Entities/TerrainBlock';
 import Mushroom from '../../Game/Entities/Mushroom';
 import SmallReactor from '../../Game/Entities/SmallReactor';
+import Larva from '../../Game/Entities/Larva';
 
 import "./Game.css";
 
@@ -85,6 +86,26 @@ const GameCanvas: React.FC = () => {
         }
     };
 
+    const drawLarvae = (scene: TScene, tileWorldSize: number, tileSizePx: number) => {
+        if (!canvas) return;
+        
+        for (let i = 0; i < scene.larvae.length; i++) {
+            const l = scene.larvae[i];
+            const larva = new Larva(l.guid, l.coords);
+            
+            const [sx, sy, sSize] = getSprite(larva.sprite[0]);
+            
+            canvas.contextV.drawImage(
+                spritesImage,
+                sx, sy, sSize, sSize,
+                canvas.xs(l.coords.x * tileWorldSize), 
+                canvas.ys(l.coords.y * tileWorldSize), 
+                tileSizePx, 
+                tileSizePx
+            );
+        }
+    };
+
     const drawScene = () => {
         if (!canvas) return;
 
@@ -97,6 +118,7 @@ const GameCanvas: React.FC = () => {
         drawMap(scene, tileWorldSize, tileSizePx);
         drawMushrooms(scene, tileWorldSize, tileSizePx);
         drawSmallReactors(scene, tileWorldSize, tileSizePx);
+        drawLarvae(scene, tileWorldSize, tileSizePx);
     };
 
     function render(FPS: number) {

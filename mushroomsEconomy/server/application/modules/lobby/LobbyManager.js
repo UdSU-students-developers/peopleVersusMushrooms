@@ -38,9 +38,7 @@ class LobbyManager extends BaseManager {
 	
 	/* EVENTS */
 	eventLobbyUpdated(lobbies) {
-		
-		console.log('я выстрелил в менеджере!!!', lobbies);
-		
+		this.io.emit(SOCKET.LOBBY_UPDATED, this.answer.good(lobbies));
 	}
 	
 	/* SOCKETS */
@@ -54,8 +52,18 @@ class LobbyManager extends BaseManager {
         });
     }
 
-    socketJoinToLobby (data, socket) {
-        
+    socketJoinToLobby (data = {}, socket) {
+        const { guid, lobbyGuid } = data;
+        const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
+        if (user) {
+            this.sendToMap('/joinToLobby', { 
+                guid, 
+                lobbyGuid, 
+                role: 'mushroomEconomy' 
+            });
+            return;
+        }
+        socket.emit(SOCKET.JOIN_TO_LOBBY, this.answer.bad(9000));
     }
 
     socketLeaveLobby (data, socket) {

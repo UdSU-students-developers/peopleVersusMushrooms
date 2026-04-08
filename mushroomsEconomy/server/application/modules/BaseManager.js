@@ -47,8 +47,12 @@ class BaseManager {
         }
     }
 
-    async sendToMushroomsArmy(urlPart, data=null) {
-        await this.send(`${CONFIG.MUSHROOMS_ARMY_URL}${urlPart}`, data);
+    sendToMushroomsArmy(urlPart, data=null) {
+        this.send(`${CONFIG.MUSHROOMS_ARMY_URL}${urlPart}`, data);
+    }
+
+    sendToMap(urlPart, data=null) {
+        this.send(`${CONFIG.MAP_URL}${urlPart}`, data);
     }
 }
 

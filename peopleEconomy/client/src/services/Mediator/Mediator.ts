@@ -15,10 +15,10 @@ class Mediator {
 
     constructor(options: TMediator) {
         const { EVENTS = {}, TRIGGERS = {} } = options;
-        this.EVENTS   = EVENTS;
+        this.EVENTS = EVENTS;
         this.TRIGGERS = TRIGGERS;
         // init events and triggers
-        Object.keys(this.EVENTS  ).forEach(key => this.events[this.EVENTS[key]] = []);
+        Object.keys(this.EVENTS).forEach(key => this.events[this.EVENTS[key]] = []);
         Object.keys(this.TRIGGERS).forEach(key => this.triggers[this.TRIGGERS[key]] = () => { return null; });
     }
 
@@ -59,7 +59,7 @@ class Mediator {
     call(name: string, data?: any): void {
         if (this.events[name]) {
             this.events[name].forEach(event => {
-                if (event instanceof Function) { 
+                if (event instanceof Function) {
                     event(data);
                 }
             });

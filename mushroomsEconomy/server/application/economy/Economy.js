@@ -1,90 +1,43 @@
 const EasyStar = require('easystarjs');
 const CONFIG = require('../../config');
 
-const Mycelium = require('./entities/Mycelium');
+const Mycelium = require('./entities/Buildings/Mycelium');
+const SmallReactor = require('./entities/Buildings/SmallReactor');
 
 const { INTERVAL } = CONFIG.ECONOMY;
 
 class Economy {
-    constructor({ db, common, callbacks: { }, map = null, guid }) {
+    constructor({
+        db,
+        common,
+        callbacks: { updated },
+        map,
+        guid
+    }) {
         this.easyStar = new EasyStar.js();
-
         this.guid = guid; // совпадает с guid игрока
         this.db = db;
         this.common = common;
-        this.callbacks = this.callbacks;
-
-        this.n = 50;
-        this.m = 50;
-        this.mapInit(map);
-
+        this.callbacks = { updated };
+        this.map = map;
+        // данные экономики
         this.resourceMap; // массив известных ресурсов [{x, y, value}]
         this.buildings = []; // здания
         this.mycelium = []; // грибница
-        this.addMycelium(50, 49);
         this.workers = []; // рабочие
         this.larvae = []; // массив личинок
-
         // данные про врагов
+        this.enemyBuildings = [];
+        //...
+
+        /* УДОЛИ МЕНЯ */
+        this.addMycelium(25, 25);
+        this.addSmallReactor(24, 25);
+        /**************/
 
         // start game proccess
+        this.updated = false;
         this.interval = setInterval(() => this.update(), INTERVAL);
-    }
-
-    mapInit(map) { //Временный метод для заглушки
-        if (map) {
-            this.map = map;
-        } else {
-            console.log('Карта не передана при создании экономики! Используется заглушка!');
-            this.map = Array(this.n).fill().map(() => Array(this.m).fill(0));
-            this.map[39][25] = 1;
-            this.map[40][25] = 1;
-            this.map[41][25] = 1;
-            this.map[42][25]= 1;
-            this.map[43][25]= 1;
-            this.map[44][25]= 1;
-            this.map[45][25]= 1;
-            this.map[46][25]= 1;
-            this.map[47][25]= 1;
-            this.map[48][25]= 1;
-            this.map[49][25]= 1;
-            this.map[5][25] = 1;
-        }
-    }
-
-    addMycelium(x, y) {
-        const mycelium = new Mycelium({
-            x,
-            y,
-            guid: this.guid,
-            callbacks: {
-                checkAround: (x, y) => this.checkAroundMycelium(x, y),
-                extend: (x, y) => this.addMycelium(x, y),
-            },
-        });
-        this.map[y][x] = 1;
-        this.mycelium.push(mycelium);
-    }
-
-    checkAroundMycelium(x, y) {
-        const directions = [
-            { dx: 0, dy: -1 },
-            { dx: 0, dy: 1 },
-            { dx: -1, dy: 0 },
-            { dx: 1, dy: 0 },
-            { dx: -1, dy: -1 },
-            { dx: 1, dy: -1 },
-            { dx: -1, dy: 1 },
-            { dx: 1, dy: 1 },
-        ];
-
-        return directions
-            .map(({ dx, dy }) => ({ x: x + dx, y: y + dy }))
-            .filter(({ x: nx, y: ny }) =>
-                nx >= 0 && nx < this.m &&
-                ny >= 0 && ny < this.n &&
-                this.map[ny][nx] === 0
-            );
     }
 
     destructor() {
@@ -95,22 +48,97 @@ class Economy {
     }
 
     get() {
+        return {
+            guid: this.guid,
+            mushrooms: this.mycelium.map(m => m.get()),
+            buildings: Object.values(this.buildings).map(b => b.get()),
+            map: this.map,
+        }
     }
 
-    printMap() {
-        console.clear();
-        console.log(`\n===========================`);
-        this.map.forEach(row => {
-            console.log(row.join(' '));
-        });
-        console.log('===========================\n');
+
+    // Методы добавления объектов
+
+    addSmallReactor(x, y) {
+        const reactorGuid = this.common.guid();
+        this.buildings.push(new SmallReactor({
+            type: CONFIG.ECONOMY.BIO_REACTOR_SMALL.TYPE,
+            guid: reactorGuid,
+            x,
+            y,
+        }));
+    }
+
+    consumeMucelium() {
+        
+    }
+
+    addMycelium(x, y) {
+        this.mycelium.push(new Mycelium({
+            x,
+            y,
+            guid: this.common.guid(),
+            callbacks: {},
+        }));
+    }
+
+
+    // 1. вырасти грибочки
+    myceliumGrow(mycelium) {
+        if (mycelium.update()) {
+            this.updated = true;
+        }
+    }
+
+    // 2. расширить грибницу при возможности
+    myceliumExtend(mycelium) {
+        if (mycelium.canExtend(this.map, this.mycelium, this.buildings, this.enemyBuildings)) {
+            const result = mycelium.extend(this.map, this.mycelium, this.buildings, this.enemyBuildings);
+            if (!result) {
+                return;
+            }
+            this.addMycelium(result.x, result.y);
+            this.updated = true;
+        }
+    }
+
+    // 3. реакторы потребляют мицелий 3-го уровня (ИЛИ МУХОМОРЫ, УТОЧНИТЬ)
+    reactorsConsume() {
+        this.buildings
+            .filter(b => b instanceof SmallReactor)
+            .forEach(reactor => {
+                reactor.getConsumable(this.mycelium).forEach(mc => mc.consume());
+            });
+    }
+
+    setPathsUnits({ x, y }) {
+        //пометка что надо будет сделать массив с юнитами общий
+        [...this.workers].forEach(unit => unit.calcPath({ x, y }));
+    }
+
+    moveUnits() {
+        [...this.workers].forEach(unit => unit.moveOneStep())
     }
 
     update() {
-        this.mycelium.forEach(mycelium => mycelium.update());
-        // this.printMap(); 
-        // Включатать только по надобности!
-        //...
+
+        //console.log(this.mycelium.length);
+
+        /****************/
+        /* про грибницу */
+        // 1. вырасти грибочки
+        this.mycelium.forEach(mycelium => this.myceliumGrow(mycelium));
+        // 2. расширить грибницу при возможности
+        this.mycelium.forEach(mycelium => this.myceliumExtend(mycelium));
+        // 3. реакторы потребляют мицелий
+        this.reactorsConsume();
+        // 4. Переместить юнитов если нужно
+        this.moveUnits();
+        /****************/
+        if (this.updated) {
+            this.updated = false;
+            this.callbacks.updated(this.get());
+        }
     }
 }
 

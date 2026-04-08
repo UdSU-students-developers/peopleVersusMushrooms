@@ -4,6 +4,7 @@ type TData = {
     token: string | null;
     user: TUser | null;
     messages: TMessages;
+    guid: string | null;
     [key: string]: any;
 }
 
@@ -14,6 +15,7 @@ class Store {
     private data: TData = {
         token: null,
         user: null,
+        guid: null,
         messages: []
     }
 

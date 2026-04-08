@@ -13,7 +13,7 @@ class Common {
     }
 
     checkGuid(guid) {
-        //...
+        return /([a-z 0-9]{8}-[a-z 0-9]{4}-4[a-z 0-9]{3}-[a-z 0-9]{4}-[a-z 0-9]{12})/g.test(guid);
     }
 }
 

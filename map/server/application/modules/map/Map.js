@@ -1,12 +1,24 @@
 const CONFIG = require('../../../config');
-const Field = require('./entities/Field');
 const MAP_CONFIG = require('./MapConfig');
+const Building = require('./entities/Building');
+const Entity = require('./entities/Entity');
+
 const libnoise = require('libnoise').libnoise;
 
+const Source = require('./entities/Source');
+const Unit = require('./entities/Unit');
+
 class Map {
-    constructor(guid, width = 50, height = 50) {
-        this.guid = guid; // это guid лобби (комнаты)
+    constructor(guid, playerGuids, width = 50, height = 50) {
+        this.guid = guid; // guid создателя лобби
         this.map = [];
+        this.playerGuids = { // guid-ы игроков
+            spectator: playerGuids.spectator,
+            peopleArmy: playerGuids.peopleArmy,
+            peopleEconomy: playerGuids.peopleEconomy,
+            mushroomArmy: playerGuids.mushroomArmy,
+            mushroomEconomy: playerGuids.mushroomEconomy,
+        }
         this.width = width;
         this.height = height;
         for (let i = 0; i < height; i++) {
@@ -21,7 +33,153 @@ class Map {
         // Массивы объектов на карте
         this.buildings = [];
         this.units = [];
-        this.fields = [];
+        this.sources = [];
+    }
+
+    getGuids() {
+        return {
+            mapGuid: this.guid,
+            ...this.playerGuids,
+        }
+    }
+
+    getSelf() {
+        return {
+            buildings: this.buildings.map(building => building),
+            units: this.buildings.map(unit => unit),
+            sources: this.sources.map(source => source)
+        };
+    }
+
+    getRelief() {
+        return this.map.map(row => row.map(tile => tile));
+    }
+
+    getGen() {
+        return {
+            water: this.water,
+            mountains: this.mountains,
+            seed: this.seed,
+            iron: this.iron,
+            oil: this.oil
+        };
+    }
+
+    // ============ ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ============
+
+    getVisibleEntities(searchedEntities, searchingEntities) {
+        const visibleEntities = [];
+        for (const entity in searchedEntities) {
+            const pos = entity.getPos();
+            for (const searchingEntity in searchingEntities) {
+                const vis = searchingEntity.getVisibleRange();
+                if ((
+                    vis.x[0] <= pos.x[0] && pos.x[0] <= vis.x[1] ||
+                    vis.x[0] <= pos.x[1] && pos.x[1] <= vis.x[1]
+                ) && (
+                        vis.y[0] <= pos.y[0] && pos.y[0] <= vis.y[1] ||
+                        vis.y[0] <= pos.y[1] && pos.y[1] <= vis.y[1]
+                    ));
+                {
+                    visibleEntities.push(entity);
+                    break;
+                }
+            }
+        }
+        return visibleEntities;
+    }
+
+    // ============ ЛОГИКА ============
+
+    getVisbileEntitiesByRole(role) {
+        const units = [];
+        const buildings = [];
+        const roleEntities = [];
+        const notRoleEntities = [];
+        [...this.units, ...this.buildings].forEach(entity => {
+            if (entity.role === role) {
+                roleEntities.push(entity);
+            } else {
+                notRoleEntities.push(entity);
+            }
+        });
+        const visibleEntities = getVisibleEntities(notRoleEntities, roleEntities);
+        visibleEntities.forEach(entity => {
+            if (entity instanceof Unit) {
+                units.push(entity.get());
+            } else {
+                buildings.push(entity.get());
+            }
+        });
+        return { units, buildings };
+    }
+
+    getVisbileSourcesByRole(role) {
+        const roleEntities = [];
+        [...this.units, ...this.buildings].forEach(entity => {
+            if (entity.role === role) {
+                roleEntities.push(entity);
+            }
+        });
+        const sources = getVisibleEntities(this.sources, roleEntities).map(source => source.get());
+        return { sources };
+    }
+
+    updateUnit(unit) {
+        // ищем юнита по гуиду
+        const unitIndex = this.units.findIndex(elem => unit.guid === elem.guid);
+        if (unitIndex + 1) {
+            const unitInArray = this.units[unitIndex]
+            // если нашелся и не изменился - считаем убитым
+            if (unit.x === unitInArray.x && unit.y === unitInArray.y) {
+                this.units.splice(unitIndex, 1);
+            } else {
+                // если нашелся и изменился - передвинулся
+                unitInArray.x = unit.x;
+                unitInArray.y = unit.y;
+            }
+        } else {
+            // не нашли - добавляем
+            this.units.push(
+                new Unit(
+                    unit.x,
+                    unit.y,
+                    unit.type,
+                    unit.guid,
+                    role,
+                    unit.visibility
+                )
+            );
+        }
+    }
+
+    updateBuilding(building) {
+        // ищем юнита по гуиду
+        const buildingIndex = this.buildings.findIndex(elem => building.guid === elem.guid);
+        if (buildingIndex + 1) {
+            const buildingInArray = this.buildings[buildingIndex]
+            // если нашелся и не изменился - считаем убитым
+            if (building.x === buildingInArray.x && building.y === buildingInArray.y) {
+                this.buildings.splice(buildingIndex, 1);
+            } else {
+                // если нашелся и изменился - передвинулся
+                buildingInArray.x = building.x;
+                buildingInArray.y = building.y;
+            }
+        } else {
+            // не нашли - добавляем
+            this.buildings.push(
+                new Building(
+                    building.x,
+                    building.y,
+                    building.type,
+                    building.guid,
+                    role,
+                    building.size,
+                    building.visibility
+                )
+            );
+        }
     }
 
     // сгенерировать карту
@@ -64,83 +222,33 @@ class Map {
     }
 
     // iron, oil - [0, 20]
-    generateFields(iron, oil) {
+    generateSources(iron, oil) {
         this.iron = typeof iron === "number" ? iron : MAP_CONFIG.DEFAULTS.IRON;
         this.oil = typeof oil === "number" ? oil : MAP_CONFIG.DEFAULTS.OIL;
+        const clamp = val => val < 0 ? 0 : (val > 20 ? 20 : val);
+        this.iron = clamp(this.iron);
+        this.oil = clamp(this.oil);
         const mapSize = this.width * this.height;
         const ironSize = Math.floor(mapSize * iron / 100);
         const oilSize = Math.floor(mapSize * oil / 100);
-        const positionsSize = ironSize + oilSize;
         const positions = new Set();
 
-        while (positions.size < positionsSize) {
+        while (positions.size < ironSize + oilSize) {
             const pos = Math.floor(Math.random() * mapSize);
             positions.add(pos);
         }
 
-        positions.forEach(pos => {
+        positions.forEach((pos, index) => {
             const row = Math.floor(pos / this.width);
             const col = pos % this.width;
-            this.fields.push(new Field({ col, row, type: CONFIG.FIELD_NAMES.IRON }));
+            this.sources.push(
+                (index > ironSize) ?
+                    new Source({ col, row, type: CONFIG.FIELD_NAMES.IRON, saturation: MAP_CONFIG.SATURATION.IRON }) :
+                    new Source({ col, row, type: CONFIG.FIELD_NAMES.OIL, saturation: MAP_CONFIG.SATURATION.OIL })
+            );
         });
     }
 
-    get() {
-        return {
-            map: this.map,
-            water: this.water,
-            mountains: this.mountains,
-            seed: this.seed,
-            iron: this.iron,
-            oil: this.oil,
-            buildings: this.buildings.map(building => building),
-            units: this.buildings.map(unit => unit),
-            fields: this.fields.map(field => field),
-        };
-    }
-
-    getEasy() {
-        return {
-            buildings: this.buildings.map(building => building),
-            units: this.buildings.map(unit => unit),
-            fields: this.fields.map(field => field)
-        }
-    }
-
-    getGen() {
-        return {
-            water: this.water,
-            mountains: this.mountains,
-            seed: this.seed
-        };
-    }
-
-    getTile(x, y) {
-        if (x < 0 || y < 0 || x >= this.width || y >= this.height)
-            return null;
-        const data = {
-            units: [],
-            buildings: [],
-            fields: []
-        };
-        this.units.forEach(unit => {
-            if (unit.x === x && unit.y === y) {
-                data.units.append(unit.get());
-            }
-        });
-        this.buildings.forEach(building => {
-            if ((building.x === x || building.x + width === x) &&
-                (building.y === y || building.y + length === x)) {
-                data.buildings.append(building.get());
-            }
-        });
-        this.fields.forEach(field => {
-            if (field.x === x && field.y === y) {
-                data.fields.append(field.get());
-            }
-        });
-        return this.map[y][x];
-    }
 }
 
 module.exports = Map;

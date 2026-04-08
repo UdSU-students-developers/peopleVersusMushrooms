@@ -1,71 +1,71 @@
-import React, { useState, useEffect } from "react";
-import { IBasePage, PAGES } from '../PageManager';
+import React, { useState, useEffect, useContext } from 'react';
+import { MediatorContext, ServerContext } from '../../App';
+import { PAGES } from '../PageManager';
 import { validateLogin, validatePassword } from '../../utils/validation';
+import { TError } from '../../services';
 import './Login.css';
 
-const Login: React.FC<IBasePage> = ({ setPage, server }) => {
+const LOGIN_SERVER_ERRORS: Record<number, string> = {
+    10: 'Токен истёк или недействителен',
+    11: 'Неверный логин или пароль',
+    13: 'Передан неполный набор параметров',
+};
+
+const mapLoginError = (error?: TError | null): string => {
+    if (!error || typeof error.code !== 'number') {
+        return 'Не удалось выполнить вход. Попробуйте снова.';
+    }
+    return LOGIN_SERVER_ERRORS[error.code] ?? error.text ?? 'Не удалось выполнить вход.';
+};
+
+const Login: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
+    const server = useContext(ServerContext);
+    const mediator = useContext(MediatorContext);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [errors, setErrors] = useState<{ username?: string; password?: string; general?: string }>({});
+    const [serverError, setServerError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    const loginCheck = validateLogin(username);
+    const passwordCheck = validatePassword(password);
+    const hasValidationErrors = !loginCheck.isValid || !passwordCheck.isValid;
+
     useEffect(() => {
-        const handleLoginSuccess = () => {
+        const { LOGIN, ERROR } = mediator.getEventTypes();
+
+        const onLoggedIn = () => {
+            setIsLoading(false);
             setPage(PAGES.LOBBY);
         };
 
-        const handleError = (error: { code: number; text: string }) => {
-            setErrors({ general: error.text });
+        const onError = (payload: TError | undefined) => {
+            setServerError(mapLoginError(payload));
             setIsLoading(false);
         };
 
-        server.mediator.subscribe(server.mediator.getEventTypes().USER_LOGGED_IN, handleLoginSuccess);
-        server.showError(handleError);
+        mediator.subscribe(LOGIN, onLoggedIn);
+        mediator.subscribe(ERROR, onError);
 
         return () => {
-            server.mediator.unsubscribe(server.mediator.getEventTypes().USER_LOGGED_IN, handleLoginSuccess);
+            mediator.unsubscribe(LOGIN, onLoggedIn);
+            mediator.unsubscribe(ERROR, onError);
         };
-    }, [server, setPage]);
+    }, [mediator, setPage]);
 
-    const validateField = (field: string, value: string) => {
-        let error = '';
-        if (field === 'username') {
-            const validation = validateLogin(value);
-            if (!validation.isValid) error = validation.error!;
-        } else if (field === 'password') {
-            const validation = validatePassword(value);
-            if (!validation.isValid) error = validation.error!;
-        }
-        setErrors(prev => ({ ...prev, [field]: error }));
+    const clearServerError = () => setServerError('');
+
+    const onUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setUsername(e.target.value);
+        clearServerError();
     };
 
-    const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setUsername(value);
-        validateField('username', value);
+    const onPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setPassword(e.target.value);
+        clearServerError();
     };
 
-    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setPassword(value);
-        validateField('password', value);
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        setErrors({});
-
-        const usernameValidation = validateLogin(username);
-        const passwordValidation = validatePassword(password);
-
-        if (!usernameValidation.isValid || !passwordValidation.isValid) {
-            setErrors({
-                username: usernameValidation.error,
-                password: passwordValidation.error,
-            });
-            return;
-        }
-
+    const onSubmit = () => {
+        if (hasValidationErrors) return;
         setIsLoading(true);
         server.login(username, password);
     };
@@ -73,39 +73,62 @@ const Login: React.FC<IBasePage> = ({ setPage, server }) => {
     return (
         <div className="login">
             <h1>Вход</h1>
-            <form onSubmit={handleSubmit} className="login-form">
+            <div className="login-form">
                 <div className="form-group">
                     <label htmlFor="username">Логин</label>
                     <input
-                        type="text"
                         id="username"
+                        type="text"
+                        autoComplete="username"
                         value={username}
-                        onChange={handleUsernameChange}
-                        className={errors.username ? 'error' : ''}
+                        onChange={onUsernameChange}
+                        className={!loginCheck.isValid && username !== '' ? 'error' : ''}
                     />
-                    {errors.username && <span className="error-text">{errors.username}</span>}
+                    {!loginCheck.isValid && username !== '' && (
+                        <span className="error-text">{loginCheck.error}</span>
+                    )}
                 </div>
                 <div className="form-group">
-                    <label htmlFor="password">Пароль</label>
+                    <label htmlFor="password">
+                        Пароль{' '}
+                        <span className="field-hint">(6–50 символов)</span>
+                    </label>
                     <input
-                        type="password"
                         id="password"
+                        type="password"
+                        autoComplete="current-password"
                         value={password}
-                        onChange={handlePasswordChange}
-                        className={errors.password ? 'error' : ''}
+                        onChange={onPasswordChange}
+                        className={!passwordCheck.isValid && password !== '' ? 'error' : ''}
                     />
-                    {errors.password && <span className="error-text">{errors.password}</span>}
+                    {!passwordCheck.isValid && password !== '' && (
+                        <span className="error-text">{passwordCheck.error}</span>
+                    )}
                 </div>
-                {errors.general && <div className="error-general">{errors.general}</div>}
-                <button type="submit" disabled={isLoading} className="login-btn">
-                    {isLoading ? 'Вход...' : 'Войти'}
+                {serverError && <div className="error-general">{serverError}</div>}
+                <button
+                    type="button"
+                    className="login-btn"
+                    disabled={hasValidationErrors || isLoading}
+                    onClick={onSubmit}
+                >
+                    {isLoading ? 'Вход…' : 'Войти'}
                 </button>
-            </form>
+            </div>
             <p className="register-link">
-                Нет аккаунта? <a href="#" onClick={(e) => { e.preventDefault(); setPage(PAGES.REGISTRATION); }}>Зарегистрироваться</a>
+                Нет аккаунта?{' '}
+                <a
+                    href="#"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        setPage(PAGES.REGISTRATION);
+                    }}
+                >
+                    Зарегистрироваться
+                </a>
             </p>
         </div>
     );
-}
+};
 
 export default Login;

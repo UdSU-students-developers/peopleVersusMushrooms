@@ -1,22 +1,33 @@
 const Entity = require("./Entity");
 
 class Unit extends Entity {
-    constructor({ x, y, type, guid }) {
+    constructor({ x, y, type, guid, role, visibility = 1 }) {
         super({ x, y, type });
         this.guid = guid;
-    }
-
-    move(dx, dy) {
-        this.x += dx;
-        this.y += dy;
+        this.role = role;
+        this.visibility = visibility;
     }
 
     get() {
-        const sup = super.get();
         return {
-            ...sup,
-            guid: guid
+            ...super.get(),
+            guid: this.guid
         };
+    }
+    
+    getSelf() {
+        return {
+            ...this.get(),
+            role: this.role,
+            visibility: this.visibility,
+        };
+    }
+
+    getVisibleRange() {
+        return {
+            x: [this.x - this.visibility, this.x + this.visibility],
+            y: [this.y - this.visibility, this.y + this.visibility],
+        }
     }
 }
 

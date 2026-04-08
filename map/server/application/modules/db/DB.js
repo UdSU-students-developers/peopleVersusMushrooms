@@ -50,11 +50,10 @@ class DB {
         return this.orm.update('users', { guid: userGuid }, { token });
     }
 
-    createUser(login, passwordHash, nickname, guid, token) {
+    createUser(login, passwordHash, guid, token) {
         return this.orm.insert('users', {
             login,
             password: passwordHash,
-            nickname,
             guid,
             token,
         });

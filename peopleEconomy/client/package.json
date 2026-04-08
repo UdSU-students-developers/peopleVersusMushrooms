@@ -11,6 +11,7 @@
     "@types/node": "^16.18.126",
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
+    "classnames": "^2.5.1",
     "md5": "^2.3.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
@@ -20,7 +21,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "set PORT=3008 & react-scripts start",
+    "start": "set PORT=3000 & react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -44,6 +45,7 @@
     ]
   },
   "devDependencies": {
-    "@types/md5": "^2.3.6"
+    "@types/md5": "^2.3.6",
+    "sass": "^1.98.0"
   }
 }

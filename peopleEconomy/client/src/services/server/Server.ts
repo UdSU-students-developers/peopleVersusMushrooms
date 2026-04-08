@@ -30,7 +30,7 @@ class Server {
             const result = this._validate(data);
             if (result) {
                 const { LOGIN } = this.mediator.getEventTypes();
-                this.mediator.call(LOGIN, data);
+                this.mediator.call(LOGIN, result);
             }
         });
 
@@ -38,7 +38,7 @@ class Server {
             const result = this._validate(data);
             if (result) {
                 const { REGISTRATION } = this.mediator.getEventTypes();
-                this.mediator.call(REGISTRATION, data);
+                this.mediator.call(REGISTRATION, result);
             }
         });
 
@@ -46,7 +46,7 @@ class Server {
             const result = this._validate(data);
             if (result) {
                 const { LOGOUT } = this.mediator.getEventTypes();
-                this.mediator.call(LOGOUT, data);
+                this.mediator.call(LOGOUT, result);
             }
         });
     }

@@ -1,139 +1,161 @@
-import React, { useState, useEffect } from "react";
-import { IBasePage, PAGES } from '../PageManager';
-import { validateLogin, validatePassword, validatePasswordMatch, validatePasswordNotLogin } from '../../utils/validation';
+import React, { useState, useEffect, useContext } from 'react';
+import { MediatorContext, ServerContext } from '../../App';
+import { PAGES } from '../PageManager';
+import { validateRegistration } from '../../utils/validation';
+import { TError } from '../../services';
+import { TUser } from '../../services/server/types';
+import { authStorage } from '../../utils/authStorage';
 import './Registration.css';
 
-const Registration: React.FC<IBasePage> = ({ setPage, server }) => {
+const REG_SERVER_ERRORS: Record<number, string> = {
+    13: 'Передан неполный набор параметров',
+    17: 'Пользователь с данным именем уже зарегистрирован',
+    18: 'Логин не соответствует формату',
+    19: 'Пароль не соответствует требованиям',
+    20: 'Пароли не совпадают',
+};
+
+const mapRegistrationError = (error?: TError | null): string => {
+    if (!error || typeof error.code !== 'number') {
+        return 'Не удалось зарегистрироваться. Попробуйте снова.';
+    }
+    return REG_SERVER_ERRORS[error.code] ?? error.text ?? 'Не удалось зарегистрироваться.';
+};
+
+const Registration: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
+    const server = useContext(ServerContext);
+    const mediator = useContext(MediatorContext);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [errors, setErrors] = useState<{ username?: string; password?: string; confirmPassword?: string; general?: string }>({});
+    const [passwordRepeat, setPasswordRepeat] = useState('');
+    const [serverError, setServerError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    const fieldErrors = validateRegistration(username, password, passwordRepeat);
+    const hasValidationErrors =
+        !!fieldErrors.login || !!fieldErrors.password || !!fieldErrors.passwordRepeat;
+
     useEffect(() => {
-        const handleRegistrationSuccess = () => {
+        const { USER_REGISTERED, ERROR } = mediator.getEventTypes();
+
+        const onRegistered = (user: TUser) => {
+            setIsLoading(false);
+            authStorage.setAuth(user.token, user);
             setPage(PAGES.LOBBY);
         };
 
-        const handleError = (error: { code: number; text: string }) => {
-            setErrors({ general: error.text });
+        const onError = (payload: TError | undefined) => {
+            setServerError(mapRegistrationError(payload));
             setIsLoading(false);
         };
 
-        server.mediator.subscribe(server.mediator.getEventTypes().USER_REGISTERED, handleRegistrationSuccess);
-        server.showError(handleError);
+        mediator.subscribe(USER_REGISTERED, onRegistered);
+        mediator.subscribe(ERROR, onError);
 
         return () => {
-            server.mediator.unsubscribe(server.mediator.getEventTypes().USER_REGISTERED, handleRegistrationSuccess);
+            mediator.unsubscribe(USER_REGISTERED, onRegistered);
+            mediator.unsubscribe(ERROR, onError);
         };
-    }, [server, setPage]);
+    }, [mediator, setPage]);
 
-    const validateField = (field: string, value: string) => {
-        let error = '';
-        if (field === 'username') {
-            const validation = validateLogin(value);
-            if (!validation.isValid) error = validation.error!;
-        } else if (field === 'password') {
-            const validation = validatePassword(value);
-            if (!validation.isValid) error = validation.error!;
-        } else if (field === 'confirmPassword') {
-            const validation = validatePasswordMatch(password, value);
-            if (!validation.isValid) error = validation.error!;
-        }
-        setErrors(prev => ({ ...prev, [field]: error }));
+    const clearServerError = () => setServerError('');
+
+    const onUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setUsername(e.target.value);
+        clearServerError();
     };
 
-    const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setUsername(value);
-        validateField('username', value);
+    const onPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setPassword(e.target.value);
+        clearServerError();
     };
 
-    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setPassword(value);
-        validateField('password', value);
-        if (confirmPassword) validateField('confirmPassword', confirmPassword);
+    const onPasswordRepeatChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setPasswordRepeat(e.target.value);
+        clearServerError();
     };
 
-    const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setConfirmPassword(value);
-        validateField('confirmPassword', value);
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setErrors({});
-
-        const usernameValidation = validateLogin(username);
-        const passwordValidation = validatePassword(password);
-        const matchValidation = validatePasswordMatch(password, confirmPassword);
-        const notLoginValidation = validatePasswordNotLogin(username, password);
-
-        if (!usernameValidation.isValid || !passwordValidation.isValid || !matchValidation.isValid || !notLoginValidation.isValid) {
-            setErrors({
-                username: usernameValidation.error,
-                password: passwordValidation.error || notLoginValidation.error,
-                confirmPassword: matchValidation.error,
-            });
-            return;
-        }
-
+    const onSubmit = () => {
+        if (hasValidationErrors) return;
         setIsLoading(true);
-        const success = await server.register(username, password, confirmPassword);
-        if (!success) {
-            setIsLoading(false);
-        }
+        server.register(username, password, passwordRepeat);
     };
+
+    const showLoginHint = username !== '' && !!fieldErrors.login;
+    const showPasswordHint = password !== '' && !!fieldErrors.password;
+    const showRepeatHint =
+        !!fieldErrors.passwordRepeat && (passwordRepeat !== '' || password !== '');
 
     return (
         <div className="registration">
             <h1>Регистрация</h1>
-            <form onSubmit={handleSubmit} className="registration-form">
+            <div className="registration-form">
                 <div className="form-group">
-                    <label htmlFor="username">Логин</label>
+                    <label htmlFor="reg-username">Логин</label>
                     <input
+                        id="reg-username"
                         type="text"
-                        id="username"
+                        autoComplete="username"
                         value={username}
-                        onChange={handleUsernameChange}
-                        className={errors.username ? 'error' : ''}
+                        onChange={onUsernameChange}
+                        className={showLoginHint ? 'error' : ''}
                     />
-                    {errors.username && <span className="error-text">{errors.username}</span>}
+                    {showLoginHint && <span className="error-text">{fieldErrors.login}</span>}
                 </div>
                 <div className="form-group">
-                    <label htmlFor="password">Пароль</label>
+                    <label htmlFor="reg-password">
+                        Пароль <span className="field-hint">(6–50 символов)</span>
+                    </label>
                     <input
+                        id="reg-password"
                         type="password"
-                        id="password"
+                        autoComplete="new-password"
                         value={password}
-                        onChange={handlePasswordChange}
-                        className={errors.password ? 'error' : ''}
+                        onChange={onPasswordChange}
+                        className={showPasswordHint ? 'error' : ''}
                     />
-                    {errors.password && <span className="error-text">{errors.password}</span>}
+                    {showPasswordHint && (
+                        <span className="error-text">{fieldErrors.password}</span>
+                    )}
                 </div>
                 <div className="form-group">
-                    <label htmlFor="confirmPassword">Подтверждение пароля</label>
+                    <label htmlFor="reg-password-repeat">Повтор пароля</label>
                     <input
+                        id="reg-password-repeat"
                         type="password"
-                        id="confirmPassword"
-                        value={confirmPassword}
-                        onChange={handleConfirmPasswordChange}
-                        className={errors.confirmPassword ? 'error' : ''}
+                        autoComplete="new-password"
+                        value={passwordRepeat}
+                        onChange={onPasswordRepeatChange}
+                        className={showRepeatHint ? 'error' : ''}
                     />
-                    {errors.confirmPassword && <span className="error-text">{errors.confirmPassword}</span>}
+                    {showRepeatHint && (
+                        <span className="error-text">{fieldErrors.passwordRepeat}</span>
+                    )}
                 </div>
-                {errors.general && <div className="error-general">{errors.general}</div>}
-                <button type="submit" disabled={isLoading} className="register-btn">
-                    {isLoading ? 'Регистрация...' : 'Зарегистрироваться'}
+                {serverError && <div className="error-general">{serverError}</div>}
+                <button
+                    type="button"
+                    className="register-btn"
+                    disabled={hasValidationErrors || isLoading}
+                    onClick={onSubmit}
+                >
+                    {isLoading ? 'Отправка…' : 'Регистрация'}
                 </button>
-            </form>
+            </div>
             <p className="login-link">
-                Уже есть аккаунт? <a href="#" onClick={(e) => { e.preventDefault(); setPage(PAGES.LOGIN); }}>Войти</a>
+                Уже есть аккаунт?{' '}
+                <a
+                    href="#"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        setPage(PAGES.LOGIN);
+                    }}
+                >
+                    Войти
+                </a>
             </p>
         </div>
     );
-}
+};
 
 export default Registration;

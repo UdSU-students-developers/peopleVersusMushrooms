@@ -1,30 +1,34 @@
+import React, { createContext } from 'react';
+
 import Store from './services/Store/Store';
 import Server from './services/server/Server';
 import PageManager from './pages/PageManager';
+import useMediator from './services/Mediator/useMediator';
 import Mediator from './services/Mediator/Mediator';
-import { MEDIATOR } from './config';
+
 import './App.css';
 
-function App() {
+export const MediatorContext = createContext<Mediator>(null!);
+export const ServerContext = createContext<Server>(null!);
+
+const App: React.FC = () => {
   // mediator
-  const mediator = new Mediator({ EVENTS: MEDIATOR.EVENTS, TRIGGERS: MEDIATOR.TRIGGERS });
+  const mediator = useMediator();
   const store = new Store(mediator);
   const server = new Server(mediator);
-
-  const props = {
-    mediator,
-    server,
-    store,
-  }
 
   server.check('ВАСИЛИЙ', 'Я на такое не подписывался!');
 
   return (
-    <div className="App">
-      <div className='app'>
-        <PageManager {...props} />
-      </div>
-    </div>
+    <MediatorContext value={mediator}>
+      <ServerContext.Provider value={server}>
+        <div className="App">
+          <div className='app'>
+            <PageManager />
+          </div>
+        </div>
+      </ServerContext.Provider>
+    </MediatorContext>
   );
 }
 

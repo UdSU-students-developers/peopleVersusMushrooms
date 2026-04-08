@@ -1,5 +1,6 @@
+const md5 = require('md5');
+
 class Common { //Класс для того, что вроде как и не запихнуть в другие классы
-    constructor() {}
     guid() { // Можно найти лцчший вариант
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
         .replace(/[xy]/g, function (c) {
@@ -7,6 +8,14 @@ class Common { //Класс для того, что вроде как и не з
                 v = c == 'x' ? r : (r & 0x3 | 0x8);
             return v.toString(16);
         });
+    }
+
+    md5(text = '') {
+        return md5(text);
+    }
+
+    md5Random(text = '') {
+        return md5(`${text}-${Date.now()}-${Math.random()}`);
     }
 }
 

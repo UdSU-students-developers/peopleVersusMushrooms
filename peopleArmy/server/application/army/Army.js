@@ -1,22 +1,16 @@
 const CONFIG = require("../../config");
-const EasyStar = require("easystarjs");
+const Soldier = require("./entities/Soldier");
+const BMP = require("./entities/BMP");
 
 const { INTERVAL } = CONFIG.ARMY;
 
 class Army {
-    constructor({ map, buildings, common, callbacks = {}, guid }) {
+    constructor({ map, buildings, common, callbacks = {}, guid, db }) {
         this.guid = guid;
         this.common = common;
         this.callbacks = callbacks;
 
-        this.n = 50;
-        this.m = 50;
-        this.mapInit(map);
-
-        this.easyStar = new EasyStar.js();
-        this.easyStar.setAcceptableTiles([0]);
-        this.easyStar.enableSync();
-        this.easyStar.setGrid(this.map);
+        this.map = map;
 
         this.units = []; // наши юниты
         this.towers = []; // наши здания
@@ -24,92 +18,12 @@ class Army {
         this.enemyUnits = []; // юниты-врагм
         this.enemyBuildings = []; // здания-враги
 
+        this.unitTypes = {};
+        db.getUnitTypes().then(types => { this.unitTypes = types; });
+
         this.interval = setInterval(() => this.update(), INTERVAL); // интервал обновления игры
-    }
 
-    /** Обновить сетку у EasyStar после изменений this.map (препятствия и т.д.) */
-    updateMap() {
-        this.easyStar.setGrid(this.map);
-    }
-
-    /**
-     * Путь от (x0,y0) до (x1,y1). Координаты как в карте: map[y][x].
-     * @returns {Array<{x:number,y:number}>|null} цепочка клеток от старта до цели, или null если пути нет
-     */
-    findPath(x0, y0, x1, y1) {
-        this.updateMap();
-        let result;
-        let calculated = false;
-        try {
-            this.easyStar.findPath(x0, y0, x1, y1, (path) => {
-                result = path;
-                calculated = true;
-            });
-        } catch {
-            return null;
-        }
-        if (calculated) {
-            return result;
-        }
-        const limit = this.n * this.m * 4;
-        for (let i = 0; i < limit && !calculated; i++) {
-            this.easyStar.calculate();
-        }
-        return calculated ? result : null;
-    }
-
-    /** Если у юнита есть цель, но ещё нет waypoints — считаем путь здесь. */
-    calculateUnitPath(unit) {
-        if (unit.targetX == null || unit.targetY == null) {
-            return;
-        }
-        if (unit.path.length > 0) {
-            return;
-        }
-        const p = this.findPath(unit.x, unit.y, unit.targetX, unit.targetY);
-        if (p === null || p.length < 2) {
-            unit.clearTarget();
-            return;
-        }
-        // еслии у юнита есть цель, срезаем первый элемент массива path, т.к. он уже был достигнут
-        unit.path = p.slice(1);
-    }
-
-    mapInit(map) { // Временный метод для заглушки
-        if (map) {
-            console.log('Карта передана при создании армии! Используется переданная карта!');
-            this.map = map;
-        } else {
-            console.log('Карта не передана при создании армии! Используется заглушка!');
-            this.map = Array(this.n).fill().map(() => Array(this.m).fill(0));
-            this.map[39][25] = 1;
-            this.map[40][25] = 1;
-            this.map[41][25] = 1;
-            this.map[42][25] = 1;
-            this.map[43][25] = 1;
-            this.map[44][25] = 1;
-            this.map[45][25] = 1;
-            this.map[46][25] = 1;
-            this.map[47][25] = 1;
-            this.map[48][25] = 1;
-            this.map[49][25] = 1;
-            this.map[5][25] = 1;
-
-            console.log(`\n===========================`);
-            this.map.forEach(row => {
-                console.log(row.join(' '));
-            });
-            console.log('===========================\n');
-        }
-    }
-
-    printMap() {
-        console.clear();
-        console.log(`\n===========================`);
-        this.map.forEach(row => {
-            console.log(row.join(' '));
-        });
-        console.log('===========================\n');
+        this.updated = false;
     }
 
     destructor() {
@@ -119,15 +33,140 @@ class Army {
         }
     }
 
-    update() {
-        // выстрелить юнитами по врагам
-        //..
+    get() {
+        return {
+            units: this.units,
+            //...
+        }
+    }
+
+    /**
+     * Создать юнита в этой армии.
+     * guid юнита генерируется внутри через Common.
+     * @param {{ x: number, y: number, type?: string }} data
+     * @returns {{ ok: true, data: object } | { ok: false, error: string }}
+     */
+    createUnit({ x, y, type = 'soldier' }) {
+        const unitType = String(type).toLowerCase();
+        const stats = this.unitTypes[unitType];
+        if (!stats) {
+            return { ok: false, error: 'UNKNOWN_UNIT_TYPE' };
+        }
+
+        const guid = this.common.guid();
+        const options = { guid, x, y, ...stats };
+        const unit = unitType === 'bmp' ? new BMP(options) : new Soldier(options);
+
+        this.units.push(unit);
+        this.setUnitsTarget();
+        console.log('Юнит создан:', unit.get());
+        console.log('Армия:', this.units);
+        return { ok: true, data: unit.get() };
+    }
+
+    // 1. выстрелить юнитами по врагам
+    getTarget(unit) {
+        const height = this.map.length;
+        const width = this.map[0]?.length || 0;
+
+        if (!height || !width) {
+            return null;
+        }
+
+        const cells = [];
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                if (this.map[y][x] !== 0) {
+                    continue;
+                }
+
+                if (unit.x === x && unit.y === y) {
+                    continue;
+                }
+
+                cells.push({ x, y });
+            }
+        }
+
+        if (!cells.length) {
+            return null;
+        }
+
+        const compareByDistance = (a, b) => {
+            const aDx = Math.abs(a.x - unit.x);
+            const aDy = Math.abs(a.y - unit.y);
+            const bDx = Math.abs(b.x - unit.x);
+            const bDy = Math.abs(b.y - unit.y);
+
+            const aDiagonalDistance = Math.min(aDx, aDy);
+            const bDiagonalDistance = Math.min(bDx, bDy);
+
+            if (aDiagonalDistance !== bDiagonalDistance) {
+                return bDiagonalDistance - aDiagonalDistance;
+            }
+
+            const aDistance = (aDx * aDx) + (aDy * aDy);
+            const bDistance = (bDx * bDx) + (bDy * bDy);
+
+            if (aDistance !== bDistance) {
+                return bDistance - aDistance;
+            }
+
+            if (a.y !== b.y) {
+                return b.y - a.y;
+            }
+
+            return b.x - a.x;
+        };
+
+        const diagonalCells = cells.filter((cell) => cell.x !== unit.x && cell.y !== unit.y);
+        const targetCells = diagonalCells.length ? diagonalCells : cells;
+
+        return targetCells.sort(compareByDistance)[0];
+    }
+
+    setUnitsTarget() {
         this.units.forEach((unit) => {
-            this.calculateUnitPath(unit);
-            unit.move(this.map);
-            console.log('Координаты юнита: ', unit.x, unit.y);
+            if (unit.targetX != null && unit.targetY != null) {
+                return;
+            }
+
+            const target = this.getTarget(unit);
+            if (!target) {
+                return;
+            }
+
+            unit.setTarget(target.x, target.y);
+            this.updated = true;
         });
-        // this.printMap();
+    }
+
+    shotUnits() {
+        //...
+    }
+
+    // 2. сходить юнитами
+    moveUnits() {
+        this.units.forEach((unit) => {
+            if (unit.move(this.map, this.buildings, this.units, this.enemyUnits, this.enemyBuildings)) {
+                this.updated = true;
+                console.log('Координаты юнита (guid: ', unit.guid, '): ', unit.x, unit.y);
+            }
+        });
+    }
+
+    update() {
+        // 1. выстрелить юнитами по врагам
+        this.shotUnits();
+        this.setUnitsTarget();
+        // 2. сходить юнитами
+        this.moveUnits();
+
+        if (this.updated) {
+            this.updated = false;
+            this.callbacks.update(this.guid, this.get());
+        }
     }
 }
 

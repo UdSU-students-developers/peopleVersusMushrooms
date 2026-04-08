@@ -1,6 +1,8 @@
 class Answer {
     errors = {
         11: "Ошибка авторизации",
+        13: "Отсутствуют обязательные параметры (name/password/token)",
+        17: "Пользователь с таким именем уже существует",
         400: "Неверные данные запроса",
         404: "Не найдено",
         409: "Пользователь с таким именем уже существует",
@@ -25,7 +27,7 @@ class Answer {
      * @returns {{ result: "ok", data: * }} или объект ошибки, если data нет.
      */
     good(data) {
-        if (data == null) {
+        if (data === null) {
             return this.bad(9000);
         }
         return {
@@ -35,4 +37,4 @@ class Answer {
     }
 }
 
-module.exports = new Answer();
+module.exports = Answer;

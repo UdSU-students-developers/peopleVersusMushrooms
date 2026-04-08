@@ -4,22 +4,34 @@ class CONFIG {
 
     static SQLITE_PATH = './application/modules/db/map.db'; // Путь к базе
 
-    static ROOM_SIZE = { // размеры комнаты
-        MIN: 1,
-        MAX: 2,
-    }
-    //ивенты
-    static EVENTS = {
-        LOGOUT: 'LOGOUT', // в т.ч. и дисконект
+    static LOBBY_MAX_SIZE = 5;
+
+    static ROLES = {
+        SPECTATOR: 'spectator',
+        PEOPLE_ECONOMY: 'peopleEconomy',
+        PEOPLE_ARMY: 'peopleArmy',
+        MUSHROOM_ECONOMY: 'mushroomEconomy',
+        MUSHROOM_ARMY: 'mushroomArmy',
     }
 
- 
+    //events
+    static EVENTS = {
+        LOGOUT: 'LOGOUT',
+        START_GAME: 'START_GAME',
+        JOIN_TO_LOBBY: 'JOIN_TO_LOBBY',
+    }
+
     static TRIGGERS = {
         //triggers
         GET_USER_BY_GUID: 'GET_USER_BY_GUID',
+        IS_GUID_IN_ANY_LOBBY: 'IS_GUID_IN_ANY_LOBBY',
+        GET_LOBBIES: 'GET_LOBBIES',
         //handlers
+        GET_RELIEF_HANDLER: 'GET_RELIEF_HANDLER',
         GET_VISIBILITY_HANDLER: 'GET_VISIBILITY_HANDLER',
         GET_RESOURSE_VISIBILITY_HANDLER: 'GET_RESOURSE_VISIBILITY_HANDLER',
+        UPDATE_UNITS_HANDLER: 'UPDATE_UNITS_HANDLER',
+        UPDATE_BUILDINGS_HANDLER: 'UPDATE_BUILDINGS_HANDLER',
     }
 
     // сокетные сообщения
@@ -33,17 +45,19 @@ class CONFIG {
         LOGOUT: 'LOGOUT',
         
         // lobby sockets
-        CREATE_ROOM: 'CREATE_ROOM',
-        JOIN_TO_ROOM: 'JOIN_ROOM',
-        LEAVE_ROOM: 'LEAVE_ROOM',
-        DROP_FROM_ROOM: 'DROP_FROM_ROOM',
+        CREATE_LOBBY: 'CREATE_LOBBY',
+        JOIN_TO_LOBBY: 'JOIN_TO_LOBBY',
+        LEAVE_LOBBY: 'LEAVE_LOBBY',
+        DROP_FROM_LOBBY: 'DROP_FROM_LOBBY',
         START_GAME: 'START_GAME',
-        GET_ROOMS: 'GET_ROOMS',
-        ROOM_UPDATED: 'ROOM_UPDATED',
-        ROOMS_LIST_UPDATED: 'ROOMS_LIST_UPDATED',
+        GET_LOBBIES: 'GET_LOBBYS',
+        LOBBY_UPDATED: 'LOBBY_UPDATED',
+        LOBBIES_LIST_UPDATED: 'LOBBYS_LIST_UPDATED',
+        SET_READY: 'SET_READY',
 
         //map sockets
         GENERATE_MAP: 'GENERATE_MAP',
+        GET_MAP_PARAMS: 'GET_MAP_PARAMS'
     }
 }
 

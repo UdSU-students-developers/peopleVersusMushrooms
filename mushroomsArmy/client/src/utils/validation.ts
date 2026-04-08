@@ -1,37 +1,30 @@
-
 export interface ValidationResult {
     isValid: boolean;
     error?: string;
 }
 
 /**
- * Валидация логина пользователя
- * 
- * 
- * - Длина от 3 до 20 символов
- * - Допустимы латинские буквы, цифры, символы подчёркивания и точки
- * - Логин не может начинаться или заканчиваться точкой
- * - Логин не может содержать две точки подряд
+ * Логин: 3–20 символов, только буквы/цифры/_/., без .. и точек в начале/конце.
  */
 export function validateLogin(login: string): ValidationResult {
     if (!login || typeof login !== 'string') {
         return {
             isValid: false,
-            error: 'Логин обязателен для заполнения'
+            error: 'Логин обязателен для заполнения',
         };
     }
 
     if (login.length < 3) {
         return {
             isValid: false,
-            error: 'Логин слишком короткий (минимум 3 символа)'
+            error: 'Логин слишком короткий (минимум 3 символа)',
         };
     }
 
     if (login.length > 20) {
         return {
             isValid: false,
-            error: 'Логин слишком длинный (максимум 20 символов)'
+            error: 'Логин слишком длинный (максимум 20 символов)',
         };
     }
 
@@ -39,91 +32,100 @@ export function validateLogin(login: string): ValidationResult {
     if (!validCharactersRegex.test(login)) {
         return {
             isValid: false,
-            error: 'Логин может содержать только латинские буквы, цифры, подчёркивания и точки'
+            error: 'Только латинские буквы, цифры, «_» и «.»',
         };
     }
 
     if (login.startsWith('.') || login.endsWith('.')) {
         return {
             isValid: false,
-            error: 'Логин не может начинаться или заканчиваться точкой'
+            error: 'Логин не может начинаться или заканчиваться точкой',
         };
     }
 
     if (login.includes('..')) {
         return {
             isValid: false,
-            error: 'Логин не может содержать две точки подряд'
+            error: 'Логин не может содержать две точки подряд',
         };
     }
 
-    return {
-        isValid: true
-    };
+    return { isValid: true };
 }
 
-/**
- * Валидация пароля пользователя
- * 
- * 
- * - Длина от 6 до 50 символов
- * - Допустимы любые символы
- */
+/** Пароль: от 6 до 50 символов включительно. */
 export function validatePassword(password: string): ValidationResult {
     if (!password || typeof password !== 'string') {
         return {
             isValid: false,
-            error: 'Пароль обязателен для заполнения'
+            error: 'Пароль обязателен для заполнения',
         };
     }
 
     if (password.length < 6) {
         return {
             isValid: false,
-            error: 'Пароль слишком короткий (минимум 6 символов)'
+            error: 'Пароль слишком короткий (минимум 6 символов)',
         };
     }
 
     if (password.length > 50) {
         return {
             isValid: false,
-            error: 'Пароль слишком длинный (максимум 50 символов)'
+            error: 'Пароль слишком длинный (максимум 50 символов)',
         };
     }
 
-    return {
-        isValid: true
-    };
+    return { isValid: true };
 }
 
-/**
- * Валидация совпадения пароля и подтверждения
- */
-export function validatePasswordMatch(password: string, confirmPassword: string): ValidationResult {
+function validatePasswordMatch(password: string, confirmPassword: string): ValidationResult {
     if (password !== confirmPassword) {
         return {
             isValid: false,
-            error: 'Пароли не совпадают'
+            error: 'Пароли не совпадают',
         };
     }
-
-    return {
-        isValid: true
-    };
+    return { isValid: true };
 }
 
-/**
- * Проверка, что пароль не совпадает с логином
- */
-export function validatePasswordNotLogin(login: string, password: string): ValidationResult {
+function validatePasswordNotLogin(login: string, password: string): ValidationResult {
     if (login === password) {
         return {
             isValid: false,
-            error: 'Пароль не должен совпадать с логином'
+            error: 'Пароль не должен совпадать с логином',
         };
     }
+    return { isValid: true };
+}
 
-    return {
-        isValid: true
-    };
+/** Ошибки по полям для формы регистрации. */
+export function validateRegistration(
+    login: string,
+    password: string,
+    passwordRepeat: string
+) {
+    const errors: Partial<Record<'login' | 'password' | 'passwordRepeat', string>> = {};
+
+    const loginRes = validateLogin(login);
+    if (!loginRes.isValid) {
+        errors.login = loginRes.error;
+    }
+
+    const passRes = validatePassword(password);
+    if (!passRes.isValid) {
+        errors.password = passRes.error;
+    }
+
+    const matchRes = validatePasswordMatch(password, passwordRepeat);
+    if (!matchRes.isValid) {
+        errors.passwordRepeat = matchRes.error;
+    }
+
+    const notLoginRes = validatePasswordNotLogin(login, password);
+    if (!notLoginRes.isValid && !errors.password) {
+        errors.password = notLoginRes.error;
+    }
+
+    return errors;
 }

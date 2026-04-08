@@ -10,6 +10,7 @@ const CONFIG = {
         }
     },
 
+    MAP_URL: 'http://localhost:3001',
     MUSHROOMS_ARMY_URL: 'http://localhost:3003',
 
     DATABASE: {
@@ -20,6 +21,7 @@ const CONFIG = {
         EVENTS: {
             DELETE_USER: "DELETE_USER",
 
+            LOBBY_UPDATED: 'LOBBY_UPDATED',
             START_GAME: 'START_GAME',
         },
         TRIGGERS: {
@@ -42,13 +44,12 @@ const CONFIG = {
         JOIN_TO_LOBBY: 'JOIN_TO_LOBBY',
         LEAVE_LOBBY: 'LEAVE_LOBBY',
         DROP_FROM_LOBBY: 'DROP_FROM_LOBBY',
-        START_GAME: 'START_GAME',
         GET_LOBBIES: 'GET_LOBBYS',
         LOBBY_UPDATED: 'LOBBY_UPDATED',
         LOBBIES_LIST_UPDATED: 'LOBBYS_LIST_UPDATED',
         SET_READY: 'SET_READY',
-
         START_GAME: 'START_GAME',
+        
         UPDATE_SCENE: 'UPDATE_SCENE',
         GET_SCENE: 'GET_SCENE',
     },

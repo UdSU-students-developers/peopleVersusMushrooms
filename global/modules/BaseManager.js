@@ -1,4 +1,4 @@
-const CONFIG = require('../../config.js');
+const CONFIG = require('../config');
 
 class BaseManager {
     constructor(options) {
@@ -12,7 +12,7 @@ class BaseManager {
 
         this.EVENTS = this.mediator.getEventTypes();
         this.TRIGGERS = this.mediator.getTriggerTypes();
-		this.SOCKETS = CONFIG.SOCKET; //Если будете смотреть код ИС, то у них это MESSAGES
+		this.SOCKETS = CONFIG.SOCKET;
     }
 
     async send(url, data=null, method='POST') {
@@ -47,12 +47,24 @@ class BaseManager {
         }
     }
 
+    sendToMushroomsEconomy(urlPart, data=null) {
+        this.send(`${CONFIG.MUSHROOMS_ECONOMY.URL}${urlPart}`, data);
+    }
+
     sendToMushroomsArmy(urlPart, data=null) {
-        this.send(`${CONFIG.MUSHROOMS_ARMY_URL}${urlPart}`, data);
+        this.send(`${CONFIG.MUSHROOMS_ARMY.URL}${urlPart}`, data);
+    }
+
+    sendToPeopleArmy(urlPart, data=null) {
+        this.send(`${CONFIG.PEOPLE_ARMY.URL}${urlPart}`, data);
+    }
+
+    sendToPeopleEconomy(urlPart, data=null) {
+        this.send(`${CONFIG.PEOPLE_ECONOMY.URL}${urlPart}`, data);
     }
 
     sendToMap(urlPart, data=null) {
-        this.send(`${CONFIG.MAP_URL}${urlPart}`, data);
+        this.send(`${CONFIG.MAP.URL}${urlPart}`, data);
     }
 }
 

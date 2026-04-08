@@ -1,12 +1,5 @@
 import { TPoint } from "../../config";
 
-export type TUser = {
-    token: string;
-    name: string;
-    id?: number;
-    guid: string;
-}
-
 export type TResponse<T> = {
     result: 'ok' | 'error';
     data?: T;
@@ -16,6 +9,13 @@ export type TResponse<T> = {
 export type TError = {
     code: number;
     text: string;
+}
+
+export type TUser = {
+    token: string;
+    name: string;
+    id?: number;
+    guid: string;
 }
 
 export type TMessage = {
@@ -54,3 +54,16 @@ export type TScene = {
 }
 
 export type TMessages = TMessage[];
+
+type TPlayer = {
+    guid: string;
+    ready: boolean;
+}
+
+type TLobby = {
+    creatorGuid: string;
+    lobbyName: string;
+    players: TPlayer[];
+}
+
+export type TLobbies = TLobby[];

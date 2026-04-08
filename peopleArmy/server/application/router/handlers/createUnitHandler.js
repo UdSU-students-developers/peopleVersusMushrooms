@@ -8,11 +8,11 @@ module.exports = (mediator, answer) => {
             y,
             type,
         });
-        if (!result?.ok) {
+        if (result?.result === 'error') {
             console.log('CREATE_UNIT error:', result);
-            return res.status(400).json(answer.bad(400));
+            return res.status(400).json(result);
         }
         console.log('createUnitHandler', guid, x, y, type);
-        res.json(answer.good(result.data));
+        res.json(result || answer.bad(9000));
     };
 };

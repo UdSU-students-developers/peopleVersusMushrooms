@@ -21,7 +21,10 @@ const Login: React.FC<IBasePage> = (props: IBasePage) => {
                 const token = userData?.token ?? null;
                 mediator.get(CONFIG.MEDIATOR.TRIGGERS.SET_STORE, { name: 'user', value: userData });
                 mediator.get(CONFIG.MEDIATOR.TRIGGERS.SET_STORE, { name: 'token', value: token });
-                setPage(PAGES.CHAT);
+                
+                mediator.get(CONFIG.MEDIATOR.TRIGGERS.SET_STORE, { name: 'socket', value: client });
+                mediator.get(CONFIG.MEDIATOR.TRIGGERS.SET_STORE, { name: 'guid', value: userData?.guid ?? null });
+                setPage(PAGES.GAME);
                 return;
             }
             setError(response.error || 'Ошибка входа');
@@ -29,8 +32,7 @@ const Login: React.FC<IBasePage> = (props: IBasePage) => {
 
         return () => {
             client.off(CONFIG.SOCKETS.LOGIN);
-            client.disconnect();
-            setSocket(null);
+
         };
     }, [setPage, mediator]);
 

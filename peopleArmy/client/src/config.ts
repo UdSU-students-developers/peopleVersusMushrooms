@@ -8,6 +8,7 @@ interface SocketEvents {
     REGISTRATION: string;
     LOGIN: string;
     LOGOUT: string;
+    UPDATE_ARMY: 'UPDATE_ARMY',
 }
 
 interface MediatorEvents {
@@ -38,6 +39,7 @@ const CONFIG: Config = {
         REGISTRATION: 'registration',
         LOGIN: 'login',
         LOGOUT: 'logout',
+        UPDATE_ARMY: 'UPDATE_ARMY',
     },
     MEDIATOR: {
         EVENTS: {

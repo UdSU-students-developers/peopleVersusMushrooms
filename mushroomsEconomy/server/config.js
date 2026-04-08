@@ -48,8 +48,8 @@ const CONFIG = {
         LOBBY_UPDATED: 'LOBBY_UPDATED',
         LOBBIES_LIST_UPDATED: 'LOBBYS_LIST_UPDATED',
         SET_READY: 'SET_READY',
-
         START_GAME: 'START_GAME',
+        
         UPDATE_SCENE: 'UPDATE_SCENE',
         GET_SCENE: 'GET_SCENE',
     },

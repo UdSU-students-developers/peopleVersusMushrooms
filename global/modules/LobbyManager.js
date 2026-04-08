@@ -1,11 +1,13 @@
-const CONFIG = require('../../../config');
+const CONFIG = require('../config')
 const BaseManager = require('../BaseManager');
 
 const { SOCKET } = CONFIG;
 
 class LobbyManager extends BaseManager {
-    constructor(options) {
+    constructor({ options, role }) { //Роль берите из своего конфига, она совпадает с названием вашего сервиса, например 'mushroomEconomy'
         super(options);
+
+        this.role = role;
 
 		if (!this.io) return;
         this.io.on('connection', (socket) => {
@@ -37,16 +39,7 @@ class LobbyManager extends BaseManager {
 	}
 	
 	/* SOCKETS */
-    socketCreateLobby(data, socket) {
-        const { guid } = data;
-        const map = new Map();
-
-        this.mediator.call(this.EVENTS.START_GAME, {
-            guid: guid,
-            map: map.generate(), //Должно приходить с одноимённого сервиса
-        });
-    }
-
+    
     socketJoinToLobby (data = {}, socket) {
         const { guid, lobbyGuid } = data;
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
@@ -54,13 +47,17 @@ class LobbyManager extends BaseManager {
             this.sendToMap('/joinToLobby', { 
                 guid, 
                 lobbyGuid, 
-                role: 'mushroomEconomy' 
+                role: this.role, 
             });
             return;
         }
         socket.emit(SOCKET.JOIN_TO_LOBBY, this.answer.bad(9000));
     }
+    
+    socketCreateLobby(data, socket) {
 
+    }
+    
     socketLeaveLobby (data, socket) {
         
     }

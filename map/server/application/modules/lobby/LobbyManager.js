@@ -288,7 +288,7 @@ class LobbyManager extends BaseManager {
 
         //устанавливаем статус ready
         if (!lobby.setPlayerReady(user.guid)) {
-            return this.answer.bad(9000);
+            return this.answer.bad(1001);
         }
 
         return this.answer.good(true);

@@ -132,7 +132,7 @@ function buildDefaultMap(): number[][] {
     return map;
 }
 
-const Game: React.FC<IBasePage> = ({ mediator }) => {
+const Game: React.FC<IBasePage> = ({ mediator, server }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const mapRef = useRef<number[][]>(buildDefaultMap());
     const unitsRef = useRef<UnitData[]>([]);
@@ -206,21 +206,23 @@ const Game: React.FC<IBasePage> = ({ mediator }) => {
             setStatus(`Создаём ${selectedType} на [${x}, ${y}]…`);
 
             try {
-                const url = `${CONFIG.SERVER_URL}/unit/create/${guid}/${x}/${y}?type=${selectedType}`;
-                const res = await fetch(url);
-                const body = await res.json();
+                const body = await server.createUnit(guid, x, y, selectedType);
 
-                if (body?.result === 'ok') {
+                if (!body) {
+                    setStatus('Ошибка сети');
+                    return;
+                }
+                if (body.result === 'ok') {
                     setStatus(`${selectedType} создан на [${x}, ${y}]`);
                 } else {
-                    setStatus(`Ошибка: ${body?.error ?? 'неизвестная'}`);
+                    setStatus(`Ошибка: ${body.error ?? 'неизвестная'}`);
                 }
             } catch (err) {
                 setStatus('Ошибка сети');
                 console.error(err);
             }
         },
-        [guid, selectedType]
+        [guid, selectedType, server]
     );
 
     return (

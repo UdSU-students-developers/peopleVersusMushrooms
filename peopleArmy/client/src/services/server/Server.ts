@@ -20,7 +20,8 @@ class Server {
     private async request<T>(
         method: string,
         params: { [key: string]: string } = {},
-        queryParams: { [key: string]: string } = {}
+        queryParams: { [key: string]: string } = {},
+        options?: { passThroughAnswerErrors?: boolean }
     ): Promise<T | null> {
         try {
             const token = this.mediator.get(TRIGGERS.GET_STORE, 'token');
@@ -44,6 +45,14 @@ class Server {
             const response = await fetch(url);
             const body = await response.json();
 
+            if (body?.result === 'error') {
+                if (options?.passThroughAnswerErrors) {
+                    return body as T;
+                }
+                this.setError(body.error);
+                console.error("Server error:", body.error);
+                return null;
+            }
             if (body && body.error) {
                 this.setError(body.error);
                 console.error("Server error:", body.error);
@@ -74,6 +83,19 @@ class Server {
 
 
         return true;
+    }
+
+    async createUnit(guid: string, x: number, y: number, type: string): Promise<
+        | { result: 'ok'; data: unknown }
+        | { result: 'error'; error: string; code?: number }
+        | null
+    > {
+        return this.request(
+            'unit/create',
+            { guid, x: String(x), y: String(y) },
+            { type },
+            { passThroughAnswerErrors: true }
+        );
     }
 }
 

@@ -7,15 +7,26 @@ const {
     useGetGeneratedMapHandler,
     useUpdateUnitsHandler,
     useUpdateBuildingsHandler,
-    useGetLobbiesHandler,
+
+    useCreateLobbyHandler,
     useJoinToLobbyHandler,
+    useLeaveLobbyHandler,
+    useDropFromLobbyHandler,
+    useStartGameHandler,
+    useGetLobbiesHandler,
+    useSetReadyHandler,
+
 } = require('./handlers');
 
 function Router(mediator, answer, common) {
     // ============ LOBBY ROUTES ============
-    router.get('/getLobbies/:guid', useGetLobbiesHandler(mediator, answer, common));
-
+    router.post('/getLobbies', useGetLobbiesHandler(mediator, answer, common));
+    router.post('/createLobby', useCreateLobbyHandler(mediator, answer, common));
     router.post('/joinToLobby', useJoinToLobbyHandler(mediator, answer, common));
+    router.post('/leaveLobby', useLeaveLobbyHandler(mediator, answer, common));
+    router.post('/dropFromLobby', useDropFromLobbyHandler(mediator, answer, common));
+    router.post('/startGame', useStartGameHandler(mediator, answer, common));
+    router.post('/setReady', useSetReadyHandler(mediator, answer, common));
 
     // ============ MAP ROUTES ============
     // для http методов из MapManager

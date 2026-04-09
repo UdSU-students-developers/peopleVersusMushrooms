@@ -14,18 +14,29 @@ class CONFIG {
         MUSHROOM_ARMY: 'mushroomArmy',
     }
 
+    static URL = {
+        PEOPLE_ECONOMY: 'http://localhost:3009',
+        PEOPLE_ARMY: 'http://localhost:3007',
+        MUSHROOM_ECONOMY: 'http://localhost:3005',
+        MUSHROOM_ARMY: 'http://localhost:3003',
+    }
+
     //events
     static EVENTS = {
-        LOGOUT: 'LOGOUT',
-        START_GAME: 'START_GAME',
+        CREATE_LOBBY: 'CREATE_LOBBY',
         JOIN_TO_LOBBY: 'JOIN_TO_LOBBY',
+        LEAVE_LOBBY: 'LEAVE_LOBBY',
+        DROP_FROM_LOBBY: 'DROP_FROM_LOBBY',
+        START_GAME: 'START_GAME',
+        GET_LOBBIES: 'GET_LOBBIES',
+        SET_READY: 'SET_READY',
+        LOGOUT: 'LOGOUT',
     }
 
     static TRIGGERS = {
         //triggers
         GET_USER_BY_GUID: 'GET_USER_BY_GUID',
         IS_GUID_IN_ANY_LOBBY: 'IS_GUID_IN_ANY_LOBBY',
-        GET_LOBBIES: 'GET_LOBBIES',
         //handlers
         GET_RELIEF_HANDLER: 'GET_RELIEF_HANDLER',
         GET_VISIBILITY_HANDLER: 'GET_VISIBILITY_HANDLER',

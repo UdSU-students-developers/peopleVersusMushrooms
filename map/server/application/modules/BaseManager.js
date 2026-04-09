@@ -35,12 +35,28 @@ class BaseManager {
         }
     }
 
-    async sendToAll(urlPart, data=null) {
-        //сообщить всем сервисам, что игра началась и сообщить guid карты
-        await this.send(`http://localhost:3009${urlPart}`, data);
-        await this.send(`http://localhost:3007${urlPart}`, data);
-        await this.send(`http://localhost:3005${urlPart}`, data);
-        await this.send(`http://localhost:3003${urlPart}`, data);
+    sendToPeopleEconomy(urlPart, data=null) {
+        this.send(`${CONFIG.URL.PEOPLE_ECONOMY}${urlPart}`, data);
+    }
+
+    sendToPeopleArmy(urlPart, data=null) {
+        this.send(`${CONFIG.URL.PEOPLE_ARMY}${urlPart}`, data);
+    }
+
+    sendToMushroomsEconomy(urlPart, data=null) {
+        this.send(`${CONFIG.URL.MUSHROOM_ECONOMY}${urlPart}`, data);
+    }
+
+    sendToMushroomsArmy(urlPart, data=null) {
+        this.send(`${CONFIG.URL.MUSHROOM_ARMY}${urlPart}`, data);
+    }
+
+
+    sendToAll(urlPart, data=null) {
+        this.sendToPeopleEconomy(urlPart, data);
+        this.sendToPeopleArmy(urlPart, data);
+        this.sendToMushroomsEconomy(urlPart, data);
+        this.sendToMushroomsArmy(urlPart, data);
     }
 }
 

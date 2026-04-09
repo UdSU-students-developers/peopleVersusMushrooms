@@ -1,5 +1,4 @@
 const { LOBBY_MAX_SIZE } = require("../../../config");
-const Player = require("./Player");
 
 class Lobby {
     constructor({ lobbyGuid, lobbyName, role = 'spectator' }) {

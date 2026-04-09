@@ -9,6 +9,10 @@ class DB {
         this.orm = new ORM(this.db);
     }
 
+    async getBuildingTypes(){
+        return await this.orm.all('buildings');
+    }
+
     async getUserByName(name) {
         return await this.orm.get('users', { name });
     }

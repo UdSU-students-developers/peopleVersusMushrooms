@@ -33,6 +33,11 @@ class Economy {
         /* УДОЛИ МЕНЯ */
         this.addMycelium(25, 25);
         this.addSmallReactor(24, 25);
+
+        //чтобы каждый раз не запрашивать у бд
+        this.buildingsTypes = this.db.getBuildingTypes();
+        this.myceliumParams = this.buildingsTypes.find(building => building.type === 'mycelium');
+        this.smallReactorParams = this.buildingsTypes.find(building => building.type === 'small_reactor');
         /**************/
 
         // start game proccess
@@ -62,10 +67,10 @@ class Economy {
     addSmallReactor(x, y) {
         const reactorGuid = this.common.guid();
         this.buildings.push(new SmallReactor({
-            type: CONFIG.ECONOMY.BIO_REACTOR_SMALL.TYPE,
             guid: reactorGuid,
             x,
             y,
+            params: this.smallReactorParams,
         }));
     }
 
@@ -74,6 +79,7 @@ class Economy {
             x,
             y,
             guid: this.common.guid(),
+            params: this.myceliumParams,
             callbacks: {},
         }));
     }

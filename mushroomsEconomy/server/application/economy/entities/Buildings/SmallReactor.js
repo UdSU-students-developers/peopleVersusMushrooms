@@ -1,12 +1,15 @@
 const Building = require("./Building");
 const CONFIG = require("../../../../config");
 
-const { HP, SIZE, CONSUMPTION, PRODUCTION, CAPACITY } = CONFIG.ECONOMY.BIO_REACTOR_SMALL;
-
 class SmallReactor extends Building {
-    constructor({ type, guid, x, y, callbacks = {} }) {
-        super({ type, guid, x, y, callbacks, hp: HP, size: SIZE, consumption: CONSUMPTION, production: PRODUCTION, capacity: CAPACITY });
-
+    constructor(props) {
+        super(props);
+        const { params, x, y } = props;
+        this.type = params.type;
+        this.size = params.size;
+        this.capacity = params.capacity;
+        this.x = x;
+        this.y = y;
         this.energy = 0;
     }
 
@@ -35,13 +38,13 @@ class SmallReactor extends Building {
 
     consumeMycelium(mycelium) {
         const consumableList = this.getConsumable(mycelium);
-        
+
         for (const mc of consumableList) {
             const energyGain = mc.getPower();
             this.energy = Math.min(this.energy + energyGain, this.capacity);
             mc.consume();
         }
-        
+
         return consumableList.length;
     }
 }

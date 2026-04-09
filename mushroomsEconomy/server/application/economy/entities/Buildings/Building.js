@@ -1,17 +1,17 @@
 class Building {
-    constructor({type, guid, x, y, callbacks = {}, hp = null, size = null, consumption = null, production = null, capacity = null}) {
+    constructor({params, guid, x, y, callbacks = {}}) {
         this.x = x;
         this.y = y;
-        this.type = type;
+        this.type = params.type;
         this.guid = guid;
         this.callbacks = callbacks;
 
         // ОБЯЗАТЕЛЬНО заполнить по типу здания!!!
-        this.hp = hp;
-        this.size = size;
-        this.consumption = consumption; // энергопотребление за единицу времени
-        this.production = production; // сколько производит за единицу времени
-        this.capacity = capacity; // емкость внутреннего хранилища
+        this.hp = params.hp;
+        this.size = params.size;
+        this.consumption = params.consumption; // энергопотребление за единицу времени
+        this.production = params.production; // сколько производит за единицу времени
+        this.capacity = params.capacity; // емкость внутреннего хранилища
     }
 
     get() {

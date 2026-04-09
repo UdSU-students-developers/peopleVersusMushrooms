@@ -64,6 +64,11 @@ const CONFIG = {
         WORKER: {
             HP: 1,
             SPEED: 1,
+        },
+        LARVA: {
+            HP: 40,
+            SPEED: 1,
+            WANDER_RADIUS: 4, //радиус блуждания личинки
         }
     }
 };

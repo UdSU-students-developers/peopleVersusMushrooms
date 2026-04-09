@@ -39,9 +39,12 @@ class Economy {
         this.addLarva(26, 26, 24, 25);
 
         //чтобы каждый раз не запрашивать у бд
-        this.buildingsTypes = this.db.getBuildingTypes();
-        this.myceliumParams = this.buildingsTypes.find(building => building.type === 'mycelium');
-        this.smallReactorParams = this.buildingsTypes.find(building => building.type === 'small_reactor');
+        this.buildingTypes = this.db.getBuildingTypes();
+        this.myceliumParams = this.buildingTypes.find(building => building.type === 'mycelium');
+        this.smallReactorParams = this.buildingTypes.find(building => building.type === 'small_reactor');
+
+        this.unitTypes = this.db.getUnitTypes();
+        this.larvaeParams = this.unitTypes.find(unit => unit.type === 'larvae');
         /**************/
 
         // start game proccess
@@ -65,7 +68,8 @@ class Economy {
             homeY: homeY,
             guid: larvaGuid,
             map: this.map,
-            easystar: this.easyStar
+            easystar: this.easyStar,
+            params: this.larvaeParams
         }));
     }
 

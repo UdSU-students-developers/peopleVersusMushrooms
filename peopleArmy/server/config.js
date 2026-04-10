@@ -9,6 +9,7 @@ const CONFIG = {
     MEDIATOR: {
         EVENTS: {
             START_GAME: 'START_GAME',
+            USER_DISCONNECT: 'USER_DISCONNECT',
         },
         TRIGGERS: {
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',

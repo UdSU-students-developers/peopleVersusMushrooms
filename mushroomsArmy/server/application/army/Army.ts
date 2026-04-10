@@ -131,8 +131,18 @@ export class Army {
             }
         }
 
-        this.buildings = this.buildings.filter(b => b.isAlive);
-        this.buildings.forEach(b => b.update(this.enemyUnits, this.map, deltaTime));
+        // Тикаем все здания — включая мёртвые взрывоморы, ожидающие respawn
+        for (const building of this.buildings) {
+            building.update(this.enemyUnits, this.map, deltaTime);
+        }
+
+        // Удаляем только те здания, что мертвы И не ждут respawn
+        this.buildings = this.buildings.filter(b => {
+            if (b.type === 'vzryvomor') {
+                return b.isAlive || (b as Vzryvomor).respawn.inProgress;
+            }
+            return b.isAlive;
+        });
         
         this.units = this.units.filter(unit => {
             if (unit.type === 'champigneb' && !unit.isAlive) {

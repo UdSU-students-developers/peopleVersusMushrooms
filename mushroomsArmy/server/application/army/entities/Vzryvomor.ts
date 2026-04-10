@@ -60,7 +60,7 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
     public y: number;
     public attackRange: number;
     public isAlive: boolean;
-    private respawn: Respawn = { inProgress: false, respawnIn: 0};
+    public respawn: Respawn = { inProgress: false, respawnIn: 0};
     private elapsedFromLastDecision: number = 0;
     private DECISION_INTERVAL = 500;
 

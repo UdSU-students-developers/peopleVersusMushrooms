@@ -6,6 +6,6 @@ export default class Incubator {
 
     constructor(guid: string, coords: TPoint) {
         this.coords = coords;
-        this.sprite = [9];
+        this.sprite = [8];
     }
 }

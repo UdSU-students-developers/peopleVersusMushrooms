@@ -47,7 +47,6 @@ class Incubator extends Building {
         ];
 
         const map = this.callbacks.getMap();
-        const mycelium = this.callbacks.getMycelium();
         const n = map.length;
         const m = map[0]?.length ?? 0;
 
@@ -56,8 +55,7 @@ class Incubator extends Building {
             .filter(({ x: nx, y: ny }) =>
                 nx >= 0 && nx < m &&
                 ny >= 0 && ny < n &&
-                map[ny][nx] === 0 &&
-                !mycelium.some(mc => mc.x === nx && mc.y === ny)
+                map[ny][nx] === 0
             );
     }
 

@@ -141,6 +141,8 @@ export class Army {
             bashnya.update(this.enemyUnits, deltaTime);
         }
 
+        this.sporovyeBashni = this.sporovyeBashni.filter(b => b.isAlive);
+
 
         this.units = this.units.filter(unit => {
             if (unit.type === 'champigneb' && !unit.isAlive) {
@@ -158,7 +160,7 @@ export class Army {
             units: this.units.map(u => u.getState()),
             buildings: [
                 ...this.buildings.filter(building => building.type !== 'sporovaya_bashnya'),
-                ...this.sporovyeBashni.map(bashnya => bashnya.getState())
+                ...this.sporovyeBashni.filter(b => b.isAlive).map(bashnya => bashnya.getState())
             ],
             slimePuddles: this.units
                 .filter(u => u.type === 'champigneb' && !u.isAlive)

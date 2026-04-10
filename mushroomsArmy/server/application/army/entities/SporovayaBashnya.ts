@@ -19,6 +19,7 @@ class SporovayaBashnya {
      public readonly sizeX: number = 2;
     public readonly sizeY: number = 2;
 
+    public isAlive: boolean = true;
     private readonly attackRange: number = 20;
     private readonly attackCooldown: number = 2;
     private readonly attackDamage: number = 50;
@@ -34,6 +35,8 @@ class SporovayaBashnya {
     }
 
     public update(enemies: Unit[], deltaTime: number): void {
+        if (!this.isAlive) return;
+
         this.attackTimer += deltaTime;
         if (this.attackTimer < this.attackCooldown) return;
 
@@ -57,6 +60,15 @@ class SporovayaBashnya {
 
         if (nearestEnemy) {
             nearestEnemy.takeDamage(this.attackDamage, 'physical');
+        }
+    }
+
+    public takeDamage(amount: number): void {
+        if (!this.isAlive) return;
+        this.hp -= amount;
+        if (this.hp <= 0) {
+            this.hp = 0;
+            this.isAlive = false;
         }
     }
 

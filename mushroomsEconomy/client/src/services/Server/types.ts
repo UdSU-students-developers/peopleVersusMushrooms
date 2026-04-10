@@ -34,6 +34,7 @@ export type TSmallReactor = {
     guid: string;
     coords: TPoint;
     type: "small_reactor";
+    consumed: boolean;
 }
 
 export type TLarva = {

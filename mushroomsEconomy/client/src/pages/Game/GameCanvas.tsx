@@ -83,6 +83,18 @@ const GameCanvas: React.FC = () => {
                 sx, sy, sSize, sSize,
                 canvas.xs(sr.coords.x * tileWorldSize), canvas.ys(sr.coords.y * tileWorldSize), tileSizePx, tileSizePx
             );
+
+            if (sr.consumed) {
+                const [animX, animY, animSize] = getSprite(9); // спрайт анимации
+                canvas.contextV.drawImage(
+                    spritesImage,
+                    animX, animY, animSize, animSize,
+                    canvas.xs(sr.coords.x * tileWorldSize), 
+                    canvas.ys(sr.coords.y * tileWorldSize), 
+                    tileSizePx, 
+                    tileSizePx
+                );
+            }
         }
     };
 

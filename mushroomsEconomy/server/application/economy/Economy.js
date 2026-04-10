@@ -151,7 +151,6 @@ class Economy {
             .reduce((sum, reactor) => sum + reactor.energy, 0);
     }
 
-    // Исправить метод
     consumeEnergyFromReactors(amount) {
         let remainingAmount = amount;
         const reactors = this.buildings.filter(b => b instanceof SmallReactor);

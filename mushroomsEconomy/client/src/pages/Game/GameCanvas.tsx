@@ -90,7 +90,7 @@ const GameCanvas: React.FC = () => {
                     spritesImage,
                     animX, animY, animSize, animSize,
                     canvas.xs(sr.coords.x * tileWorldSize), 
-                    canvas.ys(sr.coords.y * tileWorldSize), 
+                    canvas.ys(sr.coords.y * tileWorldSize - 15), 
                     tileSizePx, 
                     tileSizePx
                 );

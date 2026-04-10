@@ -8,7 +8,7 @@ class SmallReactor extends Building {
         super({ type, guid, x, y, callbacks, hp: HP, size: SIZE, consumption: CONSUMPTION, production: PRODUCTION, capacity: CAPACITY });
 
         this.energy = 0;
-        this.lastConsumed = false;
+        this.consumed = false;
     }
 
     get() {
@@ -16,7 +16,7 @@ class SmallReactor extends Building {
             ...super.get(),
             energy: this.energy,
             type: this.type,
-            consumed: this.lastConsumed,
+            consumed: this.consumed,
         };
     }
 
@@ -38,6 +38,12 @@ class SmallReactor extends Building {
     consumeMycelium(mycelium) {
         const consumableList = this.getConsumable(mycelium);
         
+        if (consumableList.length > 0) {
+            this.consumed = true;
+        } else {
+            this.consumed = false;
+        }
+
         for (const mc of consumableList) {
             const energyGain = mc.getPower();
             this.energy = Math.min(this.energy + energyGain, this.capacity);
@@ -49,8 +55,8 @@ class SmallReactor extends Building {
 
     consumeMushroom(mycelium) {
         const consumed = this.consumeMycelium(mycelium);
-        this.lastConsumed = consumed > 0;
-        return this.lastConsumed;
+        this.consumed = consumed > 0;
+        return this.consumed;
     }
 }
 

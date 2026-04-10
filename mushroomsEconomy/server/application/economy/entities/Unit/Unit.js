@@ -25,6 +25,7 @@ class Unit {
         return {
             x: this.x,
             y: this.y,
+            coords: {x: this.x, y: this.y },
             hp: this.hp,
             speed: this.speed,
             guid: this.guid
@@ -104,8 +105,6 @@ class Unit {
 
         this.target = corrected;
         this.pathRequested = true;
-
-        if (this.easystar.setGrid) this.easystar.setGrid(this.map);
 
         this.easystar.findPath(this.x, this.y, this.target.x, this.target.y, (path) => {
             if (path) {

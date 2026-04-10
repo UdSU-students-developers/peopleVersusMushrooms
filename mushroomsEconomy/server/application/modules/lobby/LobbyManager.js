@@ -1,5 +1,6 @@
 const CONFIG = require('../../../config');
 const BaseManager = require('../BaseManager');
+const Map = require('../map/Map');
 
 const { SOCKET } = CONFIG;
 

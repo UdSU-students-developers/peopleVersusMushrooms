@@ -20,7 +20,7 @@ export default class Mushroom {
             case 3: 
                 return [6];
             default:
-                console.log("Спрайт не определён, уровень гриьба ", level);
+                console.log("Спрайт не определён, уровень гриба ", level);
                 return [7];
         }
     }

@@ -4,6 +4,7 @@ const CONFIG = require('../../config');
 const Mycelium = require('./entities/Buildings/Mycelium');
 const SmallReactor = require('./entities/Buildings/SmallReactor');
 const Incubator = require('./entities/Buildings/Incubator');
+const Larva = require('./entities/Unit/Larva')
 
 const { INTERVAL } = CONFIG.ECONOMY;
 
@@ -16,6 +17,8 @@ class Economy {
         guid
     }) {
         this.easyStar = new EasyStar.js();
+        this.easyStar.setGrid(map);
+        this.easyStar.setAcceptableTiles([0]);
         this.guid = guid; // совпадает с guid игрока
         this.db = db;
         this.common = common;
@@ -34,6 +37,7 @@ class Economy {
         /* УДОЛИ МЕНЯ */
         this.addMycelium(25, 25);
         this.addSmallReactor(24, 25);
+        this.addLarva(26, 26, 24, 25);
         /**************/
 
         // start game proccess
@@ -48,12 +52,26 @@ class Economy {
         }
     }
 
+    addLarva(x, y, homeX, homeY) {
+        const larvaGuid = this.common.guid();
+        this.larvae.push(new Larva({
+            x: x,
+            y: y,
+            homeX: homeX,
+            homeY: homeY,
+            guid: larvaGuid,
+            map: this.map,
+            easystar: this.easyStar
+        }));
+    }
+
     get() {
         return {
             guid: this.guid,
             mushrooms: this.mycelium.map(m => m.get()),
             buildings: Object.values(this.buildings).map(b => b.get()),
             map: this.map,
+            larvae: this.larvae.map(l => l.get()),
         }
     }
 
@@ -172,6 +190,7 @@ class Economy {
         /* про грибницу */
         // 1. вырасти грибочки
         this.mycelium.forEach(mycelium => this.myceliumGrow(mycelium));
+        this.updateLarvae();
         // 2. расширить грибницу при возможности
         this.mycelium.forEach(mycelium => this.myceliumExtend(mycelium));
         // 3. реакторы потребляют мицелий
@@ -191,6 +210,10 @@ class Economy {
             this.updated = false;
             this.callbacks.updated(this.get());
         }
+    }
+
+    updateLarvae() {
+        this.larvae.forEach(larva => larva.update());
     }
 }
 

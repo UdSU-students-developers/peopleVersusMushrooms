@@ -72,9 +72,20 @@ class ArmyManager extends BaseManager {
             return;
         }
 
-        const { units, slimePuddles } = armyState;
+        const { units, slimePuddles, buildings } = armyState;
 
-        await this.sendToMap('/updateMushroomArmy', army.mapGuid, army.guid, { units, slimePuddles });
+        console.log(`[ArmyManager] Отправка на карту: ${buildings.length} зданий, ${units.length} юнитов`);
+
+        // Отправляем юниты и здания на отдельные эндпоинты карты
+        await this.send<{ mapGuid: string; userGuid: string; units: any[] }>(
+            `${CONFIG.SERVICES.MAP_URL}/updateUnitsHandler`,
+            { mapGuid: army.mapGuid, userGuid: army.guid, units }
+        );
+
+        await this.send<{ mapGuid: string; userGuid: string; buildings: any[] }>(
+            `${CONFIG.SERVICES.MAP_URL}/updateBuildingsHandler`,
+            { mapGuid: army.mapGuid, userGuid: army.guid, buildings }
+        );
 
         const visibility = await this.sendToMap<null, TVisibilityResponse>(
             '/getVisibility', army.mapGuid, army.guid

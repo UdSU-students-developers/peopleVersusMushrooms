@@ -50,12 +50,30 @@ export class Army {
         this.units.push(new Champigneb({ guid: common.guid(), type: 'champigneb', x: 5, y: 5, hp: 50, maxHp: 50, speed: 1, attackRange: 5 }));
         this.units.push(new Champigneb({ guid: common.guid(), type: 'champigneb', x: 15, y: 15, hp: 50, maxHp: 50, speed: 1, attackRange: 5 }));
         
-        this.buildings.push(new Vzryvomor({ guid: common.guid(), x: 20, y: 22, hp: 50, maxHp: 50, attackRange: 5 }));
-        this.buildings.push(new Vzryvomor({ guid: common.guid(), x: 40, y: 42, hp: 80, maxHp: 100, attackRange: 10 }));
+        // Создание своих зданий из initialBuildings
+        for (const building of initialBuildings) {
+            if (building.type === 'sporovaya_bashnya') {
+                this.buildings.push(new SporovayaBashnya({
+                    guid: building.guid,
+                    type: building.type,
+                    x: building.x,
+                    y: building.y,
+                    hp: building.hp,
+                    maxHp: building.maxHp
+                }));
+            } else if (building.type === 'vzryvomor') {
+                this.buildings.push(new Vzryvomor({
+                    guid: building.guid,
+                    x: building.x,
+                    y: building.y,
+                    hp: building.hp,
+                    maxHp: building.maxHp,
+                    attackRange: building.attackRange || 5
+                }));
+            }
+        }
         
-        this.buildings.push(new SporovayaBashnya({ guid: common.guid(), type: 'sporovaya_bashnya', x: 20, y: 22, hp: 50, maxHp: 50 }));
-        this.buildings.push(new SporovayaBashnya({ guid: common.guid(), type: 'sporovaya_bashnya', x: 40, y: 42, hp: 80, maxHp: 100 }));
-        
+        console.log(`[Army] Создано ${this.buildings.length} зданий: ${this.buildings.map(b => b.type).join(', ')}`);
 
         // Создаём прокси-юниты только из ВРАЖЕСКИХ зданий (не наших)
         const enemyBuildings = initialBuildings.filter(b => b.type !== 'sporovaya_bashnya' && b.type !== 'vzryvomor');

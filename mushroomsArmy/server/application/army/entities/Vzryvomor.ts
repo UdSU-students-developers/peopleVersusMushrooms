@@ -28,6 +28,7 @@ interface Respawn {
 
 interface VzryvomorState {
     guid: string;
+    type: string;
     hp: number;
     maxHp: number;
     x: number;
@@ -148,6 +149,7 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
     getState(): VzryvomorState {
         return {
             guid: this.guid,
+            type: this.type,
             x: this.x,
             y: this.y,
             hp: this.hp,

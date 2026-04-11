@@ -11,13 +11,11 @@ interface Config {
         MAP_URL: string;
         PEOPLE_ARMY_URL: string;
         PEOPLE_ECONOMY_URL: string;
+        MUSHROOMS_ECONOMY_URL: string;
     };
     MEDIATOR: {
         EVENTS: {
             START_GAME: string;
-            ARMY_UPDATE: string;
-            UNIT_DIED: string;
-            UNIT_EXPLODED: string;
         };
         TRIGGERS: {
             GET_USER_BY_GUID: string;
@@ -51,14 +49,12 @@ const CONFIG: Config = {
         MAP_URL: 'http://localhost:3001',
         PEOPLE_ARMY_URL: 'http://localhost:3007',
         PEOPLE_ECONOMY_URL: 'http://localhost:3009',
+        MUSHROOMS_ECONOMY_URL: 'http://localhost:3005',
     },
 
     MEDIATOR: {
         EVENTS: {
             START_GAME: 'START_GAME',
-            ARMY_UPDATE: 'ARMY_UPDATE',
-            UNIT_DIED: 'UNIT_DIED',
-            UNIT_EXPLODED: 'UNIT_EXPLODED'
         },
         TRIGGERS: {
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',

@@ -65,9 +65,10 @@ class SporovayaBashnya implements IBuilding<any> {
         }
     }
 
-    public takeDamage(amount: number): void {
+    public takeDamage(amount: number, type: string = 'physical'): void {
         if (!this.isAlive) return;
-        this.hp -= amount;
+        const finalAmount = Math.max(0, amount);
+        this.hp -= finalAmount;
         if (this.hp <= 0) {
             this.hp = 0;
             this.isAlive = false;

@@ -43,14 +43,27 @@ class ArmyManager extends BaseManager {
         const army = this.army[armyGuid];
         if (!army) return false;
 
+        const sanitizedAmount = Math.max(0, amount);
+
+        // Ищем цель среди юнитов
         const unit = army.units.find(u => u.guid === unitGuid);
-        if (!unit) return false;
+        if (unit) {
+            unit.takeDamage(sanitizedAmount, type);
+            this.sendToMushroomsEconomy('/takeDamage', { armyGuid, unitGuid, amount: sanitizedAmount, type });
+            return true;
+        }
 
-        unit.takeDamage(amount, type);
+        // Ищем цель среди зданий
+        const building = army.buildings.find(b => b.guid === unitGuid);
+        if (building) {
+            if ('takeDamage' in building && typeof building.takeDamage === 'function') {
+                building.takeDamage(sanitizedAmount, type);
+            }
+            this.sendToMushroomsEconomy('/takeDamage', { armyGuid, unitGuid, amount: sanitizedAmount, type });
+            return true;
+        }
 
-        this.sendToMushroomsEconomy('/takeDamage', { armyGuid, unitGuid, amount, type });
-
-        return true;
+        return false;
     }
 
     private async updateArmyCallback(guid: string, armyState: TArmyState) {
@@ -67,7 +80,7 @@ class ArmyManager extends BaseManager {
         }
         
         if (army && army.buildings.length === 0) {
-            this.io.to(user.socketId).emit(GAME_OVER, this.answer.good({ message: 'пососали' }));
+            this.io.to(user.socketId).emit(GAME_OVER, this.answer.good({ message: 'Все здания разрушены' }));
             this.destroyArmy(guid);
             return;
         }

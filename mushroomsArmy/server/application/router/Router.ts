@@ -27,6 +27,11 @@ function Router({ answer, mediator }: TRouterOptions): ExpressRouter {
             return;
         }
 
+        if (typeof amount !== 'number' || amount < 0 || !isFinite(amount)) {
+            res.json(answer.bad(13));
+            return;
+        }
+
         const TAKE_DAMAGE = CONFIG.MEDIATOR.TRIGGERS.TAKE_DAMAGE_HANDLER;
         const result = mediator.get<boolean, { armyGuid: string; unitGuid: string; amount: number; type: string }>(
             TAKE_DAMAGE,

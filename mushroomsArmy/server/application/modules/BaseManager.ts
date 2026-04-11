@@ -128,7 +128,7 @@ class BaseManager {
         urlPath: string,
         data: T | null = null
     ): Promise<K | null> {
-        return this.send(`${CONFIG.SERVICES.PEOPLE_ECONOMY_URL}${urlPath}`, data);
+        return this.send(`${CONFIG.SERVICES.MUSHROOMS_ECONOMY_URL}${urlPath}`, data);
     }
 }
 

@@ -44,11 +44,11 @@ export class Army {
     }
 
     private create(common: Common, initialBuildings: any[] = []) {
-        this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 0, y: 0, hp: 100, maxHp: 100, speed: 1, attackRange: 10 }));
-        this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 10, y: 10, hp: 100, maxHp: 100, speed: 1, attackRange: 10 }));
-        this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 20, y: 20, hp: 100, maxHp: 100, speed: 1, attackRange: 10 }));
-        this.units.push(new Champigneb({ guid: common.guid(), type: 'champigneb', x: 5, y: 5, hp: 50, maxHp: 50, speed: 1, attackRange: 5 }));
-        this.units.push(new Champigneb({ guid: common.guid(), type: 'champigneb', x: 15, y: 15, hp: 50, maxHp: 50, speed: 1, attackRange: 5 }));
+        this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 0, y: 0, hp: 30, maxHp: 30, speed: 2, attackRange: 16 }));
+        this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 10, y: 10, hp: 30, maxHp: 30, speed: 2, attackRange: 16 }));
+        this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 20, y: 20, hp: 30, maxHp: 30, speed: 2, attackRange: 16 }));
+        this.units.push(new Champigneb({ guid: common.guid(), type: 'champigneb', x: 5, y: 5, hp: 50, maxHp: 50, speed: 4, attackRange: 6 }));
+        this.units.push(new Champigneb({ guid: common.guid(), type: 'champigneb', x: 15, y: 15, hp: 50, maxHp: 50, speed: 4, attackRange: 6 }));
         
         // Создание своих зданий из initialBuildings
         for (const building of initialBuildings) {
@@ -138,6 +138,29 @@ export class Army {
         
     }
 
+    /** Наносит урон вражеским юнитам, находящимся в лужах слизи (5 damage/sec) */
+    private applySlimePuddleDamage(deltaTime: number): void {
+        const SLIME_DAMAGE_PER_SECOND = 5;
+        const activePuddles = this.units
+            .filter(u => u.type === 'champigneb' && !u.isAlive && (u as Champigneb).slimePuddle.ttl > 0)
+            .map(u => (u as Champigneb).slimePuddle);
+
+        if (activePuddles.length === 0) return;
+
+        for (const enemy of this.enemyUnits) {
+            if (!enemy.isAlive) continue;
+            for (const puddle of activePuddles) {
+                const dx = enemy.x - puddle.x;
+                const dy = enemy.y - puddle.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance <= puddle.radius) {
+                    enemy.takeDamage(SLIME_DAMAGE_PER_SECOND * deltaTime, 'poison');
+                    break; // Не стакаем урон от нескольких луж за один тик
+                }
+            }
+        }
+    }
+
     private update(): void {
         const deltaTime = 0.2;
 
@@ -148,6 +171,9 @@ export class Army {
                 (unit as Champigneb).slimePuddle.ttl -= deltaTime;
             }
         }
+
+        // Урон от луж слизи по вражеским юнитам
+        this.applySlimePuddleDamage(deltaTime);
 
         // Тикаем все здания — включая мёртвые взрывоморы, ожидающие respawn
         for (const building of this.buildings) {

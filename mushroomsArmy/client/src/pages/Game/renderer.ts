@@ -37,6 +37,9 @@ export function drawGame(
     }
   }
 
+  // 1.5. Сетка
+  drawGrid(ctx, widthCSS, heightCSS, cellW, cellH);
+
   // 2. Отрисовка луж слизи (полупрозрачные, под юнитами)
   state.slimePuddles.forEach(puddle => {
     const cx = puddle.x * cellW + cellW / 2;

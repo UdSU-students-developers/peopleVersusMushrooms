@@ -2,12 +2,12 @@ import { TMap } from "../Army";
 import Unit, { TPoisonEffect, TUnitOptions } from "./Units";
 
 class Sporomet extends Unit {
-    public retreatRange: number = 4;
+    public retreatRange: number = 8;
     public cooldown: number = 2;
     public aimTime: number = 0.5;
-    public attackDamage: number = 5;
+    public attackDamage: number = 10;
     public poisonDuration: number = 10;
-    public poisonDamagePerSecond: number = 5;
+    public poisonDamagePerSecond: number = 10;
     
     private lastShotTime: number = 0;
     private isAiming: boolean = false;
@@ -19,7 +19,7 @@ class Sporomet extends Unit {
         this.hp = 30;
         this.maxHp = 30;
         this.speed = 2;
-        this.attackRange = 8;
+        this.attackRange = 16;
         this.lastShotTime = -this.cooldown;
     }
 
@@ -67,7 +67,14 @@ class Sporomet extends Unit {
     protected onEnemyFound(enemy: Unit, distance: number): void {
         const currentTime = Date.now() / 1000;
         
+        // Если текущая цель мертва — сбрасываем прицел
+        if (this.currentTarget && !this.currentTarget.isAlive) {
+            this.isAiming = false;
+            this.currentTarget = null;
+        }
+        
         if (distance < this.retreatRange) {
+            // Слишком близко — отступаем
             this.isAiming = false;
             this.currentTarget = null;
             
@@ -80,22 +87,37 @@ class Sporomet extends Unit {
                 this.targetY = this.y + (dy / norm) * 5;
             }
         }
-        else if (distance >= this.retreatRange && distance <= this.attackRange) {
-            this.targetX = this.x;
-            this.targetY = this.y;
+        else if (distance <= this.attackRange) {
+            // В зоне атаки — встаём и стреляем
+            // Оптимальная дистанция: середина между retreat и attack range
+            const optimalDistance = (this.retreatRange + this.attackRange) / 2;
             
+            if (distance < optimalDistance - 0.5) {
+                // Чуть отходим назад к оптимальной дистанции
+                const dx = this.x - enemy.x;
+                const dy = this.y - enemy.y;
+                const norm = Math.sqrt(dx * dx + dy * dy);
+                if (norm > 0.01) {
+                    this.targetX = this.x + (dx / norm) * 1;
+                    this.targetY = this.y + (dy / norm) * 1;
+                }
+            } else {
+                // Стоим на месте
+                this.targetX = this.x;
+                this.targetY = this.y;
+            }
+            
+            // Пытаемся целиться и стрелять
             if (currentTime - this.lastShotTime >= this.cooldown) {
                 if (!this.isAiming || this.currentTarget !== enemy) {
                     this.isAiming = true;
                     this.aimStartTime = currentTime;
                     this.currentTarget = enemy;
                 }
-            } else {
-                this.isAiming = false;
-                this.currentTarget = null;
             }
         }
-        else if (distance > this.attackRange) {
+        else {
+            // Далеко — приближаемся
             this.isAiming = false;
             this.currentTarget = null;
             this.targetX = enemy.x;
@@ -110,7 +132,26 @@ class Sporomet extends Unit {
         
         super.update(enemies, map, deltaTime);
         
-        if (this.isAiming && this.currentTarget && this.currentTarget.isAlive) {
+        if (this.isAiming && this.currentTarget) {
+            // Цель умерла — сброс
+            if (!this.currentTarget.isAlive) {
+                this.isAiming = false;
+                this.currentTarget = null;
+                return;
+            }
+
+            // Проверяем, что цель всё ещё в зоне атаки
+            const dx = this.currentTarget.x - this.x;
+            const dy = this.currentTarget.y - this.y;
+            const distToTarget = Math.sqrt(dx * dx + dy * dy);
+
+            if (distToTarget > this.attackRange) {
+                // Цель вышла за радиус — сброс прицела
+                this.isAiming = false;
+                this.currentTarget = null;
+                return;
+            }
+
             const currentTime = Date.now() / 1000;
             if (currentTime - this.aimStartTime >= this.aimTime) {
                 this.isAiming = false;
@@ -118,9 +159,6 @@ class Sporomet extends Unit {
                 this.lastShotTime = currentTime;
                 this.currentTarget = null;
             }
-        } else if (this.isAiming) {
-            this.isAiming = false;
-            this.currentTarget = null;
         }
     }
 

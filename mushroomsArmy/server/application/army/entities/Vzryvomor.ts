@@ -48,6 +48,7 @@ export interface IBuilding<T> {
     maxHp: number;
     isAlive: boolean;
     update: (enemies: Unit[], map: TMap, deltaTime: number) => void;
+    takeDamage: (amount: number, type: string) => void;
     getState: () => T;
 }
 
@@ -76,35 +77,44 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
     };
 
     update(enemies: Unit[], map: TMap, deltaTime: number): void {
-        if (!this.isAlive) return;
-
-        if (this.respawn.inProgress && this.respawn.respawnIn > 0) {
+        // Во время респауна тикаем таймер даже если isAlive=false
+        if (this.respawn.inProgress) {
             this.respawn.respawnIn -= deltaTime;
             this.elapsedFromLastDecision = 0;
-        }
-        else
-        {
-            this.respawn.inProgress = false; 
 
-            this.elapsedFromLastDecision += deltaTime;
-            
-            if (this.elapsedFromLastDecision >= this.DECISION_INTERVAL) {
-                this.elapsedFromLastDecision = 0;
-                this.makeDecision(enemies);
+            if (this.respawn.respawnIn <= 0) {
+                // Респаун завершён — восстанавливаем здание
+                this.respawn.inProgress = false;
+                this.respawn.respawnIn = 0;
+                this.isAlive = true;
+                this.hp = this.maxHp;
             }
+            return;
+        }
+
+        if (!this.isAlive) return;
+
+        this.elapsedFromLastDecision += deltaTime;
+        
+        if (this.elapsedFromLastDecision >= this.DECISION_INTERVAL) {
+            this.elapsedFromLastDecision = 0;
+            this.makeDecision(enemies);
         }
     }
 
     private makeDecision(enemies: Unit []) {
+        const TRIGGER_RADIUS = 6;
+        const EXPLOSION_DAMAGE = 100;
+
         const isNearToMe = (e: Unit) => {
             const p: Point = { x: e.x, y: e.y};
             const myPos = {x: this.x, y: this.y};
-            return distance (p, myPos) < 3;
+            return distance (p, myPos) < TRIGGER_RADIUS;
         }
         const isAlive = (e: Unit) => e.isAlive
         const isNotAlive = (e: Unit) => !e.isAlive
         const makeDamage = (e: Unit) => {
-            e.takeDamage(50, 'explosion')
+            e.takeDamage(EXPLOSION_DAMAGE, 'explosion')
             return e
         }
 
@@ -129,15 +139,18 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
     }
 
     private blow() {
+        this.isAlive = false;
         this.respawn = { inProgress: true, respawnIn: 5};
     }
 
     takeDamage(amount: number, type: string): void {
         if (!this.isAlive || this.respawn.inProgress) return;
 
-        this.hp -= amount;
+        const finalAmount = Math.max(0, amount);
+        this.hp -= finalAmount;
         
         if (this.hp <= 0) {
+            this.hp = 0;
             this.die();
         }
     }

@@ -87,13 +87,13 @@ class Unit {
         
         if (this.decisionAccumulator >= this.DECISION_INTERVAL) {
             this.decisionAccumulator = 0;
-            this.makeDecision(enemies);
+            this.makeDecision(enemies, map);
         }
         
         this.moveTo(this.targetX, this.targetY, map, deltaTime);
     }
     
-    private makeDecision(enemies: Unit[]): void {
+    private makeDecision(enemies: Unit[], map: TMap): void {
         let nearestEnemy: Unit | null = null;
         let nearestDistance: number = Infinity;
         
@@ -104,18 +104,73 @@ class Unit {
             const dy = enemy.y - this.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
-            if (distance < nearestDistance) {
+            if (distance < nearestDistance && this.hasLineOfSight(this.x, this.y, enemy.x, enemy.y, map)) {
                 nearestDistance = distance;
                 nearestEnemy = enemy;
             }
         }
         
+        // Нет видимого врага — ищем ближайшего без LoS (просто идём к нему через pathfinding)
+        if (!nearestEnemy) {
+            for (const enemy of enemies) {
+                if (!enemy.isAlive) continue;
+                const dx = enemy.x - this.x;
+                const dy = enemy.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestEnemy = enemy;
+                }
+            }
+        }
+
         if (nearestEnemy) {
             this.onEnemyFound(nearestEnemy, nearestDistance);
         } else {
+            // Нет врагов — двигаемся к центру карты
             this.targetX = 25;
             this.targetY = 25;
         }
+    }
+
+    /** Проверяет прямую видимость между двумя точками (Bresenham) */
+    protected hasLineOfSight(
+        fromX: number, fromY: number,
+        toX: number, toY: number,
+        map: TMap
+    ): boolean {
+        const x0 = Math.floor(fromX);
+        const y0 = Math.floor(fromY);
+        const x1 = Math.floor(toX);
+        const y1 = Math.floor(toY);
+
+        let dx = Math.abs(x1 - x0);
+        let dy = Math.abs(y1 - y0);
+        let sx = x0 < x1 ? 1 : -1;
+        let sy = y0 < y1 ? 1 : -1;
+        let err = dx - dy;
+
+        let cx = x0;
+        let cy = y0;
+
+        while (true) {
+            // Проверяем, что клетка в пределах карты и проходима
+            if (cx >= 0 && cy >= 0 && cy < map.length && cx < (map[0]?.length ?? 0)) {
+                const tile = map[cy][cx];
+                if (tile === null || tile === 1) {
+                    // Стена или вода блокируют обзор
+                    return false;
+                }
+            }
+
+            if (cx === x1 && cy === y1) break;
+
+            const e2 = 2 * err;
+            if (e2 > -dy) { err -= dy; cx += sx; }
+            if (e2 < dx) { err += dx; cy += sy; }
+        }
+
+        return true;
     }
 
     protected moveTo(targetX: number, targetY: number, map: TMap, deltaTime: number): void {
@@ -209,16 +264,19 @@ class Unit {
     takeDamage(amount: number, type: string): void {
         if (!this.isAlive) return;
 
+        const sanitizedAmount = Math.max(0, amount);
+
         // Огонь снимает яд с отравленного юнита
-        if (type === 'fire' && (this as any).poisonEffects) {
-            (this as any).poisonEffects = [];
+        if (type === 'fire') {
+            this.poisonEffects = [];
         }
 
-        const finalAmount = type === 'fire' ? amount * this.fireDamageMultiplier : amount;
+        const finalAmount = type === 'fire' ? sanitizedAmount * this.fireDamageMultiplier : sanitizedAmount;
 
         this.hp -= finalAmount;
         
         if (this.hp <= 0) {
+            this.hp = 0;
             this.die();
         }
     }

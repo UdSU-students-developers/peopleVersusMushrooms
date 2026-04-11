@@ -163,9 +163,9 @@ class UserManager extends BaseManager {
             { guid: this.common.guid(), type: 'tower', x: 38, y: 35, hp: 150, maxHp: 150 },
             { guid: this.common.guid(), type: 'sporovaya_bashnya', x: 20, y: 10, hp: 500, maxHp: 500, sizeX: 2, sizeY: 2 },
             { guid: this.common.guid(), type: 'sporovaya_bashnya', x: 20, y: 30, hp: 500, maxHp: 500, sizeX: 2, sizeY: 2 },
-            { guid: this.common.guid(), type: 'vzryvomor', x: 40, y: 10, hp: 500, maxHp: 500 },
-            { guid: this.common.guid(), type: 'vzryvomor', x: 30, y: 30, hp: 500, maxHp: 500 },
-            { guid: this.common.guid(), type: 'vzryvomor', x: 20, y: 40, hp: 500, maxHp: 500 },
+            { guid: this.common.guid(), type: 'vzryvomor', x: 40, y: 10, hp: 100, maxHp: 100 },
+            { guid: this.common.guid(), type: 'vzryvomor', x: 30, y: 30, hp: 100, maxHp: 100 },
+            { guid: this.common.guid(), type: 'vzryvomor', x: 20, y: 40, hp: 100, maxHp: 100 },
         ];
 
         const mapGuid = this.common.guid();

@@ -9,8 +9,8 @@ export type TSlimePuddle = {
 
 class Champigneb extends Unit {
 
-    public explosionRadius: number = 3;
-    public explosionDamage: number = 100;
+    public explosionRadius: number = 10;
+    public explosionDamage: number = 200;
     public slimeDuration: number = 10;
     public slimePuddle: TSlimePuddle = { x: 0, y: 0, radius: 0, ttl: 0 };
     public hasExploded: boolean = false;
@@ -39,7 +39,7 @@ class Champigneb extends Unit {
         this.slimePuddle = { 
             x: this.x,
             y: this.y,
-            radius: 3,
+            radius: this.explosionRadius,
             ttl: this.slimeDuration
         };
         
@@ -50,7 +50,7 @@ class Champigneb extends Unit {
     protected onEnemyFound(enemy: Unit, distance: number): void {
         this.targetX = enemy.x;
         this.targetY = enemy.y;
-        if (distance < this.explosionRadius) {
+        if (distance < 6) {
             this.explode();
         }
     }

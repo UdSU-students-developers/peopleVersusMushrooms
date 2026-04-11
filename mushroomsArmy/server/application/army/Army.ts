@@ -1,6 +1,7 @@
 import Common from "../modules/common/Common";
 import Champigneb, { TSlimePuddle } from "./entities/Champigneb";
 import Sporomet from "./entities/Sporomet";
+import SporovayaBashnya from "./entities/SporovayaBashnya";
 import Unit, { TUnitState } from "./entities/Units";
 
 export type TMap = (number | null)[][];
@@ -12,6 +13,8 @@ export type TBuilding = {
     y: number;
     hp: number;
     maxHp: number;
+    sizeX?: number;
+    sizeY?: number;
 };
 
 export type TArmyOptions = {
@@ -35,6 +38,7 @@ export class Army {
     public guid: string;
     public map: TMap = [];
     public buildings: TBuilding[] = [];
+    public sporovyeBashni: SporovayaBashnya[] = [];
     public units: Unit[] = [];
     public enemyUnits: Unit[] = [];
     public enemyBuildings: TBuilding[] = [];
@@ -52,29 +56,74 @@ export class Army {
     }
 
     private create(common: Common) {
+        this.sporovyeBashni = this.buildings
+            .filter(building => building.type === 'sporovaya_bashnya')
+            .map(building => new SporovayaBashnya(building));
         this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 0, y: 0, hp: 100, maxHp: 100, speed: 1, attackRange: 10 }));
         this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 10, y: 10, hp: 100, maxHp: 100, speed: 1, attackRange: 10 }));
         this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 20, y: 20, hp: 100, maxHp: 100, speed: 1, attackRange: 10 }));
         this.units.push(new Champigneb({ guid: common.guid(), type: 'champigneb', x: 5, y: 5, hp: 50, maxHp: 50, speed: 1, attackRange: 5 }));
         this.units.push(new Champigneb({ guid: common.guid(), type: 'champigneb', x: 15, y: 15, hp: 50, maxHp: 50, speed: 1, attackRange: 5 }));
         // Создаём прокси-юниты из зданий как изначальных целей для армии
-        this.updateEnemyEntities(this.buildings);
+        this.updateEnemyEntities(this.buildings.filter(building => building.type !== 'sporovaya_bashnya'));
     }
 
     /** Обновляет список целей армии из данных видимости (здания и юниты врага) */
+    /** Синхронизирует урон по proxy-цели с локальным списком зданий врага */
+    private syncBuildingDamage(guid: string, hp: number): void {
+        const buildingIndex = this.buildings.findIndex(building => building.guid === guid);
+
+        if (buildingIndex === -1) {return;}
+
+        if (hp <= 0) {
+            this.buildings.splice(buildingIndex, 1);
+            return;
+        }
+
+        this.buildings[buildingIndex].hp = hp;
+    }
+
+    /** Создаёт proxy-юнита для здания и пробрасывает урон обратно в this.buildings. */
+    private createEnemyProxy(entity: TBuilding): Unit {
+        const proxy = new Unit({
+            guid: entity.guid,
+            type: entity.type,
+            x: entity.x,
+            y: entity.y,
+            hp: entity.hp,
+            maxHp: entity.maxHp,
+            speed: 0,
+            attackRange: 0,
+        });
+
+        const baseTakeDamage = proxy.takeDamage.bind(proxy);
+
+        proxy.takeDamage = (amount: number, type: string): void => {
+            baseTakeDamage(amount, type);
+            this.syncBuildingDamage(proxy.guid, proxy.hp);
+        };
+
+        return proxy;
+    }
+
+    /** Обновляет цели из видимости: существующим proxy меняет координаты, и создаёт новых по guid. */
     public updateEnemyEntities(entities: TBuilding[]): void {
-        this.enemyUnits = entities.map(entity =>
-            new Unit({
-                guid: entity.guid,
-                type: entity.type,
-                x: entity.x,
-                y: entity.y,
-                hp: entity.hp,
-                maxHp: entity.maxHp,
-                speed: 0,
-                attackRange: 0,
-            })
+        const existingEnemiesByGuid = new Map(
+            this.enemyUnits.map(enemy => [enemy.guid, enemy] as const)
         );
+
+        this.enemyUnits = entities.map(entity => {
+            const existingEnemy = existingEnemiesByGuid.get(entity.guid);
+
+            if (existingEnemy) {
+                existingEnemy.x = entity.x;
+                existingEnemy.y = entity.y;
+                return existingEnemy;
+            }
+
+            return this.createEnemyProxy(entity);
+        });
+        
     }
 
     private update(): void {
@@ -87,6 +136,13 @@ export class Army {
                 (unit as Champigneb).slimePuddle.ttl -= deltaTime;
             }
         }
+
+        for (const bashnya of this.sporovyeBashni) {
+            bashnya.update(this.enemyUnits, deltaTime);
+        }
+
+        this.sporovyeBashni = this.sporovyeBashni.filter(b => b.isAlive);
+
 
         this.units = this.units.filter(unit => {
             if (unit.type === 'champigneb' && !unit.isAlive) {
@@ -102,7 +158,10 @@ export class Army {
         return {
             map: this.map,
             units: this.units.map(u => u.getState()),
-            buildings: this.buildings,
+            buildings: [
+                ...this.buildings.filter(building => building.type !== 'sporovaya_bashnya'),
+                ...this.sporovyeBashni.map(bashnya => bashnya.getState())
+            ],
             slimePuddles: this.units
                 .filter(u => u.type === 'champigneb' && !u.isAlive)
                 .map(u => (u as Champigneb).slimePuddle)

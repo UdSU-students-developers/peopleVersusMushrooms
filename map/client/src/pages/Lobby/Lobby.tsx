@@ -19,7 +19,7 @@ const Lobby: React.FC<IBasePage> = (props) => {
     const logoutClickHandler = async () => {
         server.logout();
     }
-    
+
     const createLobbyClickHandler = () => {
         setShowCreateModal(true);
         setLobbyName('');
@@ -168,25 +168,35 @@ const Lobby: React.FC<IBasePage> = (props) => {
                 <div className="current-lobby">
                     <h2>Текущая комната: {currentLobby.lobbyName}</h2>
                     <div className="lobby-info">
-                        <p>Создатель: {currentLobby.players.find(p => p.guid === currentLobby.creatorGuid)?.role}</p>
-                        <p>Игроки: {currentLobby.players.length}/5</p>
+                        <p>Создатель:
+                            {
+                                Object.keys(currentLobby.playersGuids).find(role => {
+                                    const guid = currentLobby.playersGuids[role as keyof typeof currentLobby.playersGuids];
+                                    return guid !== null && guid === currentLobby.lobbyGuid;
+                                })
+                            }</p>
+                        <p>Игроки: {Object.values(currentLobby.playersGuids).filter(g => g !== null).length}/5</p>
                         <div className="players-list">
                             <h3>Игроки:</h3>
                             <ul>
-                                {currentLobby.players.map((player, index) => (
-                                    <li key={index}>
-                                        {player.role} {player.guid === currentLobby.creatorGuid && '(Создатель)'}
-                                    </li>
-                                ))}
+                                {
+                                    Object.keys(currentLobby.playersGuids)
+                                        .filter(role => currentLobby.playersGuids[role as keyof typeof currentLobby.playersGuids] !== null)
+                                        .map((role, index) => (
+                                            <li key={index}>
+                                                {role} {currentLobby.playersGuids[role as keyof typeof currentLobby.playersGuids] === currentLobby.lobbyGuid && '(Создатель)'}
+                                            </li>
+                                        ))}
                             </ul>
                         </div>
-                        {currentLobby.creatorGuid === currentLobby.players[0]?.guid && currentLobby.players.length === 5 && (
-                            <Button
-                                onClick={startGameHandler}
-                                text='Начать игру'
-                                className='button-start-game'
-                            />
-                        )}
+                        {currentLobby.lobbyGuid === currentLobby.playersGuids.spectator
+                            && Object.values(currentLobby.playersGuids).filter(g => g !== null).length === 5 && (
+                                <Button
+                                    onClick={startGameHandler}
+                                    text='Начать игру'
+                                    className='button-start-game'
+                                />
+                            )}
                         <Button
                             onClick={leaveLobbyHandler}
                             text='Покинуть комнату'
@@ -205,13 +215,14 @@ const Lobby: React.FC<IBasePage> = (props) => {
                 {!isLoading && lobbies.length > 0 && (
                     <div className="lobbies-grid">
                         {lobbies.map((lobby) => (
-                            <div key={lobby.creatorGuid} className="lobby-card">
+                            <div key={lobby.lobbyGuid} className="lobby-card">
                                 <h3>{lobby.lobbyName}</h3>
-                                <p>Создатель: {lobby.players.find(p => p.guid === lobby.creatorGuid)?.role}</p>
-                                <p>Игроки: {lobby.players.length}/5</p>
-                                {lobby.players.length < 5 && (
+                                <p>Создатель: {Object.keys(lobby.playersGuids)
+                                    .find(role => lobby.playersGuids[role as keyof typeof lobby.playersGuids] === lobby.lobbyGuid)}</p>
+                                <p>Игроки: {Object.values(lobby.playersGuids).filter(g => g !== null).length}/5</p>
+                                {Object.values(lobby.playersGuids).filter(g => g !== null).length < 5 && (
                                     <Button
-                                        onClick={() => joinLobbyHandler(lobby.creatorGuid)}
+                                        onClick={() => joinLobbyHandler(lobby.lobbyGuid)}
                                         text='Присоединиться'
                                         className='button-join'
                                     />

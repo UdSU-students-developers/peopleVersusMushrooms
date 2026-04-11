@@ -70,7 +70,7 @@ class Store {
     handleCreateLobby(data: ILobby): void {
         console.log('Lobby created:', data);
         this.currentLobby = data;
-        const existingIndex = this.lobbies.findIndex(lobby => lobby.creatorGuid === data.creatorGuid);
+        const existingIndex = this.lobbies.findIndex(lobby => lobby.lobbyGuid === data.lobbyGuid);
         if (existingIndex === -1) {
             this.lobbies.push(data);
         } else {
@@ -81,7 +81,7 @@ class Store {
     handleJoinToLobby(data: ILobby): void {
         console.log('Joined to lobby:', data);
         this.currentLobby = data;
-        const index = this.lobbies.findIndex(lobby => lobby.creatorGuid === data.creatorGuid);
+        const index = this.lobbies.findIndex(lobby => lobby.lobbyGuid === data.lobbyGuid);
         if (index !== -1) {
             this.lobbies[index] = data;
         }
@@ -95,10 +95,10 @@ class Store {
 
     handleDropFromLobby(data: ILobby): void {
         console.log('Player dropped from lobby:', data);
-        if (this.currentLobby && this.currentLobby.creatorGuid === data.creatorGuid) {
+        if (this.currentLobby && this.currentLobby.lobbyGuid === data.lobbyGuid) {
             this.currentLobby = data;
         }
-        const index = this.lobbies.findIndex(lobby => lobby.creatorGuid === data.creatorGuid);
+        const index = this.lobbies.findIndex(lobby => lobby.lobbyGuid === data.lobbyGuid);
         if (index !== -1) {
             this.lobbies[index] = data;
         }
@@ -106,7 +106,7 @@ class Store {
 
     handleStartGame(data: ILobby): void {
         console.log('Game started:', data);
-        if (this.currentLobby && this.currentLobby.creatorGuid === data.creatorGuid) {
+        if (this.currentLobby && this.currentLobby.lobbyGuid === data.lobbyGuid) {
             this.currentLobby = data;
         }
         this.mediator.call(EMESSAGES.GAME_STARTED, data);
@@ -114,10 +114,10 @@ class Store {
 
     handleLobbyUpdated(data: ILobby): void {
         console.log('Lobby updated:', data);
-        if (this.currentLobby && this.currentLobby.creatorGuid === data.creatorGuid) {
+        if (this.currentLobby && this.currentLobby.lobbyGuid === data.lobbyGuid) {
             this.currentLobby = data;
         }
-        const index = this.lobbies.findIndex(lobby => lobby.creatorGuid === data.creatorGuid);
+        const index = this.lobbies.findIndex(lobby => lobby.lobbyGuid === data.lobbyGuid);
         if (index !== -1) {
             this.lobbies[index] = data;
         }
@@ -150,17 +150,13 @@ class Store {
     }
 
     isUserLobbyCreator(): boolean {
-        return this.currentLobby !== null && this.user !== null && this.currentLobby.creatorGuid === this.user.guid;
+        return this.currentLobby !== null && this.user !== null && this.currentLobby.lobbyGuid === this.user.guid;
     }
 
     canStartGame(): boolean {
         return this.isUserLobbyCreator() &&
             this.currentLobby !== null &&
-            this.currentLobby.players.length === 5
-    }
-
-    getPlayersInCurrentLobby(): IPlayer[] {
-        return this.currentLobby ? this.currentLobby.players : [];
+            Object.values(this.currentLobby.playersGuids).filter(g => g !== null).length === 5
     }
 
     setGeneratedMap(mapData: TMap): void {

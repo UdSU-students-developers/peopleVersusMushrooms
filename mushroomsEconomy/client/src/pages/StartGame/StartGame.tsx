@@ -1,70 +1,52 @@
-import React, {useContext, useEffect, useState} from "react";
-import { IBasePage, PAGES } from "../PageManager";
-import { MediatorContext, ServerContext } from "../../App";
+import React, { useContext, useEffect, useState } from "react";
 import CONFIG from "../../config";
-import "./StartGame.css";
+import { MediatorContext, ServerContext } from "../../App";
+import { TLobbies, TUser } from "../../services/Server/types";
+import { IBasePage, PAGES } from "../PageManager";
 
-interface IUser {
-    name: string;
-    guid: string;
-}
+import "./StartGame.css";
 
 const StartGame: React.FC<IBasePage> = ({ setPage }) => {
     const server = useContext(ServerContext);
     const mediator = useContext(MediatorContext);
-    const [isStarting, setIsStarting] = useState(false);
-    const [userInfo, setUserInfo] = useState<IUser | null>(null);
-    const { GET_STORE} = CONFIG.MEDIATOR.TRIGGERS;
+    const [lobbies, setLobbies] = useState<TLobbies>([]);
+    const { GET_STORE } = CONFIG.MEDIATOR.TRIGGERS;
+    const EVENTS = mediator.getEventTypes();
+    const user = mediator.get<TUser | null>(GET_STORE, 'user');
 
     useEffect(() => {
-        if (mediator) {
-            const user = mediator.get<IUser | null>(GET_STORE, 'user');
-            if (user) {
-                setUserInfo(user);
-            }
-        }
-    }, [mediator]);
+        const handleStartGame = () => setPage(PAGES.GAME);
+        const handleLobbyUpdated = (data: TLobbies) => setLobbies(data);
 
-    useEffect(() => {
-        if (!mediator) return;
-
-        const eventTypes = mediator.getEventTypes();
-
-        const handleStartGame = () => {
-            setIsStarting(false);
-            setPage(PAGES.GAME);
-        };
-
-        mediator.subscribe(eventTypes.START_GAME, handleStartGame);
+        mediator.subscribe(EVENTS.START_GAME, handleStartGame);
+        mediator.subscribe(EVENTS.LOBBY_UPDATED, handleLobbyUpdated);
 
         return () => {
-            mediator.unsubscribe(eventTypes.START_GAME, handleStartGame);
+            mediator.unsubscribe(EVENTS.START_GAME, handleStartGame);
+            mediator.unsubscribe(EVENTS.LOBBY_UPDATED, handleLobbyUpdated);
         };
-    }, [mediator, setPage]);
+    });
 
-    const handleStartGame = async (e: any) => {
-        e.preventDefault();
-        await server.createLobby();
+    const handleJoinToLobby = () => {
+        server.joinToLobby(lobbies[0].creatorGuid);
     }
-
-    const handleBackToLogin = () => {
-        setPage(PAGES.LOGIN);
-    }
+    const handleStartGame = () => server.createLobby();
+    const handleBackToLogin = () => setPage(PAGES.LOGIN);
 
     return (
         <div className="start-game-page">
             <div className="start-game-container">
                 <h2>Лобби</h2>
                 <div className="player-info-block">
-                    {userInfo ? (
+                    {user ? (
                         <>
                             <div className="info-row">
                                 <span className="info-label">Игрок:</span>
-                                <span className="info-value">{userInfo.name}</span>
+                                <span className="info-value">{user.name}</span>
                             </div>
                             <div>
                                 <span className="info-label">Socket ID:</span>
-                                <span className="info-value socket-id">{userInfo.guid}</span>
+                                <span className="info-value socket-id">{user.guid}</span>
                             </div>
                         </>
                     ) : (
@@ -72,7 +54,10 @@ const StartGame: React.FC<IBasePage> = ({ setPage }) => {
                     )}
                 </div>
                 <div className="start-game-actions">
-                    <button id="testing-start-game" type="submit" onClick={handleStartGame}>
+                    <button onClick={handleJoinToLobby}>
+                        Присоединиться к лобби
+                    </button>
+                    <button id="testing-start-game" onClick={handleStartGame}>
                         Создать лобби и начать игру
                     </button>
                     <button className="back-button" id="testing-back-to-game" onClick={handleBackToLogin}>

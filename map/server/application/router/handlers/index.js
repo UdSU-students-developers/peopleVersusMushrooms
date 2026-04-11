@@ -1,20 +1,35 @@
-const getVisibilityHandler = require("./getVisibilityHandler");
-const getResourseVisibilityHandler = require("./getResourseVisibilityHandler");
-const useGetLobbiesHandler = require("./useGetLobbiesHandler");
-const useJoinToLobbyHandler = require("./useJoinToLobbyHandler");
-const updateUnitsHandler = require("./updateUnitsHandler");
-const getReliefHandler = require("./getReliefHandler");
-const updateBuildingsHandler = require("./updateBuildingsHandler");
+const useUpdateUnitsHandler = require("./useUpdateUnitsHandler");
+const useUpdateBuildingsHandler = require("./useUpdateBuildingsHandler");
+const useGetVisibilityHandler = require("./useGetVisibilityHandler");
+const useGetResourseVisibilityHandler = require("./useGetResourseVisibilityHandler");
+const useGetGeneratedMapHandler = require("./useGetGeneratedMapHandler");
+const useGetReliefHandler = require ("./useGetReliefHandler");
+
+const useCreateLobbyHandler = require("./lobbyHandlers/useCreateLobbyHandler");
+const useJoinToLobbyHandler = require("./lobbyHandlers/useJoinToLobbyHandler");
+const useLeaveLobbyHandler = require("./lobbyHandlers/useLeaveLobbyHandler");
+const useDropFromLobbyHandler= require("./lobbyHandlers/useDropFromLobbyHandler");
+const useStartGameHandler = require("./lobbyHandlers/useStartGameHandler");
+const useGetLobbiesHandler = require("./lobbyHandlers/useGetLobbiesHandler");
+const useSetReadyHandler = require("./lobbyHandlers/useSetReadyHandler");
 
 module.exports = {
     //для http методов map
-    getReliefHandler,
-    getVisibilityHandler,
-    getResourseVisibilityHandler,
+    useGetReliefHandler,
+    useGetVisibilityHandler,
+    useGetResourseVisibilityHandler,
+    useGetGeneratedMapHandler,
 
-    updateUnitsHandler,
-    updateBuildingsHandler,
+    useUpdateUnitsHandler,
+    useUpdateBuildingsHandler,
 
-    useGetLobbiesHandler,
+    //для http методов lobby
+    useCreateLobbyHandler,
     useJoinToLobbyHandler,
+    useLeaveLobbyHandler,
+    useDropFromLobbyHandler,
+    useStartGameHandler,
+    useGetLobbiesHandler,
+    useSetReadyHandler,
+
 };

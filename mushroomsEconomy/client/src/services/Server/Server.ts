@@ -7,7 +7,8 @@ import {
     TScene, 
     TUser, 
     TError, 
-    TMessage 
+    TMessage, 
+    TLobbies
 } from "../Server/types";
 import md5 from 'md5';
 
@@ -45,6 +46,7 @@ class Server {
             this.socket.on(SOCKET.NEW_MESSAGE, (data: TResponse<TMessage>) => this.handleNewMessage(data));
             this.socket.on(SOCKET.START_GAME, (data: TResponse<TScene>) => this.handleStartGame(data));
             this.socket.on(SOCKET.UPDATE_SCENE, (data: TResponse<TScene>) => this.handleUpdateScene(data));
+            this.socket.on(SOCKET.LOBBY_UPDATED, (data: TResponse<any>) => this.handleLobbyUpdated(data));
         });
     }
 
@@ -66,7 +68,7 @@ class Server {
         return false;
     }
 
-    private request(event: string, payload: object): void {
+    private request(event: string, payload: object = {}): void {
         const credentials = this.getCredentials();
         const fullPayload = credentials ? { ...payload, ...credentials } : payload;
         this.socket.emit(event, fullPayload);
@@ -98,11 +100,15 @@ class Server {
     }
 
     public getMessages(): void {
-        this.request(CONFIG.SOCKET.MESSAGES, {});
+        this.request(CONFIG.SOCKET.MESSAGES);
     }
 
     public createLobby(): void {
-        this.request(CONFIG.SOCKET.CREATE_LOBBY, {});
+        this.request(CONFIG.SOCKET.CREATE_LOBBY);
+    }
+
+    public joinToLobby(lobbyGuid: string): void {
+        this.request(CONFIG.SOCKET.JOIN_TO_LOBBY, { lobbyGuid });
     }
 
     // ─── Response handlers ───────────────────────────────────────────────────────
@@ -190,16 +196,20 @@ class Server {
 
     private handleStartGame(response: TResponse<TScene>): void {
         if (this.checkError(response)) return;
-
         const { START_GAME } = this.mediator.getEventTypes();
         this.mediator.call(START_GAME, response.data);
     }
 
     private handleUpdateScene(response: TResponse<TScene>): void {
         if (this.checkError(response)) return;
-
         const { UPDATE_SCENE } = this.mediator.getEventTypes();
         this.mediator.call(UPDATE_SCENE, response.data);
+    }
+
+    private handleLobbyUpdated(response: TResponse<TLobbies>): void {
+        if (this.checkError(response)) return;
+        const { LOBBY_UPDATED } = this.mediator.getEventTypes();
+        this.mediator.call(LOBBY_UPDATED, response.data);
     }
 }
 

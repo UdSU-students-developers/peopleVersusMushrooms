@@ -22,9 +22,22 @@ export interface IPlayer {
 }
 
 export interface ILobby {
-    creatorGuid: string;
+    lobbyGuid: string;
     lobbyName: string;
-    players: IPlayer[];
+    playersGuids: {
+        spectator: string | null,
+        peopleEconomy: string | null,
+        peopleArmy: string | null,
+        mushroomsEconomy: string | null,
+        mushroomsArmy: string | null,
+    }
+    playersIsReady: {
+        spectator: boolean,
+        peopleEconomy: boolean,
+        peopleArmy: boolean,
+        mushroomsEconomy: boolean,
+        mushroomsArmy: boolean,
+    }
     gameState: 'waiting' | 'playing';
 }
 

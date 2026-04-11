@@ -1,6 +1,6 @@
 // pages/Game/Game.tsx
 import React, { useEffect, useRef, useState, useContext } from 'react';
-import { MediatorContext } from '../../App';
+import { MediatorContext, ServerContext } from '../../App';
 import CONFIG from '../../config';
 import { drawGame } from './renderer';
 import { GameState } from './types';
@@ -11,7 +11,9 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const gameStateRef = useRef<GameState | null>(null);
   const mediator = useContext(MediatorContext);
+  const server = useContext(ServerContext);
   const [isGameOver, setIsGameOver] = useState(false);
+  const [aliveUnitsCount, setAliveUnitsCount] = useState(0);
 
   const GET_STORE = mediator.getTriggerTypes().GET_STORE;
   const user = mediator.get(GET_STORE, 'user');
@@ -26,6 +28,9 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     const widthCSS = canvas.clientWidth;
     const heightCSS = canvas.clientHeight;
     if (widthCSS === 0 || heightCSS === 0) return;
+
+    const aliveCount = gameStateRef.current?.units.filter((u) => u.hp > 0).length ?? 0;
+    setAliveUnitsCount(aliveCount);
 
     drawGame(ctx, gameStateRef.current, widthCSS, heightCSS);
   };
@@ -75,7 +80,6 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
 
     const EVENT_NAME = CONFIG.MEDIATOR.EVENTS.GAME_STATE_UPDATED;
     const handler = (newState: GameState) => {
-      console.log('[Game] State updated', newState);
       gameStateRef.current = newState;
       redrawCanvas();
     };
@@ -101,12 +105,21 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     setPage(PAGES.LOBBY);
   };
 
+  const handleRestartGame = () => {
+    server.lobbyStart();
+    setIsGameOver(false);
+  };
+
   return (
     <div className="game-page">
       <header className="game-header">
         <div className="game-user">
           <strong>{username}</strong>
+          <span className="game-units-counter">
+            Живых: <strong>{aliveUnitsCount}</strong>
+          </span>
         </div>
+
         <button type="button" className="game-exit" onClick={handleExitToLobby}>
           Выход в лобби
         </button>
@@ -120,7 +133,15 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
         <div className="game-overlay">
           <div className="game-overlay-content">
             <h2>Игра окончена</h2>
-            <button onClick={handleExitToLobby}>В лобби</button>
+
+            <div className="game-overlay-actions">
+              <button type="button" onClick={handleRestartGame}>
+                Начать заново
+              </button>
+              <button type="button" onClick={handleExitToLobby}>
+                В лобби
+              </button>
+            </div>
           </div>
         </div>
       )}

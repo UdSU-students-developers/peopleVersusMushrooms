@@ -1,0 +1,163 @@
+.game-page {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+    background: #0d1117;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', 'Fira Mono', monospace;
+}
+
+.game-sidebar {
+    width: 200px;
+    min-width: 200px;
+    padding: 24px 16px;
+    border-right: 1px solid #1a2332;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: #0d1117;
+    overflow-y: auto;
+}
+
+.game-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #c9d1d9;
+    margin: 0;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.game-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 10px 12px;
+    background: #161b22;
+    border: 1px solid #1a2332;
+    border-radius: 6px;
+}
+
+.game-stat-label {
+    font-size: 11px;
+    color: #6e7681;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.game-stat-value {
+    font-size: 22px;
+    font-weight: 600;
+    color: #4a9eff;
+}
+
+.game-section-label {
+    font-size: 11px;
+    color: #6e7681;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 8px 0;
+}
+
+.game-type-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.game-type-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: transparent;
+    border: 1px solid #1a2332;
+    border-radius: 6px;
+    color: #8b949e;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.game-type-btn:hover {
+    border-color: #30363d;
+    color: #c9d1d9;
+    background: #161b22;
+}
+
+.game-type-btn.active {
+    border-color: #4a9eff;
+    color: #c9d1d9;
+    background: rgba(74, 158, 255, 0.08);
+}
+
+.game-type-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.game-type-dot.soldier {
+    background: #4a9eff;
+    border-radius: 50%;
+}
+
+.game-type-dot.bmp {
+    background: #39d353;
+    border-radius: 2px;
+}
+
+.game-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.game-legend-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #6e7681;
+    padding: 4px 0;
+}
+
+.game-legend-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.game-status {
+    margin: auto 0 0 0;
+    font-size: 11px;
+    color: #6e7681;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+.game-canvas-wrap {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 16px;
+}
+
+.game-canvas {
+    cursor: crosshair;
+    display: block;
+    image-rendering: pixelated;
+    border: 1px solid #1a2332;
+    border-radius: 4px;
+}
+
+.game-canvas:hover {
+    border-color: #30363d;
+}

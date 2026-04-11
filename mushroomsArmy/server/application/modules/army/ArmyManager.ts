@@ -71,6 +71,13 @@ class ArmyManager extends BaseManager {
             this.destroyArmy(guid);
             return;
         }
+        
+        // Проверям: если здания противников нету, то передаем сообщене о победе
+        if (army && army.buildings.length === 0) {
+            this.io.to(user.socketId).emit(GAME_OVER, this.answer.good({ message: 'пососали' }));
+            this.destroyArmy(guid);
+            return;
+        }
 
         const { units, slimePuddles } = armyState;
 

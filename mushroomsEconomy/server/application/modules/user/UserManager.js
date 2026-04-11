@@ -2,7 +2,7 @@ const BaseManager = require('../BaseManager');
 const CONFIG = require('../../../config');
 const User = require('./User');
 
-const { REGISTRATION, LOGIN, LOGOUT, RECONNECT } = CONFIG.SOCKET;
+const { REGISTRATION, LOGIN, LOGOUT } = CONFIG.SOCKET;
 
 class UserManager extends BaseManager {
     constructor(options) {
@@ -15,28 +15,45 @@ class UserManager extends BaseManager {
             socket.on(REGISTRATION, (data) => this.socketRegistration(data, socket));
             socket.on(LOGIN, (data) => this.socketLogin(data, socket));
             socket.on(LOGOUT, (data) => this.socketLogout(data, socket));
-            socket.on(RECONNECT, (data) => this.socketReconnect(data, socket));
-            socket.on('disconnect', () => console.log('disconnect', socket.id));
+            socket.on('disconnect', () => this.handleDisconnect(socket));
         });
 
         // mediator events subscribers
-		//...
+        this.mediator.subscribe(this.EVENTS.DELETE_USER, (socketId) => this.eventDeleteUser(socketId));
+
         // mediator triggers setters
 		this.mediator.set(this.TRIGGERS.GET_USER_BY_GUID, (guid) => this.triggerGetUserByGuid(guid));
+        this.mediator.set(this.TRIGGERS.GET_USER_BY_SOCKET_ID, (socketId) => this.triggerGetUserBySocketId(socketId));
+
+    }
+    
+    handleDisconnect(socket) {
+        this.eventDeleteUser(this.triggerGetUserBySocketId(socket.id));
     }
 
     /* PRIVATE */
-	
+	//...
+    
 	/* TRIGGERS */
 	triggerGetUserByGuid(guid) {
-		if (guid && this.users[guid] && this.users[guid].isLogin()) {
-			return this.users[guid];
+        if (guid && this.users[guid] && this.users[guid].isLogin()) {
+            return this.users[guid];
 		}
 		return null;
 	}
+
+    triggerGetUserBySocketId(socketId) {
+        return Object.values(this.users).find(user => user.socketId === socketId) || null;
+    }
+
 	
 	/* EVENTS */
-	//...
+    eventDeleteUser(guid) {
+        if (guid && this.users[guid]) {
+            delete this.users[guid];
+            console.log(`пользователь с guid: ${user.guid} удалён`);
+        }
+    }
 
     /* SOCKETS */
     async socketRegistration(data = {}, socket) {
@@ -81,19 +98,6 @@ class UserManager extends BaseManager {
         }
 
         socket.emit(LOGOUT, this.answer.bad(19));
-    }
-
-    async socketReconnect(data = {}, socket) {
-        const { guid } = data;
-        if (!guid ) {
-            return socket.emit(CONFIG.SOCKET.RECONNECT, this.answer.bad(13));
-        }
-        const user = this.users[guid];
-        if (user) {
-            user.socketId = socket.id;
-            return socket.emit(CONFIG.SOCKET.RECONNECT, this.answer.good(true));
-        }
-        socket.emit(CONFIG.SOCKET.RECONNECT, this.answer.bad(19));
     }
 }
 

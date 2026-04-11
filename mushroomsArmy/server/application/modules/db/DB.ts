@@ -15,6 +15,14 @@ type TDbUser = {
     created_at?: string;
 };
 
+type TDbError = {
+    id?: number;
+    url: string;
+    code: number;
+    message: string;
+    created_at?: string;
+};
+
 // Тут используется sqlite3, но вы можете сменить её на другую (лучше так и сделать). Трусов упомянул postgreSQL, поэтому если будете менять, ставьте её
 
 class DB {
@@ -40,14 +48,33 @@ class DB {
             )
         `;
 
+        const createErrorsTable = `
+            CREATE TABLE IF NOT EXISTS errors (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                url TEXT NOT NULL,
+                code INTEGER NOT NULL,
+                message TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `;
+
         return new Promise((resolve) => {
-            this.db.run(createUsersTable, function(err) {
-                if (err) {
-                    console.error('Error creating users table:', err);
+            this.db.run(createUsersTable, (usersErr) => {
+                if (usersErr) {
+                    console.error('Error creating users table:', usersErr);
                 } else {
                     console.log('Users table initialized');
                 }
-                resolve();
+
+                this.db.run(createErrorsTable, (errorsErr) => {
+                    if (errorsErr) {
+                        console.error('Error creating errors table:', errorsErr);
+                    } else {
+                        console.log('Errors table initialized');
+                    }
+
+                    resolve();
+                });
             });
         });
     }
@@ -60,11 +87,11 @@ class DB {
         return await this.orm.get('users', { token });
     }
 
-    async registration(name: string, guid: string, passwordHash: string, token: string): Promise<any> {
+    async registration(name: string, guid: string, passwordHash: string, token: string): Promise<{ id: number; changes: number }> {
         return await this.orm.insert('users', ['name', 'guid', 'password_hash', 'token'], [name, guid, passwordHash, token]);
     }
 
-    async updateToken(id: number, token: string, expiresInMinutes: number = 1440): Promise<any> {
+    async updateToken(id: number, token: string, expiresInMinutes: number = 1440): Promise<{ changes: number }> {
         const expirationDate = new Date();
         expirationDate.setMinutes(expirationDate.getMinutes() + expiresInMinutes);
         const tokenExpiration = expirationDate.toISOString();
@@ -72,7 +99,7 @@ class DB {
         return await this.orm.update('users', ['token', 'token_expiration'], [token, tokenExpiration], { id });
     }
 
-    async invalidateToken(id: number): Promise<any>{
+    async invalidateToken(id: number): Promise<{ changes: number }> {
         return await this.orm.update('users', ['token', 'token_expiration'], [null, null], { id });
     }
 
@@ -80,16 +107,23 @@ class DB {
         const user = await this.getUserByToken(token);
         
         if (user && user.token_expiration) {
-  
             const currentTime = new Date();
             const expirationTime = new Date(user.token_expiration);
             
             if (expirationTime > currentTime) {
                 return user;
             }
-            
         }
+
         return null;
+    }
+
+    async logError(url: string, code: number, message: string): Promise<{ id: number; changes: number }> {
+        return await this.orm.insert(
+            'errors',
+            ['url', 'code', 'message'],
+            [url, code, message]
+        );
     }
 
     destructor(): void {

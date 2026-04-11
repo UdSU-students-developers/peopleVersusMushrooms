@@ -1,3 +1,4 @@
+const { randomInt } = require('crypto');
 const CONFIG = require('../../../config');
 const MAP_CONFIG = require('./MapConfig');
 const Building = require('./entities/Building');
@@ -9,7 +10,7 @@ const Source = require('./entities/Source');
 const Unit = require('./entities/Unit');
 
 class Map {
-    constructor(guid, playerGuids, width = 50, height = 50) {
+    constructor(guid, playerGuids, width = 100, height = 100) {
         this.guid = guid; // guid создателя лобби
         this.map = [];
         this.playerGuids = { // guid-ы игроков
@@ -185,10 +186,10 @@ class Map {
     // сгенерировать карту
     // water, mountains - [0-100]
     // seed - number
-    generateRelief(water, mountains, seed) {
+    generateRelief(seed, water = MAP_CONFIG.DEFAULTS.WATER, mountains = MAP_CONFIG.DEFAULTS.MOUNTAIN) {
         this.water = typeof water === "number" ? water : MAP_CONFIG.DEFAULTS.WATER;
         this.mountains = typeof mountains === "number" ? mountains : MAP_CONFIG.DEFAULTS.MOUNTAIN;
-        this.seed = typeof seed === "number" ? seed : MAP_CONFIG.DEFAULTS.SEED;
+        this.seed = typeof seed === "number" ? seed : randomInt(2**48-1);
 
         //val -> [0,100]
         const clamp = val => val < 0 ? 0 : (val > 100 ? 100 : val);
@@ -222,7 +223,7 @@ class Map {
     }
 
     // iron, oil - [0, 20]
-    generateSources(iron, oil) {
+    generateSources(iron = MAP_CONFIG.DEFAULTS.IRON, oil = MAP_CONFIG.DEFAULTS.OIL) {
         this.iron = typeof iron === "number" ? iron : MAP_CONFIG.DEFAULTS.IRON;
         this.oil = typeof oil === "number" ? oil : MAP_CONFIG.DEFAULTS.OIL;
         const clamp = val => val < 0 ? 0 : (val > 20 ? 20 : val);

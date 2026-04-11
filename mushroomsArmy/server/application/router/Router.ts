@@ -2,6 +2,7 @@ import express, { Request, Response, Router as ExpressRouter } from 'express';
 import { notFoundHandler } from './handlers';
 import Answer from '../Answer';
 import Mediator from '../modules/Mediator';
+import CONFIG from '../../config';
 
 type TRouterOptions = {
     answer: Answer;
@@ -17,21 +18,16 @@ type TTakeDamageBody = {
 function Router({ answer, mediator }: TRouterOptions): ExpressRouter {
     const router = express.Router();
 
-    /**
-     * POST /takeDamage/:armyGuid
-     * Внешний вызов от армии людей: нанести урон юниту грибов.
-     * Payload: { unitGuid, amount, type }
-     */
     router.post('/takeDamage/:armyGuid', (req: Request, res: Response) => {
         const { armyGuid } = req.params;
         const { unitGuid, amount, type } = req.body as TTakeDamageBody;
 
-        if (!armyGuid || !unitGuid || amount === undefined || !type) {
+        if (!armyGuid || Array.isArray(armyGuid) || !unitGuid || amount === undefined || !type) {
             res.json(answer.bad(13));
             return;
         }
 
-        const TAKE_DAMAGE = 'TAKE_DAMAGE_HANDLER';
+        const TAKE_DAMAGE = CONFIG.MEDIATOR.TRIGGERS.TAKE_DAMAGE_HANDLER;
         const result = mediator.get<boolean, { armyGuid: string; unitGuid: string; amount: number; type: string }>(
             TAKE_DAMAGE,
             { armyGuid, unitGuid, amount, type }
@@ -44,16 +40,11 @@ function Router({ answer, mediator }: TRouterOptions): ExpressRouter {
         }
     });
 
-    /**
-     * POST /startGame/:armyGuid
-     * Вызов от сервиса карты: инициализировать армию грибов для игровой сессии.
-     * Payload: { mapGuid, map, buildings, ... }
-     */
     router.post('/startGame/:armyGuid', (req: Request, res: Response) => {
         const { armyGuid } = req.params;
         const payload = req.body as { mapGuid?: string; map?: unknown; buildings?: unknown };
 
-        if (!armyGuid || !payload.mapGuid || !payload.map) {
+        if (!armyGuid || Array.isArray(armyGuid) || !payload.mapGuid || !payload.map) {
             res.json(answer.bad(13));
             return;
         }

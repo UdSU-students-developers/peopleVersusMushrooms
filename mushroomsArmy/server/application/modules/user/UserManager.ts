@@ -5,16 +5,15 @@ import User from './User';
 
 const { REGISTRATION, LOGIN, LOGOUT, LOBBY_START, VALIDATE_TOKEN } = CONFIG.SOCKET;
 const { START_GAME } = CONFIG.MEDIATOR.EVENTS;
-const { GET_USER_BY_GUID } = CONFIG.MEDIATOR.TRIGGERS;
+const { GET_USER_BY_GUID, DESTROY_ARMY } = CONFIG.MEDIATOR.TRIGGERS;
 
 class UserManager extends BaseManager {
     private users: { [guid: string]: User };
 
     constructor(options: TManagerOptions) {
         super(options);
-        this.users = {}; // Ключ guid значение new User
+        this.users = {};
 
-        // Триггер: вернуть пользователя по guid
         this.mediator.set(GET_USER_BY_GUID, (guid: string) => this.users[guid] || null);
 
         if (!this.io) return;
@@ -26,22 +25,25 @@ class UserManager extends BaseManager {
             socket.on(LOBBY_START, (data) => this.socketLobbyStart(data, socket));
             socket.on(VALIDATE_TOKEN, (data) => this.socketValidateToken(data, socket));
 
-            socket.on('disconnect', () => console.log('disconnect', socket.id));
+            // ИСПРАВЛЕНО: убран console.log, добавлен вызов DESTROY_ARMY
+            socket.on('disconnect', () => {
+                const user = Object.values(this.users).find(u => u.getSelf().socketId === socket.id);
+                if (user && user.getSelf().guid) {
+                    this.mediator.get(DESTROY_ARMY, user.getSelf().guid);
+                    delete this.users[user.getSelf().guid!];
+                }
+            });
         });
     }
 
     private validateLogin(name: string): boolean {
-        // Логин от 3 до 20 символов
         if (!name || name.length < 3 || name.length > 20) {
             return false;
         }
-        // Допустимы латинские буквы, цифры, символы подчёркивания и точки
-        // Логин не может начинаться или заканчиваться точкой, не может содержать две точки подряд
         const loginRegex = /^[a-zA-Z0-9_]([a-zA-Z0-9_.]*[a-zA-Z0-9_])?$/;
         if (!loginRegex.test(name)) {
             return false;
         }
-        // Проверка на две точки подряд и начало/конец на точку
         if (name.includes('..') || name.startsWith('.') || name.endsWith('.')) {
             return false;
         }
@@ -49,7 +51,6 @@ class UserManager extends BaseManager {
     }
 
     private validatePassword(password: string): boolean {
-        // Пароль от 6 до 50 символов
         return !!(password && password.length >= 6 && password.length <= 50);
     }
 
@@ -149,22 +150,22 @@ class UserManager extends BaseManager {
 
         user.setSocketId(socket.id);
 
-        // Захардкоженная карта 50×50: 0=равнина, 1=вода, 2=горы
         const map: (number | null)[][] = Array.from({ length: 50 }, (_row, row) =>
             Array.from({ length: 50 }, (_col, col) => {
-                if (col === 10) return 1; // полоса воды
+                if (col === 10) return 1;
                 return 0;
             })
         );
 
-        // Тестовые здания людей (цели для армии грибов)
         const buildings = [
             { guid: this.common.guid(), type: 'house', x: 35, y: 15, hp: 200, maxHp: 200 },
             { guid: this.common.guid(), type: 'barracks', x: 40, y: 25, hp: 300, maxHp: 300 },
             { guid: this.common.guid(), type: 'tower', x: 38, y: 35, hp: 150, maxHp: 150 },
-            // Споровые башни грибов: позиции правее спавна армии (x>14), не перекрываются с юнитами
             { guid: this.common.guid(), type: 'sporovaya_bashnya', x: 20, y: 10, hp: 500, maxHp: 500, sizeX: 2, sizeY: 2 },
             { guid: this.common.guid(), type: 'sporovaya_bashnya', x: 20, y: 30, hp: 500, maxHp: 500, sizeX: 2, sizeY: 2 },
+            { guid: this.common.guid(), type: 'vzryvomor', x: 40, y: 10, hp: 500, maxHp: 500 },
+            { guid: this.common.guid(), type: 'vzryvomor', x: 30, y: 30, hp: 500, maxHp: 500 },
+            { guid: this.common.guid(), type: 'vzryvomor', x: 20, y: 40, hp: 500, maxHp: 500 },
         ];
 
         const mapGuid = this.common.guid();
@@ -182,14 +183,12 @@ class UserManager extends BaseManager {
             return;
         }
 
-        // Сначала проверяем в памяти
         const cachedUser = Object.values(this.users).find((item) => item.getSelf().token === token);
         if (cachedUser) {
             socket.emit(VALIDATE_TOKEN, this.answer.good(cachedUser.toClient()));
             return;
         }
 
-        // Если нет в памяти — восстанавливаем из БД (например, после перезагрузки страницы)
         const userData = await this.db.getUserByValidToken(token);
         if (userData) {
             const user = User.restoreFromData(

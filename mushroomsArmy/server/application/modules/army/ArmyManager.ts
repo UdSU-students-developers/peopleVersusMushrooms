@@ -1,13 +1,12 @@
 import BaseManager, { TManagerOptions } from '../BaseManager';
 import CONFIG from '../../../config';
-import { Army, TBuilding, TMap, TArmyState } from '../../army/Army';
+import { Army, TMap, TArmyState } from '../../army/Army';
 import User from '../user/User';
 
 const { GAME_STATE, GAME_OVER } = CONFIG.SOCKET;
 
-type TStartGame = { guid: string; map: TMap; buildings: TBuilding[]; mapGuid: string };
+type TStartGame = { guid: string; map: TMap; buildings: any[]; mapGuid: string };
 
-/** Сущность видимости, возвращаемая картой */
 type TVisibleEntity = {
     guid: string;
     type: string;
@@ -29,18 +28,15 @@ class ArmyManager extends BaseManager {
 
         this.army = {};
 
-        // Подписки на события медиатора
         this.mediator.subscribe(this.EVENTS.START_GAME, (data: TStartGame) => this.eventStartGame(data));
 
-        // Триггер: принять урон снаружи (от людей) для юнита армии
-        this.mediator.set('TAKE_DAMAGE_HANDLER', (data: { armyGuid: string; unitGuid: string; amount: number; type: string }) =>
+        this.mediator.set(CONFIG.MEDIATOR.TRIGGERS.TAKE_DAMAGE_HANDLER, (data: { armyGuid: string; unitGuid: string; amount: number; type: string }) =>
             this.triggerTakeDamage(data)
         );
+
+        this.mediator.set(CONFIG.MEDIATOR.TRIGGERS.DESTROY_ARMY, (guid: string) => this.destroyArmy(guid));
     }
 
-    /* ПРИВАТНЫЕ МЕТОДЫ */
-
-    /** Обрабатывает входящий урон по юниту армии (вызывается через HTTP /takeDamage) */
     private triggerTakeDamage({ armyGuid, unitGuid, amount, type }: {
         armyGuid: string; unitGuid: string; amount: number; type: string;
     }): boolean {
@@ -52,7 +48,6 @@ class ArmyManager extends BaseManager {
 
         unit.takeDamage(amount, type);
 
-        // Сигнализируем экономике грибов: нас атакуют
         this.sendToMushroomsEconomy('/takeDamage', { armyGuid, unitGuid, amount, type });
 
         return true;
@@ -64,7 +59,6 @@ class ArmyManager extends BaseManager {
 
         this.io.to(user.socketId).emit(GAME_STATE, this.answer.good(armyState));
 
-        // Проверяем: если все юниты мертвы — game over
         const army = this.army[guid];
         if (army && army.getAliveUnits().length === 0) {
             this.io.to(user.socketId).emit(GAME_OVER, this.answer.good({ message: 'Все юниты погибли' }));
@@ -72,26 +66,44 @@ class ArmyManager extends BaseManager {
             return;
         }
         
-        // Проверям: если здания противников нету, то передаем сообщене о победе
         if (army && army.buildings.length === 0) {
             this.io.to(user.socketId).emit(GAME_OVER, this.answer.good({ message: 'пососали' }));
             this.destroyArmy(guid);
             return;
         }
 
-        const { units, slimePuddles } = armyState;
+        const { units, slimePuddles, buildings } = armyState;
 
-        // Послать текущее состояние армии на карту
-        await this.sendToMap('/updateMushroomArmy', army.mapGuid, army.guid, { units, slimePuddles });
+        console.log(`[ArmyManager] Отправка на карту: ${buildings.length} зданий, ${units.length} юнитов`);
 
-        // Запросить у карты список видимых вражеских сущностей
+        // Отправляем юниты и здания на отдельные эндпоинты карты
+        await this.send<{ mapGuid: string; userGuid: string; units: any[] }>(
+            `${CONFIG.SERVICES.MAP_URL}/updateUnitsHandler`,
+            { mapGuid: army.mapGuid, userGuid: army.guid, units }
+        );
+
+        await this.send<{ mapGuid: string; userGuid: string; buildings: any[] }>(
+            `${CONFIG.SERVICES.MAP_URL}/updateBuildingsHandler`,
+            { mapGuid: army.mapGuid, userGuid: army.guid, buildings }
+        );
+
         const visibility = await this.sendToMap<null, TVisibilityResponse>(
             '/getVisibility', army.mapGuid, army.guid
         );
 
-        // Обновить цели армии на основе данных видимости
         if (visibility?.entities && visibility.entities.length > 0) {
-            army.updateEnemyEntities(visibility.entities);
+            const enemyEntities = visibility.entities.map(entity => ({
+                guid: entity.guid,
+                type: entity.type,
+                x: entity.x,
+                y: entity.y,
+                hp: entity.hp,
+                maxHp: entity.maxHp,
+                isAlive: true,
+                update: () => {},
+                getState: () => ({})
+            }));
+            army.updateEnemyEntities(enemyEntities as any);
         }
     }
 
@@ -103,12 +115,10 @@ class ArmyManager extends BaseManager {
         delete this.army[guid];
     }
 
-    /* СОБЫТИЯ */
     private eventStartGame({ guid, map, buildings, mapGuid }: TStartGame): void {
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
         if (!user) return;
 
-        // Если у игрока уже есть армия — уничтожаем старую
         if (this.army[guid]) {
             this.destroyArmy(guid);
         }

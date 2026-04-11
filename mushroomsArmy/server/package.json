@@ -9,7 +9,6 @@
     "dev": "ts-node app.ts"
   },
   "dependencies": {
-    "@types/easystarjs": "^0.1.29",
     "easystarjs": "^0.4.4",
     "express": "^5.2.1",
     "expression": "^0.0.1",
@@ -19,6 +18,7 @@
     "typescript": "^6.0.2"
   },
   "devDependencies": {
+    "@types/easystarjs": "^0.1.29",
     "@types/express": "^4.17.21",
     "@types/md5": "^2.3.2",
     "@types/node": "^20.0.0",

@@ -1,12 +1,20 @@
-class ORM {
-    constructor(db) { //НАСТОЯТЕЛЬНО рекомендуется подредактировать orm так, чтобы передавать нужно было не массив с колонками, а строку
-        this.db = db; //Сейчас: orm.get("users", { id }, ["username", "token", "online"]);
-    }                 //Должно быть: orm.get("users", { id }, "username, token, online");
+import sqlite3 from 'sqlite3';
 
-    get(table, params = null, columns = "*", operand = 'AND') {
-        const query = [];
-        const values = [];
-        let sql = `SELECT ${columns} FROM ${table}`
+interface Params {
+    [key: string]: any;
+}
+
+class ORM {
+    private db: sqlite3.Database;
+
+    constructor(db: sqlite3.Database) { // НАСТОЯТЕЛЬНО рекомендуется подредактировать orm так, чтобы передавать нужно было не массив с колонками, а строку
+        this.db = db; // Сейчас: orm.get("users", { id }, ["username", "token", "online"]);
+    }                 // Должно быть: orm.get("users", { id }, "username, token, online");
+
+    get(table: string, params: Params | null = null, columns: string = "*", operand: string = 'AND'): Promise<any> {
+        const query: string[] = [];
+        const values: any[] = [];
+        let sql = `SELECT ${columns} FROM ${table}`;
 
         if (params) {
             for (let key in params) {
@@ -23,9 +31,9 @@ class ORM {
         });
     }
 
-    all(table, params = null, columns = "*", operand = 'AND') {
-        const query = [];
-        const values = [];
+    all(table: string, params: Params | null = null, columns: string = "*", operand: string = 'AND'): Promise<any[]> {
+        const query: string[] = [];
+        const values: any[] = [];
         let sql = `SELECT ${columns} FROM ${table}`;
 
         if (params) {
@@ -48,7 +56,7 @@ class ORM {
         });
     }
 
-    insert(table, columns, values) {
+    insert(table: string, columns: string[], values: any[]): Promise<{ id: number; changes: number }> {
         const placeholders = columns.map(() => '?').join(', ');
         const sql = `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`;
 
@@ -64,11 +72,11 @@ class ORM {
         });
     }
 
-    update(table, setColumns, setValues, params, operand = 'AND') {
+    update(table: string, setColumns: string[], setValues: any[], params: Params, operand: string = 'AND'): Promise<{ changes: number }> {
         const setClauses = setColumns.map(col => `${col} = ?`);
-        const whereClauses = [];
+        const whereClauses: string[] = [];
         const allValues = [...setValues];
-        
+
         for (let key in params) {
             whereClauses.push(`${key} = ?`);
             allValues.push(params[key]);
@@ -88,10 +96,10 @@ class ORM {
         });
     }
 
-    delete(table, params, operand = 'AND') {
-        const whereClauses = [];
-        const values = [];
-        
+    delete(table: string, params: Params, operand: string = 'AND'): Promise<{ changes: number }> {
+        const whereClauses: string[] = [];
+        const values: any[] = [];
+
         for (let key in params) {
             whereClauses.push(`${key} = ?`);
             values.push(params[key]);
@@ -110,7 +118,6 @@ class ORM {
             );
         });
     }
-
 }
 
-module.exports = ORM;
+export default ORM;

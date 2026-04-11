@@ -165,6 +165,12 @@ class UserManager extends BaseManager {
             // Споровые башни грибов: позиции правее спавна армии (x>14), не перекрываются с юнитами
             { guid: this.common.guid(), type: 'sporovaya_bashnya', x: 20, y: 10, hp: 500, maxHp: 500, sizeX: 2, sizeY: 2 },
             { guid: this.common.guid(), type: 'sporovaya_bashnya', x: 20, y: 30, hp: 500, maxHp: 500, sizeX: 2, sizeY: 2 },
+
+            // взрывомор грибов
+            { guid: this.common.guid(), type: 'vzryvomor', x: 40, y: 10, hp: 500, maxHp: 500 },
+            { guid: this.common.guid(), type: 'vzryvomor', x: 30, y: 30, hp: 500, maxHp: 500 },
+            { guid: this.common.guid(), type: 'vzryvomor', x: 20, y: 40, hp: 500, maxHp: 500 },
+        
         ];
 
         const mapGuid = this.common.guid();

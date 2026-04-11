@@ -1,4 +1,6 @@
+import { TMap } from "../Army";
 import Unit from "./Units";
+import { IBuilding } from "./Vzryvomor";
 
 type TSporovayaBashnyaOptions = {
     guid: string;
@@ -9,7 +11,7 @@ type TSporovayaBashnyaOptions = {
     maxHp: number;
 };
 
-class SporovayaBashnya {
+class SporovayaBashnya implements IBuilding<any> {
     public guid: string;
     public type: string;
     public x: number;
@@ -34,7 +36,7 @@ class SporovayaBashnya {
         this.maxHp = options.maxHp;
     }
 
-    public update(enemies: Unit[], deltaTime: number): void {
+    public update(enemies: Unit[], map: TMap, deltaTime: number): void {
         if (!this.isAlive) return;
 
         this.attackTimer += deltaTime;

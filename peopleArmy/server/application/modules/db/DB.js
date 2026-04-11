@@ -6,6 +6,7 @@ const ORM = require('./ORM');
 class DB {
     constructor({ DATABASE }) {
         this.db = new sqlite3.Database(`${__dirname}/${DATABASE.NAME}`);
+
         this.orm = new ORM(this.db);
         const sql = fs.readFileSync(`${__dirname}/data.sql`, 'utf8');
         this.db.exec(sql);

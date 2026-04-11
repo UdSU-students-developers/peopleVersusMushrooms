@@ -62,7 +62,7 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
     public isAlive: boolean;
     public respawn: Respawn = { inProgress: false, respawnIn: 0};
     private elapsedFromLastDecision: number = 0;
-    private DECISION_INTERVAL = 500;
+    private DECISION_INTERVAL = 0.5; // seconds
 
     constructor({guid, x, y, hp, maxHp, attackRange}: TVzryvomorOptions) {
         this.guid = guid;
@@ -95,18 +95,30 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
     }
 
     private makeDecision(enemies: Unit []) {
-        const closeEnemies = 
-            enemies
-                .filter(enemy => {
-                    const p: Point = { x: enemy.x, y: enemy.y};
-                    return distance (p, {x: this.x, y: this.y}) < 3;
-                });
-        
-        closeEnemies.forEach(enemy => enemy.takeDamage(50, 'fire'));
-        const diedEnemies = enemies.filter(e => !e.isAlive);
+        const isNearToMe = (e: Unit) => {
+            const p: Point = { x: e.x, y: e.y};
+            const myPos = {x: this.x, y: this.y};
+            return distance (p, myPos) < 3;
+        }
+        const isAlive = (e: Unit) => e.isAlive
+        const isNotAlive = (e: Unit) => !e.isAlive
+        const makeDamage = (e: Unit) => {
+            e.takeDamage(50, 'explosion')
+            return e
+        }
 
-        if(closeEnemies.length > 0) {
-            if (diedEnemies.length > 0) {
+        const enemiesNearToMe = 
+            enemies
+                .filter(isAlive)
+                .filter(isNearToMe)
+
+        const myFrags = 
+            enemiesNearToMe
+                .map(makeDamage)
+                .filter(isNotAlive);
+        
+        if(enemiesNearToMe.length > 0) {
+            if (myFrags.length > 0) {
                 this.blow()
             }
             else {
@@ -116,11 +128,11 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
     }
 
     private blow() {
-        this.respawn = { inProgress: true, respawnIn: 5000};
+        this.respawn = { inProgress: true, respawnIn: 5};
     }
 
     takeDamage(amount: number, type: string): void {
-        if (!this.isAlive) return;
+        if (!this.isAlive || this.respawn.inProgress) return;
 
         this.hp -= amount;
         

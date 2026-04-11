@@ -13,6 +13,11 @@ export type TManagerOptions = {
     common: Common;
 }
 
+type TServiceError = {
+    code: number;
+    text: string;
+};
+
 class BaseManager {
     protected answer: Answer;
     protected mediator: Mediator;
@@ -47,28 +52,55 @@ class BaseManager {
                     'Content-Type': 'application/json;charset=utf-8'
                 },
             };
+
             if (data) {
                 params.body = JSON.stringify(data);
             }
+
             const res = await fetch(url, params);
             const answer = await res.json() as TResponse<K>;
+
             if (answer.result === 'ok') {
                 return answer.data;
-            } 
+            }
+
             if (answer.result === 'error') {
                 await this.logErrorToDB(url, answer.error);
             }
+
             return null;
         } catch (error) {
             console.error(`[BaseManager] Ошибка запроса к ${url}:`, error);
+
+            await this.logErrorToDB(url, {
+                code: 9000,
+                text: error instanceof Error ? error.message : 'Unknown send error',
+            });
+
             return null;
         }
     }
 
     /** Записывает ошибку в базу данных */
     private async logErrorToDB(url: string, error: unknown): Promise<void> {
-        // TODO: реализовать запись в таблицу errors при наличии схемы
-        console.error(`[BaseManager] Ошибка от сервиса ${url}:`, error);
+        try {
+            if (
+                typeof error === 'object' &&
+                error !== null &&
+                'code' in error &&
+                'text' in error &&
+                typeof error.code === 'number' &&
+                typeof error.text === 'string'
+            ) {
+                const serviceError = error as TServiceError;
+                await this.db.logError(url, serviceError.code, serviceError.text);
+                return;
+            }
+
+            await this.db.logError(url, 9000, 'Unknown service error');
+        } catch (dbError) {
+            console.error('[BaseManager] Не удалось записать ошибку в БД:', dbError);
+        }
     }
 
     sendToMap<T, K = undefined>(

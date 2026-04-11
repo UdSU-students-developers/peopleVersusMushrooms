@@ -31,6 +31,8 @@ export type Building = {
   y: number;
   hp: number;
   maxHp: number;
+  sizeX?: number;
+  sizeY?: number;
 };
 
 /**

@@ -21,8 +21,8 @@ interface Config {
         };
         TRIGGERS: {
             GET_USER_BY_GUID: string;
-            TAKE_DAMAGE_HANDLER: string;  // НОВЫЙ ТРИГГЕР
-            DESTROY_ARMY: string;          // НОВЫЙ ТРИГГЕР
+            TAKE_DAMAGE_HANDLER: string;
+            DESTROY_ARMY: string;
         };
     };
     SOCKET: {
@@ -62,8 +62,8 @@ const CONFIG: Config = {
         },
         TRIGGERS: {
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',
-            TAKE_DAMAGE_HANDLER: 'TAKE_DAMAGE_HANDLER',  // НОВЫЙ
-            DESTROY_ARMY: 'DESTROY_ARMY',                 // НОВЫЙ
+            TAKE_DAMAGE_HANDLER: 'TAKE_DAMAGE_HANDLER',
+            DESTROY_ARMY: 'DESTROY_ARMY',
         },
     },
     SOCKET: {

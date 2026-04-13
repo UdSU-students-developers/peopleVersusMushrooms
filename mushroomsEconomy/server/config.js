@@ -20,10 +20,6 @@ const CONFIG = {
         MESSAGES: 'MESSAGES',
         NEW_MESSAGE: 'NEW_MESSAGE',
         TYPING: 'TYPING',           // печатает
-
-        REGISTRATION: 'REGISTRATION',
-        LOGIN: 'LOGIN',
-        LOGOUT: 'LOGOUT',
         
         UPDATE_SCENE: 'UPDATE_SCENE',
         GET_SCENE: 'GET_SCENE',

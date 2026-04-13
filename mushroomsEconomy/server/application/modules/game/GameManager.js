@@ -6,7 +6,6 @@ const GLOBAL_CONFIG = require('../../../../../global/globalConfig');
 const CONFIG = require("../../../config");
 const Economy = require('../../economy/Economy');
 
-const { } = GLOBAL_CONFIG.SOCKET;
 
 class GameManager extends BaseManager {
 	constructor(options) {

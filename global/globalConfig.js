@@ -30,6 +30,7 @@ const GLOBAL_CONFIG = {
 
 
     SOCKET: {
+        //lobby
         CREATE_LOBBY: 'CREATE_LOBBY',
         JOIN_TO_LOBBY: 'JOIN_TO_LOBBY',
         LEAVE_LOBBY: 'LEAVE_LOBBY',
@@ -39,6 +40,11 @@ const GLOBAL_CONFIG = {
         LOBBIES_LIST_UPDATED: 'LOBBYS_LIST_UPDATED',
         SET_READY: 'SET_READY',
         START_GAME: 'START_GAME',
+
+        //user
+        REGISTRATION: 'REGISTRATION',
+        LOGIN: 'LOGIN',
+        LOGOUT: 'LOGOUT',
     },
 };
 

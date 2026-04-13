@@ -30,7 +30,10 @@ const answer = new Answer();
 new GameManager( { mediator, db, io, answer, common } );
 new UserManager( { mediator, db, io, answer, common } );
 new ChatManager( { mediator, db, io, answer, common } );
-new LobbyManager( { mediator, db, io, answer, common } );
+new LobbyManager( {
+    options: { mediator, db, io, answer, common },
+    role: CONFIG.NAME,
+});
 
 
 app.use(GLOBAL_CONFIG.CORS.middleware);
@@ -46,7 +49,7 @@ function deinit() {
     setTimeout(() => process.exit(), 500);
 }
 
-const startLog = `${NAME} started at port ${PORT} \nYou can connect to server ONLY from CORS: \n ${CONFIG.CORS.origin}`;
+const startLog = `${NAME} started at port ${PORT} \nYou can connect to server ONLY from CORS: \n ${GLOBAL_CONFIG.CORS.origin}`;
 
 server.listen(PORT, () => console.log(startLog));
 

@@ -1,4 +1,4 @@
-const CONFIG = require('../globalConfig');
+const GLOBAL_CONFIG = require('../globalConfig');
 
 class BaseManager {
     constructor(options) {
@@ -12,7 +12,7 @@ class BaseManager {
 
         this.EVENTS = this.mediator.getEventTypes();
         this.TRIGGERS = this.mediator.getTriggerTypes();
-		this.SOCKETS = CONFIG.SOCKET;
+		this.SOCKET = GLOBAL_CONFIG.SOCKET;
     }
 
     async send(url, data=null, method='POST') {

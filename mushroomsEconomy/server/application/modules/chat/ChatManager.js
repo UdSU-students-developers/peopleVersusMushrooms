@@ -29,7 +29,7 @@ class ChatManager extends BaseManager {
         return Object.values(this.messages).find(mes => mes.socketId === socketId) || null;
     }
 
-    eventDeleteChat(guid) {
+    eventDeleteMessage(guid) {
         if (guid && this.messages[guid]) {
             delete this.messages[guid];
             console.log(`сообщение с guid: ${this.message.guid} удалёно`);

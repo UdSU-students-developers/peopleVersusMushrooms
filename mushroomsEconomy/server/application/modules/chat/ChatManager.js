@@ -36,6 +36,10 @@ class ChatManager extends BaseManager {
         }
     }
 
+    triggerGetMessageBySocketId(socketId) {
+        return Object.values(this.messages).find(mes => mes.socketId === socketId) || null;
+    }
+
 
     sendMessage(data = {}, socket) {
         const { author, message } = data;

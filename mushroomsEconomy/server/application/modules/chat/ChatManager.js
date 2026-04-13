@@ -7,21 +7,33 @@ const { MESSAGE, MESSAGES, NEW_MESSAGE } = CONFIG.SOCKET;
 class ChatManager extends BaseManager {
     constructor(options) {
         super(options);
-        this.messages = [];
+
+        this.messages = {};
 
         if (!this.io) return;
-
         this.io.on('connection', (socket) => {
             socket.on(MESSAGE, (data) => this.sendMessage(data, socket));
             socket.on(MESSAGES, () => this.getMessages(socket));
-
             socket.on('disconnect', () => this.handleDisconnect(socket));
         });
     }
 
-    handleDisconnect(socket) {};
+    handleDisconnect(socket) {
+        this.eventDeleteMessage(this.triggerGetMessageBySocketId(socket.id));
+    };
 
-    
+    triggerGetUserBySocketId(socketId) {
+        return Object.values(this.messages).find(mes => mes.socketId === socketId) || null;
+    }
+
+    eventDeleteChat(guid) {
+        if (guid && this.messages[guid]) {
+            delete this.messages[guid];
+            console.log(`сообщение с guid: ${this.message.guid} удалёно`);
+        }
+    }
+
+
     sendMessage(data = {}, socket) {
         const { author, message } = data;
 
@@ -34,8 +46,7 @@ class ChatManager extends BaseManager {
             author: author,
             message: message
         });
-
-        this.messages.push(newMessage.get());
+        this.messages[newMessage.guid] = newMessage;
 
         this.io.emit(NEW_MESSAGE, this.answer.good(newMessage.get()));
     }

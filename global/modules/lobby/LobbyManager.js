@@ -1,4 +1,4 @@
-const CONFIG = require('../config')
+const CONFIG = require('../../config')
 const BaseManager = require('../BaseManager');
 
 const { SOCKET } = CONFIG;

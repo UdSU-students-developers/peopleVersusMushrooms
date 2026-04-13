@@ -3,6 +3,7 @@ const CONFIG = require('../../config');
 
 const Mycelium = require('./entities/Buildings/Mycelium');
 const SmallReactor = require('./entities/Buildings/SmallReactor');
+const Incubator = require('./entities/Buildings/Incubator');
 const Larva = require('./entities/Unit/Larva')
 
 const { INTERVAL } = CONFIG.ECONOMY;
@@ -133,15 +134,52 @@ class Economy {
         [...this.workers].forEach(unit => unit.moveOneStep())
     }
 
-    reactorsConsume() {
+    startIncubatorCreating() {
         this.buildings
-            .filter(b => b instanceof SmallReactor)
-            .forEach(reactor => {
-                const consumedCount = reactor.consumeMycelium(this.mycelium);
-                if (consumedCount > 0) {
+            .filter(b => b instanceof Incubator)
+            .forEach(incubator => {
+                if (incubator.startCreating()) {
                     this.updated = true;
                 }
             });
+    }
+
+    updateIncubator() {
+        const availableEnergy = this.getAvailableEnergy();
+        
+        this.buildings
+            .filter(building => building instanceof Incubator)
+            .forEach(incubator => {
+                if (incubator.updateLarvaProgress(availableEnergy)) {
+                    this.updated = true;
+                    this.consumeEnergyFromReactors(incubator.consumption);
+                }
+
+                const larva = incubator.createLarva();
+                if (larva) {
+                    this.larvae.push(larva);
+                    this.updated = true;
+                }
+            });
+    }
+
+    getAvailableEnergy() {
+        return this.buildings
+            .filter(b => b instanceof SmallReactor)
+            .reduce((sum, reactor) => sum + reactor.energy, 0);
+    }
+
+    consumeEnergyFromReactors(amount) {
+        let remainingAmount = amount;
+        const reactors = this.buildings.filter(b => b instanceof SmallReactor);
+
+        for (const reactor of reactors) {
+            if (remainingAmount <= 0) break;
+
+            const consumeEnergy = Math.min(reactor.energy, remainingAmount);
+            reactor.energy -= consumeEnergy;
+            remainingAmount -= consumeEnergy;
+        }
     }
 
     update() {
@@ -160,6 +198,14 @@ class Economy {
         // 4. Переместить юнитов если нужно
         this.moveUnits();
         /****************/
+
+        /* про инкубатор */
+        // 1. создать личинку
+        this.startIncubatorCreating();
+        // 2. обновить прогресс и создать личинку
+        this.updateIncubator();
+        /****************/
+
         if (this.updated) {
             this.updated = false;
             this.callbacks.updated(this.get());

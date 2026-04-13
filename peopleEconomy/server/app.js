@@ -14,6 +14,7 @@ const Common = require('./application/modules/common/Common.js');
 const Answer = require('./application/router/Answer.js');
 const UserManager = require('./application/modules/user/UserManager.js');
 const LobbyManager = require('./application/modules/lobby/LobbyManager.js');
+const GameManager = require('./application/modules/game/GameManager.js');
 const { EVENTS, TRIGGERS, SERVER_PORT, SERVER_NAME } = require('./config.js');
 
 // Экз БД
@@ -25,6 +26,7 @@ const answer = new Answer();
 // Создаем менеджеры
 const userManager = new UserManager({ mediator, db, common, answer, io });
 const lobbyManager = new LobbyManager({ mediator, db, common, answer, io });
+const gameManager = new GameManager({ mediator, db, common, answer, io });
 
 
 /*//для тестов

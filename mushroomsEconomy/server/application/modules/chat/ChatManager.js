@@ -7,23 +7,21 @@ const { MESSAGE, MESSAGES, NEW_MESSAGE } = CONFIG.SOCKET;
 class ChatManager extends BaseManager {
     constructor(options) {
         super(options);
-        // data
         this.messages = [];
 
-        //sockets
         if (!this.io) return;
+
         this.io.on('connection', (socket) => {
             socket.on(MESSAGE, (data) => this.sendMessage(data, socket));
             socket.on(MESSAGES, () => this.getMessages(socket));
+
             socket.on('disconnect', () => this.handleDisconnect(socket));
         });
     }
 
-    handleDisconnect(socket) { 
-        this.eventDeleteChat(this.triggerGetUserBySocketId(socket.id));
-    };
+    handleDisconnect(socket) {};
 
-
+    
     sendMessage(data = {}, socket) {
         const { author, message } = data;
 

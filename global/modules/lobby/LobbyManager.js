@@ -1,7 +1,11 @@
-const CONFIG = require('../../config')
-const BaseManager = require('../BaseManager');
+//GLOBAL
+const GLOBAL_CONFIG = require('../../globalConfig')
+const BaseManager = require('../../../global/modules/BaseManager');
 
-const { SOCKET } = CONFIG;
+//LOCAL
+//...
+
+const { SOCKET } = GLOBAL_CONFIG;
 
 class LobbyManager extends BaseManager {
     constructor({ options, role }) { //Роль берите из своего конфига, она совпадает с названием вашего сервиса, например 'mushroomEconomy'

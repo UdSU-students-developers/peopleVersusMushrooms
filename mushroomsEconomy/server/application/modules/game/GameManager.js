@@ -1,8 +1,12 @@
-const BaseManager = require("../BaseManager");
+//GLOBAL
+const BaseManager = require('../../../../../global/modules/BaseManager');
+const GLOBAL_CONFIG = require('../../../../../global/globalConfig');
+
+// LOCAL
 const CONFIG = require("../../../config");
 const Economy = require('../../economy/Economy');
 
-const { } = CONFIG.SOCKET;
+const { } = GLOBAL_CONFIG.SOCKET;
 
 class GameManager extends BaseManager {
 	constructor(options) {
@@ -29,7 +33,7 @@ class GameManager extends BaseManager {
 			);
 			return;
 		}
-		this.io.to(user.socketId).emit(this.SOCKETS.UPDATE_SCENE, this.answer.bad(16));
+		this.io.to(user.socketId).emit(this.SOCKETS.UPDATE_SCENE, this.answer.bad(1002));
 	}
 
 	_createEconomy(guid, startPoint, map) {
@@ -68,7 +72,7 @@ class GameManager extends BaseManager {
 			return;
 		}
 		if (user) {
-			this.io.to(user.socketId).emit(this.SOCKETS.START_GAME, this.answer.bad(16));
+			this.io.to(user.socketId).emit(this.SOCKETS.START_GAME, this.answer.bad(1002));
 		}
 	}
 

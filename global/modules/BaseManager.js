@@ -1,4 +1,4 @@
-const CONFIG = require('../config');
+const CONFIG = require('../globalConfig');
 
 class BaseManager {
     constructor(options) {

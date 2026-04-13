@@ -1,8 +1,11 @@
+//GLOABL
+const GLOABL_CONFIG = require('../../../../global/globalConfig');
+//..
+
+//LOCAL
 const express = require('express');
 const router = express.Router();
-const CONFIG = require('../../config');
 
-const SOCKET = CONFIG.SOCKET;
 
 const {
     notFoundHandler,

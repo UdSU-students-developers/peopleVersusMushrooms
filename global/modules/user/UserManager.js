@@ -1,8 +1,8 @@
 const BaseManager = require('../BaseManager');
-const CONFIG = require('../../../config');
+const GLOBAL_CONFIG = require('../../globalConfig');
 const User = require('./User');
 
-const { REGISTRATION, LOGIN, LOGOUT } = CONFIG.SOCKET;
+const { REGISTRATION, LOGIN, LOGOUT } = GLOBAL_CONFIG.SOCKET;
 
 class UserManager extends BaseManager {
     constructor(options) {

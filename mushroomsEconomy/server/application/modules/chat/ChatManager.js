@@ -1,4 +1,7 @@
-const BaseManager = require("../BaseManager");
+//GLOBAL
+const BaseManager = require('../../../../../global/modules/BaseManager');
+
+// LOCAL
 const Message = require("./Message");
 const CONFIG = require("../../../config");
 
@@ -26,7 +29,7 @@ class ChatManager extends BaseManager {
         const { author, message } = data;
 
         if (!author || !message) {
-            return socket.emit(MESSAGE, this.answer.bad(13));
+            return socket.emit(MESSAGE, this.answer.bad(242));
         }
 
         const newMessage = new Message({

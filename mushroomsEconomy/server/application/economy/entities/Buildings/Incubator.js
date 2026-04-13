@@ -1,6 +1,6 @@
-const CONFIG = require('../../../config')
-const Larva = require('../entities/Larva');
-const Building = require('../entities/Building');
+const CONFIG = require('../../../../config')
+const Larva = require('../Unit/Larva');
+const Building = require('../Buildings/Building');
 
 const { HP, SIZE, CONSUMPTION, PRODUCTION, CAPACITY } = CONFIG.ECONOMY.INCUBATOR;
 

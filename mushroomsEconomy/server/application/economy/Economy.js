@@ -1,3 +1,4 @@
+//LOCAL
 const EasyStar = require('easystarjs');
 const CONFIG = require('../../config');
 

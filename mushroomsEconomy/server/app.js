@@ -1,34 +1,39 @@
+//GLOBAL
+const GLOBAL_CONFIG = require('../../global/globalConfig');
+const DB = require('../../global/modules/db/DB');
+const Mediator = require('../../global/modules/Mediator');
+const Answer = require('../../global/Answer');
+const UserManager = require('../../global/modules/user/UserManager');
+const Common = require('../../global/modules/common/Common');
+const LobbyManager = require('../../global/modules/lobby/LobbyManager');
+
+//LOCAL
 const CONFIG = require('./config');
 
 const express = require('express');
 const app = express();
 const server = require('http').createServer(app);
-const io = require('socket.io')(server, {cors: CONFIG.CORS});
+const io = require('socket.io')(server, {cors: GLOBAL_CONFIG.CORS});
 
 const Router = require('./application/router/Router');
-const DB = require('./application/modules/db/DB');
-const Mediator = require('./application/modules/mediator/Mediator');
-const Answer = require('./application/Answer');
 const GameManager = require('./application/modules/game/GameManager');
-const UserManager = require('./application/modules/user/UserManager');
-const Common = require('./application/modules/common/Common');
 const ChatManager = require('./application/modules/chat/ChatManager');
-const LobbyManager = require('./application/modules/lobby/LobbyManager');
 
-const { NAME, PORT, DATABASE } = CONFIG;
+const { NAME, PORT } = CONFIG;
+const { DATABASE } = GLOBAL_CONFIG
 
 const common = new Common();
 const db = new DB({ DATABASE, common });
 const mediator = new Mediator(CONFIG.MEDIATOR);
 const answer = new Answer();
 
-const gameManager = new GameManager( { mediator, db, common, io, answer } );
-const userManager = new UserManager({ mediator, db, common, io, answer });
-const chatManager = new ChatManager({ mediator, common, io, answer });
-const lobbyManager = new LobbyManager({ mediator, common, db, io, answer });
+new GameManager( { mediator, db, io, answer, common } );
+new UserManager( { mediator, db, io, answer, common } );
+new ChatManager( { mediator, db, io, answer, common } );
+new LobbyManager( { mediator, db, io, answer, common } );
 
 
-app.use(CONFIG.CORS.middleware);
+app.use(GLOBAL_CONFIG.CORS.middleware);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

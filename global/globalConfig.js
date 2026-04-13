@@ -1,4 +1,4 @@
-const CONFIG = {
+const GLOBAL_CONFIG = {
     MAP: {
         URL: 'http://localhost:3001',
     },
@@ -24,6 +24,10 @@ const CONFIG = {
         }
     },
 
+    DATABASE: {
+        NAME: 'data.db',
+    },
+
 
     SOCKET: {
         CREATE_LOBBY: 'CREATE_LOBBY',
@@ -38,4 +42,4 @@ const CONFIG = {
     },
 };
 
-module.exports = CONFIG;
+module.exports = GLOBAL_CONFIG;

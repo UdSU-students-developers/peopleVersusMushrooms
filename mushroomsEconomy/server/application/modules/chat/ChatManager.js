@@ -51,7 +51,8 @@ class ChatManager extends BaseManager {
         const newMessage = new Message({
             common: this.common,
             author: author,
-            message: message
+            message: message,
+            socketId: socket.id
         });
         this.messages[newMessage.guid] = newMessage;
 

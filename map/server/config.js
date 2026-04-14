@@ -72,6 +72,11 @@ class CONFIG {
         UPDATE_MAP: 'UPDATE_MAP',
         GET_MAP_PARAMS: 'GET_MAP_PARAMS'
     }
+
+    static FIELD_NAMES = {
+        IRON: 'IRON',
+        OIL: 'OIL'
+    }
 }
 
 module.exports = CONFIG;

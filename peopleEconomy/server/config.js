@@ -8,6 +8,25 @@ class CONFIG {
 
     static LOBBY_MAX_SIZE = 5;
 
+    static URL = {
+        MAP: 'http://localhost:3001',
+        PEOPLE_ARMY: 'http://localhost:3007',
+        MUSHROOM_ECONOMY: 'http://localhost:3005',
+        MUSHROOM_ARMY: 'http://localhost:3003',
+    }
+
+    static ECONOMY = {
+        INTERVAL: 200, //ms
+
+        UNIT: {
+            RADIUS: 10, //максимальный радиус расчета ближайшей точки от центра стремления(больше 20 не ставить)
+        },
+
+        WORKER: {
+            HP: 5,
+            SPEED: 5,
+        }
+    }
 
     //events
     static EVENTS = {
@@ -44,11 +63,6 @@ class CONFIG {
 
         GAME_STARTED: 'GAME_STARTED',
 
-    }
-
-    static ECONOMY = {
-        WORKER_HP: 5,
-        WORKER_SPEED: 5,
     }
 }
 

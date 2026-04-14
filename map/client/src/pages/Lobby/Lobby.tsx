@@ -59,6 +59,11 @@ const Lobby: React.FC<IBasePage> = (props) => {
         server.setReady(server.user.guid);
     }
 
+    const kickPlayerHandler = (targetGuid: string) => {
+        if (window.confirm('Вы уверены, что хотите кикнуть этого игрока?')) {
+            server.dropFromLobby(server.user.guid, targetGuid);
+        }
+    }
 
     useEffect(() => {
         const {
@@ -72,7 +77,7 @@ const Lobby: React.FC<IBasePage> = (props) => {
             START_GAME,
             GENERATE_MAP,
             SET_READY,
-
+            DROP_FROM_LOBBY
         } = mediator.getEventTypes();
 
         const logoutHandler = () => {
@@ -120,6 +125,14 @@ const Lobby: React.FC<IBasePage> = (props) => {
         const lobbyUpdatedHandler = (data: any) => {
             console.log('Комната обновлена:', data);
             setCurrentLobby(data);
+            if (data.playersReady && server.user) {
+                const userRole = Object.keys(data.playersGuids).find(
+                    role => data.playersGuids[role] === server.user.guid
+                );
+                if (userRole) {
+                    setIsReady(data.playersReady[userRole] || false);
+                }
+            }
         };
 
         const lobbiesListUpdatedHandler = (data: any) => {
@@ -131,8 +144,15 @@ const Lobby: React.FC<IBasePage> = (props) => {
             console.log('Игра началась:', data);
         };
 
-        const setReadyHandlerFromServer = (data: any) => {
+        const setReadyHandler = (data: any) => {
             setIsReady(true);
+        };
+
+        const dropFromLobbyHandler = (data: any) => {
+            console.log('Игрок кикнут из лобби:', data);
+            if (data && currentLobby && currentLobby.lobbyGuid === data.lobbyGuid) {
+                setCurrentLobby(data);
+            }
         };
 
         mediator.subscribe(LOGOUT, logoutHandler);
@@ -145,7 +165,8 @@ const Lobby: React.FC<IBasePage> = (props) => {
         mediator.subscribe(LOBBIES_LIST_UPDATED, lobbiesListUpdatedHandler);
         mediator.subscribe(START_GAME, startGameHandler);
         mediator.subscribe(GENERATE_MAP, mapHandler);
-        mediator.subscribe(SET_READY, setReadyHandlerFromServer);
+        mediator.subscribe(SET_READY, setReadyHandler);
+        mediator.subscribe(DROP_FROM_LOBBY, dropFromLobbyHandler);
 
         return () => {
             mediator.unsubscribe(LOGOUT, logoutHandler);
@@ -157,9 +178,10 @@ const Lobby: React.FC<IBasePage> = (props) => {
             mediator.unsubscribe(LOBBIES_LIST_UPDATED, lobbiesListUpdatedHandler);
             mediator.unsubscribe(START_GAME, startGameHandler);
             mediator.unsubscribe(GENERATE_MAP, mapHandler);
-            mediator.unsubscribe(SET_READY, setReadyHandlerFromServer);
+            mediator.unsubscribe(SET_READY, setReadyHandler);
+            mediator.unsubscribe(DROP_FROM_LOBBY, dropFromLobbyHandler);
         };
-    }, [mediator, setPage, server]);
+    }, [mediator, setPage, server, currentLobby]);
 
     return (
         <div className='lobby'>
@@ -192,12 +214,29 @@ const Lobby: React.FC<IBasePage> = (props) => {
                                 {
                                     Object.keys(currentLobby.playersGuids)
                                         .filter(role => currentLobby.playersGuids[role as keyof typeof currentLobby.playersGuids] !== null)
-                                        .map((role, index) => (
-                                            <li key={index}>
-                                                {role} {currentLobby.playersGuids[role as keyof typeof currentLobby.playersGuids] === currentLobby.lobbyGuid && '(Создатель)'}
-                                            </li>
-                                        ))}
+                                        .map((role, index) => {
+                                            const playerGuid = currentLobby.playersGuids[role as keyof typeof currentLobby.playersGuids];
+                                            const isCreator = playerGuid === currentLobby.lobbyGuid;
+                                            const isCurrentUser = playerGuid === server.user?.guid;
+                                            const canKick = currentLobby.lobbyGuid === server.user?.guid && !isCreator && !isCurrentUser;
+
+                                            return (
+                                                <li key={index} className="player-item">
+                                                    {canKick && (
+                                                        <Button
+                                                            onClick={() => kickPlayerHandler(playerGuid!)}
+                                                            text='Кикнуть'
+                                                            className='button-kick'
+                                                        />
+                                                    )}
+                                                </li>
+                                            );
+                                        })
+                                }
                             </ul>
+                        </div>
+                        <div className="player-info">
+                            {isReady ? '✅ Готов' : '⏳ Не готов'}
                         </div>
                         <Button
                             onClick={setReadyHandler}

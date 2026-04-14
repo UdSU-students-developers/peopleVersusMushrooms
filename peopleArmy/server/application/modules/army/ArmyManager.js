@@ -1,4 +1,4 @@
-const BaseManager = require('../BaseManager');
+const BaseManager = require('../../../../../global/modules/BaseManager');
 const Army = require('../../army/Army');
 
 class ArmyManager extends BaseManager {

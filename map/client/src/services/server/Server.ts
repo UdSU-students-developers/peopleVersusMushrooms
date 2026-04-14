@@ -53,6 +53,14 @@ class Server {
             }
         });
 
+        this.socket.on(MEDIATOR.EVENTS.SET_READY, (data: TAnswer<any>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { SET_READY } = this.mediator.getEventTypes();
+                this.mediator.call(SET_READY, result);
+            }
+        });
+
         this.socket.on(MEDIATOR.EVENTS.CREATE_LOBBY, (data: TAnswer<any>) => {
             const result = this._validate(data);
             if (result) {
@@ -149,6 +157,11 @@ class Server {
             });*/
             return null;
         }
+    }
+
+    setReady(guid: string): void {
+        console.log(guid)
+        this.socket.emit(MEDIATOR.EVENTS.SET_READY, { guid });
     }
 
     check(name: string, text: string): void {

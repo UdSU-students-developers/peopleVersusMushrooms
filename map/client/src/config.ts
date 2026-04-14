@@ -11,6 +11,7 @@ export enum EMESSAGES {
 export const MEDIATOR = {
     EVENTS: {
         REGISTRATION: 'REGISTRATION',
+        SET_READY: 'SET_READY',
         LOGIN: 'LOGIN',
         LOGOUT: 'LOGOUT',
         SHOW_ERROR: 'SHOW_ERROR',

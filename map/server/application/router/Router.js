@@ -22,7 +22,7 @@ function Router(mediator, answer, common) {
     // ============ LOBBY ROUTES ============
     router.post('/getLobbies{/:guid}', useGetLobbiesHandler(mediator, answer, common));
     router.post('/createLobby{/:guid}{/:lobbyName}{/:role}', useCreateLobbyHandler(mediator, answer, common));
-    router.post('/joinToLobby{/:guid}{/:lobbyName}{/:role}', useJoinToLobbyHandler(mediator, answer, common));
+    router.post('/joinToLobby{/:guid}{/:lobbyGuid}{/:role}', useJoinToLobbyHandler(mediator, answer, common));
     router.post('/leaveLobby{/:guid}', useLeaveLobbyHandler(mediator, answer, common));
     router.post('/dropFromLobby{/:guid}{/:targetGuid}', useDropFromLobbyHandler(mediator, answer, common));
     router.post('/startGame{/:guid}', useStartGameHandler(mediator, answer, common));

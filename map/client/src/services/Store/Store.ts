@@ -29,6 +29,7 @@ class Store {
         this.mediator.subscribe(MEDIATOR.EVENTS.START_GAME, (data) => this.handleStartGame(data));
         this.mediator.subscribe(MEDIATOR.EVENTS.LOBBY_UPDATED, (data) => this.handleLobbyUpdated(data));
         this.mediator.subscribe(MEDIATOR.EVENTS.LOBBIES_LIST_UPDATED, (data) => this.handleLobbiesListUpdated(data));
+        this.mediator.subscribe(MEDIATOR.EVENTS.SET_READY, (data) => this.handleSetReady(data));
 
         this.mediator.set(MEDIATOR.TRIGGERS.GET_TOKEN, () => this.getToken());
         this.mediator.set(MEDIATOR.TRIGGERS.GET_LOBBIES, () => this.getLobbies());
@@ -36,7 +37,6 @@ class Store {
         this.mediator.set(EMESSAGES.GET_USER, () => this.getUser());
         this.mediator.set(MEDIATOR.TRIGGERS.SET_GENERATED_MAP, (data) => this.setGeneratedMap(data));
         this.mediator.set(MEDIATOR.TRIGGERS.GET_GENERATED_MAP, () => this.getGeneratedMap());
-
     }
 
     handleLogin(data: TUser): void {
@@ -121,6 +121,10 @@ class Store {
         if (index !== -1) {
             this.lobbies[index] = data;
         }
+    }
+
+    handleSetReady(data: any): void {
+        console.log('Set ready:', data);
     }
 
     handleLobbiesListUpdated(data: ILobby[]): void {

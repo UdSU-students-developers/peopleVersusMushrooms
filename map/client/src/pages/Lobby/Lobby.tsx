@@ -15,6 +15,7 @@ const Lobby: React.FC<IBasePage> = (props) => {
     const [lobbyName, setLobbyName] = useState('');
     const [currentLobby, setCurrentLobby] = useState<ILobby | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isReady, setIsReady] = useState(false);
 
     const logoutClickHandler = async () => {
         server.logout();
@@ -30,6 +31,7 @@ const Lobby: React.FC<IBasePage> = (props) => {
             console.log(server.user.guid)
             server.createLobby(server.user.guid, lobbyName.trim(), 'spectator');
             setLobbyName('');
+            setShowCreateModal(false);
         }
     }
 
@@ -43,6 +45,7 @@ const Lobby: React.FC<IBasePage> = (props) => {
     }
 
     const leaveLobbyHandler = () => {
+        setIsReady(false);
         server.leaveLobby(server.user.guid);
     }
 
@@ -51,6 +54,11 @@ const Lobby: React.FC<IBasePage> = (props) => {
         server.startGame(server.user.guid);
         setPage(PAGES.MAP);
     }
+
+    const setReadyHandler = () => {
+        server.setReady(server.user.guid);
+    }
+
 
     useEffect(() => {
         const {
@@ -62,7 +70,9 @@ const Lobby: React.FC<IBasePage> = (props) => {
             LOBBY_UPDATED,
             LOBBIES_LIST_UPDATED,
             START_GAME,
-            GENERATE_MAP
+            GENERATE_MAP,
+            SET_READY,
+
         } = mediator.getEventTypes();
 
         const logoutHandler = () => {
@@ -76,8 +86,8 @@ const Lobby: React.FC<IBasePage> = (props) => {
         };
 
         const createLobbyHandler = (data: any) => {
-            console.log('Комната создана:', data);
             setCurrentLobby(data);
+            setIsReady(false);
             setIsLoading(false);
         };
 
@@ -89,12 +99,14 @@ const Lobby: React.FC<IBasePage> = (props) => {
         const joinToLobbyHandler = (data: any) => {
             console.log('Присоединились к комнате:', data);
             setCurrentLobby(data);
+            setIsReady(false);
             setIsLoading(false);
         };
 
         const leaveLobbyHandler = (data: any) => {
             console.log('Покинули комнату:', data);
             setCurrentLobby(null);
+            setIsReady(false);
             setIsLoading(false);
         };
 
@@ -119,6 +131,10 @@ const Lobby: React.FC<IBasePage> = (props) => {
             console.log('Игра началась:', data);
         };
 
+        const setReadyHandlerFromServer = (data: any) => {
+            setIsReady(true);
+        };
+
         mediator.subscribe(LOGOUT, logoutHandler);
         mediator.subscribe(SHOW_ERROR, serverErrorHandler);
         mediator.subscribe(CREATE_LOBBY, createLobbyHandler);
@@ -129,6 +145,7 @@ const Lobby: React.FC<IBasePage> = (props) => {
         mediator.subscribe(LOBBIES_LIST_UPDATED, lobbiesListUpdatedHandler);
         mediator.subscribe(START_GAME, startGameHandler);
         mediator.subscribe(GENERATE_MAP, mapHandler);
+        mediator.subscribe(SET_READY, setReadyHandlerFromServer);
 
         return () => {
             mediator.unsubscribe(LOGOUT, logoutHandler);
@@ -140,7 +157,7 @@ const Lobby: React.FC<IBasePage> = (props) => {
             mediator.unsubscribe(LOBBIES_LIST_UPDATED, lobbiesListUpdatedHandler);
             mediator.unsubscribe(START_GAME, startGameHandler);
             mediator.unsubscribe(GENERATE_MAP, mapHandler);
-
+            mediator.unsubscribe(SET_READY, setReadyHandlerFromServer);
         };
     }, [mediator, setPage, server]);
 
@@ -168,13 +185,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
                 <div className="current-lobby">
                     <h2>Текущая комната: {currentLobby.lobbyName}</h2>
                     <div className="lobby-info">
-                        <p>Создатель:
-                            {
-                                Object.keys(currentLobby.playersGuids).find(role => {
-                                    const guid = currentLobby.playersGuids[role as keyof typeof currentLobby.playersGuids];
-                                    return guid !== null && guid === currentLobby.lobbyGuid;
-                                })
-                            }</p>
                         <p>Игроки: {Object.values(currentLobby.playersGuids).filter(g => g !== null).length}/5</p>
                         <div className="players-list">
                             <h3>Игроки:</h3>
@@ -189,14 +199,19 @@ const Lobby: React.FC<IBasePage> = (props) => {
                                         ))}
                             </ul>
                         </div>
-                        {currentLobby.lobbyGuid === currentLobby.playersGuids.spectator
-                            && Object.values(currentLobby.playersGuids).filter(g => g !== null).length === 5 && (
-                                <Button
-                                    onClick={startGameHandler}
-                                    text='Начать игру'
-                                    className='button-start-game'
-                                />
-                            )}
+                        <Button
+                            onClick={setReadyHandler}
+                            text={'Готов'}
+                        />
+
+                        {currentLobby.lobbyGuid === currentLobby.playersGuids.spectator && (
+                            <Button
+                                onClick={startGameHandler}
+                                text='Начать игру'
+                                className='button-start-game'
+                                isDisabled={!isReady}
+                            />
+                        )}
                         <Button
                             onClick={leaveLobbyHandler}
                             text='Покинуть комнату'
@@ -217,8 +232,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
                         {lobbies.map((lobby) => (
                             <div key={lobby.lobbyGuid} className="lobby-card">
                                 <h3>{lobby.lobbyName}</h3>
-                                <p>Создатель: {Object.keys(lobby.playersGuids)
-                                    .find(role => lobby.playersGuids[role as keyof typeof lobby.playersGuids] === lobby.lobbyGuid)}</p>
                                 <p>Игроки: {Object.values(lobby.playersGuids).filter(g => g !== null).length}/5</p>
                                 {Object.values(lobby.playersGuids).filter(g => g !== null).length < 5 && (
                                     <Button

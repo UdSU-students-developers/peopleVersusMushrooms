@@ -62,12 +62,9 @@ class MapManager extends BaseManager {
 
     //EVENTS
     async eventStartGame(playersGuids) {
-        const guid = playersGuids.lobbyGuid;
-        //создать карту
-        const map = new Map(guid, playersGuids);
-        map.generateRelief();
-        map.generateSources();
-        this.maps[map.guid] = map;
+        const guid = playersGuids.spectator;
+        //найти карту. Если нету - крашим сервер
+        const map = this.maps[guid]; // скорее всего возвращаем рассылаем рельеф
 
         //сообщить всем сервисам, что игра началась и сообщить guid карты
         const result1 = await this.send(
@@ -201,7 +198,7 @@ class MapManager extends BaseManager {
     socketGenerateMap(data, socket) {
         const { guid, width, height, water, mountains, seed, iron, oil } = data;
         const playerGuids = {
-            spectator: null,
+            spectator: guid,
             peopleArmy: null,
             peopleEconomy: null,
             mushroomArmy: null,
@@ -210,7 +207,7 @@ class MapManager extends BaseManager {
         const map = new Map(guid, playerGuids, width, height);
         map.generateRelief(seed, water, mountains);
         map.generateSources(iron, oil);
-        this.maps[map.guid] = map;
+        this.maps[guid] = map;
         socket.emit(
             MESSAGES.GENERATE_MAP,
             this.answer.good({ map: map.getRelief(), ...map.getSelf() })

@@ -28,7 +28,7 @@ const StartGame: React.FC<IBasePage> = ({ setPage }) => {
     });
 
     const handleJoinToLobby = () => {
-        server.joinToLobby(lobbies[0].creatorGuid);
+        server.joinToLobby(lobbies[0].lobbyGuid);
     }
     const handleStartGame = () => server.createLobby();
     const handleBackToLogin = () => setPage(PAGES.LOGIN);

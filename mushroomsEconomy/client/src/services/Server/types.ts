@@ -62,7 +62,7 @@ type TPlayer = {
 }
 
 type TLobby = {
-    creatorGuid: string;
+    lobbyGuid: string;
     lobbyName: string;
     players: TPlayer[];
 }

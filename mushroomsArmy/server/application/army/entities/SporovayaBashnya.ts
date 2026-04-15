@@ -36,6 +36,8 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
 
     public isAlive: boolean = true;
     public isAttacking: boolean = false;
+    private attackingTimer: number = 0;          // сколько секунд ещё показывать флаг атаки
+    private readonly attackAnimDuration: number = 0.6; // держим флаг 600ms
     private readonly attackRange: number = 20;
     private readonly attackCooldown: number = 2;
     private readonly attackDamage: number = 50;
@@ -53,7 +55,15 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
     public update(enemies: Unit[], map: TMap, deltaTime: number): void {
         if (!this.isAlive) return;
 
-        this.isAttacking = false;
+        // Обратный отсчёт флага анимации атаки
+        if (this.attackingTimer > 0) {
+            this.attackingTimer -= deltaTime;
+            if (this.attackingTimer <= 0) {
+                this.isAttacking = false;
+                this.attackingTimer = 0;
+            }
+        }
+
         this.attackTimer += deltaTime;
         if (this.attackTimer < this.attackCooldown) return;
 
@@ -77,6 +87,7 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
 
         if (nearestEnemy) {
             this.isAttacking = true;
+            this.attackingTimer = this.attackAnimDuration;
             nearestEnemy.takeDamage(this.attackDamage, 'physical');
         }
     }

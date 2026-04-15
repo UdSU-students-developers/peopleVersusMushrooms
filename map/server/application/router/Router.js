@@ -20,13 +20,13 @@ const {
 
 function Router(mediator, answer, common) {
     // ============ LOBBY ROUTES ============
-    router.post('/getLobbies{/:guid}', useGetLobbiesHandler(mediator, answer, common));
-    router.post('/createLobby{/:guid}{/:lobbyName}{/:role}', useCreateLobbyHandler(mediator, answer, common));
-    router.post('/joinToLobby{/:guid}{/:lobbyGuid}{/:role}', useJoinToLobbyHandler(mediator, answer, common));
-    router.post('/leaveLobby{/:guid}', useLeaveLobbyHandler(mediator, answer, common));
-    router.post('/dropFromLobby{/:guid}{/:targetGuid}', useDropFromLobbyHandler(mediator, answer, common));
-    router.post('/startGame{/:guid}', useStartGameHandler(mediator, answer, common));
-    router.post('/setReady{/:guid}', useSetReadyHandler(mediator, answer, common));
+    router.post('/getLobbies', useGetLobbiesHandler(mediator, answer, common));
+    router.post('/createLobby', useCreateLobbyHandler(mediator, answer, common));
+    router.post('/joinToLobby', useJoinToLobbyHandler(mediator, answer, common));
+    router.post('/leaveLobby', useLeaveLobbyHandler(mediator, answer, common));
+    router.post('/dropFromLobby', useDropFromLobbyHandler(mediator, answer, common));
+    router.post('/startGame', useStartGameHandler(mediator, answer, common));
+    router.post('/setReady', useSetReadyHandler(mediator, answer, common));
 
     // ============ MAP ROUTES ============
     // для http методов из MapManager

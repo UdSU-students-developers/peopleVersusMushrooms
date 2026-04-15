@@ -48,10 +48,6 @@ class MapManager extends BaseManager {
 
     // ============ ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ============
 
-    isUserInAnyLobby(guid) {
-        return this.mediator.get(this.TRIGGERS.IS_GUID_IN_ANY_LOBBY, guid);
-    }
-
     getMapByGuid(guid) {
         return Object.values(this.maps).find(map => map.guid === guid);
     }

@@ -1,5 +1,5 @@
 //GLOBAL
-const GLOBAL_CONFIG = require('../../../../global/globalConfig');
+const { URLS } = require('../../../../global/globalConfig');
 //..
 
 //LOCAL
@@ -15,7 +15,7 @@ const {
 function Router({ mediator, answer }) {
 	
 	// про лобби
-	router.post('/lobbyUpdated', useLobbyUpdatedHandler(mediator, answer));
+	router.post(URLS.LOBBY_UPDATED, useLobbyUpdatedHandler(mediator, answer));
 
     router.all('/*path', notFoundHandler);
     return router;

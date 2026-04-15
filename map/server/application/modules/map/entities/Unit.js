@@ -11,14 +11,14 @@ class Unit extends Entity {
     get() {
         return {
             ...super.get(),
-            guid: this.guid
+            guid: this.guid,
+            role: this.role
         };
     }
     
     getSelf() {
         return {
             ...this.get(),
-            role: this.role,
             visibility: this.visibility,
         };
     }

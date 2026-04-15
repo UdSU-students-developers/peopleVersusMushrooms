@@ -68,6 +68,10 @@ export type TBuilding = {
     y: number;
     hp: number;
     maxHp: number;
+    sizeX?: number;
+    sizeY?: number;
+    isExploding?: boolean;
+    isAttacking?: boolean;
 }
 
 // Лужа слайма

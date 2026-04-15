@@ -33,6 +33,8 @@ export type Building = {
   maxHp: number;
   sizeX?: number;
   sizeY?: number;
+  isExploding?: boolean;
+  isAttacking?: boolean;
 };
 
 /**

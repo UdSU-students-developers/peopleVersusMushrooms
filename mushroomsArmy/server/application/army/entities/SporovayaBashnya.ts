@@ -11,7 +11,20 @@ type TSporovayaBashnyaOptions = {
     maxHp: number;
 };
 
-class SporovayaBashnya implements IBuilding<any> {
+type TSporovayaBashnyaState = {
+    guid: string;
+    type: string;
+    x: number;
+    y: number;
+    hp: number;
+    maxHp: number;
+    sizeX: number;
+    sizeY: number;
+    isAlive: boolean;
+    isAttacking: boolean;
+};
+
+class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
     public guid: string;
     public type: string;
     public x: number;
@@ -22,6 +35,9 @@ class SporovayaBashnya implements IBuilding<any> {
     public readonly sizeY: number = 2;
 
     public isAlive: boolean = true;
+    public isAttacking: boolean = false;
+    private attackingTimer: number = 0;          // сколько секунд ещё показывать флаг атаки
+    private readonly attackAnimDuration: number = 0.6; // держим флаг 600ms
     private readonly attackRange: number = 20;
     private readonly attackCooldown: number = 2;
     private readonly attackDamage: number = 50;
@@ -38,6 +54,15 @@ class SporovayaBashnya implements IBuilding<any> {
 
     public update(enemies: Unit[], map: TMap, deltaTime: number): void {
         if (!this.isAlive) return;
+
+        // Обратный отсчёт флага анимации атаки
+        if (this.attackingTimer > 0) {
+            this.attackingTimer -= deltaTime;
+            if (this.attackingTimer <= 0) {
+                this.isAttacking = false;
+                this.attackingTimer = 0;
+            }
+        }
 
         this.attackTimer += deltaTime;
         if (this.attackTimer < this.attackCooldown) return;
@@ -61,6 +86,8 @@ class SporovayaBashnya implements IBuilding<any> {
         }
 
         if (nearestEnemy) {
+            this.isAttacking = true;
+            this.attackingTimer = this.attackAnimDuration;
             nearestEnemy.takeDamage(this.attackDamage, 'physical');
         }
     }
@@ -75,18 +102,20 @@ class SporovayaBashnya implements IBuilding<any> {
         }
     }
 
-    public getState() {
-        return {
-            guid: this.guid,
-            type: this.type,
-            x: this.x,
-            y: this.y,
-            hp: this.hp,
-            maxHp: this.maxHp,
-            sizeX: this.sizeX,
-            sizeY: this.sizeY,
-        };
-    }
+    public getState(): TSporovayaBashnyaState {
+    return {
+        guid: this.guid,
+        type: this.type,
+        x: this.x,
+        y: this.y,
+        hp: this.hp,
+        maxHp: this.maxHp,
+        sizeX: this.sizeX,
+        sizeY: this.sizeY,
+        isAlive: this.isAlive,
+        isAttacking: this.isAttacking,
+    };
+}
 }
 
 export default SporovayaBashnya;

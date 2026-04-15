@@ -1,6 +1,6 @@
 import { GameState, TerrainType } from './types';
-import sporometSrc from './Sporomet.png';
-import champignebSrc from './Champigneb.png';
+import sporometSrc from '../../assets/units/Sporomet.png';
+import champignebSrc from '../../assets/units/Champigneb.png';
 
 // Предзагрузка изображений (один раз)
 const unitImages: Record<string, HTMLImageElement> = {};

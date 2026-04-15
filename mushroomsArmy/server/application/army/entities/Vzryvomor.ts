@@ -35,6 +35,7 @@ interface VzryvomorState {
     y: number;
     attackRange: number;
     isAlive: boolean;
+    isExploding: boolean;
     respawn: Respawn;
     elapsedFromLastDecision: number;
 }
@@ -160,17 +161,18 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
     }
     
     getState(): VzryvomorState {
-        return {
-            guid: this.guid,
-            type: this.type,
-            x: this.x,
-            y: this.y,
-            hp: this.hp,
-            maxHp: this.maxHp,
-            elapsedFromLastDecision: this.elapsedFromLastDecision,
-            attackRange: this.attackRange,
-            isAlive: this.isAlive,
-            respawn: this.respawn
-        };
-    }
+    return {
+        guid: this.guid,
+        type: this.type,
+        x: this.x,
+        y: this.y,
+        hp: this.hp,
+        maxHp: this.maxHp,
+        elapsedFromLastDecision: this.elapsedFromLastDecision,
+        attackRange: this.attackRange,
+        isAlive: this.isAlive,
+        isExploding: this.respawn.inProgress,
+        respawn: this.respawn
+    };
+}
 }

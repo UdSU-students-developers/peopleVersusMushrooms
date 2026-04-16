@@ -55,6 +55,9 @@ const Login: React.FC<IBasePage> = (props) => {
     const registrationClickHandler = () => { setPage(PAGES.REGISTRATION) };
 
     return (<div className='login'>
+        <h1>КАРТА</h1>
+        <h2>  🤸‍♂️</h2>
+        <h1>🏌️🦽</h1>
         <div className="input-group login-group">
             <p className='p-login'>логин</p>
             <input

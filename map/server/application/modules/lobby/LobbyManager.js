@@ -13,13 +13,36 @@ class LobbyManager extends BaseManager {
 
         // socket обработчики
         this.io.on('connection', (socket) => {
-            socket.on(MESSAGES.CREATE_LOBBY, (data) => this.socketCreateLobby(data, socket));
-            socket.on(MESSAGES.JOIN_TO_LOBBY, (data) => this.socketJoinToLobby(data, socket));
-            socket.on(MESSAGES.LEAVE_LOBBY, (data) => this.socketLeaveLobby(data, socket));
-            socket.on(MESSAGES.DROP_FROM_LOBBY, (data) => this.socketDropFromLobby(data, socket));
-            socket.on(MESSAGES.START_GAME, (data) => this.socketStartGame(data, socket));
-            socket.on(MESSAGES.GET_LOBBIES, (data) => this.socketGetLobbies(data, socket));
-            socket.on(MESSAGES.SET_READY, (data) => this.socketSetReady(data, socket));
+            console.log(`[map LobbyManager] socket connected id=${socket.id}`);
+
+            socket.on(MESSAGES.CREATE_LOBBY, (data) => {
+                console.log(`[map LobbyManager] socket ${MESSAGES.CREATE_LOBBY}`, JSON.stringify(data));
+                this.socketCreateLobby(data, socket);
+            });
+            socket.on(MESSAGES.JOIN_TO_LOBBY, (data) => {
+                console.log(`[map LobbyManager] socket ${MESSAGES.JOIN_TO_LOBBY}`, JSON.stringify(data));
+                this.socketJoinToLobby(data, socket);
+            });
+            socket.on(MESSAGES.LEAVE_LOBBY, (data) => {
+                console.log(`[map LobbyManager] socket ${MESSAGES.LEAVE_LOBBY}`, JSON.stringify(data));
+                this.socketLeaveLobby(data, socket);
+            });
+            socket.on(MESSAGES.DROP_FROM_LOBBY, (data) => {
+                console.log(`[map LobbyManager] socket ${MESSAGES.DROP_FROM_LOBBY}`, JSON.stringify(data));
+                this.socketDropFromLobby(data, socket);
+            });
+            socket.on(MESSAGES.START_GAME, (data) => {
+                console.log(`[map LobbyManager] socket ${MESSAGES.START_GAME}`, JSON.stringify(data));
+                this.socketStartGame(data, socket);
+            });
+            socket.on(MESSAGES.GET_LOBBIES, (data) => {
+                console.log(`[map LobbyManager] socket ${MESSAGES.GET_LOBBIES}`, JSON.stringify(data));
+                this.socketGetLobbies(data, socket);
+            });
+            socket.on(MESSAGES.SET_READY, (data) => {
+                console.log(`[map LobbyManager] socket ${MESSAGES.SET_READY}`, JSON.stringify(data));
+                this.socketSetReady(data, socket);
+            });
         });
 
         // mediator events
@@ -28,7 +51,7 @@ class LobbyManager extends BaseManager {
         this.mediator.subscribe(this.EVENTS.LEAVE_LOBBY, (data) => this._eventAnswer(data, '_leaveLobby'));
         this.mediator.subscribe(this.EVENTS.DROP_FROM_LOBBY, (data) => this._eventAnswer(data, '_dropFromLobby'));
         this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this._eventAnswer(data, '_startGame'));
-        this.mediator.subscribe(this.EVENTS.GET_LOBBIES, () => this._eventAnswer(_, '_getLobbies'));
+        this.mediator.subscribe(this.EVENTS.GET_LOBBIES, () => this._eventAnswer(undefined, '_getLobbies'));
         this.mediator.subscribe(this.EVENTS.SET_READY, (data) => this._eventAnswer(data, '_setReady'));
         this.mediator.subscribe(this.EVENTS.LOGOUT, (data) => this._eventAnswer(data, '_leaveLobby'));
 
@@ -78,6 +101,7 @@ class LobbyManager extends BaseManager {
     // ============ БИЗНЕС-ЛОГИКА ============
 
     _createLobby({ guid, lobbyName, role }) {
+        console.log('[map LobbyManager] _createLobby (socket или HTTP → mediator)', { guid, lobbyName, role });
         //проверка, не в лобби ли уже
         const existingLobby = this.isGuidInAnyLobby(guid);
         if (existingLobby) {
@@ -121,6 +145,7 @@ class LobbyManager extends BaseManager {
     }
 
     _leaveLobby({ guid }) {
+        console.log('[map LobbyManager] _leaveLobby (socket или HTTP → mediator)', { guid });
         let e;
         //находим лобби
         const lobby = this.isGuidInAnyLobby(guid);

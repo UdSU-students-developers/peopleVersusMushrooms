@@ -8,7 +8,7 @@ module.exports = (mediator, answer, common) => {
             return res.json(answer.bad(242));
         }
 
-        const response = await mediator.call(DROP_FROM_LOBBY, guid, targetGuid);
+        const response = await mediator.call(DROP_FROM_LOBBY, { guid, targetGuid });
 
         if (response && response.error) {
             return res.json(answer.bad(response.error));

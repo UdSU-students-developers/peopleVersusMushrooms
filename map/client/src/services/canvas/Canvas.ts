@@ -205,7 +205,7 @@ class Canvas {
 
     rect(x: number, y: number, size = 64, color = '#f004'): void {
         this.contextV.fillStyle = color;
-        this.contextV.fillRect(this.xs(x), this.ys(y), size, size)
+        this.contextV.fillRect(this.xs(x), this.ys(y), this.dec(size), this.dec(size))
     }
 
     // прямоугольник. НЕ квадрат

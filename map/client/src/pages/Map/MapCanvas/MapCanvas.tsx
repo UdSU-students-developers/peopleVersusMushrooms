@@ -18,8 +18,6 @@ const MapCanvas: React.FC = () => {
     let canMove = false;
     let dragStartX = 0;
     let dragStartY = 0;
-    let dragStartLeft = 0;
-    let dragStartTop = 0;
 
     useEffect(() => {
         const { GENERATE_MAP } = mediator.getEventTypes();
@@ -62,8 +60,9 @@ const MapCanvas: React.FC = () => {
     const cellSize = WINDOW.WIDTH / CONFIG.WIDTH;
 
     function render(fps: number): void {
+        canvas.clear();
+
         if (canvas && map) {
-            canvas.clear();
             map.cells.forEach((cell) => {
                 canvas.rect(cell.x * cellSize, cell.y * cellSize, cellSize, cell.color);
 
@@ -87,10 +86,9 @@ const MapCanvas: React.FC = () => {
         const zoomAmount = delta > 0 ? 1 + ZOOM : 1 - ZOOM;
         let newWidth = WINDOW.WIDTH * zoomAmount;
         let newHeight = WINDOW.HEIGHT * zoomAmount;
-        const MIN_ZOOM = 400;
+        const MIN_ZOOM = 100;
         const MAX_ZOOM = 2000;
-        newWidth = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, newWidth));
-        newHeight = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, newHeight));
+        if (newHeight < MIN_ZOOM || newHeight > MAX_ZOOM) return;
 
         WINDOW.LEFT = x - (x - WINDOW.LEFT) * zoomAmount;
         WINDOW.TOP = y - (y - WINDOW.TOP) * zoomAmount;
@@ -100,12 +98,14 @@ const MapCanvas: React.FC = () => {
 
     const mouseMove = (x: number, y: number) => {
         if (!canMove) return;
-        WINDOW.LEFT = dragStartLeft - (x - dragStartX) / canvas.WIDTH * WINDOW.WIDTH;
-        WINDOW.TOP = dragStartTop - (y - dragStartY) / canvas.HEIGHT * WINDOW.HEIGHT;
+        WINDOW.LEFT -= (x - dragStartX);
+        WINDOW.TOP -= (y - dragStartY);
     };
 
-    const mouseDown = () => {
+    const mouseDown = (x: number, y: number) => {
         canMove = true;
+        dragStartX = x;
+        dragStartY = y;
     };
 
     const mouseUp = () => {
@@ -135,7 +135,7 @@ const MapCanvas: React.FC = () => {
         return () => {
             canvas?.destructor();
         };
-    });
+    }, []);
 
     // выстреливает только при уничтожении компоненты
     useEffect(() => () => map?.destructor());

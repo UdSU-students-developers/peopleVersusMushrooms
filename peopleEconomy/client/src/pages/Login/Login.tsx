@@ -1,5 +1,5 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
-import { MediatorContext, ServerContext } from '../../App';
+import React, { useEffect, useRef, useState, useContext } from 'react';
+import { MediatorContext, ServerContext } from "../../App";
 import { IBasePage, PAGES } from '../PageManager';
 import { TError } from '../../services/server/types';
 import Button from '../../components/Button/Button';
@@ -8,8 +8,8 @@ import './Login.scss'
 
 const Login: React.FC<IBasePage> = (props) => {
     const { setPage } = props;
-    const mediator = useContext(MediatorContext);
     const server = useContext(ServerContext);
+    const mediator = useContext(MediatorContext);
     const loginRef = useRef<HTMLInputElement>(null!);
     const passwordRef = useRef<HTMLInputElement>(null!);
     const { isFormValid, clientError, setClientError, checkFilled, showError } = useCheckLogin();
@@ -55,6 +55,9 @@ const Login: React.FC<IBasePage> = (props) => {
     const registrationClickHandler = () => { setPage(PAGES.REGISTRATION) };
 
     return (<div className='login'>
+        <h1>ЛЮДИШКИ РАБОЧИЕ</h1>
+        <h2>  🤸‍♂️</h2>
+        <h1>🏌️🦽</h1>
         <div className="input-group login-group">
             <p className='p-login'>логин</p>
             <input

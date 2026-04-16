@@ -223,12 +223,12 @@ class Map {
         }
 
         positions.forEach((pos, index) => {
-            const row = Math.floor(pos / this.width);
-            const col = pos % this.width;
+            const y = Math.floor(pos / this.width);
+            const x = pos % this.width;
             this.sources.push(
                 (index > ironSize) ?
-                    new Source({ col, row, type: CONFIG.FIELD_NAMES.IRON, saturation: MAP_CONFIG.SATURATION.IRON }) :
-                    new Source({ col, row, type: CONFIG.FIELD_NAMES.OIL, saturation: MAP_CONFIG.SATURATION.OIL })
+                    new Source({ x, y, type: CONFIG.FIELD_NAMES.IRON, saturation: MAP_CONFIG.SATURATION.IRON }) :
+                    new Source({ x, y, type: CONFIG.FIELD_NAMES.OIL, saturation: MAP_CONFIG.SATURATION.OIL })
             );
         });
     }

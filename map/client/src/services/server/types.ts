@@ -44,6 +44,14 @@ export interface ILobby {
 export type TMap = {
     guid: string;
     map: number[][];
+    sources: TSource[];
     width: number;
     height: number;
 }
+export type TSource = {
+    x: number;
+    y: number;
+    type: 'IRON' | 'OIL';
+    saturation: number;
+}
+

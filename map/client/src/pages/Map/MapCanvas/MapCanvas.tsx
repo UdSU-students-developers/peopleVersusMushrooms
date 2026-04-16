@@ -3,7 +3,7 @@ import { MediatorContext, ServerContext } from "../../../App";
 import CONFIG from "../../../config";
 import { Canvas, useCanvas } from "../../../services/canvas";
 import Map from "../../../services/Map/Map";
-import { TMap } from "../../../services/server/types";
+import { TMap, TSource } from "../../../services/server/types";
 
 const mapField = 'map-field';
 
@@ -33,8 +33,22 @@ const MapCanvas: React.FC = () => {
                     color: type === 1 ? 'blue'
                         : type === 2 ? 'gray'
                             : 'green',
+                    isResource: false,
+                    resourceColor: null as string | null
                 }))
             );
+
+
+            if (mapData.sources) {
+                mapData.sources.forEach((source: TSource) => {
+                    const cell = cells.find(c => c.x === source.x && c.y === source.y);
+
+                    if (cell) {
+                        cell.isResource = true;
+                        cell.resourceColor = source.type === 'IRON' ? 'white' : 'black';
+                    }
+                });
+            }
             map?.setCells(cells);
         };
 
@@ -52,7 +66,16 @@ const MapCanvas: React.FC = () => {
             canvas.clear();
             map.cells.forEach((cell) => {
                 canvas.rect(cell.x * cellSize, cell.y * cellSize, cellSize, cell.color);
+
+                if (cell.isResource) {
+                    const centerX = cell.x * cellSize + cellSize / 2;
+                    const centerY = cell.y * cellSize + cellSize / 2;
+                    const radius = cellSize / 4;
+
+                    canvas.circle(centerX, centerY, radius, cell.resourceColor);
+                }
             });
+
             canvas.text(WINDOW.LEFT + 20, WINDOW.TOP + 50, String(fps), 'red');
             canvas.render();
         }

@@ -187,35 +187,13 @@ class Canvas {
         this.contextV.closePath();
     }
 
-    arrow(x1: number, y1: number, x2: number, y2: number, color = '#ff0000', lineWidth = 3): void {
+    circle(x: number, y: number, radius: number, color: string): void {
         if (!this.contextV) return;
-        const screenX1 = this.xs(x1);
-        const screenY1 = this.ys(y1);
-        const screenX2 = this.xs(x2);
-        const screenY2 = this.ys(y2);
         this.contextV.beginPath();
-        this.contextV.strokeStyle = color;
-        this.contextV.lineWidth = lineWidth;
-        this.contextV.moveTo(screenX1, screenY1);
-        this.contextV.lineTo(screenX2, screenY2);
-        this.contextV.stroke();
-        const angle = Math.atan2(screenY2 - screenY1, screenX2 - screenX1);
-        const arrowLength = 15;
-        const arrowAngle = Math.PI / 6;
-        this.contextV.beginPath();
-        this.contextV.moveTo(screenX2, screenY2);
-        this.contextV.lineTo(
-            screenX2 - arrowLength * Math.cos(angle - arrowAngle),
-            screenY2 - arrowLength * Math.sin(angle - arrowAngle)
-        );
-        this.contextV.stroke();
-        this.contextV.beginPath();
-        this.contextV.moveTo(screenX2, screenY2);
-        this.contextV.lineTo(
-            screenX2 - arrowLength * Math.cos(angle + arrowAngle),
-            screenY2 - arrowLength * Math.sin(angle + arrowAngle)
-        );
-        this.contextV.stroke();
+        this.contextV.arc(this.xs(x), this.ys(y), radius, 0, Math.PI * 2);
+        this.contextV.fillStyle = color;
+        this.contextV.fill();
+        this.contextV.closePath();
     }
 
     text(x: number, y: number, text: string, color = '#fff', font = 'bold 1rem Arial'): void {

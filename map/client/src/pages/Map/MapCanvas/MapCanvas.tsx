@@ -15,12 +15,17 @@ const MapCanvas: React.FC = () => {
     const Canvas = useCanvas(render);
     const { WINDOW } = CONFIG;
 
+    let canMove = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let dragStartLeft = 0;
+    let dragStartTop = 0;
 
     useEffect(() => {
         const { GENERATE_MAP } = mediator.getEventTypes();
 
         const renderMap = (mapData: TMap) => {
-            const cells = mapData.map.flatMap((row: any[], y: number) =>
+            const cells = mapData.map.flatMap((row, y: number) =>
                 row.map((type, x) => ({
                     x,
                     y,
@@ -34,23 +39,58 @@ const MapCanvas: React.FC = () => {
         };
 
         mediator.subscribe(GENERATE_MAP, renderMap);
-        
+
         return () => {
             mediator.unsubscribe(GENERATE_MAP, renderMap);
-            map?.destructor();
         };
     }, []);
+
+    const cellSize = WINDOW.WIDTH / CONFIG.WIDTH;
 
     function render(fps: number): void {
         if (canvas && map) {
             canvas.clear();
             map.cells.forEach((cell) => {
-                canvas.rect(cell.x * 8, cell.y * 8, 100, cell.color);
+                canvas.rect(cell.x * cellSize, cell.y * cellSize, cellSize, cell.color);
             });
             canvas.text(WINDOW.LEFT + 20, WINDOW.TOP + 50, String(fps), 'red');
             canvas.render();
         }
     }
+
+    const mouseWheel = (delta: number, x: number, y: number) => {
+        if (!canvas) return;
+        const ZOOM = 0.2;
+        const zoomAmount = delta > 0 ? 1 + ZOOM : 1 - ZOOM;
+        let newWidth = WINDOW.WIDTH * zoomAmount;
+        let newHeight = WINDOW.HEIGHT * zoomAmount;
+        const MIN_ZOOM = 400;
+        const MAX_ZOOM = 2000;
+        newWidth = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, newWidth));
+        newHeight = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, newHeight));
+
+        WINDOW.LEFT = x - (x - WINDOW.LEFT) * zoomAmount;
+        WINDOW.TOP = y - (y - WINDOW.TOP) * zoomAmount;
+        WINDOW.WIDTH = newWidth;
+        WINDOW.HEIGHT = newHeight;
+    };
+
+    const mouseMove = (x: number, y: number) => {
+        if (!canMove) return;
+        WINDOW.LEFT = dragStartLeft - (x - dragStartX) / canvas.WIDTH * WINDOW.WIDTH;
+        WINDOW.TOP = dragStartTop - (y - dragStartY) / canvas.HEIGHT * WINDOW.HEIGHT;
+    };
+
+    const mouseDown = () => {
+        canMove = true;
+    };
+
+    const mouseUp = () => {
+        canMove = false;
+    };
+    const mouseLeave = () => {
+        canMove = false;
+    };
 
     useEffect(() => {
         map = new Map(CONFIG.WINDOW.WIDTH, CONFIG.WINDOW.HEIGHT);
@@ -60,7 +100,10 @@ const MapCanvas: React.FC = () => {
             HEIGHT: WINDOW.HEIGHT,
             WINDOW,
             callbacks: {
-                mouseMove: () => { },
+                mouseWheel,
+                mouseMove, mouseDown,
+                mouseUp,
+                mouseLeave,
                 mouseClick: () => { },
                 mouseRightClick: () => { },
             },

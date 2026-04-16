@@ -43,7 +43,7 @@ export interface ILobby {
 
 export type TMap = {
     guid: string;
-    map: any[];
+    map: number[][];
     width: number;
     height: number;
 }

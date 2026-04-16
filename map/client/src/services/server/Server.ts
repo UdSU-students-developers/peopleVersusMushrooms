@@ -206,8 +206,16 @@ class Server {
         return this.mediator.get<ILobby[]>(MEDIATOR.TRIGGERS.GET_LOBBIES);
     }
 
-    generateMap(): void {
-        this.socket.emit(MEDIATOR.EVENTS.GENERATE_MAP, { width: CONFIG.WIDTH, height: CONFIG.HEIGHT });
+    generateMap(seed?: number, water?: number, mountains?: number, iron?: number, oil?: number): void {
+        const params: any = { width: CONFIG.WIDTH, height: CONFIG.HEIGHT };
+
+        if (seed !== undefined) params.seed = seed;
+        if (water !== undefined) params.water = water;
+        if (mountains !== undefined) params.mountains = mountains;
+        if (iron !== undefined) params.iron = iron;
+        if (oil !== undefined) params.oil = oil;
+
+        this.socket.emit(MEDIATOR.EVENTS.GENERATE_MAP, params);
     }
 
     setGeneratedMap(data: TMap): void {

@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useRef } from "react";
 import { MediatorContext, ServerContext } from "../../App";
 import { IBasePage, PAGES } from '../PageManager';
 import Button from "../../components/Button/Button";
 import { ILobby, TError, TMap } from "../../services/server/types";
 import './Lobby.scss';
+import MapCanvas from "../Map/MapCanvas/MapCanvas";
 
 const Lobby: React.FC<IBasePage> = (props) => {
     const { setPage } = props;
@@ -16,6 +17,11 @@ const Lobby: React.FC<IBasePage> = (props) => {
     const [currentLobby, setCurrentLobby] = useState<ILobby | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isReady, setIsReady] = useState(false);
+    const seedRef = useRef<HTMLInputElement>(null);
+    const waterRef = useRef<HTMLInputElement>(null)
+    const mountainsRef = useRef<HTMLInputElement>(null);
+    const ironRef = useRef<HTMLInputElement>(null)
+    const oilRef = useRef<HTMLInputElement>(null);
 
     const logoutClickHandler = async () => {
         server.logout();
@@ -49,8 +55,16 @@ const Lobby: React.FC<IBasePage> = (props) => {
         server.leaveLobby(server.user.guid);
     }
 
+    const generateMapHandler = () => {
+        const seed = seedRef.current?.value ? Number(seedRef.current.value) : undefined;
+        const water = waterRef.current?.value ? Number(waterRef.current.value) : undefined;
+        const mountains = mountainsRef.current?.value ? Number(mountainsRef.current.value) : undefined;
+        const iron = ironRef.current?.value ? Number(ironRef.current.value) : undefined;
+        const oil = oilRef.current?.value ? Number(oilRef.current.value) : undefined;
+        server.generateMap(seed, water, mountains, iron, oil);
+    }
+
     const startGameHandler = () => {
-        server.generateMap();
         server.startGame(server.user.guid);
         setPage(PAGES.MAP);
     }
@@ -242,6 +256,49 @@ const Lobby: React.FC<IBasePage> = (props) => {
                             onClick={setReadyHandler}
                             text={'Готов'}
                         />
+                        <p>Опциональные параметры:</p>
+                        <input
+                            ref={seedRef}
+                            type="number"
+                            placeholder="введите сид"
+                            className='input-seed'
+                            id='test-input-seed'
+                        />
+                        <input
+                            ref={waterRef}
+                            type="number"
+                            placeholder="введите воду"
+                            className='input-water'
+                            id='test-input-water'
+                        />
+                        <input
+                            ref={mountainsRef}
+                            type="number"
+                            placeholder="введите горы"
+                            className='input-mountains'
+                            id='test-input-mountains'
+                        />
+                        <input
+                            ref={ironRef}
+                            type="number"
+                            placeholder="введите железо"
+                            className='input-iron'
+                            id='test-input-iron'
+                        />
+                        <input
+                            ref={oilRef}
+                            type="number"
+                            placeholder="введите нефть"
+                            className='input-oil'
+                            id='test-input-oil'
+                        />
+                        <Button
+                            onClick={generateMapHandler}
+                            text='Сгенерировать карту'
+                            className='button-generate-map'
+                            id='test-button-generate-map'
+                        />
+                        <MapCanvas />
 
                         {currentLobby.lobbyGuid === currentLobby.playersGuids.spectator && (
                             <Button

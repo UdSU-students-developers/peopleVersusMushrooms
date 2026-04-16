@@ -13,7 +13,11 @@ export type TCanvas = {
     WIDTH: number;
     HEIGHT: number;
     callbacks: {
+        mouseWheel?: (delta: number, x: number, y: number) => void;
         mouseMove: (x: number, y: number) => void;
+        mouseDown: (x: number, y: number) => void;
+        mouseUp: (x: number, y: number) => void;
+        mouseLeave?: () => void;
         mouseClick: (x: number, y: number) => void;
         mouseRightClick: () => void;
     },
@@ -39,11 +43,7 @@ class Canvas {
     dx = 0;
     dy = 0;
     interval: NodeJS.Timer;
-    callbacks: {
-        mouseMove: (x: number, y: number) => void;
-        mouseClick: (x: number, y: number) => void;
-        mouseRightClick: () => void;
-    }
+    callbacks: TCanvas['callbacks'];
 
     constructor(options: TCanvas) {
         const { parentId, WINDOW, WIDTH, HEIGHT, callbacks } = options;
@@ -70,7 +70,10 @@ class Canvas {
         this.WINDOW = WINDOW;
         this.callbacks = callbacks;
 
+        this.canvas.addEventListener('wheel', (event) => this.mouseWheelHandler(event));
         this.canvas.addEventListener('mousemove', (event) => this.mouseMoveHandler(event));
+        this.canvas.addEventListener('mousedown', (event) => this.mouseDownHandler(event));
+        this.canvas.addEventListener('mouseup', (event) => this.mouseUpHandler(event));
         this.canvas.addEventListener('mouseleave', () => this.mouseLeaveHandler());
         this.canvas.addEventListener('click', (event) => this.mouseClickHandler(event));
         this.canvas.addEventListener('contextmenu', (event) => this.mouseRightClickHandler(event));
@@ -96,6 +99,14 @@ class Canvas {
         clearInterval(this.interval);
     }
 
+    mouseWheelHandler(event: WheelEvent) {
+        event.preventDefault();
+        const { offsetX, offsetY, deltaY } = event;
+        if (this.callbacks.mouseWheel) {
+            this.callbacks.mouseWheel(deltaY, this.sx(offsetX), this.sy(offsetY));
+        }
+    }
+
     mouseClickHandler(event: MouseEvent) {
         const { offsetX, offsetY } = event;
         this.callbacks.mouseClick(this.sx(offsetX), this.sy(offsetY));
@@ -108,31 +119,31 @@ class Canvas {
 
     mouseMoveHandler(event: MouseEvent) {
         const { offsetX, offsetY } = event;
-        // для скролла окошка относительно положения мышки
-        /*
-        const pX = offsetX / this.WIDTH;
-        const pY = offsetY / this.HEIGHT;
-        if (pX <= 0.1) {
-            this.dx = -1;
-        } else if (pX >= 0.9) {
-            this.dx = 1;
-        } else {
-            this.dx = 0;
-        }
-        if (pY <= 0.1) {
-            this.dy = -1;
-        } else if (pY >= 0.9) {
-            this.dy = 1;
-        } else {
-            this.dy = 0;
-        }
-        */
         this.callbacks.mouseMove(this.sx(offsetX), this.sy(offsetY));
+    }
+
+    mouseDownHandler(event: MouseEvent) {
+        event.preventDefault();
+        const { offsetX, offsetY, button } = event;
+        if (button === 0) {
+            this.callbacks.mouseDown(this.sx(offsetX), this.sy(offsetY));
+        }
+    }
+
+    mouseUpHandler(event: MouseEvent) {
+        event.preventDefault();
+        const { offsetX, offsetY, button } = event;
+        if (button === 0) {
+            this.callbacks.mouseUp(this.sx(offsetX), this.sy(offsetY));
+        }
     }
 
     mouseLeaveHandler() {
         this.dx = 0;
         this.dy = 0;
+        if (this.callbacks.mouseLeave) {
+            this.callbacks.mouseLeave();
+        }
     }
 
     // перевод в экранные координаты

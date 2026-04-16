@@ -1,16 +1,15 @@
 const { randomInt } = require('crypto');
+const libnoise = require('libnoise').libnoise;
+
 const CONFIG = require('../../../config');
 const MAP_CONFIG = require('./MapConfig');
-const Building = require('./entities/Building');
-const Entity = require('./entities/Entity');
-
-const libnoise = require('libnoise').libnoise;
 
 const Source = require('./entities/Source');
 const Unit = require('./entities/Unit');
+const Building = require('./entities/Building');
 
 class Map {
-    constructor(guid, playerGuids, width = 100, height = 100) {
+    constructor({ guid, playerGuids, width = 100, height = 100 }) {
         this.guid = guid; // guid создателя лобби
         this.map = [];
         this.playerGuids = { // guid-ы игроков
@@ -37,6 +36,13 @@ class Map {
         this.sources = [];
     }
 
+    get() {
+        return {
+            buildings: this.buildings.map(building => building),
+            units: this.buildings.map(unit => unit),
+        };
+    }
+
     getGuids() {
         return {
             mapGuid: this.guid,
@@ -46,8 +52,7 @@ class Map {
 
     getSelf() {
         return {
-            buildings: this.buildings.map(building => building),
-            units: this.buildings.map(unit => unit),
+            ...this.get(),
             sources: this.sources.map(source => source)
         };
     }
@@ -142,14 +147,7 @@ class Map {
         } else {
             // не нашли - добавляем
             this.units.push(
-                new Unit(
-                    unit.x,
-                    unit.y,
-                    unit.type,
-                    unit.guid,
-                    role,
-                    unit.visibility
-                )
+                new Unit(unit)
             );
         }
     }
@@ -158,27 +156,12 @@ class Map {
         // ищем юнита по гуиду
         const buildingIndex = this.buildings.findIndex(elem => building.guid === elem.guid);
         if (buildingIndex + 1) {
-            const buildingInArray = this.buildings[buildingIndex]
-            // если нашелся и не изменился - считаем убитым
-            if (building.x === buildingInArray.x && building.y === buildingInArray.y) {
-                this.buildings.splice(buildingIndex, 1);
-            } else {
-                // если нашелся и изменился - передвинулся
-                buildingInArray.x = building.x;
-                buildingInArray.y = building.y;
-            }
+            // если нашлось - удаляем
+            this.buildings.splice(buildingIndex, 1);
         } else {
             // не нашли - добавляем
             this.buildings.push(
-                new Building(
-                    building.x,
-                    building.y,
-                    building.type,
-                    building.guid,
-                    role,
-                    building.size,
-                    building.visibility
-                )
+                new Building(building)
             );
         }
     }
@@ -186,7 +169,7 @@ class Map {
     // сгенерировать карту
     // water, mountains - [0-100]
     // seed - number
-    generateRelief(seed, water = MAP_CONFIG.DEFAULTS.WATER, mountains = MAP_CONFIG.DEFAULTS.MOUNTAIN) {
+    generateRelief({ seed, water, mountains }) {
         this.water = typeof water === "number" ? water : MAP_CONFIG.DEFAULTS.WATER;
         this.mountains = typeof mountains === "number" ? mountains : MAP_CONFIG.DEFAULTS.MOUNTAIN;
         this.seed = typeof seed === "number" ? seed : randomInt(2 ** 48 - 1);
@@ -223,15 +206,15 @@ class Map {
     }
 
     // iron, oil - [0, 20]
-    generateSources(iron = MAP_CONFIG.DEFAULTS.IRON, oil = MAP_CONFIG.DEFAULTS.OIL) {
+    generateSources({ iron, oil }) {
         this.iron = typeof iron === "number" ? iron : MAP_CONFIG.DEFAULTS.IRON;
         this.oil = typeof oil === "number" ? oil : MAP_CONFIG.DEFAULTS.OIL;
         const clamp = val => val < 0 ? 0 : (val > 20 ? 20 : val);
         this.iron = clamp(this.iron);
         this.oil = clamp(this.oil);
         const mapSize = this.width * this.height;
-        const ironSize = Math.floor(mapSize * iron / 100);
-        const oilSize = Math.floor(mapSize * oil / 100);
+        const ironSize = Math.floor(mapSize * this.iron / 100);
+        const oilSize = Math.floor(mapSize * this.oil / 100);
         const positions = new Set();
 
         while (positions.size < ironSize + oilSize) {
@@ -239,17 +222,25 @@ class Map {
             positions.add(pos);
         }
 
-        positions.forEach((pos, index) => {
-            const row = Math.floor(pos / this.width);
-            const col = pos % this.width;
+        [...positions].forEach((pos, index) => {
+            const y = Math.floor(pos / this.width);
+            const x = pos % this.width;
             this.sources.push(
                 (index > ironSize) ?
-                    new Source({ col, row, type: CONFIG.FIELD_NAMES.IRON, saturation: MAP_CONFIG.SATURATION.IRON }) :
-                    new Source({ col, row, type: CONFIG.FIELD_NAMES.OIL, saturation: MAP_CONFIG.SATURATION.OIL })
+                    new Source({ x, y, type: CONFIG.FIELD_NAMES.IRON, saturation: MAP_CONFIG.SATURATION.IRON }) :
+                    new Source({ x, y, type: CONFIG.FIELD_NAMES.OIL, saturation: MAP_CONFIG.SATURATION.OIL })
             );
         });
     }
 
+    generateStartingPositions() {
+        for (let i = 0; i < 15; i++) {
+            for (let j = 0; j < 15; j++) {
+                this.map[i][j] = 0;
+                this.map[99 - i][99 - j] = 0;
+            }
+        }
+    }
 }
 
 module.exports = Map;

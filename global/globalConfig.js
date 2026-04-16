@@ -24,8 +24,9 @@ const GLOBAL_CONFIG = {
         }
     },
 
-    DATABASE: {
-        NAME: 'data.db',
+    DATABASES: {
+        MUSHROOMS_ECONOMY: 'data.db',
+        PEOPLE_ECONOMY: 'peopleEconomy.db',
     },
 
 
@@ -46,6 +47,24 @@ const GLOBAL_CONFIG = {
         LOGIN: 'LOGIN',
         LOGOUT: 'LOGOUT',
     },
+
+    URLS: {
+        CREATE_LOBBY: '/createLobby',
+        JOIN_TO_LOBBY: '/joinToLobby',
+        LEAVE_LOBBY: '/leaveLobby',
+        DROP_FROM_LOBBY: '/dropFromLobby',
+        GET_LOBBIES: '/getLobbies',
+        LOBBY_UPDATED: '/lobbyUpdated',
+        LOBBIES_LIST_UPDATED: '/lobbiesListUpdated',
+        SET_READY: '/setReady',
+        START_GAME: '/startGame',
+
+        GET_RELIEF: '/getRelief',
+        GET_VISIBILITY: '/getVisibility',
+        GET_RESOURSE_VISIBILITY: '/getResourseVisibility',
+        UPDATE_UNITS: '/updateUnits',
+        UPDATE_BUILDINGS: '/updateBuldings',
+    }
 };
 
 module.exports = GLOBAL_CONFIG;

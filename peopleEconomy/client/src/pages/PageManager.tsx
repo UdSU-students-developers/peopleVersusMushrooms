@@ -1,16 +1,19 @@
-import React, { useContext, useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { MediatorContext } from '../App';
 import Registration from './Registration/Registration';
 import Login from './Login/Login';
 import Chat from './Chat/Chat'
 import Lobby from './Lobby/Lobby';
+import MapPage from './Map/MapPage';
+
 import { TError } from '../services/server/types';
 
 export enum PAGES {
     LOGIN,
     REGISTRATION,
     CHAT,
-    LOBBY
+    LOBBY,
+    MAP
 }
 
 export interface IBasePage {
@@ -36,6 +39,7 @@ const PageManager: React.FC = () => {
             {page === PAGES.LOGIN && <Login {...props} />}
             {page === PAGES.CHAT && <Chat {...props} />}
             {page === PAGES.LOBBY && <Lobby {...props} />}
+            {page === PAGES.MAP && <MapPage />}
         </>
     );
 }

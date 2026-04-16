@@ -1,3 +1,4 @@
+const { URLS } = require("../../../../../global/globalConfig");
 const { MESSAGES } = require("../../../config");
 const BaseManager = require("../BaseManager");
 const Lobby = require("./Lobby");
@@ -48,7 +49,7 @@ class LobbyManager extends BaseManager {
         const lobbies = Object.values(this.lobbies).map(lobby => lobby.get());
         console.log('список лобби:', JSON.stringify(lobbies, null, 2));
         this.io.emit(MESSAGES.LOBBIES_LIST_UPDATED, this.answer.good(lobbies));
-        this.sendToAll('/lobbyUpdated', { lobbies });
+        this.sendToAll(URLS.LOBBY_UPDATED, { lobbies });
     }
 
     _destroyLobby(lobbyGuid) {
@@ -173,10 +174,7 @@ class LobbyManager extends BaseManager {
         if (e = this._checkError(!lobby.canStarted(), 2012)) return e;
 
         //оповещаем через медиатор о старте игры
-        this.mediator.call(this.EVENTS.START_GAME, {
-            lobbyGuid: lobby.lobbyGuid,
-            ...lobby.getGuids()
-        });
+        this.mediator.call(this.EVENTS.START_GAME, lobby.getGuids());
 
         //удаляем лобби
         const lobbyGuid = lobby.lobbyGuid;

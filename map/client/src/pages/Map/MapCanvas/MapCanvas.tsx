@@ -75,7 +75,7 @@ const MapCanvas: React.FC = () => {
                 }
             });
 
-            canvas.text(WINDOW.LEFT + 20, WINDOW.TOP + 50, String(fps), 'red');
+            canvas.screenText(20, 50, String(fps), 'red');
             canvas.render();
         }
     }

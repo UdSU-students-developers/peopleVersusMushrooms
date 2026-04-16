@@ -190,7 +190,7 @@ class Canvas {
     circle(x: number, y: number, radius: number, color: string): void {
         if (!this.contextV) return;
         this.contextV.beginPath();
-        this.contextV.arc(this.xs(x), this.ys(y), radius, 0, Math.PI * 2);
+        this.contextV.arc(this.xs(x), this.ys(y), this.dec(radius), 0, Math.PI * 2);
         this.contextV.fillStyle = color;
         this.contextV.fill();
         this.contextV.closePath();
@@ -201,6 +201,13 @@ class Canvas {
         this.contextV.fillStyle = color;
         this.contextV.font = font;
         this.contextV.fillText(text, this.xs(x), this.ys(y));
+    }
+
+    screenText(x: number, y: number, text: string, color = '#fff', font = 'bold 1rem Arial'): void {
+        if (!this.contextV) return;
+        this.contextV.fillStyle = color;
+        this.contextV.font = font;
+        this.contextV.fillText(text, x, y);
     }
 
     rect(x: number, y: number, size = 64, color = '#f004'): void {

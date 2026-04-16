@@ -25,12 +25,33 @@ class BaseManager {
             }
             const res = await fetch(url, params);
             const answer = await res.json();
-            return answer; 
+            if (answer && answer.result === 'ok') {
+                return answer.data;
+            }
+            return null;
         } catch (error) {
             console.log(error);
-            return null;
+            return null; 
         }
     }
+
+
+    sendToMap(urlPart, data=null) {
+        this.send(`${CONFIG.URL.MAP}${urlPart}`, data);
+    }
+
+    sendToPeopleArmy(urlPart, data=null) {
+        this.send(`${CONFIG.URL.PEOPLE_ARMY}${urlPart}`, data);
+    }
+
+    sendToMushroomsEconomy(urlPart, data=null) {
+        this.send(`${CONFIG.URL.MUSHROOM_ECONOMY}${urlPart}`, data);
+    }
+
+    sendToMushroomsArmy(urlPart, data=null) {
+        this.send(`${CONFIG.URL.MUSHROOM_ARMY}${urlPart}`, data);
+    }
+
 }
 
 module.exports = BaseManager;

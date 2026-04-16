@@ -189,7 +189,7 @@ class Map {
     generateRelief(seed, water = MAP_CONFIG.DEFAULTS.WATER, mountains = MAP_CONFIG.DEFAULTS.MOUNTAIN) {
         this.water = typeof water === "number" ? water : MAP_CONFIG.DEFAULTS.WATER;
         this.mountains = typeof mountains === "number" ? mountains : MAP_CONFIG.DEFAULTS.MOUNTAIN;
-        this.seed = typeof seed === "number" ? seed : randomInt(2**48-1);
+        this.seed = typeof seed === "number" ? seed : randomInt(2 ** 48 - 1);
 
         //val -> [0,100]
         const clamp = val => val < 0 ? 0 : (val > 100 ? 100 : val);

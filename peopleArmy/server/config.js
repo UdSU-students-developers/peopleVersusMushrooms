@@ -1,6 +1,15 @@
 const CONFIG = {
-    NAME: 'PeoplesArmy',
+    NAME: 'PeopleArmy',
     PORT: 3007, //Порт соостветсвующий серверу вашего сервиса
+    ROLE: 'peopleArmy',
+    CORS: {
+        origin: "*",
+        middleware: (_, res, next) => {
+            res.header('Content-Type', 'application/json; charset=utf-8');
+            res.header('Access-Control-Allow-Origin', '*');
+            next();
+        }
+    },
 
     DATABASE: {
         NAME: 'data.db',
@@ -9,6 +18,7 @@ const CONFIG = {
     MEDIATOR: {
         EVENTS: {
             START_GAME: 'START_GAME',
+            LOBBY_UPDATED: 'LOBBY_UPDATED',
             USER_DISCONNECT: 'USER_DISCONNECT',
         },
         TRIGGERS: {

@@ -1,5 +1,7 @@
-const BaseManager = require('../BaseManager');
+const CONFIG = require('../../../config');
+const BaseManager = require('../../../../../global/modules/BaseManager');
 const Army = require('../../army/Army');
+const { UPDATE_ARMY } = CONFIG.SOCKETS;
 
 class ArmyManager extends BaseManager {
     constructor(options) {
@@ -27,7 +29,7 @@ class ArmyManager extends BaseManager {
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
         if (user) {
             this.io.to(user.socketId).emit(
-                this.SOCKETS.UPDATE_ARMY,
+                UPDATE_ARMY,
                 this.answer.good(data)
             )
         }

@@ -6,7 +6,7 @@ import { IBasePage, PAGES } from "../PageManager";
 
 import "./StartGame.css";
 
-const StartGame: React.FC<IBasePage> = ({ setPage }) => {
+const Lobby: React.FC<IBasePage> = ({ setPage }) => {
     const server = useContext(ServerContext);
     const mediator = useContext(MediatorContext);
 
@@ -179,4 +179,4 @@ const StartGame: React.FC<IBasePage> = ({ setPage }) => {
     );
 }
 
-export default StartGame;
+export default Lobby;

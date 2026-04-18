@@ -91,10 +91,10 @@ class Canvas {
 
     destructor() {
         document.getElementById(this.parentId)?.removeChild(this.canvas);
-        this.contextV = null as any;
-        this.canvasV = null as any;
-        this.context = null as any;
-        this.canvas = null as any;
+        (this.contextV as CanvasRenderingContext2D | null) = null;
+        (this.canvasV as HTMLCanvasElement | null) = null;
+        (this.context as CanvasRenderingContext2D | null) = null;
+        (this.canvas as HTMLCanvasElement | null) = null;
         clearInterval(this.interval);
     }
 

@@ -84,6 +84,17 @@ export type TSlimePool = {
     ttl: number;
 }
 
+// Снаряд
+export type TProjectile = {
+    guid: string;
+    type: 'sporomet' | 'sporovaya_bashnya' | 'eblekar';
+    fromX: number;
+    fromY: number;
+    toX: number;
+    toY: number;
+    createdAt: number;
+}
+
 // Карта — матрица 50x50 (0=равнина, 1=вода, 2=горы, null=неизвестно)
 export type TMapData = (number | null)[][];
 
@@ -93,4 +104,5 @@ export type TArmyState = {
     units: TUnit[];
     buildings: TBuilding[];
     slimePuddles: TSlimePool[];
+    projectiles: TProjectile[];
 }

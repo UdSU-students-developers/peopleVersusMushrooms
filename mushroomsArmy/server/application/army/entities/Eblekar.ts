@@ -21,7 +21,7 @@ class Eblekar extends Unit {
         super(options);
         this.hp = 40;
         this.maxHp = 40;
-        this.speed = 2;
+        this.speed = 1;
     }
 
     public update(enemies: Unit[], map: TMap, deltaTime: number, allies: Unit[] = []): void {

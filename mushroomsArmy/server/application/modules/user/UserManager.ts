@@ -25,7 +25,6 @@ class UserManager extends BaseManager {
             socket.on(LOBBY_START, (data) => this.socketLobbyStart(data, socket));
             socket.on(VALIDATE_TOKEN, (data) => this.socketValidateToken(data, socket));
 
-            // ИСПРАВЛЕНО: убран console.log, добавлен вызов DESTROY_ARMY
             socket.on('disconnect', () => {
                 const user = Object.values(this.users).find(u => u.getSelf().socketId === socket.id);
                 if (user && user.getSelf().guid) {
@@ -63,17 +62,22 @@ class UserManager extends BaseManager {
         }
 
         if (!this.validateLogin(name)) {
-            socket.emit(REGISTRATION, this.answer.bad(13));
+            socket.emit(REGISTRATION, this.answer.bad(18));
             return;
         }
 
         if (!this.validatePassword(password)) {
-            socket.emit(REGISTRATION, this.answer.bad(13));
+            socket.emit(REGISTRATION, this.answer.bad(19));
+            return;
+        }
+
+        if (password === name) {
+            socket.emit(REGISTRATION, this.answer.bad(19));
             return;
         }
 
         if (password !== passwordRepeat) {
-            socket.emit(REGISTRATION, this.answer.bad(13));
+            socket.emit(REGISTRATION, this.answer.bad(20));
             return;
         }
 
@@ -150,22 +154,22 @@ class UserManager extends BaseManager {
 
         user.setSocketId(socket.id);
 
-        const map: (number | null)[][] = Array.from({ length: 50 }, (_row, row) =>
-            Array.from({ length: 50 }, (_col, col) => {
+        const map: (number | null)[][] = Array.from({ length: 100 }, () =>
+            Array.from({ length: 100 }, (_, col) => {
                 if (col === 10) return 1;
                 return 0;
             })
         );
 
         const buildings = [
-            { guid: this.common.guid(), type: 'house', x: 35, y: 15, hp: 200, maxHp: 200 },
-            { guid: this.common.guid(), type: 'barracks', x: 40, y: 25, hp: 300, maxHp: 300 },
-            { guid: this.common.guid(), type: 'tower', x: 38, y: 35, hp: 150, maxHp: 150 },
-            { guid: this.common.guid(), type: 'sporovaya_bashnya', x: 20, y: 10, hp: 500, maxHp: 500, sizeX: 2, sizeY: 2 },
-            { guid: this.common.guid(), type: 'sporovaya_bashnya', x: 20, y: 30, hp: 500, maxHp: 500, sizeX: 2, sizeY: 2 },
-            { guid: this.common.guid(), type: 'vzryvomor', x: 40, y: 10, hp: 100, maxHp: 100 },
-            { guid: this.common.guid(), type: 'vzryvomor', x: 30, y: 30, hp: 100, maxHp: 100 },
-            { guid: this.common.guid(), type: 'vzryvomor', x: 20, y: 40, hp: 100, maxHp: 100 },
+            { guid: this.common.guid(), type: 'house', x: 50, y: 30, hp: 200, maxHp: 200 },
+            { guid: this.common.guid(), type: 'barracks', x: 60, y: 50, hp: 300, maxHp: 300 },
+            { guid: this.common.guid(), type: 'tower', x: 56, y: 70, hp: 150, maxHp: 150 },
+            { guid: this.common.guid(), type: 'sporovaya_bashnya', x: 40, y: 20, hp: 500, maxHp: 500, sizeX: 2, sizeY: 2 },
+            { guid: this.common.guid(), type: 'sporovaya_bashnya', x: 40, y: 60, hp: 500, maxHp: 500, sizeX: 2, sizeY: 2 },
+            { guid: this.common.guid(), type: 'vzryvomor', x: 80, y: 20, hp: 70, maxHp: 70, attackRange: 7 },
+            { guid: this.common.guid(), type: 'vzryvomor', x: 60, y: 60, hp: 70, maxHp: 70, attackRange: 7 },
+            { guid: this.common.guid(), type: 'vzryvomor', x: 40, y: 80, hp: 70, maxHp: 70, attackRange: 7 },
         ];
 
         const mapGuid = this.common.guid();

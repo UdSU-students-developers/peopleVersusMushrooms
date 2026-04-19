@@ -143,8 +143,8 @@ class Unit {
             this.onEnemyFound(nearestEnemy, nearestDistance);
         } else {
             // Нет врагов — двигаемся к центру карты
-            this.targetX = 25;
-            this.targetY = 25;
+            this.targetX = 50;
+            this.targetY = 50;
         }
     }
 
@@ -259,8 +259,8 @@ class Unit {
 
     /** Пересчитывает путь если цель изменилась или путь пустой */
     private calculateUnitPath(map: TMap): void {
-        const endX = Math.max(0, Math.min((map[0]?.length ?? 50) - 1, Math.round(this.targetX)));
-        const endY = Math.max(0, Math.min((map.length ?? 50) - 1, Math.round(this.targetY)));
+        const endX = Math.max(0, Math.min((map[0]?.length ?? 100) - 1, Math.round(this.targetX)));
+        const endY = Math.max(0, Math.min((map.length ?? 100) - 1, Math.round(this.targetY)));
 
         const targetChanged = endX !== this.lastTargetTileX || endY !== this.lastTargetTileY;
 

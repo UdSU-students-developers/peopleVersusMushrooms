@@ -45,7 +45,7 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
             <header className="lobby__header">
                 <div className="lobby__userBlock">
                     <span className="lobby__username">
-                        {user?.name || user?.username || "Игрок"}
+                        {user?.name || "Игрок"}
                     </span>
 
                     <button

@@ -1,5 +1,7 @@
+import { TUser } from '../services/server/types';
+
 export const authStorage = {
-    setAuth: (token: string, user: any) => {
+    setAuth: (token: string, user: TUser) => {
 
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));

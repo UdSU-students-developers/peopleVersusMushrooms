@@ -9,17 +9,17 @@ export type TSlimePuddle = {
 
 class Champigneb extends Unit {
 
-    public explosionRadius: number = 10;
-    public explosionDamage: number = 200;
+    public explosionRadius: number = 6;
+    public explosionDamage: number = 60;
     public slimeDuration: number = 10;
     public slimePuddle: TSlimePuddle = { x: 0, y: 0, radius: 0, ttl: 0 };
     public hasExploded: boolean = false;
 
     constructor(options: TUnitOptions) {
         super(options);
-        this.hp = 50;
-        this.maxHp = 50;
-        this.speed = 4;
+        this.hp = 35;
+        this.maxHp = 35;
+        this.speed = 3;
     }
 
     protected explode(): void {

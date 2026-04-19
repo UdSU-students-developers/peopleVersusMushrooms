@@ -5,11 +5,12 @@ import Mediator from './services/Mediator/Mediator';
 import Server from './services/server/Server';
 import CONFIG from './config'
 import useStore from './services/Store/useStore';
+import { TResponse, TUser } from './services/server/types';
 
 import './App.css';
 
-export const MediatorContext = createContext<any>(null!);
-export const ServerContext = createContext<any>(null!);
+export const MediatorContext = createContext<Mediator>(null!);
+export const ServerContext = createContext<Server>(null!);
 
 function App() {
   const [page, setPage] = useState<PAGES>(PAGES.LOGIN);
@@ -27,9 +28,7 @@ useEffect(() => {
         return;
     }
 
-
-
-    server.authValidate(token).then((response: any) => {
+    server.authValidate(token).then((response: TResponse<TUser>) => {
         if (response?.result === 'ok') {
             const SET_STORE = mediator.getTriggerTypes().SET_STORE;
             mediator.get(SET_STORE, { name: 'user', value: response.data });

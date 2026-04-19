@@ -148,13 +148,13 @@ export function drawGame(
     return;
   }
 
-  const cellW = widthCSS / 50;
-  const cellH = heightCSS / 50;
+  const cellW = widthCSS / 100;
+  const cellH = heightCSS / 100;
 
-  // 1. Отрисовка карты (тайлы 50×50)
-  for (let y = 0; y < 50; y++) {
-    for (let x = 0; x < 50; x++) {
-      const terrain = state.map[y][x];
+  // 1. Отрисовка карты (тайлы 100×100)
+  for (let y = 0; y < 100; y++) {
+    for (let x = 0; x < 100; x++) {
+      const terrain = state.map[y]?.[x];
       ctx.fillStyle = getTerrainColor(terrain);
       ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
     }
@@ -406,13 +406,13 @@ function getProjectileColor(type: Projectile['type']): string {
 }
 
 /**
- * Рисует тонкую серую сетку 50×50
+ * Рисует тонкую серую сетку 100×100
  */
 function drawGrid(ctx: CanvasRenderingContext2D, width: number, height: number, cellW: number, cellH: number) {
   ctx.beginPath();
   ctx.strokeStyle = '#cccccc';
   ctx.lineWidth = 0.5;
-  for (let i = 0; i <= 50; i++) {
+  for (let i = 0; i <= 100; i++) {
     const x = i * cellW;
     const y = i * cellH;
     ctx.moveTo(x, 0);
@@ -424,10 +424,10 @@ function drawGrid(ctx: CanvasRenderingContext2D, width: number, height: number, 
 }
 
 function drawPlaceholder(ctx: CanvasRenderingContext2D, width: number, height: number) {
-  const cellW = width / 50;
-  const cellH = height / 50;
-  for (let y = 0; y < 50; y++) {
-    for (let x = 0; x < 50; x++) {
+  const cellW = width / 100;
+  const cellH = height / 100;
+  for (let y = 0; y < 100; y++) {
+    for (let x = 0; x < 100; x++) {
       ctx.fillStyle = '#a0d6a0';
       ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
     }

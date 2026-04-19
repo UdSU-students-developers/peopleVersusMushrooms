@@ -1,7 +1,9 @@
 import sqlite3 from 'sqlite3';
 
+type TParamValue = string | number | boolean | null;
+
 interface Params {
-    [key: string]: any;
+    [key: string]: TParamValue;
 }
 
 class ORM {
@@ -11,9 +13,9 @@ class ORM {
         this.db = db; // Сейчас: orm.get("users", { id }, ["username", "token", "online"]);
     }                 // Должно быть: orm.get("users", { id }, "username, token, online");
 
-    get(table: string, params: Params | null = null, columns: string = "*", operand: string = 'AND'): Promise<any> {
+    get<R extends Record<string, unknown>>(table: string, params: Params | null = null, columns: string = "*", operand: string = 'AND'): Promise<R | null> {
         const query: string[] = [];
-        const values: any[] = [];
+        const values: TParamValue[] = [];
         let sql = `SELECT ${columns} FROM ${table}`;
 
         if (params) {
@@ -26,14 +28,14 @@ class ORM {
         return new Promise((resolve) => {
             this.db.get(sql, values, function(err, row) {
                 if (err) resolve(null);
-                else resolve(row);
+                else resolve(row as R ?? null);
             });
         });
     }
 
-    all(table: string, params: Params | null = null, columns: string = "*", operand: string = 'AND'): Promise<any[]> {
+    all<R extends Record<string, unknown>>(table: string, params: Params | null = null, columns: string = "*", operand: string = 'AND'): Promise<R[]> {
         const query: string[] = [];
-        const values: any[] = [];
+        const values: TParamValue[] = [];
         let sql = `SELECT ${columns} FROM ${table}`;
 
         if (params) {
@@ -50,13 +52,13 @@ class ORM {
                 values,
                 (err, rows) => {
                     if (err) reject(err);
-                    else resolve(rows);
+                    else resolve(rows as R[]);
                 }
             );
         });
     }
 
-    insert(table: string, columns: string[], values: any[]): Promise<{ id: number; changes: number }> {
+    insert(table: string, columns: string[], values: TParamValue[]): Promise<{ id: number; changes: number }> {
         const placeholders = columns.map(() => '?').join(', ');
         const sql = `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`;
 
@@ -72,10 +74,10 @@ class ORM {
         });
     }
 
-    update(table: string, setColumns: string[], setValues: any[], params: Params, operand: string = 'AND'): Promise<{ changes: number }> {
+    update(table: string, setColumns: string[], setValues: TParamValue[], params: Params, operand: string = 'AND'): Promise<{ changes: number }> {
         const setClauses = setColumns.map(col => `${col} = ?`);
         const whereClauses: string[] = [];
-        const allValues = [...setValues];
+        const allValues: TParamValue[] = [...setValues];
 
         for (let key in params) {
             whereClauses.push(`${key} = ?`);
@@ -98,7 +100,7 @@ class ORM {
 
     delete(table: string, params: Params, operand: string = 'AND'): Promise<{ changes: number }> {
         const whereClauses: string[] = [];
-        const values: any[] = [];
+        const values: TParamValue[] = [];
 
         for (let key in params) {
             whereClauses.push(`${key} = ?`);

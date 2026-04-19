@@ -49,7 +49,7 @@ class Mediator {
         }
     }
 
-    call(name: string, data?: any): void {
+    call(name: string, data?: unknown): void {
         if (this.events[name]) {
             this.events[name].forEach(event => {
                 if (event instanceof Function) {

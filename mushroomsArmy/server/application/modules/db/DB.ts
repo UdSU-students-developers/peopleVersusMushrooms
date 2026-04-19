@@ -62,15 +62,11 @@ class DB {
             this.db.run(createUsersTable, (usersErr) => {
                 if (usersErr) {
                     console.error('Error creating users table:', usersErr);
-                } else {
-                    console.log('Users table initialized');
                 }
 
                 this.db.run(createErrorsTable, (errorsErr) => {
                     if (errorsErr) {
                         console.error('Error creating errors table:', errorsErr);
-                    } else {
-                        console.log('Errors table initialized');
                     }
 
                     resolve();
@@ -80,11 +76,11 @@ class DB {
     }
 
     async getUserByName(name: string): Promise<TDbUser | null> {
-        return await this.orm.get('users', { name });
+        return await this.orm.get<TDbUser>('users', { name });
     }
 
     async getUserByToken(token: string): Promise<TDbUser | null> {
-        return await this.orm.get('users', { token });
+        return await this.orm.get<TDbUser>('users', { token });
     }
 
     async registration(name: string, guid: string, passwordHash: string, token: string): Promise<{ id: number; changes: number }> {

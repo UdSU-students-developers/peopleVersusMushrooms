@@ -8,10 +8,40 @@ import { IBuilding, Vzryvomor } from "./entities/Vzryvomor";
 
 export type TMap = (number | null)[][];
 
+export type TBuildingInput = {
+    guid: string;
+    type: string;
+    x: number;
+    y: number;
+    hp: number;
+    maxHp: number;
+    attackRange?: number;
+    sizeX?: number;
+    sizeY?: number;
+};
+
+export type TBuildingState = {
+    guid: string;
+    type: string;
+    x: number;
+    y: number;
+    hp: number;
+    maxHp: number;
+    isAlive?: boolean;
+    isExploding?: boolean;
+    isAttacking?: boolean;
+    sizeX?: number;
+    sizeY?: number;
+    attackRange?: number;
+    attackDamage?: number;
+    respawn?: { inProgress: boolean; respawnIn: number };
+    elapsedFromLastDecision?: number;
+};
+
 export type TArmyOptions = {
     mapGuid: string;
     map: TMap;
-    buildings: IBuilding<any>[];
+    buildings: TBuildingInput[];
     guid: string;
     common: Common;
     callbacks: { update: (guid: string, data: TArmyState) => void };
@@ -20,7 +50,7 @@ export type TArmyOptions = {
 export type TArmyState = {
     map: TMap;
     units: TUnitState[];
-    buildings: IBuilding<any>[];
+    buildings: TBuildingState[];
     slimePuddles: TSlimePuddle[];
     projectiles: TProjectile[];
 }
@@ -29,10 +59,10 @@ export class Army {
     public mapGuid: string;
     public guid: string;
     public map: TMap = [];
-    public buildings: IBuilding<any>[] = [];
+    public buildings: IBuilding<TBuildingState>[] = [];
     public units: Unit[] = [];
     public enemyUnits: Unit[] = [];
-    public enemyBuildings: IBuilding<any>[] = [];
+    public enemyBuildings: TBuildingInput[] = [];
     public projectiles: TProjectile[] = [];
     public callbacks: { update: (guid: string, data: TArmyState) => void };
     private intervalId: NodeJS.Timeout;
@@ -46,7 +76,7 @@ export class Army {
         this.intervalId = setInterval(() => this.update(), 200);
     }
 
-    private create(common: Common, initialBuildings: any[] = []) {
+    private create(common: Common, initialBuildings: TBuildingInput[] = []) {
         this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 0, y: 0, hp: 8, maxHp: 8, speed: 1, attackRange: 12, projectiles: this.projectiles }));
         this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 10, y: 10, hp: 8, maxHp: 8, speed: 1, attackRange: 12, projectiles: this.projectiles }));
         this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 20, y: 20, hp: 8, maxHp: 8, speed: 1, attackRange: 12, projectiles: this.projectiles }));
@@ -78,7 +108,7 @@ export class Army {
         }
 
         // Вражеские здания (house, barracks, tower) — в прокси-цели для юнитов
-        this.enemyBuildings = initialBuildings.filter(b => b.type !== 'sporovaya_bashnya' && b.type !== 'vzryvomor') as IBuilding<any>[];
+        this.enemyBuildings = initialBuildings.filter(b => b.type !== 'sporovaya_bashnya' && b.type !== 'vzryvomor');
         this.updateEnemyEntities(this.enemyBuildings);
     }
 
@@ -98,7 +128,7 @@ export class Army {
     }
 
     /** Создаёт proxy-юнита для здания и пробрасывает урон обратно в this.buildings. */
-    private createEnemyProxy(entity: IBuilding<any>): Unit {
+    private createEnemyProxy(entity: TBuildingInput): Unit {
         const proxy = new Unit({
             guid: entity.guid,
             type: entity.type,
@@ -121,7 +151,7 @@ export class Army {
     }
 
     /** Обновляет цели из видимости: существующим proxy меняет координаты, и создаёт новых по guid. */
-    public updateEnemyEntities(entities: IBuilding<any>[]): void {
+    public updateEnemyEntities(entities: TBuildingInput[]): void {
         const existingEnemiesByGuid = new Map(
             this.enemyUnits.map(enemy => [enemy.guid, enemy] as const)
         );
@@ -192,7 +222,7 @@ export class Army {
         // Удаляем только те здания, что мертвы И не ждут respawn
         this.buildings = this.buildings.filter(b => {
             if (b.type === 'vzryvomor') {
-                return b.isAlive || (b as Vzryvomor).respawn.inProgress;
+                return b.isAlive || (b as unknown as Vzryvomor).respawn.inProgress;
             }
             return b.isAlive;
         });

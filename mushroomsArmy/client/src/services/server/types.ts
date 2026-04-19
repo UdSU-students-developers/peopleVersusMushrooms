@@ -95,14 +95,14 @@ export type TProjectile = {
     createdAt: number;
 }
 
-// Карта — матрица 50x50 (0=равнина, 1=вода, 2=горы, null=неизвестно)
+// Карта — матрица 100x100 (0=равнина, 1=вода, 2=горы, null=неизвестно)
 export type TMapData = (number | null)[][];
 
 // Состояние армии (приходит каждые 200мс через game:state)
 export type TArmyState = {
-    map: (number | null)[][];
+    map: TMapData;
     units: TUnit[];
     buildings: TBuilding[];
     slimePuddles: TSlimePool[];
     projectiles: TProjectile[];
-}
+};

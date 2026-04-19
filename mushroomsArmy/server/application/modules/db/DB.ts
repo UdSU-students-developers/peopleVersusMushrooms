@@ -76,11 +76,11 @@ class DB {
     }
 
     async getUserByName(name: string): Promise<TDbUser | null> {
-        return await this.orm.get('users', { name });
+        return await this.orm.get<TDbUser>('users', { name });
     }
 
     async getUserByToken(token: string): Promise<TDbUser | null> {
-        return await this.orm.get('users', { token });
+        return await this.orm.get<TDbUser>('users', { token });
     }
 
     async registration(name: string, guid: string, passwordHash: string, token: string): Promise<{ id: number; changes: number }> {

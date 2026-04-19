@@ -1,11 +1,11 @@
 import BaseManager, { TManagerOptions } from '../BaseManager';
 import CONFIG from '../../../config';
-import { Army, TMap, TArmyState } from '../../army/Army';
+import { Army, TMap, TArmyState, TBuildingInput } from '../../army/Army';
 import User from '../user/User';
 
 const { GAME_STATE, GAME_OVER } = CONFIG.SOCKET;
 
-type TStartGame = { guid: string; map: TMap; buildings: any[]; mapGuid: string };
+type TStartGame = { guid: string; map: TMap; buildings: TBuildingInput[]; mapGuid: string };
 
 type TVisibleEntity = {
     guid: string;
@@ -88,12 +88,12 @@ class ArmyManager extends BaseManager {
         const { units, slimePuddles, buildings } = armyState;
 
         // Отправляем юниты и здания на отдельные эндпоинты карты
-        await this.send<{ mapGuid: string; userGuid: string; units: any[] }>(
+        await this.send<{ mapGuid: string; userGuid: string; units: TArmyState['units'] }>(
             `${CONFIG.SERVICES.MAP_URL}/updateUnitsHandler`,
             { mapGuid: army.mapGuid, userGuid: army.guid, units }
         );
 
-        await this.send<{ mapGuid: string; userGuid: string; buildings: any[] }>(
+        await this.send<{ mapGuid: string; userGuid: string; buildings: TArmyState['buildings'] }>(
             `${CONFIG.SERVICES.MAP_URL}/updateBuildingsHandler`,
             { mapGuid: army.mapGuid, userGuid: army.guid, buildings }
         );
@@ -103,18 +103,15 @@ class ArmyManager extends BaseManager {
         );
 
         if (visibility?.entities && visibility.entities.length > 0) {
-            const enemyEntities = visibility.entities.map(entity => ({
+            const enemyEntities: TBuildingInput[] = visibility.entities.map(entity => ({
                 guid: entity.guid,
                 type: entity.type,
                 x: entity.x,
                 y: entity.y,
                 hp: entity.hp,
                 maxHp: entity.maxHp,
-                isAlive: true,
-                update: () => {},
-                getState: () => ({})
             }));
-            army.updateEnemyEntities(enemyEntities as any);
+            army.updateEnemyEntities(enemyEntities);
         }
     }
 

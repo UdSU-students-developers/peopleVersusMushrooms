@@ -75,14 +75,14 @@ class Server {
         });
     }
 
-    authValidate(token: string): Promise<any> {
+    authValidate(token: string): Promise<TResponse<TUser>> {
         return new Promise((resolve) => {
             this.socket.emit(VALIDATE_TOKEN, { token });
             this.socket.once(VALIDATE_TOKEN, (response) => resolve(response));
         });
     }
 
-    private handleRegistration(response: TResponse<any>): void {
+    private handleRegistration(response: TResponse<TUser>): void {
         if (response?.result === 'ok' && response.data) {
             const SET_STORE = this.mediator.getTriggerTypes().SET_STORE;
             const USER_REGISTERED = this.mediator.getEventTypes().USER_REGISTERED;
@@ -100,7 +100,7 @@ class Server {
         this.mediator.call(this.mediator.getEventTypes().ERROR, response.error);
     }
 
-    private handleLogin(response: TResponse<any>) {
+    private handleLogin(response: TResponse<TUser>) {
         if (response?.result === 'ok' && response.data) {
             const SET_STORE = this.mediator.getTriggerTypes().SET_STORE;
             const LOGIN_EVENT = this.mediator.getEventTypes().LOGIN;
@@ -134,13 +134,13 @@ class Server {
         }
     }
 
-    private handleGameState(response: any) {
+    private handleGameState(response: TResponse<TArmyState>) {
         if (response?.result !== 'ok' || !response.data) return;
         const GAME_STATE_UPDATED = this.mediator.getEventTypes().GAME_STATE_UPDATED;
         this.mediator.call(GAME_STATE_UPDATED, response.data);
     }
 
-    private handleGameOver(data: any) {
+    private handleGameOver(data: TResponse<{ message: string }>) {
         const GAME_OVER_EVENT = this.mediator.getEventTypes().GAME_OVER;
         this.mediator.call(GAME_OVER_EVENT, data);
     }

@@ -58,6 +58,7 @@ export type TUnit = {
     y: number;
     hp: number;
     maxHp: number;
+    isHealing?: boolean;
 }
 
 // Здание (цель для армии грибов)
@@ -68,6 +69,10 @@ export type TBuilding = {
     y: number;
     hp: number;
     maxHp: number;
+    sizeX?: number;
+    sizeY?: number;
+    isExploding?: boolean;
+    isAttacking?: boolean;
 }
 
 // Лужа слайма

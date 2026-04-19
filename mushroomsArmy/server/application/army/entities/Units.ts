@@ -25,6 +25,7 @@ export type TUnitState = {
   y: number;
   hp: number;
   maxHp: number;
+  isHealing?: boolean;
 };
 
 export type TPoisonEffect = {
@@ -78,7 +79,8 @@ class Unit {
         this.lastTargetTileY = Math.floor(y);
     }
 
-    update(enemies: Unit[], map: TMap, deltaTime: number): void {
+
+    update(enemies: Unit[], map: TMap, deltaTime: number, allies: Unit[] = []): void {
         if (!this.isAlive) return;
 
         this.enemies = enemies;

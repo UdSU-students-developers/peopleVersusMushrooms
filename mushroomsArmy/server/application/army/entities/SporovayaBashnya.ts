@@ -1,5 +1,5 @@
 import { TMap } from "../Army";
-import Unit from "./Units";
+import Unit, { TProjectile } from "./Units";
 import { IBuilding } from "./Vzryvomor";
 
 type TSporovayaBashnyaOptions = {
@@ -9,6 +9,7 @@ type TSporovayaBashnyaOptions = {
     y: number;
     hp: number;
     maxHp: number;
+    projectiles?: TProjectile[];
 };
 
 type TSporovayaBashnyaState = {
@@ -42,6 +43,7 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
     private readonly attackCooldown: number = 2;
     private readonly attackDamage: number = 50;
     private attackTimer: number = 0;
+    private projectiles: TProjectile[] = [];
 
     constructor(options: TSporovayaBashnyaOptions) {
         this.guid = options.guid;
@@ -50,6 +52,7 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
         this.y = options.y;
         this.hp = options.hp;
         this.maxHp = options.maxHp;
+        this.projectiles = options.projectiles ?? [];
     }
 
     public update(enemies: Unit[], map: TMap, deltaTime: number): void {
@@ -88,6 +91,15 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
         if (nearestEnemy) {
             this.isAttacking = true;
             this.attackingTimer = this.attackAnimDuration;
+            this.projectiles.push({
+                guid: `${this.guid}-${Date.now()}-${Math.random()}`,
+                type: 'sporovaya_bashnya',
+                fromX: this.x + 1,
+                fromY: this.y + 1,
+                toX: nearestEnemy.x,
+                toY: nearestEnemy.y,
+                createdAt: Date.now(),
+            });
             nearestEnemy.takeDamage(this.attackDamage, 'physical');
         }
     }

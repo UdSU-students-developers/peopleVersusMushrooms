@@ -47,6 +47,16 @@ export type SlimePuddle = {
   radius: number;          
 };
 
+export type Projectile = {
+  guid: string;
+  type: 'sporomet' | 'sporovaya_bashnya' | 'eblekar';
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  createdAt: number;
+};
+
 /**
  * Полное состояние игры
  */
@@ -55,4 +65,5 @@ export type GameState = {
   units: Unit[];
   buildings: Building[];
   slimePuddles: SlimePuddle[]; 
+  projectiles: Projectile[];
 };

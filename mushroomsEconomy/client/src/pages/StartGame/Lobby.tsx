@@ -13,6 +13,8 @@ const Lobby: React.FC<IBasePage> = ({ setPage }) => {
     const [lobbies, setLobbies] = useState<TLobbies>([]);
     const [currentLobby, setCurrentLobby] = useState<TLobby | null>(null);
     const [error, setError] = useState<string | null>(null);
+    
+    const [lobbyNameInput, setLobbyNameInput] = useState<string>("");
 
     const { GET_STORE } = CONFIG.MEDIATOR.TRIGGERS;
     const EVENTS = mediator.getEventTypes();
@@ -59,10 +61,11 @@ const Lobby: React.FC<IBasePage> = ({ setPage }) => {
 
     const handleCreateLobby = () => {
         setError(null);
-        const name = `${user?.name || 'Player'}'s Lobby`;
-        server.createLobby(name);
+        const nameToSend = lobbyNameInput.trim() || `${user?.name || 'Player'}'s Lobby`;
+        server.createLobby(nameToSend);
+        setLobbyNameInput(""); 
     };
-
+    
     const handleJoinLobby = (lobbyGuid: string) => {
         setError(null);
         server.joinToLobby(lobbyGuid);
@@ -72,6 +75,7 @@ const Lobby: React.FC<IBasePage> = ({ setPage }) => {
         setError(null);
         server.leaveLobby();
         setCurrentLobby(null);
+        setPage(PAGES.GAME_MENU);
     };
 
     const handleSetReady = () => {
@@ -79,7 +83,7 @@ const Lobby: React.FC<IBasePage> = ({ setPage }) => {
         server.setReady();
     };
 
-    const handleStartGame = () => {
+    const handleStartGameClick = () => {
         setError(null);
         server.startGame();
     };
@@ -126,7 +130,7 @@ const Lobby: React.FC<IBasePage> = ({ setPage }) => {
                         <button onClick={handleLeaveLobby} className="btn-danger">Выйти</button>
                         
                         {isOwner && (
-                            <button onClick={handleStartGame} className="btn-success">
+                            <button onClick={handleStartGameClick} className="btn-success">
                                 Начать игру
                             </button>
                         )}
@@ -154,9 +158,18 @@ const Lobby: React.FC<IBasePage> = ({ setPage }) => {
                     )}
                 </div>
 
-                <button onClick={handleCreateLobby} className="create-lobby-btn">
-                    Создать новое лобби
-                </button>
+                <div className="create-lobby-form">
+                    <input 
+                        type="text" 
+                        value={lobbyNameInput}
+                        onChange={(e) => setLobbyNameInput(e.target.value)}
+                        placeholder="Название лобби"
+                        className="lobby-input"
+                    />
+                    <button onClick={handleCreateLobby} className="create-lobby-btn">
+                        Создать новое лобби
+                    </button>
+                </div>
 
                 <div className="lobby-list-container">
                     {lobbies.length === 0 ? (

@@ -1,1 +1,2 @@
 npm test
+echo ">>> Pre-commit hook is running <<<"

@@ -1,5 +1,5 @@
-const Unit = require("../Unit")
-const CONFIG = require("../../../../../config");
+const Unit = require("./Unit")
+const CONFIG = require("../../../../config");
 
 const { HP, SPEED, WANDER_RADIUS } = CONFIG.ECONOMY.LARVA
 

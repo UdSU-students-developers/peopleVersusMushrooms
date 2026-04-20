@@ -4,9 +4,9 @@ import { MediatorContext, ServerContext } from "../../App";
 import { TLobbies, TLobby, TUser } from "../../services/Server/types";
 import { IBasePage, PAGES } from "../PageManager";
 
-import "./StartGame.css";
+import "./LobbyMenu.css";
 
-const Lobby: React.FC<IBasePage> = ({ setPage }) => {
+const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
     const server = useContext(ServerContext);
     const mediator = useContext(MediatorContext);
 
@@ -192,4 +192,4 @@ const Lobby: React.FC<IBasePage> = ({ setPage }) => {
     );
 }
 
-export default Lobby;
+export default LobbyMenu;

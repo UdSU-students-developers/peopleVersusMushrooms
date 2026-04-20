@@ -30,6 +30,8 @@
 
   "devDependencies": {
 
+    "@types/express": "^5.0.6",
+
     "husky": "^9.1.7",
 
     "jest": "^30.3.0"

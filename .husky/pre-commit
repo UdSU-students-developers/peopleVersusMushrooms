@@ -1,0 +1,1 @@
+cd service-a/server && npm test

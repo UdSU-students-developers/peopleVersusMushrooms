@@ -35,10 +35,10 @@ class Economy {
         this.enemyBuildings = [];
         //...
 
-        /* УДОЛИ МЕНЯ */
-        this.addMycelium(25, 25);
-        this.addSmallReactor(24, 25);
-        this.addLarva(26, 26, 24, 25);
+        //Не придумал куда сунуть
+        this.peopleArmyGuid = '';
+        this.p
+
         /**************/
 
         // start game proccess

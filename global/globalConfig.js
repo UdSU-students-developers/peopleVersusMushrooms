@@ -43,6 +43,11 @@ const GLOBAL_CONFIG = {
         SET_READY: 'SET_READY',
         START_GAME: 'START_GAME',
 
+        //map
+        GENERATE_MAP: 'GENERATE_MAP',
+        UPDATE_MAP: 'UPDATE_MAP',
+        GET_MAP_PARAMS: 'GET_MAP_PARAMS',
+
         //user
         REGISTRATION: 'REGISTRATION',
         LOGIN: 'LOGIN',

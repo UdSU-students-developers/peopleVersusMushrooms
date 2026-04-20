@@ -14,11 +14,14 @@ class GameManager extends BaseManager {
 		this.economies = {};
 		// sockets
 		if (!this.io) return;
-		this.io.on('connection', (socket) => { });
+		this.io.on('connection', (socket) => {
+			//
+		 });
 		// mediator events subscribers
 		this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
 		this.mediator.subscribe(this.EVENTS.LOAD_GAME, (data) => this.eventLoadGame(data));
 		// mediator triggers setters
+		this.mediator.set(this.TRIGGERS.SET_SERIVCES_GUIDS, (guids) => this.triggerSetServicesGuids(guids));
 		//...
 	}
 
@@ -49,6 +52,12 @@ class GameManager extends BaseManager {
 	}
 
 	/* TRIGGERS */
+
+	triggerSetServicesGuids(guids = {}) {
+		if (guids) {
+			
+		}
+	}
 
 	/* EVENTS */
 	eventStartGame(data = {}) {

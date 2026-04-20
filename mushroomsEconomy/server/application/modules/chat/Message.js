@@ -1,30 +1,20 @@
 class Message {
-    constructor({ common, author, message }) {
-        this.common = common;
-        this.guid = this.common.guid();
+    constructor({ common, author, message, socketId }) {
+        this.socketId = socketId;
+        this.guid = common.guid();
         this.author = author;
         this.message = message;
+        this.date = date;
     }
 
     get() {
         return {
+            socketId: this.socketId,
             guid: this.guid,
             author: this.author,
-            message: this.message
+            message: this.message,
+            date: this.date,
         }
-    }
-    
-    getSelf() {
-        return {
-            common: this.common,
-            guid: this.guid,
-            author: this.author,
-            message: this.message
-        }
-    }
-
-    isValid() {
-        return this.author && this.message;
     }
 }
 

@@ -3363,7 +3363,7 @@
     }]
   }, {
     "id": "8bbf18ee-9caf-4d84-b0d2-bbc2ff52d749",
-    "name": "01_08_17 Регистрация с Пустым полем Пароль",
+    "name": "01_08_17 Регистрация с пустым полем Пароль",
     "commands": [{
       "id": "bddbbcca-5bd1-4c5c-a41e-50d2dd3b9fd7",
       "comment": "",
@@ -4587,6 +4587,31 @@
       "command": "assertElementPresent",
       "target": "id=testing-login-switch-to-register",
       "targets": [],
+      "value": ""
+    }, {
+      "id": "e161bd99-0864-4b2a-942e-0cd0b978b96d",
+      "comment": "",
+      "command": "assertElementPresent",
+      "target": "id=testing-login-remember",
+      "targets": [
+        ["id=testing-login-remember", "id"],
+        ["css=#testing-login-remember", "css:finder"],
+        ["xpath=//input[@id='testing-login-remember']", "xpath:attributes"],
+        ["xpath=//div[@id='root']/div/div/div/div/div/input", "xpath:idRelative"],
+        ["xpath=//div[6]/div/div/div/div/div/input", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "fbd26ca5-7e27-4e95-bc43-d68bb7d3d5b5",
+      "comment": "",
+      "command": "assertElementPresent",
+      "target": "css=.link-style",
+      "targets": [
+        ["css=.link-style", "css:finder"],
+        ["xpath=//div[@id='root']/div/div/div/div[2]/p", "xpath:idRelative"],
+        ["xpath=//p", "xpath:position"],
+        ["xpath=//p[contains(.,'Забыли пароль?')]", "xpath:innerText"]
+      ],
       "value": ""
     }, {
       "id": "c3df33e7-0581-4e39-a10f-89fc180b21f1",

@@ -88,7 +88,12 @@ class Incubator extends Building {
         this.isCreating = false;
         this.larvaProgress = 0;
 
-        return new Larva();
+        return new Larva({
+            x: spawnPoint.x,
+            y: spawnPoint.y,
+            homeX: this.x,
+            homeY: this.y
+        });
     }
 
     updateLarvaProgress(availableEnergy) {

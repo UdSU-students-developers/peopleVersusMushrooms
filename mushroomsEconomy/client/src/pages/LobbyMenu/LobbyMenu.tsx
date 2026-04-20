@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import CONFIG from "../../config";
 import { MediatorContext, ServerContext } from "../../App";
-import { TLobbies, TLobby, TUser } from "../../services/Server/types";
+import { TLobbies, TLobby, TUser, TPlayer, TLobbyServer } from "../../services/Server/types";
 import { IBasePage, PAGES } from "../PageManager";
 
 import "./LobbyMenu.css";
@@ -27,10 +27,35 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
             setError(null);
         };
 
-        const handleLobbyUpdate = (lobby: TLobby | null) => {
-            console.log('Обновление лобби:', lobby);
-            setCurrentLobby(lobby);
-            setError(null);
+        const handleLobbyUpdate = (lobbyData: TLobbyServer | TLobbyServer[] | null) => {
+            console.log('Обновление лобби:', lobbyData);
+
+            if (!lobbyData) {
+                setCurrentLobby(null);
+                return;
+            }
+
+            const candidates = Array.isArray(lobbyData) ? lobbyData : [lobbyData];
+            
+            let activeLobby: TLobby | null = null;
+            const currentUserGuid = user?.guid;
+
+            for (const serverLobby of candidates) {
+                const normalizedLobby = normalizeLobbyData(serverLobby);
+
+                const isUserInLobby = normalizedLobby.players.some(p => p.guid === currentUserGuid);
+
+                if (isUserInLobby) {
+                    activeLobby = normalizedLobby;
+                    break;
+                }
+            }
+
+            if (activeLobby) {
+                setCurrentLobby(activeLobby);
+            } else if (!Array.isArray(lobbyData)) {
+                setCurrentLobby(null);
+            }
         };
 
         const handleStartGame = () => {
@@ -56,7 +81,29 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
             mediator.unsubscribe(EVENTS.START_GAME, handleStartGame);
             mediator.unsubscribe(EVENTS.SHOW_ERROR, handleError);
         };
-    }, [mediator, server, setPage]);
+    }, [mediator, server, setPage, user]);
+
+    const normalizeLobbyData = (serverData: TLobbyServer): TLobby => {
+        const players: TPlayer[] = [];
+
+        if (serverData.playersGuids) {
+            Object.entries(serverData.playersGuids).forEach(([role, guid]) => {
+                if (guid) {
+                    players.push({
+                        guid: guid,
+                        role: role,
+                        ready: serverData.playersIsReady?.[role] ?? false 
+                    });
+                }
+            });
+        }
+
+        return {
+            lobbyGuid: serverData.lobbyGuid,
+            lobbyName: serverData.lobbyName,
+            players: players
+        };
+    };
 
 
     const handleCreateLobby = () => {
@@ -96,10 +143,10 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
     };
 
     if (currentLobby) {
-        const players = currentLobby?.playersGuids 
-            ? (Array.isArray(currentLobby.playersGuids) 
-                ? currentLobby.playersGuids 
-                : Object.values(currentLobby.playersGuids))
+        const players = currentLobby?.players 
+            ? (Array.isArray(currentLobby.players) 
+                ? currentLobby.players 
+                : Object.values(currentLobby.players))
             : [];
 
         const isOwner = currentLobby.lobbyGuid === user?.guid;

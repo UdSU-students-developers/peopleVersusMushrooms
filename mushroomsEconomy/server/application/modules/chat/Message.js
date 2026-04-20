@@ -4,6 +4,7 @@ class Message {
         this.guid = common.guid();
         this.author = author;
         this.message = message;
+        this.date = date;
     }
 
     get() {
@@ -11,7 +12,8 @@ class Message {
             socketId: this.socketId,
             guid: this.guid,
             author: this.author,
-            message: this.message
+            message: this.message,
+            date: this.date,
         }
     }
 }

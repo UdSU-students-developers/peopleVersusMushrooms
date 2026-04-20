@@ -21,28 +21,18 @@ class ChatManager extends BaseManager {
         });
     }
 
+    /* SOCKETS */
+
     handleDisconnect(socket) {
-        this.eventDeleteMessage(this.triggerGetMessageBySocketId(socket.id));
+        this._eventDeleteMessage(this._triggerGetMessageBySocketId(socket.id));
     };
 
-    triggerGetUserBySocketId(socketId) {
-        return Object.values(this.messages).find(mes => mes.socketId === socketId) || null;
+    getMessages(socket) {
+        return socket.emit(MESSAGES, this.answer.good(this.messages));
     }
-
-    eventDeleteMessage(guid) {
-        if (guid && this.messages[guid]) {
-            delete this.messages[guid];
-            console.log(`сообщение с guid: ${this.message.guid} удалёно`);
-        }
-    }
-
-    triggerGetMessageBySocketId(socketId) {
-        return Object.values(this.messages).find(mes => mes.socketId === socketId) || null;
-    }
-
 
     sendMessage(data = {}, socket) {
-        const { author, message } = data;
+        const { author, message, date } = data;
 
         if (!author || !message) {
             return socket.emit(MESSAGE, this.answer.bad(242));
@@ -52,17 +42,32 @@ class ChatManager extends BaseManager {
             common: this.common,
             author: author,
             message: message,
-            socketId: socket.id
+            socketId: socket.id,
+            date: date
         });
         this.messages[newMessage.guid] = newMessage;
 
         this.io.emit(NEW_MESSAGE, this.answer.good(newMessage.get()));
     }
 
-    getMessages(socket) {
-        return socket.emit(MESSAGES, this.answer.good(this.messages));
+    /* PRIVATE */
+
+    _eventDeleteMessage(guid) {
+        if (guid && this.messages[guid]) {
+            delete this.messages[guid];
+            console.log(`сообщение с guid: ${this.message.guid} удалёно`);
+        }
     }
 
+    _triggerGetMessageBySocketId(socketId) {
+        return Object.values(this.messages).find(mes => mes.socketId === socketId) || null;
+    }
+
+    /* TRIGGGERS */
+    
+    triggerGetUserBySocketId(socketId) {
+        return Object.values(this.messages).find(mes => mes.socketId === socketId) || null;
+    }
 }
 
 module.exports = ChatManager;

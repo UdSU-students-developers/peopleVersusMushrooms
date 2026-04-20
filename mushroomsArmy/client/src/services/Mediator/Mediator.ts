@@ -31,13 +31,13 @@ class Mediator {
     }
 
     // subscribe event
-    subscribe(name: string, func: (a: any) => any): void {
+    subscribe(name: string, func: Function): void {
         if (this.events[name] && func instanceof Function) {
             this.events[name].push(func);
         }
     }
 
-    unsubscribe(name: string, _func: (a: any) => any): void {
+    unsubscribe(name: string, _func: Function): void {
         if (!(this.events[name] && _func instanceof Function)) {
             return;
         }
@@ -56,7 +56,7 @@ class Mediator {
     }
 
     // call event
-    call(name: string, data?: any): void {
+    call(name: string, data?: unknown): void {
         if (this.events[name]) {
             this.events[name].forEach(event => {
                 if (event instanceof Function) { 
@@ -75,14 +75,14 @@ class Mediator {
     }
 
     // set trigger
-    set(name: string, func: (a: any) => any): void {
+    set(name: string, func: Function): void {
         if (name && func instanceof Function) {
             this.triggers[name] = func;
         }
     }
 
     // get trigger value
-    get<T>(name: string, data?: any): T | null {
+    get<T>(name: string, data?: unknown): T | null {
         return (this.triggers[name] && this.triggers[name] instanceof Function) ? this.triggers[name](data) : null;
     }
 }

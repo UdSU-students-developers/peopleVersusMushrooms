@@ -1,12 +1,5 @@
 import { TPoint } from "../../config";
 
-export type TUser = {
-    token: string;
-    name: string;
-    id?: number;
-    guid: string;
-}
-
 export type TResponse<T> = {
     result: 'ok' | 'error';
     data?: T;
@@ -16,6 +9,13 @@ export type TResponse<T> = {
 export type TError = {
     code: number;
     text: string;
+}
+
+export type TUser = {
+    token: string;
+    name: string;
+    id?: number;
+    guid: string;
 }
 
 export type TMessage = {
@@ -34,13 +34,37 @@ export type TSmallReactor = {
     guid: string;
     coords: TPoint;
     type: "small_reactor";
+    consumed: boolean;
 }
+
+export type TLarva = {
+    guid: string;
+    x: number;
+    y: number;
+    coords: { x: number; y: number };
+    hp: number;
+    speed: number;
+};
 
 export type TScene = {
     guid: string;
-    mushrooms: TMushroom[];
+    mushrooms: TMushroom[]; 
     buildings: (TSmallReactor | number)[]; //number тут временно, загатовка на разные типы
     map: number[][];
+    larvae: TLarva[];
 }
 
 export type TMessages = TMessage[];
+
+type TPlayer = {
+    guid: string;
+    ready: boolean;
+}
+
+export type TLobby = {
+    lobbyGuid: string;
+    lobbyName: string;
+    playersGuids: TPlayer[] | { [key: string]: TPlayer };
+}
+
+export type TLobbies = TLobby[];

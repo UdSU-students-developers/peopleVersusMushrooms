@@ -6,48 +6,25 @@ import CONFIG from "../../config";
 import Button from "../../components/Button/Button";
 
 import './Chat.css';
-import useStore from "../../services/Store/useStore";
 
-const Chat: React.FC<IBasePage> = (props: IBasePage) => {
-    const { setPage } = props;
-
-    const { GET_STORE, SET_STORE } = CONFIG.MEDIATOR.TRIGGERS;
-
+const Chat: React.FC<IBasePage> = ({setPage}) => {
     const server = useContext(ServerContext);
     const mediator = useContext(MediatorContext);
-    
+    const { GET_STORE, SET_STORE } = CONFIG.MEDIATOR.TRIGGERS;
+    const EVENTS = mediator.getEventTypes();
     const [messages, setMessages] = useState<TMessages>([]);
-    const [user, setUser] = useState<TUser | null>(null);
+    const user = mediator.get<TUser | null>(GET_STORE, 'user');
     const messageRef = useRef<HTMLInputElement>(null);
+    const storedMessages = mediator.get<TMessage>(GET_STORE, 'messages');
 
     useEffect(() => {
-        if (!mediator) return;
-        
-        const storedUser = mediator.get<TUser | null>(GET_STORE, 'user');
-        setUser(storedUser);
-    }, [mediator]);
-
-    useEffect(() => {
-        if (!mediator) return;
-        
-        const storedMessages = mediator.get<TMessages>(GET_STORE, 'messages');
-        if (storedMessages) {
-            setMessages(storedMessages);
-        }
-    }, [mediator]);
-
-    useEffect(() => {
-        if (!mediator) return;
-
-        const eventTypes = mediator.getEventTypes();
+        const initialMessages = Array.isArray(storedMessages) ? storedMessages : [];
+        setMessages(initialMessages);
+        server.getMessages();
 
         const handleNewMessage = (message: TMessage) => {
             setMessages(prev => [...prev, message]);
-            let currentMessages = mediator.get<TMessages>(GET_STORE, 'messages') || [];
-
-            if (!Array.isArray(currentMessages)) {
-                currentMessages = [];
-            }
+            const currentMessages = mediator.get<TMessages>(GET_STORE, 'messages') || [];
 
             mediator.get(SET_STORE, { 
                 name: 'messages', 
@@ -63,42 +40,17 @@ const Chat: React.FC<IBasePage> = (props: IBasePage) => {
             });
         };
 
-        const handleLogin = () => {
-            const user = mediator.get<TUser | null>(GET_STORE, 'user');
-            setUser(user);
-        };
-
-        mediator.subscribe(eventTypes.NEW_MESSAGE, handleNewMessage);
-        mediator.subscribe(eventTypes.MESSAGES_LOADED, handleMessagesLoaded);
-        mediator.subscribe(eventTypes.LOGIN, handleLogin);
-
-        server.getMessages();
+        mediator.subscribe(EVENTS.NEW_MESSAGE, handleNewMessage);
+        mediator.subscribe(EVENTS.MESSAGES_LOADED, handleMessagesLoaded);
 
         return () => {
-            mediator.unsubscribe(eventTypes.NEW_MESSAGE, handleNewMessage);
-            mediator.unsubscribe(eventTypes.MESSAGES_LOADED, handleMessagesLoaded);
-            mediator.unsubscribe(eventTypes.LOGIN, handleLogin);
+            mediator.unsubscribe(EVENTS.NEW_MESSAGE, handleNewMessage);
+            mediator.unsubscribe(EVENTS.MESSAGES_LOADED, handleMessagesLoaded);
         }
 
-    }, [mediator, server]);
+    }, []);
 
-    const handleKeyUp = (event: KeyboardEvent<HTMLInputElement>) => {
-        if (event.key === 'Enter') {
-            if (messageRef.current) {
-                const message = messageRef.current.value;
-                if (message.length > CONFIG.CHAT_MAX_MESSAGE_LENGTH) {
-                    alert(`Сообщение не должно превышать ${CONFIG.CHAT_MAX_MESSAGE_LENGTH} символов`);
-                    return;
-                }
-                if (message) {
-                    server.sendMessage(message);
-                    messageRef.current.value = '';
-                }
-            }
-        }
-    }
-
-    const handleSend = () => {
+    const handleSendMessage = () => {
         if (messageRef.current) {
             const message = messageRef.current.value;
             if (message.length > CONFIG.CHAT_MAX_MESSAGE_LENGTH) {
@@ -112,9 +64,11 @@ const Chat: React.FC<IBasePage> = (props: IBasePage) => {
         }
     }
 
-    const handleBackToGame = () => {
-        setPage(PAGES.GAME);
-    };
+    const handleKeyUp = (event: KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter') handleSendMessage();
+    }
+
+    const handleBackToGame = () => setPage(PAGES.GAME);
 
     const getAuthorColor = (author: string) => {
         let hash = 0;
@@ -122,8 +76,7 @@ const Chat: React.FC<IBasePage> = (props: IBasePage) => {
             hash = author.charCodeAt(i) + ((hash << 5) - hash);
         }
         
-        const hue = hash % 360;
-        return `hsl(${hue}, 70%, 50%)`;
+        return `hsl(${hash % 360}, 70%, 50%)`;
     }
 
     if (!user) {
@@ -175,7 +128,7 @@ const Chat: React.FC<IBasePage> = (props: IBasePage) => {
                     placeholder='Сообщение'
                 />
                 <Button 
-                    onClick={handleSend} 
+                    onClick={handleSendMessage} 
                     text="Отправить"
                     className='button button-primary'
                     id='testSendButton'

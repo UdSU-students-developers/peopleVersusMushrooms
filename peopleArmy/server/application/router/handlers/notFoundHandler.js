@@ -1,6 +1,6 @@
 const Answer = require('../../Answer');
-new Answer();
+const answer = new Answer();
 
 module.exports = (_, res) => {
-    res.status(404).json(Answer.bad(404));
+    res.status(404).json(answer.bad(404));
 };

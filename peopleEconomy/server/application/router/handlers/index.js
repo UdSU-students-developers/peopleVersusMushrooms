@@ -1,5 +1,7 @@
-const useStartGameHandler = require("./lobbyHandlers/useStartGameHandler");
+const notFoundHandler = require("./notFoundHandler");
+const useLobbyUpdatedHandler = require('./lobby/useLobbyUpdatedHandler');
 
 module.exports = {
-    useStartGameHandler,
+    notFoundHandler,
+    useLobbyUpdatedHandler,
 };

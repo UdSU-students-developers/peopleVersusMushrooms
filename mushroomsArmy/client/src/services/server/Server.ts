@@ -1,73 +1,140 @@
+import { io, Socket } from "socket.io-client";
+import md5 from 'md5';
 import CONFIG from '../../config';
-import Store from "../Store/Store";
-import { TUser } from "./types";
+import Mediator from '../Mediator/Mediator';
+import { TArmyState, TResponse, TUser } from './types';
+import { authStorage } from '../../utils/authStorage';
 
-const HOST = CONFIG.HOST;
+const { HOST, SOCKET } = CONFIG;
+const { REGISTRATION, LOGIN, LOGOUT, LOBBY_START, GAME_STATE, GAME_OVER } = SOCKET;
 
 class Server {
-    HOST = HOST;
-    store: Store;
-    chatInterval: NodeJS.Timer | null = null;
-    showErrorCb: (text: string) => void = function() {};
+    mediator: Mediator;
+    socket: Socket;
 
-    constructor(store: Store) {
-        this.store = store;
+    constructor(mediator: Mediator) {
+        this.mediator = mediator;
+        this.socket = io(HOST);
+
+        this.socket.on(REGISTRATION, (data) => this.handleRegistration(data));
+        this.socket.on(LOGIN, (data) => this.handleLogin(data));
+        this.socket.on(LOGOUT, (data) => this.handleLogout(data));
+        this.socket.on(LOBBY_START, (data) => this.handleLobbyStart(data));
+        this.socket.on(GAME_STATE, (data) => this.handleGameState(data));
+        this.socket.on(GAME_OVER, (data) => this.handleGameOver(data));
     }
 
-    private async request<T>(
-        method: string,
-        params: { [key: string]: string } = {},
-        queryParams: { [key: string]: string } = {}
-    ): Promise<T | null> {
-        try {
-            const token = this.store.getToken();
-            let url = `${this.HOST}/${method}`;
-            const paramValues = Object.values(params);
-            if (paramValues.length > 0) {
-                url += "/" + paramValues.join("/");
-            }
-            const queryParts: string[] = [];
-            if (token) {
-                queryParts.push("token=" + token);
-            }
-            for (const key in queryParams) {
-                queryParts.push(key + "=" + queryParams[key]);
-            }
-            if (queryParts.length > 0) {
-                url += "?" + queryParts.join("&");
-            }
+    register(username: string, password: string, passwordRepeat: string): void {
+        this.socket.emit(REGISTRATION, {
+            name: username,
+            passwordHash: md5(password),
+        });
+    }
 
-            console.log("Request URL:", url);
-            const response = await fetch(url);
-            const body = await response.json();
+    login(username: string, password: string): void {
+        this.socket.emit(LOGIN, {
+            name: username,
+            passwordHash: md5(password),
+        });
+    }
 
-            if (body && body.error) {
-                this.setError(body.error);
-                console.error("Server error:", body.error);
-                return null;
-            }
-            return body as T;
-        } catch (e) {
-            console.log("Request exception:", e);
-            this.setError("Unknown error");
-            return null;
+    logout(): void {
+        const ERROR = this.mediator.getEventTypes().ERROR;
+        const user = this.mediator.get<TUser | null>(
+            this.mediator.getTriggerTypes().GET_STORE,
+            'user'
+        );
+
+        if (!user) {
+            this.mediator.call(ERROR, { code: 13, message: 'Пользователь не найден' });
+            return;
+        }
+
+        this.socket.emit(LOGOUT, {
+            token: user.token,
+            guid: user.guid
+        });
+    }
+
+    lobbyStart(): void {
+        const ERROR = this.mediator.getEventTypes().ERROR;
+        const user = this.mediator.get<TUser>(
+            this.mediator.getTriggerTypes().GET_STORE,
+            'user'
+        );
+
+        if (!user || !user.token || !user.guid) {
+            this.mediator.call(ERROR, { code: 13, message: 'Недостаточно данных' });
+            return;
+        }
+
+        this.socket.emit(LOBBY_START, {
+            token: user.token,
+            guid: user.guid
+        });
+    }
+
+    private handleRegistration(response: TResponse<TUser>): void {
+        if (response?.result === 'ok' && response.data) {
+            const SET_STORE = this.mediator.getTriggerTypes().SET_STORE;
+            const USER_REGISTERED = this.mediator.getEventTypes().USER_REGISTERED;
+
+            this.mediator.get(SET_STORE, {
+                name: 'user',
+                value: response.data
+            });
+
+            authStorage.setAuth(response.data.token, response.data);
+            this.mediator.call(USER_REGISTERED, response.data);
+            return;
+        }
+
+        this.mediator.call(this.mediator.getEventTypes().ERROR, response.error);
+    }
+
+    private handleLogin(response: TResponse<TUser>) {
+        if (response?.result === 'ok' && response.data) {
+            const SET_STORE = this.mediator.getTriggerTypes().SET_STORE;
+            const LOGIN_EVENT = this.mediator.getEventTypes().LOGIN;
+
+            this.mediator.get(SET_STORE, {
+                name: 'user',
+                value: response.data
+            });
+
+            authStorage.setAuth(response.data.token, response.data);
+            this.mediator.call(LOGIN_EVENT, response.data);
+        } else {
+            this.mediator.call(this.mediator.getEventTypes().ERROR, response.error);
         }
     }
 
-    private setError(text: string): void {
-        this.showErrorCb(text);
+    private handleLogout(response: TResponse<boolean>) {
+        const CLEAR_STORE = this.mediator.getTriggerTypes().CLEAR_STORE;
+        const USER_LOGGED_OUT = this.mediator.getEventTypes().USER_LOGGED_OUT;
+
+        this.mediator.get(CLEAR_STORE, 'user');
+        this.mediator.call(USER_LOGGED_OUT);
     }
 
-    showError(cb: (text: string) => void) {
-        this.showErrorCb = cb;
+    private handleLobbyStart(response: TResponse<boolean>) {
+        if (response?.result === 'ok' && response.data) {
+            const GAME_STARTED = this.mediator.getEventTypes().GAME_STARTED;
+            this.mediator.call(GAME_STARTED);
+        } else {
+            this.mediator.call(this.mediator.getEventTypes().ERROR, response.error);
+        }
     }
 
-    async register(username: string, password: string): Promise<boolean> { //Функцию выпилить! Она для примера
-        const user = await this.request<TUser & { username?: string; name?: string; id?: number }>("reg", { username, password });
-        if (!user) return false;
-        const name = user.username ? user.username : user.name;
-        this.store.setUser({ token: user.token, name: name, id: user.id });
-        return true;
+    private handleGameState(response: TResponse<TArmyState>) {
+        if (response?.result !== 'ok' || !response.data) return;
+        const GAME_STATE_UPDATED = this.mediator.getEventTypes().GAME_STATE_UPDATED;
+        this.mediator.call(GAME_STATE_UPDATED, response.data);
+    }
+
+    private handleGameOver(data: TResponse<{ message: string }>) {
+        const GAME_OVER_EVENT = this.mediator.getEventTypes().GAME_OVER;
+        this.mediator.call(GAME_OVER_EVENT, data);
     }
 }
 

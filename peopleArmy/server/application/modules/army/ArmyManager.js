@@ -1,5 +1,7 @@
-const BaseManager = require('../BaseManager');
+const CONFIG = require('../../../config');
+const BaseManager = require('../../../../../global/modules/BaseManager');
 const Army = require('../../army/Army');
+const { UPDATE_ARMY } = CONFIG.SOCKETS;
 
 class ArmyManager extends BaseManager {
     constructor(options) {
@@ -13,6 +15,7 @@ class ArmyManager extends BaseManager {
         });
         // mediator event subscribers
         this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
+        this.mediator.subscribe(this.EVENTS.USER_DISCONNECT, (data) => this.eventUserDisconnect(data));
         // mediator trigger setters
         this.mediator.set(this.TRIGGERS.CREATE_UNIT, (data) => this.createUnit(data));
     }
@@ -26,7 +29,7 @@ class ArmyManager extends BaseManager {
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
         if (user) {
             this.io.to(user.socketId).emit(
-                this.SOCKETS.UPDATE_ARMY,
+                UPDATE_ARMY,
                 this.answer.good(data)
             )
         }
@@ -38,7 +41,7 @@ class ArmyManager extends BaseManager {
      * mediator.get(CREATE_UNIT, { guid, x, y, type? })
      * guid — guid пользователя
      * type: "soldier" | "bmp" (по умолчанию soldier)
-     * @returns {{ ok: true, data: object } | { ok: false, error: string }}
+     * @returns {{ result: "ok", data: object } | { result: "error", error: string, code: number }}
      */
     createUnit(data) {
         const guid = data?.guid;
@@ -47,26 +50,30 @@ class ArmyManager extends BaseManager {
         const type = data?.type ?? 'soldier';
 
         if (guid === null || data?.x === undefined || data?.y === undefined) {
-            return { ok: false, error: 'BAD_PAYLOAD' };
+            return this.answer.bad(400);
         }
         if (!Number.isFinite(x) || !Number.isFinite(y)) {
-            return { ok: false, error: 'BAD_PAYLOAD' };
+            return this.answer.bad(400);
         }
 
         // Проверяем залогиненность юзера (isLogin)
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
         if (!user || !user?.isLogin()) {
-            return { ok: false, error: 'USER_NOT_LOGGED_IN '};
+            return this.answer.bad(11);
         }
 
         // Проверяем наличие армии у этого юзера
         if (!this.army[guid]) {
-            return { ok: false, error: 'ARMY_NOT_FOUND' };
+            return this.answer.bad(400);
         }
 
         // Находим его армию и вызываем createUnit на уровне Army
         const army = this.army[guid];
-        return army.createUnit({ x, y, type });
+        const result = army.createUnit({ x, y, type });
+        if (!result?.ok) {
+            return this.answer.bad(400);
+        }
+        return this.answer.good(result.data);
     }
 
     /* EVENTS */
@@ -84,6 +91,16 @@ class ArmyManager extends BaseManager {
                 }
             });
         }
+    }
+
+    eventUserDisconnect({ guid }) {
+        if (!guid || !this.army[guid]) {
+            return;
+        }
+        this.army[guid].destructor();
+        delete this.army[guid];
+        this.updateArmyCallback(guid, { units: [] });
+        console.log(`армия с guid: ${guid} уничтожена`);
     }
 
     /* SOCKETS */

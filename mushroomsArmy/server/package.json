@@ -1,8 +1,29 @@
 {
+  "name": "mushrooms-army-server",
+  "version": "1.0.0",
+  "description": "Server for Mushroom Army game",
+  "main": "dist/app.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/app.js",
+    "dev": "ts-node app.ts"
+  },
   "dependencies": {
+    "easystarjs": "^0.4.4",
     "express": "^5.2.1",
     "expression": "^0.0.1",
     "md5": "^2.3.0",
-    "sqlite3": "^5.1.7"
+    "socket.io": "^4.8.3",
+    "sqlite3": "^5.1.7",
+    "typescript": "^6.0.2"
+  },
+  "devDependencies": {
+    "@types/easystarjs": "^0.1.29",
+    "@types/express": "^4.17.21",
+    "@types/md5": "^2.3.2",
+    "@types/node": "^20.0.0",
+    "@types/socket.io": "^3.0.2",
+    "@types/sqlite3": "^3.1.11",
+    "ts-node": "^10.9.2"
   }
 }

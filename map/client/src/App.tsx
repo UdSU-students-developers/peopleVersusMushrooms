@@ -9,6 +9,7 @@ import Mediator from './services/Mediator/Mediator';
 import './App.css';
 
 export const MediatorContext = createContext<Mediator>(null!);
+export const ServerContext = createContext<Server>(null!);
 
 const App: React.FC = () => {
   // mediator
@@ -16,20 +17,17 @@ const App: React.FC = () => {
   const store = new Store(mediator);
   const server = new Server(mediator);
 
-  const props = {
-    server,
-    store,
-  }
-
   server.check('ВАСИЛИЙ', 'Я на такое не подписывался!');
 
   return (
     <MediatorContext value={mediator}>
-      <div className="App">
-        <div className='app'>
-          <PageManager {...props} />
+      <ServerContext.Provider value={server}>
+        <div className="App">
+          <div className='app'>
+            <PageManager />
+          </div>
         </div>
-      </div>
+      </ServerContext.Provider>
     </MediatorContext>
   );
 }

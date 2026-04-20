@@ -8,10 +8,10 @@ class MAP_CONFIG {
     }
 
     static DEFAULTS = {
-        WATER: 50,
+        WATER: 40,
         MOUNTAIN: 50,
-        IRON: 2,
-        OIL: 2,
+        IRON: 0.5,
+        OIL: 0.5,
         SEED: 1
     }
 

@@ -1,10 +1,9 @@
 const { LOBBY_MAX_SIZE } = require("../../../config");
-const Player = require("./Player");
 
 class Lobby {
-    constructor({ creatorGuid, lobbyName, role = 'spectator' }) {
+    constructor({ lobbyGuid, lobbyName, role = 'spectator' }) {
         this.lobbyName = lobbyName;
-        this.creatorGuid = creatorGuid;
+        this.lobbyGuid = lobbyGuid;
         this.maxPlayers = LOBBY_MAX_SIZE;
         this.playersGuids = {
             spectator: null,
@@ -14,36 +13,41 @@ class Lobby {
             mushroomEconomy: null,
         }
 
-        this.playersGuids.spectator = new Player(creatorGuid, role);
+        this.playersIsReady = {
+            spectator: false,
+            peopleArmy: false,
+            peopleEconomy: false,
+            mushroomArmy: false,
+            mushroomEconomy: false
+        }
+
+        this.playersGuids[role] = lobbyGuid;
     }
 
     //получить информацию о комнате 
     get() {
         return {
             lobbyName: this.lobbyName,
-            creatorGuid: this.creatorGuid,
-            players: Object.values(this.playersGuids)
-                .filter(player => player !== null)
-                .map(player => player.get()),
+            lobbyGuid: this.lobbyGuid,
+            playersGuids: { ...this.playersGuids },
+            playersIsReady: { ...this.playersIsReady }
         };
     }
 
     getGuids() {
-        return {
-            ...this.playersGuids
-        }
+        return { ...this.playersGuids }
     }
 
     //добавить игрока
     addPlayer(guid, role) {
         if (guid && role && this.playersGuids[role] === null) {
-            if (guid === this.creatorGuid) {
+            if (guid === this.lobbyGuid) {
                 return false;
             }
-            if (Object.values(this.playersGuids).some(player => player?.guid === guid)) {
+            if (Object.values(this.playersGuids).some(someGuid => someGuid === guid)) {
                 return false;
             }
-            this.playersGuids[role] = new Player(guid, role);
+            this.playersGuids[role] = guid;
             return true;
         }
         return false;
@@ -51,9 +55,10 @@ class Lobby {
 
     //удалить игрока
     removePlayer(guid) {
-        const role = Object.keys(this.playersGuids).find(key => this.playersGuids[key]?.guid === guid);
+        const role = Object.keys(this.playersGuids).find(key => this.playersGuids[key] === guid);
         if (role) {
             this.playersGuids[role] = null;
+            this.playersIsReady[role] = false;
             return true;
         }
         return false;
@@ -62,17 +67,17 @@ class Lobby {
 
     //установить статус игрока
     setPlayerReady(guid) {
-        const player = Object.values(this.playersGuids).find(p => p?.guid === guid);
-        if (player) {
-            player.setReady();
+        const role = Object.keys(this.playersGuids).find(role => this.playersGuids[role] === guid);
+        if (role) {
+            this.playersIsReady[role] = true;
             return true;
         }
         return false;
     }
 
     canStarted() {
-        for (const player of Object.values(this.playersGuids)) {
-            if (player && !player.isReady()) {
+        for (const isReady of Object.values(this.playersIsReady)) {
+            if (!isReady) {
                 return false;
             }
         }
@@ -80,8 +85,8 @@ class Lobby {
     }
 
     isGuidInLobby(guid) {
-        for (const player of Object.values(this.playersGuids)) {
-            if (player && player.guid === guid) {
+        for (const playerGuid of Object.values(this.playersGuids)) {
+            if (playerGuid && playerGuid === guid) {
                 return true;
             }
         }
@@ -89,8 +94,8 @@ class Lobby {
     }
 
 
-    canJoin () {
-        const count = Object.values(this.playersGuids).filter(p => p !== null).length;
+    canJoin() {
+        const count = Object.values(this.playersGuids).filter(g => g !== null).length;
         return count < this.maxPlayers;
     }
 }

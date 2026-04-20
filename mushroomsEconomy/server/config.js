@@ -1,24 +1,17 @@
 const CONFIG = {
     NAME: 'Mushroom economy server',
     PORT: 3005,
-    CORS: {
-        origin: "*",
-    },
-
-    DATABASE: {
-        NAME: 'data.db',
-    },
 
     MEDIATOR: {
         EVENTS: {
-            EXAMPLE_EVENT: "EXAMPLE_EVENT",
+            DELETE_USER: "DELETE_USER",
 
+            LOBBY_UPDATED: 'LOBBY_UPDATED',
             START_GAME: 'START_GAME',
-            LOAD_GAME: 'LOAD_GAME',
         },
         TRIGGERS: {
-            EXAMPLE_TRIGGER: "EXAMPLE_TRIGGER",
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',
+            GET_USER_BY_SOCKET_ID: 'GET_USER_BY_SOCKET_ID',
         },
     },
 
@@ -27,18 +20,7 @@ const CONFIG = {
         MESSAGES: 'MESSAGES',
         NEW_MESSAGE: 'NEW_MESSAGE',
         TYPING: 'TYPING',           // печатает
-
-        REGISTRATION: 'REGISTRATION',
-        LOGIN: 'LOGIN',
-        LOGOUT: 'LOGOUT',
-        RECONNECT: 'RECONNECT',
-
-        CREATE_LOBBY: 'CREATE_LOBBY',
-        DELETE_LOBBY: 'DELETE_LOBBY',
-        JOIN_LOBBY: 'JOIN_LOBBY',
-        LEAVE_LOBBY: 'LEAVE_LOBBY',
-
-        START_GAME: 'START_GAME',
+        
         UPDATE_SCENE: 'UPDATE_SCENE',
         GET_SCENE: 'GET_SCENE',
     },
@@ -55,6 +37,7 @@ const CONFIG = {
             CONSUMPTION: 0, // не потребляет энергию (растёт от Солнышка)
             PRODUCTION: 30, // чтобы для непрерывной работы малого реактора было необходимо ДВЕ грибницы
             CAPACITY: 0, // ничего в себе хранить не умеет
+            POWER: 1,
             SIZE: 1,
         },
         // грибница вырастает за 12 секунд
@@ -94,6 +77,11 @@ const CONFIG = {
         WORKER: {
             HP: 1,
             SPEED: 1,
+        },
+        LARVA: {
+            HP: 40,
+            SPEED: 1,
+            WANDER_RADIUS: 4, //радиус блуждания личинки
         }
     }
 };

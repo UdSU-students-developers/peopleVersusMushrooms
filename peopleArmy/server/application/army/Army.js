@@ -151,7 +151,7 @@ class Army {
         this.units.forEach((unit) => {
             if (unit.move(this.map, this.buildings, this.units, this.enemyUnits, this.enemyBuildings)) {
                 this.updated = true;
-                console.log('Координаты юнита (guid: ', unit.guid, '): ', unit.x, unit.y);
+                //console.log('Координаты юнита (guid: ', unit.guid, '): ', unit.x, unit.y);
             }
         });
     }

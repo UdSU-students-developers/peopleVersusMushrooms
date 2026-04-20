@@ -1,5 +1,5 @@
 const CONFIG = require('../../../config');
-const BaseManager = require('../BaseManager');
+const BaseManager = require('../../../../../global/modules/BaseManager');
 const User = require('./User');
 
 const { REGISTRATION, LOGIN, LOGOUT } = CONFIG.SOCKETS;
@@ -14,6 +14,7 @@ class UserManager extends BaseManager {
             socket.on(REGISTRATION, (data) => this.socketRegistration(data, socket));
             socket.on(LOGIN, (data) => this.socketLogin(data, socket));
             socket.on(LOGOUT, (data) => this.socketLogout(data, socket));
+            socket.on('disconnect', () => this.handleDisconnect(socket));
         });
         // mediator event subscribers
         //...
@@ -35,6 +36,18 @@ class UserManager extends BaseManager {
     /* EVENTS */
     //...
 
+    async handleDisconnect(socket) {
+        const guid = socket?.data?.guid;
+        const user = this.triggerGetUserByGuid(guid);
+        if (!user || !user.isLogin()) {
+            return;
+        }
+        await user.logout();
+        this.mediator.call(this.EVENTS.USER_DISCONNECT, { guid: user.guid });
+        delete this.users[user.guid];
+        console.log(`пользователь с guid: ${user.guid} отключился`);
+    }
+
     /* SOCKETS */
     async socketRegistration(data = {}, socket) {
         const { name, password } = data;
@@ -48,7 +61,16 @@ class UserManager extends BaseManager {
         });
         if (await user.registration(name, password)) {
             this.users[user.guid] = user;
+            socket.data.guid = user.guid;
             socket.emit(REGISTRATION, this.answer.good(user.getSelf()));
+
+            const map = Array(50).fill().map(() => Array(50).fill(0));
+            map[39][25] = 1; map[40][25] = 1; map[41][25] = 1; map[42][25] = 1; map[43][25] = 1; map[44][25] = 1; map[45][25] = 1; map[46][25] = 1; map[47][25] = 1; map[48][25] = 1; map[49][25] = 1; map[5][25] = 1;
+            this.mediator.call(this.EVENTS.START_GAME, {
+                guid: user.guid,
+                map,
+                buildings: []
+            });
             return;
         }
         socket.emit(REGISTRATION, this.answer.bad(17));
@@ -66,6 +88,7 @@ class UserManager extends BaseManager {
         });
         if (await user.login(name, password)) {
             this.users[user.guid] = user;
+            socket.data.guid = user.guid;
             socket.emit(LOGIN, this.answer.good(user.getSelf()));
 
             const map = Array(50).fill().map(() => Array(50).fill(0));
@@ -90,7 +113,11 @@ class UserManager extends BaseManager {
             return socket.emit(LOGOUT, this.answer.bad(11));
         }
         await user.logout();
+        this.mediator.call(this.EVENTS.USER_DISCONNECT, { guid: user.guid });
         delete this.users[user.guid];
+        if (socket.data) {
+            delete socket.data.guid;
+        }
         socket.emit(LOGOUT, this.answer.good(true));
     }
 }

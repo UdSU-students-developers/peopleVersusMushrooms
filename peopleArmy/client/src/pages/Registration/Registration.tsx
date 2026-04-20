@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { io, Socket } from 'socket.io-client';
 import { IBasePage, PAGES } from '../PageManager';
 import CONFIG from '../../config';
@@ -10,6 +10,7 @@ const Registration: React.FC<IBasePage> = (props: IBasePage) => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [socket, setSocket] = useState<Socket | null>(null);
+    const registrationOkRef = useRef(false);
 
     useEffect(() => {
         const client = io(CONFIG.SERVER_URL);
@@ -17,11 +18,14 @@ const Registration: React.FC<IBasePage> = (props: IBasePage) => {
 
         client.on(CONFIG.SOCKETS.REGISTRATION, (response: any) => {
             if (response.result === 'ok') {
+                registrationOkRef.current = true;
                 const userData = response?.data ?? null;
                 const token = userData?.token ?? null;
                 mediator.get(CONFIG.MEDIATOR.TRIGGERS.SET_STORE, { name: 'user', value: userData });
                 mediator.get(CONFIG.MEDIATOR.TRIGGERS.SET_STORE, { name: 'token', value: token });
-                setPage(PAGES.CHAT);
+                mediator.get(CONFIG.MEDIATOR.TRIGGERS.SET_STORE, { name: 'socket', value: client });
+                mediator.get(CONFIG.MEDIATOR.TRIGGERS.SET_STORE, { name: 'guid', value: userData?.guid ?? null });
+                setPage(PAGES.GAME);
                 return;
             }
             setError(response.error || 'Ошибка регистрации');
@@ -29,7 +33,9 @@ const Registration: React.FC<IBasePage> = (props: IBasePage) => {
 
         return () => {
             client.off(CONFIG.SOCKETS.REGISTRATION);
-            client.disconnect();
+            if (!registrationOkRef.current) {
+                client.disconnect();
+            }
             setSocket(null);
         };
     }, [setPage, mediator]);

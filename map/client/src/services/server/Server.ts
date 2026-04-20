@@ -1,7 +1,7 @@
 import md5 from 'md5';
 import { io, Socket } from 'socket.io-client';
 import CONFIG, { MEDIATOR, EMESSAGES } from '../../config';
-import { TAnswer, TMap, TUser } from "./types";
+import { ILobby, TAnswer, TMap, TUser } from "./types";
 import Mediator from '../Mediator/Mediator';
 
 const HOST = CONFIG.HOST;
@@ -31,7 +31,7 @@ class Server {
             const result = this._validate(data);
             if (result) {
                 const { LOGIN } = this.mediator.getEventTypes();
-                this.mediator.call(LOGIN, data);
+                this.mediator.call(LOGIN, result);
                 console.log(result)
                 this.user = result
             }
@@ -41,7 +41,7 @@ class Server {
             const result = this._validate(data);
             if (result) {
                 const { REGISTRATION } = this.mediator.getEventTypes();
-                this.mediator.call(REGISTRATION, data);
+                this.mediator.call(REGISTRATION, result);
             }
         });
 
@@ -49,31 +49,39 @@ class Server {
             const result = this._validate(data);
             if (result) {
                 const { LOGOUT } = this.mediator.getEventTypes();
-                this.mediator.call(LOGOUT, data);
+                this.mediator.call(LOGOUT, result);
             }
         });
 
-        this.socket.on(EMESSAGES.CREATE_LOBBY, (data: TAnswer<any>) => {
+        this.socket.on(MEDIATOR.EVENTS.SET_READY, (data: TAnswer<any>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { SET_READY } = this.mediator.getEventTypes();
+                this.mediator.call(SET_READY, result);
+            }
+        });
+
+        this.socket.on(MEDIATOR.EVENTS.CREATE_LOBBY, (data: TAnswer<any>) => {
             const result = this._validate(data);
             if (result) {
                 const { CREATE_LOBBY } = this.mediator.getEventTypes();
-                this.mediator.call(CREATE_LOBBY, data);
+                this.mediator.call(CREATE_LOBBY, result);
             }
         });
 
-        this.socket.on(EMESSAGES.JOIN_TO_LOBBY, (data: TAnswer<any>) => {
+        this.socket.on(MEDIATOR.EVENTS.JOIN_TO_LOBBY, (data: TAnswer<any>) => {
             const result = this._validate(data);
             if (result) {
                 const { JOIN_TO_LOBBY } = this.mediator.getEventTypes();
-                this.mediator.call(JOIN_TO_LOBBY, data);
+                this.mediator.call(JOIN_TO_LOBBY, result);
             }
         });
 
-        this.socket.on(EMESSAGES.LEAVE_LOBBY, (data: TAnswer<any>) => {
+        this.socket.on(MEDIATOR.EVENTS.LEAVE_LOBBY, (data: TAnswer<any>) => {
             const result = this._validate(data);
             if (result) {
                 const { LEAVE_LOBBY } = this.mediator.getEventTypes();
-                this.mediator.call(LEAVE_LOBBY, data);
+                this.mediator.call(LEAVE_LOBBY, result);
             }
         });
 
@@ -81,39 +89,31 @@ class Server {
             const result = this._validate(data);
             if (result) {
                 const { DROP_FROM_LOBBY } = this.mediator.getEventTypes();
-                this.mediator.call(DROP_FROM_LOBBY, data);
+                this.mediator.call(DROP_FROM_LOBBY, result);
             }
         });
 
-        this.socket.on(EMESSAGES.START_GAME, (data: TAnswer<any>) => {
+        this.socket.on(MEDIATOR.EVENTS.START_GAME, (data: TAnswer<any>) => {
             const result = this._validate(data);
             if (result) {
                 const { START_GAME } = this.mediator.getEventTypes();
-                this.mediator.call(START_GAME, data);
+                this.mediator.call(START_GAME, result);
             }
         });
 
-        this.socket.on(EMESSAGES.GET_LOBBIES, (data: TAnswer<any>) => {
-            const result = this._validate(data);
-            if (result) {
-                const { GET_LOBBIES } = this.mediator.getEventTypes();
-                this.mediator.call(GET_LOBBIES, data);
-            }
-        });
-
-        this.socket.on(EMESSAGES.LOBBY_UPDATED, (data: TAnswer<any>) => {
+        this.socket.on(MEDIATOR.EVENTS.LOBBY_UPDATED, (data: TAnswer<any>) => {
             const result = this._validate(data);
             if (result) {
                 const { LOBBY_UPDATED } = this.mediator.getEventTypes();
-                this.mediator.call(LOBBY_UPDATED, data);
+                this.mediator.call(LOBBY_UPDATED, result);
             }
         });
 
-        this.socket.on(EMESSAGES.LOBBIES_LIST_UPDATED, (data: TAnswer<any>) => {
+        this.socket.on(MEDIATOR.EVENTS.LOBBIES_LIST_UPDATED, (data: TAnswer<any>) => {
             const result = this._validate(data);
             if (result) {
                 const { LOBBIES_LIST_UPDATED } = this.mediator.getEventTypes();
-                this.mediator.call(LOBBIES_LIST_UPDATED, data);
+                this.mediator.call(LOBBIES_LIST_UPDATED, result);
             }
         });
 
@@ -121,7 +121,7 @@ class Server {
             const result = this._validate(data);
             if (result) {
                 const { GENERATE_MAP } = this.mediator.getEventTypes();
-                this.mediator.call(GENERATE_MAP, data.data);
+                this.mediator.call(GENERATE_MAP, result);
             }
         });
     }
@@ -159,6 +159,11 @@ class Server {
         }
     }
 
+    setReady(guid: string): void {
+        console.log(guid)
+        this.socket.emit(MEDIATOR.EVENTS.SET_READY, { guid });
+    }
+
     check(name: string, text: string): void {
         this.socket.emit(EMESSAGES.CHECK, { name, text });
     }
@@ -178,15 +183,15 @@ class Server {
     }
 
     createLobby(guid: string, lobbyName: string, role: string): void {
-        this.socket.emit(EMESSAGES.CREATE_LOBBY, { guid, lobbyName, role });
+        this.socket.emit(MEDIATOR.EVENTS.CREATE_LOBBY, { guid, lobbyName, role });
     }
 
     joinToLobby(guid: string, lobbyGuid: string, role: string): void {
-        this.socket.emit(EMESSAGES.JOIN_TO_LOBBY, { guid, lobbyGuid, role });
+        this.socket.emit(MEDIATOR.EVENTS.JOIN_TO_LOBBY, { guid, lobbyGuid, role });
     }
 
     leaveLobby(guid: string): void {
-        this.socket.emit(EMESSAGES.LEAVE_LOBBY, { guid });
+        this.socket.emit(MEDIATOR.EVENTS.LEAVE_LOBBY, { guid });
     }
 
     dropFromLobby(guid: string, targetGuid: string): void {
@@ -194,15 +199,23 @@ class Server {
     }
 
     startGame(guid: string): void {
-        this.socket.emit(EMESSAGES.START_GAME, { guid });
+        this.socket.emit(MEDIATOR.EVENTS.START_GAME, { guid });
     }
 
-    getLobbies(guid: string): void {
-        this.socket.emit(EMESSAGES.GET_LOBBIES, { guid });
+    getLobbies(): ILobby[] | null {
+        return this.mediator.get<ILobby[]>(MEDIATOR.TRIGGERS.GET_LOBBIES);
     }
 
     generateMap(): void {
         this.socket.emit(MEDIATOR.EVENTS.GENERATE_MAP, { width: CONFIG.WIDTH, height: CONFIG.HEIGHT });
+    }
+
+    setGeneratedMap(data: TMap): void {
+        this.mediator.set(MEDIATOR.TRIGGERS.SET_GENERATED_MAP, () => data);
+    }
+
+    getGeneratedMap(): TMap | null {
+        return this.mediator.get(MEDIATOR.TRIGGERS.GET_GENERATED_MAP);
     }
 }
 

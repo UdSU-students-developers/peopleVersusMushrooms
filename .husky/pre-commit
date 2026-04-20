@@ -1,1 +1,1 @@
-cd service-a/server && npm test
+cd mushroomsEconomy/server && npm test

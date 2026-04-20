@@ -75,10 +75,10 @@ class Army {
             return { ok: false, error: 'UNIT_NOT_FOUND' };
         }
 
-        unit.hp -= damage;
+        unit.takeDamage(damage);
         console.log('Юнит получил урон:', unit.guid, 'damage:', damage, 'hp:', unit.hp);
 
-        if (unit.hp <= 0) {
+        if (unit.isDead()) {
             this.units = this.units.filter((u) => u.guid !== guid);
             console.log('Юнит уничтожен:', guid);
         }

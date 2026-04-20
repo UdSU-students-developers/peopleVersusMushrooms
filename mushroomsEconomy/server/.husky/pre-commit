@@ -1,2 +1,2 @@
-cd mushroomsEconomy/server
+cd "mushroomsEconomy/server"
 npm test

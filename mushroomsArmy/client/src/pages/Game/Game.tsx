@@ -5,6 +5,7 @@ import CONFIG from '../../config';
 import { drawGame } from './renderer';
 import { GameState } from './types';
 import { PAGES } from '../PageManager';
+import { TUser } from '../../services/server/types';
 import './Game.css';
 
 const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
@@ -16,8 +17,8 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   const [aliveUnitsCount, setAliveUnitsCount] = useState(0);
 
   const GET_STORE = mediator.getTriggerTypes().GET_STORE;
-  const user = mediator.get(GET_STORE, 'user');
-  const username = user?.name || user?.username || 'Игрок';
+  const user = mediator.get(GET_STORE, 'user') as TUser | null;
+  const username = user?.name || 'Игрок';
 
   const redrawCanvas = () => {
     const canvas = canvasRef.current;

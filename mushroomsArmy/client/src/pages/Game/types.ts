@@ -16,9 +16,10 @@ export type Unit = {
   guid: string;               
   x: number;                
   y: number;                
-  type: 'sporomet' | 'champigneb';
+  type: 'sporomet' | 'champigneb' | 'eblekar';
   hp: number;               
-  maxHp: number;            
+  maxHp: number;  
+  isHealing?: boolean;          
 };
 
 /**
@@ -33,6 +34,9 @@ export type Building = {
   maxHp: number;
   sizeX?: number;
   sizeY?: number;
+  isAlive?: boolean;
+  isExploding?: boolean;
+  isAttacking?: boolean;
 };
 
 /**
@@ -44,6 +48,16 @@ export type SlimePuddle = {
   radius: number;          
 };
 
+export type Projectile = {
+  guid: string;
+  type: 'sporomet' | 'sporovaya_bashnya' | 'eblekar';
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  createdAt: number;
+};
+
 /**
  * Полное состояние игры
  */
@@ -52,4 +66,5 @@ export type GameState = {
   units: Unit[];
   buildings: Building[];
   slimePuddles: SlimePuddle[]; 
+  projectiles: Projectile[];
 };

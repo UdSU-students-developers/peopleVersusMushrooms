@@ -26,6 +26,7 @@ const GLOBAL_CONFIG = {
 
     DATABASES: {
         MUSHROOMS_ECONOMY: 'data.db',
+        MUSHROOMS_ARMY: 'mushroomsArmy.db',
         PEOPLE_ECONOMY: 'peopleEconomy.db',
     },
 

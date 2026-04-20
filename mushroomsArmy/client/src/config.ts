@@ -20,11 +20,10 @@ const CONFIG = {
     },
 
     SOCKET: {
-        REGISTRATION: 'registration',
-        LOGIN: 'login',
-        LOGOUT: 'logout',
+        REGISTRATION: 'REGISTRATION',
+        LOGIN: 'LOGIN',
+        LOGOUT: 'LOGOUT',
         LOBBY_START: 'lobby:start',
-        VALIDATE_TOKEN: 'auth:validate',
         GAME_STATE: 'game:state',
         GAME_OVER: 'game:over',
     }

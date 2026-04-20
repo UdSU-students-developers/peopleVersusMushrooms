@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
-import { IBasePage } from '../PageManager';
+import { IBasePage, PAGES } from '../PageManager';
 import CONFIG from '../../config';
 import './Game.css';
 
@@ -132,7 +132,7 @@ function buildDefaultMap(): number[][] {
     return map;
 }
 
-const Game: React.FC<IBasePage> = ({ mediator, server }) => {
+const Game: React.FC<IBasePage> = ({ mediator, server, setPage }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const mapRef = useRef<number[][]>(buildDefaultMap());
     const unitsRef = useRef<UnitData[]>([]);
@@ -178,9 +178,7 @@ const Game: React.FC<IBasePage> = ({ mediator, server }) => {
         return () => socket.off(CONFIG.SOCKETS.UPDATE_ARMY, handler);
 
     }, [socket]);
-    socket.on(CONFIG.SOCKETS.UPDATE_ARMY, (data: any) => {
-        console.log('UPDATE_ARMY:', data);
-    });
+
     // Клик по канвасу — создать юнита
     const handleCanvasClick = useCallback(
         async (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -253,6 +251,17 @@ const Game: React.FC<IBasePage> = ({ mediator, server }) => {
                             БМП
                         </button>
                     </div>
+                </div>
+
+                <div className="game-section">
+                    <p className="game-section-label">Лобби</p>
+                    <button
+                        type="button"
+                        className="game-type-btn"
+                        onClick={() => setPage(PAGES.LOBBY)}
+                    >
+                        Открыть лобби
+                    </button>
                 </div>
 
                 <div className="game-legend">

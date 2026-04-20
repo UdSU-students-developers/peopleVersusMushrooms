@@ -9,17 +9,17 @@ export type TSlimePuddle = {
 
 class Champigneb extends Unit {
 
-    public explosionRadius: number = 10;
-    public explosionDamage: number = 200;
+    public explosionRadius: number = 6;
+    public explosionDamage: number = 60;
     public slimeDuration: number = 10;
     public slimePuddle: TSlimePuddle = { x: 0, y: 0, radius: 0, ttl: 0 };
     public hasExploded: boolean = false;
 
     constructor(options: TUnitOptions) {
         super(options);
-        this.hp = 50;
-        this.maxHp = 50;
-        this.speed = 4;
+        this.hp = 35;
+        this.maxHp = 35;
+        this.speed = 3;
     }
 
     protected explode(): void {
@@ -44,6 +44,7 @@ class Champigneb extends Unit {
         };
         
         this.hasExploded = true;
+        this.hp = 0; // Клиент определяет смерть по hp === 0, поэтому обнуляем явно
         this.die();
     }
 
@@ -57,13 +58,6 @@ class Champigneb extends Unit {
 
     public takeDamage(amount: number, type: string): void {
         if (!this.isAlive) return;
-
-        // При огненном уроне — немедленный взрыв
-        if (type === 'fire') {
-            this.explode();
-            return;
-        }
-
         super.takeDamage(amount, type);
     }
 

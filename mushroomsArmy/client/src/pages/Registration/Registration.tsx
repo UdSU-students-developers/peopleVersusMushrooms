@@ -19,7 +19,7 @@ const mapRegistrationError = (error?: TError | null): string => {
     if (!error || typeof error.code !== 'number') {
         return 'Не удалось зарегистрироваться. Попробуйте снова.';
     }
-    return REG_SERVER_ERRORS[error.code] ?? error.text ?? 'Не удалось зарегистрироваться.';
+    return REG_SERVER_ERRORS[error.code] ?? error.message ?? 'Не удалось зарегистрироваться.';
 };
 
 const Registration: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {

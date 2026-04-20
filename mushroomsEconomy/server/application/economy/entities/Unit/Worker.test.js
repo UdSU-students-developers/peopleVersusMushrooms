@@ -1,4 +1,6 @@
 const Worker = require('./Worker');
+const CONFIG = require("../../../../config");
+
 const { HP, SPEED } = CONFIG.ECONOMY.WORKER;
 
 describe("Worker", () => {

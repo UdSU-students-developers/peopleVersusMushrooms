@@ -1,4 +1,6 @@
 const GLOBAL_CONFIG = {
+    INTERVAL: 200, //мс
+
     MAP: {
         URL: 'http://localhost:3001',
     },

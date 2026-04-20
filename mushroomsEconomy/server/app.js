@@ -20,20 +20,17 @@ const GameManager = require('./application/modules/game/GameManager');
 const ChatManager = require('./application/modules/chat/ChatManager');
 
 const { NAME, PORT } = CONFIG;
-const { DATABASE } = GLOBAL_CONFIG
+const { DATABASES } = GLOBAL_CONFIG
 
 const common = new Common();
-const db = new DB({ DATABASE, common });
+const db = new DB({ DATABASE: DATABASES.MUSHROOMS_ECONOMY, common });
 const mediator = new Mediator(CONFIG.MEDIATOR);
 const answer = new Answer();
 
 new GameManager( { mediator, db, io, answer, common } );
 new UserManager( { mediator, db, io, answer, common } );
 new ChatManager( { mediator, db, io, answer, common } );
-new LobbyManager( {
-    options: { mediator, db, io, answer, common },
-    role: CONFIG.NAME,
-});
+new LobbyManager({ mediator, db, io, answer, common }, CONFIG.NAME);
 
 
 app.use(GLOBAL_CONFIG.CORS.middleware);

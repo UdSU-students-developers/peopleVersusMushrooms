@@ -61,10 +61,10 @@ type TPlayer = {
     ready: boolean;
 }
 
-type TLobby = {
-    creatorGuid: string;
+export type TLobby = {
+    lobbyGuid: string;
     lobbyName: string;
-    players: TPlayer[];
+    playersGuids: TPlayer[] | { [key: string]: TPlayer };
 }
 
 export type TLobbies = TLobby[];

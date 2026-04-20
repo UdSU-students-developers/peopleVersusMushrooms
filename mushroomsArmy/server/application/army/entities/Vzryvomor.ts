@@ -1,7 +1,7 @@
 import Unit from "./Units";
 import { TMap } from "../Army";
 
-export interface TVzryvomorOptions {
+export type TVzryvomorOptions = {
     guid: string;
     hp: number;
     maxHp: number;
@@ -10,10 +10,10 @@ export interface TVzryvomorOptions {
     attackRange: number;
 };
 
-interface Point {
+type Point = {
     x: number;
     y: number;
-}
+};
 
 const distance = (p1: Point, p2: Point) => {
     const dx = p1.x - p2.x;
@@ -21,12 +21,12 @@ const distance = (p1: Point, p2: Point) => {
     return Math.sqrt(dx * dx + dy * dy);
 }
 
-interface Respawn {
+type Respawn = {
     respawnIn: number;
     inProgress: boolean;
-}
+};
 
-interface VzryvomorState {
+type VzryvomorState = {
     guid: string;
     type: string;
     hp: number;
@@ -35,9 +35,10 @@ interface VzryvomorState {
     y: number;
     attackRange: number;
     isAlive: boolean;
+    isExploding: boolean;
     respawn: Respawn;
     elapsedFromLastDecision: number;
-}
+};
 
 export interface IBuilding<T> {
     guid: string;
@@ -61,6 +62,7 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
     public x: number ;
     public y: number;
     public attackRange: number;
+    public attackDamage: number = 35;
     public isAlive: boolean;
     public respawn: Respawn = { inProgress: false, respawnIn: 0};
     private elapsedFromLastDecision: number = 0;
@@ -103,18 +105,15 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
     }
 
     private makeDecision(enemies: Unit []) {
-        const TRIGGER_RADIUS = 6;
-        const EXPLOSION_DAMAGE = 100;
-
         const isNearToMe = (e: Unit) => {
             const p: Point = { x: e.x, y: e.y};
             const myPos = {x: this.x, y: this.y};
-            return distance (p, myPos) < TRIGGER_RADIUS;
+            return distance (p, myPos) < this.attackRange;
         }
         const isAlive = (e: Unit) => e.isAlive
         const isNotAlive = (e: Unit) => !e.isAlive
         const makeDamage = (e: Unit) => {
-            e.takeDamage(EXPLOSION_DAMAGE, 'explosion')
+            e.takeDamage(this.attackDamage, 'explosion')
             return e
         }
 
@@ -160,17 +159,18 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
     }
     
     getState(): VzryvomorState {
-        return {
-            guid: this.guid,
-            type: this.type,
-            x: this.x,
-            y: this.y,
-            hp: this.hp,
-            maxHp: this.maxHp,
-            elapsedFromLastDecision: this.elapsedFromLastDecision,
-            attackRange: this.attackRange,
-            isAlive: this.isAlive,
-            respawn: this.respawn
-        };
-    }
+    return {
+        guid: this.guid,
+        type: this.type,
+        x: this.x,
+        y: this.y,
+        hp: this.hp,
+        maxHp: this.maxHp,
+        elapsedFromLastDecision: this.elapsedFromLastDecision,
+        attackRange: this.attackRange,
+        isAlive: this.isAlive,
+        isExploding: this.respawn.inProgress,
+        respawn: this.respawn
+    };
+}
 }

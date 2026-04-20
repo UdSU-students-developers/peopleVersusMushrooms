@@ -8,7 +8,12 @@ interface SocketEvents {
     REGISTRATION: string;
     LOGIN: string;
     LOGOUT: string;
-    UPDATE_ARMY: 'UPDATE_ARMY',
+    UPDATE_ARMY: 'UPDATE_ARMY';
+    CREATE_LOBBY: 'CREATE_LOBBY';
+    JOIN_TO_LOBBY: 'JOIN_TO_LOBBY';
+    LEAVE_LOBBY: 'LEAVE_LOBBY';
+    GET_LOBBIES: 'GET_LOBBIES';
+    LOBBY_UPDATED: 'LOBBY_UPDATED';
 }
 
 interface MediatorEvents {
@@ -40,6 +45,11 @@ const CONFIG: Config = {
         LOGIN: 'login',
         LOGOUT: 'logout',
         UPDATE_ARMY: 'UPDATE_ARMY',
+        CREATE_LOBBY: 'CREATE_LOBBY',
+        JOIN_TO_LOBBY: 'JOIN_TO_LOBBY',
+        LEAVE_LOBBY: 'LEAVE_LOBBY',
+        GET_LOBBIES: 'GET_LOBBIES',
+        LOBBY_UPDATED: 'LOBBY_UPDATED',
     },
     MEDIATOR: {
         EVENTS: {

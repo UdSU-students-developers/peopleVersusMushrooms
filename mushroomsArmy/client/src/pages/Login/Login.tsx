@@ -15,7 +15,7 @@ const mapLoginError = (error?: TError | null): string => {
     if (!error || typeof error.code !== 'number') {
         return 'Не удалось выполнить вход. Попробуйте снова.';
     }
-    return LOGIN_SERVER_ERRORS[error.code] ?? error.text ?? 'Не удалось выполнить вход.';
+    return LOGIN_SERVER_ERRORS[error.code] ?? error.message ?? 'Не удалось выполнить вход.';
 };
 
 const Login: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {

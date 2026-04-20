@@ -1,51 +1,53 @@
+//GLOBAL
+const GLOBAL_CONFIG = require('../../global/globalConfig');
+const DB = require('../../global/modules/db/DB');
+const Mediator = require('../../global/modules/Mediator');
+const Answer = require('../../global/Answer');
+const UserManager = require('../../global/modules/user/UserManager');
+const Common = require('../../global/modules/common/Common');
+const LobbyManager = require('../../global/modules/lobby/LobbyManager');
+
+//LOCAL
+const CONFIG = require('./config');
+
 const express = require('express');
 const app = express();
 const server = require('http').createServer(app);
-const io = require('socket.io')(server, {
-    cors: {
-        origin: "http://localhost:3008",
-    }
-});
+const io = require('socket.io')(server, {cors: GLOBAL_CONFIG.CORS});
 
-const Router = require('./application/router/Router.js');
-const DB = require('./application/modules/db/DB.js');
-const Mediator = require('./application/modules/Mediator.js');
-const Common = require('./application/modules/common/Common.js');
-const Answer = require('./application/router/Answer.js');
-const UserManager = require('./application/modules/user/UserManager.js');
-const LobbyManager = require('./application/modules/lobby/LobbyManager.js');
-const { EVENTS, TRIGGERS, SERVER_PORT, SERVER_NAME } = require('./config.js');
+const Router = require('./application/router/Router');
+const GameManager = require('./application/modules/game/GameManager');
+const ChatManager = require('./application/modules/chat/ChatManager');
 
-// Экз БД
-const db = new DB();
-// Создание медиатора
-const mediator = new Mediator({ EVENTS, TRIGGERS });
+const { NAME, PORT } = CONFIG;
+const { DATABASES } = GLOBAL_CONFIG;
+
 const common = new Common();
+const db = new DB({ DATABASE: DATABASES.PEOPLE_ECONOMY, common });
+const mediator = new Mediator(CONFIG.MEDIATOR);
 const answer = new Answer();
-// Создаем менеджеры
-const userManager = new UserManager({ mediator, db, common, answer, io });
-const lobbyManager = new LobbyManager({ mediator, db, common, answer, io });
+
+new GameManager( { mediator, db, io, answer, common } );
+new UserManager( { mediator, db, io, answer, common } );
+new ChatManager( { mediator, db, io, answer, common } );
+new LobbyManager({ mediator, db, io, answer, common }, CONFIG.NAME);
 
 
-/*//для тестов
-app.use(express.static('public'));
-*/
+app.use(GLOBAL_CONFIG.CORS.middleware);
 
-app.use((_, res, next) => {
-    res.header('Content-Type', 'application/json; charset=utf-8');
-    res.header('Access-Control-Allow-Origin', '*');
-    next();
-});
-    
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Создаем роутер
-const router = new Router(mediator, answer, common);
-app.use('/', router);
+app.use(express.static(`${__dirname}/public`));
+app.use('/', new Router({ mediator, answer }));
 
+function deinit() {
+    db.destructor();
+    setTimeout(() => process.exit(), 500);
+}
 
-// Запуск сервака
-server.listen(SERVER_PORT, () => {
-    console.log(`Server ${SERVER_NAME} running on port ${SERVER_PORT}`);
-});
+const startLog = `${NAME} started at port ${PORT} \nYou can connect to server ONLY from CORS: \n ${GLOBAL_CONFIG.CORS.origin}`;
+
+server.listen(PORT, () => console.log(startLog));
+
+process.on('SIGNINT', deinit);

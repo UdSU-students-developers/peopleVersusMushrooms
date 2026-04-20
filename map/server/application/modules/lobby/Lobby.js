@@ -29,7 +29,7 @@ class Lobby {
         return {
             lobbyName: this.lobbyName,
             lobbyGuid: this.lobbyGuid,
-            playersGuids: {...this.playersGuids },
+            playersGuids: { ...this.playersGuids },
             playersIsReady: { ...this.playersIsReady }
         };
     }
@@ -67,7 +67,7 @@ class Lobby {
 
     //установить статус игрока
     setPlayerReady(guid) {
-        const role = Object.key(this.playersGuids).find(role => this.playersGuids[role] === guid);
+        const role = Object.keys(this.playersGuids).find(role => this.playersGuids[role] === guid);
         if (role) {
             this.playersIsReady[role] = true;
             return true;

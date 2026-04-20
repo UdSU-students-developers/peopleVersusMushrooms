@@ -2,6 +2,7 @@ import React, { useContext, useEffect } from "react";
 import { MediatorContext, ServerContext } from "../../App";
 import { PAGES } from '../PageManager';
 import { authStorage } from "../../utils/authStorage";
+import { TUser } from "../../services/server/types";
 import './Lobby.css';
 
 const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
@@ -11,7 +12,7 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     const GET_STORE = mediator.getTriggerTypes().GET_STORE;
     const { USER_LOGGED_OUT, GAME_STARTED } = mediator.getEventTypes();
 
-    const user = mediator.get(GET_STORE, 'user');
+    const user = mediator.get(GET_STORE, 'user') as TUser | null;
 
     useEffect(() => {
         const handleLoggedOut = () => {
@@ -45,7 +46,7 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
             <header className="lobby__header">
                 <div className="lobby__userBlock">
                     <span className="lobby__username">
-                        {user?.name || user?.username || "Игрок"}
+                        {user?.name || "Игрок"}
                     </span>
 
                     <button

@@ -1,17 +1,167 @@
-import { GameState, TerrainType } from './types';
-import sporometSrc from './Sporomet.png';
-import champignebSrc from './Champigneb.png';
+import { GameState, Projectile, TerrainType, Unit } from './types';
+import sporometSrc from '../../assets/units/Sporomet.png';
+import champignebSrc from '../../assets/units/Champigneb.png';
+import eblekarSrc from '../../assets/units/Eblekar.png';
+import vzryvomorFrame0 from '../../assets/buildings/vzryvomor/frame_0.png';
+import vzryvomorFrame1 from '../../assets/buildings/vzryvomor/frame_1.png';
+import vzryvomorFrame2 from '../../assets/buildings/vzryvomor/frame_2.png';
+import vzryvomorFrame3 from '../../assets/buildings/vzryvomor/frame_3.png';
+import vzryvomorFrame4 from '../../assets/buildings/vzryvomor/frame_4.png';
+import vzryvomorFrame5 from '../../assets/buildings/vzryvomor/frame_5.png';
+import vzryvomorFrame6 from '../../assets/buildings/vzryvomor/frame_6.png';
+import vzryvomorFrame7 from '../../assets/buildings/vzryvomor/frame_7.png';
+import vzryvomorFrame8 from '../../assets/buildings/vzryvomor/frame_8.png';
+import vzryvomorFrame9 from '../../assets/buildings/vzryvomor/frame_9.png';
+import vzryvomorFrame10 from '../../assets/buildings/vzryvomor/frame_10.png';
+import sporovayaBashnyaIdle from '../../assets/buildings/sporovaya_bashnya/idle.png';
+import sporovayaBashnyaAttack from '../../assets/buildings/sporovaya_bashnya/attack.png';
+import sporovayaBashnyaDestroyed from '../../assets/buildings/sporovaya_bashnya/destroyed.png';
+import {
+  getVzryvomorFrameKey,
+  stepVzryvomorAnimation,
+  VZRYVOMOR_FRAME_MS,
+} from './vzryvomorAnimation';
+import champignebExplFrame0 from '../../assets/units/champigneb_explosion/frame_0.png';
+import champignebExplFrame1 from '../../assets/units/champigneb_explosion/frame_1.png';
+import champignebExplFrame2 from '../../assets/units/champigneb_explosion/frame_2.png';
+import champignebExplFrame3 from '../../assets/units/champigneb_explosion/frame_3.png';
+import champignebExplFrame4 from '../../assets/units/champigneb_explosion/frame_4.png';
 
-// Предзагрузка изображений (один раз)
+const CHAMPIGNEB_EXPL_DURATION = 1000; // 1 секунда
+const CHAMPIGNEB_EXPLOSION_FRAME_COUNT = 5;
+
+
 const unitImages: Record<string, HTMLImageElement> = {};
+const activeProjectiles = new Map<string, Projectile & { duration: number }>();
 
-function getUnitImage(type: string, src: string): HTMLImageElement {
-  if (!unitImages[type]) {
+// ── Анимации взрывов шампиньебов ─────────────────────────────────────────────
+const CHAMPIGNEB_EXPL_FRAME_SRCS: string[] = [
+  champignebExplFrame0,
+  champignebExplFrame1,
+  champignebExplFrame2,
+  champignebExplFrame3,
+  champignebExplFrame4,
+];
+const champignebExplImages: HTMLImageElement[] = CHAMPIGNEB_EXPL_FRAME_SRCS.map(src => {
+  const img = new Image();
+  img.src = src;
+  return img;
+});
+
+/** guid → {x, y, startTime} — активные взрывы шампиньебов */
+const champignebExplosions = new Map<string, { x: number; y: number; startTime: number }>();
+/** guid → последнее hp, чтобы поймать момент смерти */
+const prevChampignebHp = new Map<string, number>();
+
+const buildingImages: Record<string, HTMLImageElement> = {};
+
+const VZRYVOMOR_FRAME_SRCS: string[] = [
+  vzryvomorFrame0,
+  vzryvomorFrame1,
+  vzryvomorFrame2,
+  vzryvomorFrame3,
+  vzryvomorFrame4,
+  vzryvomorFrame5,
+  vzryvomorFrame6,
+  vzryvomorFrame7,
+  vzryvomorFrame8,
+  vzryvomorFrame9,
+  vzryvomorFrame10,
+];
+
+/** Возвращает картинку здания по стабильному ключу и URL (как getUnitImage, но с явным src). */
+function getBuildingImage(key: string, src: string | undefined): HTMLImageElement | undefined {
+  if (src === undefined) return undefined;
+  if (!buildingImages[key]) {
     const img = new Image();
     img.src = src;
-    unitImages[type] = img;
+    buildingImages[key] = img;
   }
-  return unitImages[type];
+  return buildingImages[key];
+}
+
+/** Картинка реально готова к отрисовке (не битая, загрузка завершена). */
+function isImageDrawable(img: HTMLImageElement | undefined): img is HTMLImageElement {
+  return img !== undefined && img.complete && img.naturalWidth > 0;
+}
+
+/**
+ * Безопасный drawImage: при сбое canvas (редко: битое изображение, taint) возвращает false —
+ * тогда рисуем fillRect-fallback как раньше.
+ */
+function tryDrawImageScaled(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  dx: number,
+  dy: number,
+  dw: number,
+  dh: number
+): boolean {
+  try {
+    ctx.drawImage(img, dx, dy, dw, dh);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function preloadBuildingImages(): void {
+  VZRYVOMOR_FRAME_SRCS.forEach((src, i) => {
+    getBuildingImage(getVzryvomorFrameKey(i), src);
+  });
+  getBuildingImage('sporovaya_bashnya:idle', sporovayaBashnyaIdle);
+  getBuildingImage('sporovaya_bashnya:attack', sporovayaBashnyaAttack);
+  getBuildingImage('sporovaya_bashnya:destroyed', sporovayaBashnyaDestroyed);
+}
+
+preloadBuildingImages();
+
+const VZRYVOMOR_FRAME_COUNT = VZRYVOMOR_FRAME_SRCS.length;
+
+/** Текущий кадр взрывомора и время последней смены кадра (по guid здания). */
+const buildingAnimState: Record<string, { frame: number; lastFrameTime: number }> = {};
+
+/**
+ * Обновляет состояние анимации взрывомора и возвращает индекс кадра 0 … frameCount-1.
+ * При isExploding=false кадр сбрасывается (запись удаляется), при отрисовке считается 0.
+ */
+function updateVzryvomorAnimation(guid: string, isExploding: boolean): number {
+  const now = Date.now();
+  const { next, frameIndex } = stepVzryvomorAnimation(
+    buildingAnimState[guid],
+    isExploding,
+    now,
+    VZRYVOMOR_FRAME_COUNT,
+    VZRYVOMOR_FRAME_MS
+  );
+  if (next === undefined) {
+    delete buildingAnimState[guid];
+  } else {
+    buildingAnimState[guid] = next;
+  }
+  return frameIndex;
+}
+
+function getUnitImage(unit: Unit): HTMLImageElement | undefined {
+
+  let getImage = (unit: Unit) => {
+    switch (unit.type) {
+      case 'sporomet': return sporometSrc;
+      case 'champigneb': return champignebSrc;
+      case 'eblekar': return eblekarSrc;
+      default: return undefined;
+    }
+  }
+
+  if (!unitImages[unit.type]) {
+    const imgSrc = getImage(unit);
+    if (imgSrc === undefined) return undefined;
+
+    const img = new Image();
+    img.src = imgSrc;
+    unitImages[unit.type] = img;
+  }
+  return unitImages[unit.type];
 }
 
 export function drawGame(
@@ -25,13 +175,13 @@ export function drawGame(
     return;
   }
 
-  const cellW = widthCSS / 50;
-  const cellH = heightCSS / 50;
+  const cellW = widthCSS / 100;
+  const cellH = heightCSS / 100;
 
-  // 1. Отрисовка карты (тайлы 50×50)
-  for (let y = 0; y < 50; y++) {
-    for (let x = 0; x < 50; x++) {
-      const terrain = state.map[y][x];
+  // 1. Отрисовка карты (тайлы 100×100)
+  for (let y = 0; y < 100; y++) {
+    for (let x = 0; x < 100; x++) {
+      const terrain = state.map[y]?.[x];
       ctx.fillStyle = getTerrainColor(terrain);
       ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
     }
@@ -52,6 +202,12 @@ export function drawGame(
   });
 
   // 3. Отрисовка зданий (вражеские — красные; сооружения грибов — отдельный вид)
+  const activeVzryvomorGuids = new Set(
+    (state.buildings ?? [])
+      .filter(b => b.type === 'vzryvomor' && b.hp > 0)
+      .map(b => b.guid)
+  );
+
   (state.buildings ?? []).forEach(building => {
     if (building.hp <= 0) return;
 
@@ -63,24 +219,39 @@ export function drawGame(
         : 0;
 
     if (building.type === 'vzryvomor') {
-      const cx = bx + cellW / 2;
-      const cy = by + cellH / 2;
-      const side = Math.min(cellW, cellH) * 0.88;
-      const half = side / 2;
-      ctx.fillStyle = '#f1c40f';
-      ctx.fillRect(cx - half, cy - half, side, side);
-      ctx.strokeStyle = '#b7950b';
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(cx - half, cy - half, side, side);
-      ctx.fillStyle = '#1a1a1a';
-      ctx.font = `bold ${Math.max(10, side * 0.42)}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('В', cx, cy);
-      const barWidth = side;
+      const frameIndex = updateVzryvomorAnimation(building.guid, building.isExploding === true);
+      const fi = Math.max(0, Math.min(frameIndex, VZRYVOMOR_FRAME_COUNT - 1));
+      const vzImg = getBuildingImage(getVzryvomorFrameKey(fi), VZRYVOMOR_FRAME_SRCS[fi]);
+
       const barHeight = 4;
-      const barX = cx - barWidth / 2;
-      const barY = cy - half - 6;
+      let barX: number;
+      let barY: number;
+      let barWidth: number;
+
+      if (isImageDrawable(vzImg) && tryDrawImageScaled(ctx, vzImg, bx, by, cellW, cellH)) {
+        barX = bx;
+        barY = by - 6;
+        barWidth = cellW;
+      } else {
+        const cx = bx + cellW / 2;
+        const cy = by + cellH / 2;
+        const side = Math.min(cellW, cellH) * 0.88;
+        const half = side / 2;
+        ctx.fillStyle = '#f1c40f';
+        ctx.fillRect(cx - half, cy - half, side, side);
+        ctx.strokeStyle = '#b7950b';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(cx - half, cy - half, side, side);
+        ctx.fillStyle = '#1a1a1a';
+        ctx.font = `bold ${Math.max(10, side * 0.42)}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('В', cx, cy);
+        barWidth = side;
+        barX = cx - barWidth / 2;
+        barY = cy - half - 6;
+      }
+
       ctx.fillStyle = '#d32f2f';
       ctx.fillRect(barX, barY, barWidth, barHeight);
       ctx.fillStyle = '#4caf50';
@@ -95,17 +266,29 @@ export function drawGame(
       const py = by;
       const pw = sx * cellW;
       const ph = sy * cellH;
-      ctx.fillStyle = '#4e342e';
-      ctx.fillRect(px, py, pw, ph);
-      ctx.strokeStyle = '#3e2723';
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(px + 0.75, py + 0.75, pw - 1.5, ph - 1.5);
-      ctx.fillStyle = '#efebe9';
-      ctx.font = `bold ${Math.max(9, Math.min(cellW, cellH) * 0.32)}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('СБ', px + pw / 2, py + ph / 2);
-      const barWidth = 2 * cellW;
+
+      const destroyed = building.isAlive === false || building.hp <= 0;
+      const attacking = !destroyed && building.isAttacking === true;
+      const sbImg = destroyed
+        ? getBuildingImage('sporovaya_bashnya:destroyed', sporovayaBashnyaDestroyed)
+        : attacking
+          ? getBuildingImage('sporovaya_bashnya:attack', sporovayaBashnyaAttack)
+          : getBuildingImage('sporovaya_bashnya:idle', sporovayaBashnyaIdle);
+
+      if (!isImageDrawable(sbImg) || !tryDrawImageScaled(ctx, sbImg, px, py, pw, ph)) {
+        ctx.fillStyle = '#4e342e';
+        ctx.fillRect(px, py, pw, ph);
+        ctx.strokeStyle = '#3e2723';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(px + 0.75, py + 0.75, pw - 1.5, ph - 1.5);
+        ctx.fillStyle = '#efebe9';
+        ctx.font = `bold ${Math.max(9, Math.min(cellW, cellH) * 0.32)}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('СБ', px + pw / 2, py + ph / 2);
+      }
+
+      const barWidth = pw;
       const barHeight = 4;
       const barX = px;
       const barY = py - 6;
@@ -145,6 +328,82 @@ export function drawGame(
     ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight);
   });
 
+  for (const guid of Object.keys(buildingAnimState)) {
+    if (!activeVzryvomorGuids.has(guid)) {
+      delete buildingAnimState[guid];
+    }
+  }
+
+  // Отрисовка снарядов
+  const now = Date.now();
+  for (const projectile of state.projectiles ?? []) {
+    if (!activeProjectiles.has(projectile.guid)) {
+      activeProjectiles.set(projectile.guid, {
+        ...projectile,
+        duration: getProjectileDuration(projectile.type),
+      });
+    }
+  }
+
+  for (const [guid, projectile] of activeProjectiles.entries()) {
+    const elapsed = Math.max(0, (now - projectile.createdAt) / projectile.duration);
+    if (elapsed >= 1) {
+      activeProjectiles.delete(guid);
+      continue;
+    }
+
+    const x = projectile.fromX + (projectile.toX - projectile.fromX) * elapsed;
+    const y = projectile.fromY + (projectile.toY - projectile.fromY) * elapsed;
+    const px = x * cellW + cellW / 2;
+    const py = y * cellH + cellH / 2;
+
+    ctx.beginPath();
+    ctx.arc(px, py, 4, 0, Math.PI * 2);
+    ctx.fillStyle = getProjectileColor(projectile.type);
+    ctx.fill();
+  }
+
+  // 4a. Ловим смерть шампиньебов и запускаем взрыв на 1 секунду
+  const now2 = Date.now();
+  state.units.forEach(unit => {
+    if (unit.type !== 'champigneb') return;
+    const prevHp = prevChampignebHp.get(unit.guid) ?? unit.hp;
+    if (unit.hp <= 0 && prevHp > 0 && !champignebExplosions.has(unit.guid)) {
+      champignebExplosions.set(unit.guid, { x: unit.x, y: unit.y, startTime: now2 });
+    }
+    prevChampignebHp.set(unit.guid, unit.hp);
+  });
+
+  // 4b. Рисуем активные взрывы
+  for (const [guid, entry] of champignebExplosions.entries()) {
+    const elapsed = now2 - entry.startTime;
+    if (elapsed >= CHAMPIGNEB_EXPL_DURATION) {
+      champignebExplosions.delete(guid);
+      prevChampignebHp.delete(guid);
+      continue;
+    }
+    const fi = Math.min(
+      Math.floor((elapsed / CHAMPIGNEB_EXPL_DURATION) * CHAMPIGNEB_EXPLOSION_FRAME_COUNT),
+      CHAMPIGNEB_EXPLOSION_FRAME_COUNT - 1
+    );
+    const cx = entry.x * cellW + cellW / 2;
+    const cy = entry.y * cellH + cellH / 2;
+    const size = 20 * Math.min(cellW, cellH);
+    const img = champignebExplImages[fi];
+    if (isImageDrawable(img)) {
+      tryDrawImageScaled(ctx, img, cx - size / 2, cy - size / 2, size, size);
+    } else {
+      const alpha = 1 - elapsed / CHAMPIGNEB_EXPL_DURATION;
+      ctx.beginPath();
+      ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,152,0,${alpha * 0.85})`;
+      ctx.fill();
+      ctx.strokeStyle = `rgba(255,80,0,${alpha})`;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+  }
+
   // 4. Отрисовка юнитов (только живых)
   state.units.forEach(unit => {
     if (unit.hp <= 0) return; // мёртвых не рисуем
@@ -154,58 +413,74 @@ export function drawGame(
     const radius = Math.min(cellW, cellH) * 0.35;
     const size = radius * 2;
 
-    // Изображение юнита
-    const imgSrc = unit.type === 'sporomet' ? sporometSrc : champignebSrc;
-    const img = getUnitImage(unit.type, imgSrc);
-    if (img.complete && img.naturalWidth > 0) {
-      ctx.drawImage(img, cx - size / 2, cy - size / 2, size, size);
-    } else {
-      // fallback — цветной круг пока изображение не загружено
+    const img = getUnitImage(unit);
+    if (!isImageDrawable(img) || !tryDrawImageScaled(ctx, img, cx - size / 2, cy - size / 2, size, size)) {
       ctx.beginPath();
       ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-      ctx.fillStyle = unit.type === 'sporomet' ? '#4caf50' : '#ff9800';
+      ctx.fillStyle = unit.type === 'sporomet' ? '#4caf50' : unit.type === 'eblekar' ? '#e040fb' : '#ff9800';
       ctx.fill();
       ctx.strokeStyle = '#000000';
       ctx.lineWidth = 1;
       ctx.stroke();
     }
 
-    // Полоска HP
     const barWidth = radius * 1.8;
     const barHeight = 5;
     const barX = cx - barWidth / 2;
     const barY = cy - radius - 5;
 
-    ctx.fillStyle = '#d32f2f'; // красный фон
+    ctx.fillStyle = '#d32f2f';
     ctx.fillRect(barX, barY, barWidth, barHeight);
 
     const hpPercent = Math.max(0, Math.min(1, unit.hp / unit.maxHp));
-    ctx.fillStyle = '#4caf50'; // зелёный заряд
+    ctx.fillStyle = '#4caf50';
     ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight);
   });
 
 }
 
-/**
- * Возвращает цвет тайла в зависимости от типа местности
- */
 function getTerrainColor(type: TerrainType): string {
   switch (type) {
-    case 0: return '#a0d6a0'; // равнина
-    case 1: return '#4a7db4'; // вода
-    case 2: return '#555555'; // горы
+    case 0: return '#a0d6a0';
+    case 1: return '#4a7db4';
+    case 2: return '#555555';
     default: return '#a0d6a0';
   }
 }
 
+function getProjectileDuration(type: Projectile['type']): number {
+  switch (type) {
+    case 'sporovaya_bashnya':
+      return 500;
+    case 'eblekar':
+      return 450;
+    case 'sporomet':
+    default:
+      return 400;
+  }
+}
+
+function getProjectileColor(type: Projectile['type']): string {
+  switch (type) {
+    case 'sporomet':
+      return '#4caf50';
+    case 'sporovaya_bashnya':
+      return '#f1c40f';
+    case 'eblekar':
+      return '#2196f3';
+    default:
+      return '#ffffff';
+  }
+}
+
 /**
- * Рисует тонкую серую сетку 50×50
+ * Рисует тонкую серую сетку 100×100
  */
 function drawGrid(ctx: CanvasRenderingContext2D, width: number, height: number, cellW: number, cellH: number) {
   ctx.beginPath();
   ctx.strokeStyle = '#cccccc';
   ctx.lineWidth = 0.5;
-  for (let i = 0; i <= 50; i++) {
+  for (let i = 0; i <= 100; i++) {
     const x = i * cellW;
     const y = i * cellH;
     ctx.moveTo(x, 0);
@@ -216,14 +491,11 @@ function drawGrid(ctx: CanvasRenderingContext2D, width: number, height: number, 
   ctx.stroke();
 }
 
-/**
- * Заглушка на случай отсутствия состояния
- */
 function drawPlaceholder(ctx: CanvasRenderingContext2D, width: number, height: number) {
-  const cellW = width / 50;
-  const cellH = height / 50;
-  for (let y = 0; y < 50; y++) {
-    for (let x = 0; x < 50; x++) {
+  const cellW = width / 100;
+  const cellH = height / 100;
+  for (let y = 0; y < 100; y++) {
+    for (let x = 0; x < 100; x++) {
       ctx.fillStyle = '#a0d6a0';
       ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
     }

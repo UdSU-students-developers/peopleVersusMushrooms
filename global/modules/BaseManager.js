@@ -48,23 +48,23 @@ class BaseManager {
     }
 
     sendToMushroomsEconomy(urlPart, data=null) {
-        this.send(`${CONFIG.MUSHROOMS_ECONOMY.URL}${urlPart}`, data);
+        this.send(`${GLOBAL_CONFIG.MUSHROOMS_ECONOMY.URL}${urlPart}`, data);
     }
 
     sendToMushroomsArmy(urlPart, data=null) {
-        this.send(`${CONFIG.MUSHROOMS_ARMY.URL}${urlPart}`, data);
+        this.send(`${GLOBAL_CONFIG.MUSHROOMS_ARMY.URL}${urlPart}`, data);
     }
 
     sendToPeopleArmy(urlPart, data=null) {
-        this.send(`${CONFIG.PEOPLE_ARMY.URL}${urlPart}`, data);
+        this.send(`${GLOBAL_CONFIG.PEOPLE_ARMY.URL}${urlPart}`, data);
     }
 
     sendToPeopleEconomy(urlPart, data=null) {
-        this.send(`${CONFIG.PEOPLE_ECONOMY.URL}${urlPart}`, data);
+        this.send(`${GLOBAL_CONFIG.PEOPLE_ECONOMY.URL}${urlPart}`, data);
     }
 
     sendToMap(urlPart, data=null) {
-        this.send(`${CONFIG.MAP.URL}${urlPart}`, data);
+        this.send(`${GLOBAL_CONFIG.MAP.URL}${urlPart}`, data);
     }
 }
 

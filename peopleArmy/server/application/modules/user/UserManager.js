@@ -1,5 +1,5 @@
 const CONFIG = require('../../../config');
-const BaseManager = require('../BaseManager');
+const BaseManager = require('../../../../../global/modules/BaseManager');
 const User = require('./User');
 
 const { REGISTRATION, LOGIN, LOGOUT } = CONFIG.SOCKETS;

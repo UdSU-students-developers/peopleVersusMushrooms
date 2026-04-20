@@ -1,11 +1,12 @@
 import { io, Socket } from "socket.io-client";
+import md5 from 'md5';
 import CONFIG from '../../config';
 import Mediator from '../Mediator/Mediator';
 import { TArmyState, TResponse, TUser } from './types';
 import { authStorage } from '../../utils/authStorage';
 
 const { HOST, SOCKET } = CONFIG;
-const { REGISTRATION, LOGIN, LOGOUT, LOBBY_START, VALIDATE_TOKEN, GAME_STATE, GAME_OVER } = SOCKET;
+const { REGISTRATION, LOGIN, LOGOUT, LOBBY_START, GAME_STATE, GAME_OVER } = SOCKET;
 
 class Server {
     mediator: Mediator;
@@ -14,10 +15,6 @@ class Server {
     constructor(mediator: Mediator) {
         this.mediator = mediator;
         this.socket = io(HOST);
-
-        this.socket.on("connect", () => {
-            console.log(`[Server] Подключено к серверу ${HOST}`);
-        });
 
         this.socket.on(REGISTRATION, (data) => this.handleRegistration(data));
         this.socket.on(LOGIN, (data) => this.handleLogin(data));
@@ -30,15 +27,14 @@ class Server {
     register(username: string, password: string, passwordRepeat: string): void {
         this.socket.emit(REGISTRATION, {
             name: username,
-            password,
-            passwordRepeat,
+            passwordHash: md5(password),
         });
     }
 
     login(username: string, password: string): void {
         this.socket.emit(LOGIN, {
             name: username,
-            password
+            passwordHash: md5(password),
         });
     }
 
@@ -50,7 +46,7 @@ class Server {
         );
 
         if (!user) {
-            this.mediator.call(ERROR, { code: 13, text: 'Пользователь не найден' });
+            this.mediator.call(ERROR, { code: 13, message: 'Пользователь не найден' });
             return;
         }
 
@@ -62,13 +58,13 @@ class Server {
 
     lobbyStart(): void {
         const ERROR = this.mediator.getEventTypes().ERROR;
-        const user = this.mediator.get<any>(
+        const user = this.mediator.get<TUser>(
             this.mediator.getTriggerTypes().GET_STORE,
             'user'
         );
 
         if (!user || !user.token || !user.guid) {
-            this.mediator.call(ERROR, { code: 13, text: 'Недостаточно данных' });
+            this.mediator.call(ERROR, { code: 13, message: 'Недостаточно данных' });
             return;
         }
 
@@ -78,16 +74,7 @@ class Server {
         });
     }
 
-    authValidate(token: string): Promise<any> {
-        return new Promise((resolve) => {
-            this.socket.emit(VALIDATE_TOKEN, { token });
-            this.socket.once(VALIDATE_TOKEN, (response) => resolve(response));
-        });
-    }
-
-    private handleRegistration(response: TResponse<any>): void {
-        console.log('[Server] Ответ регистрации:', response);
-
+    private handleRegistration(response: TResponse<TUser>): void {
         if (response?.result === 'ok' && response.data) {
             const SET_STORE = this.mediator.getTriggerTypes().SET_STORE;
             const USER_REGISTERED = this.mediator.getEventTypes().USER_REGISTERED;
@@ -105,9 +92,7 @@ class Server {
         this.mediator.call(this.mediator.getEventTypes().ERROR, response.error);
     }
 
-    private handleLogin(response: TResponse<any>) {
-        console.log('[Server] Ответ входа:', response);
-
+    private handleLogin(response: TResponse<TUser>) {
         if (response?.result === 'ok' && response.data) {
             const SET_STORE = this.mediator.getTriggerTypes().SET_STORE;
             const LOGIN_EVENT = this.mediator.getEventTypes().LOGIN;
@@ -125,8 +110,6 @@ class Server {
     }
 
     private handleLogout(response: TResponse<boolean>) {
-        console.log('[Server] Ответ выхода:', response);
-
         const CLEAR_STORE = this.mediator.getTriggerTypes().CLEAR_STORE;
         const USER_LOGGED_OUT = this.mediator.getEventTypes().USER_LOGGED_OUT;
 
@@ -135,8 +118,6 @@ class Server {
     }
 
     private handleLobbyStart(response: TResponse<boolean>) {
-        console.log('[Server] Ответ запуска игры:', response);
-
         if (response?.result === 'ok' && response.data) {
             const GAME_STARTED = this.mediator.getEventTypes().GAME_STARTED;
             this.mediator.call(GAME_STARTED);
@@ -145,13 +126,13 @@ class Server {
         }
     }
 
-    private handleGameState(response: any) {
+    private handleGameState(response: TResponse<TArmyState>) {
         if (response?.result !== 'ok' || !response.data) return;
         const GAME_STATE_UPDATED = this.mediator.getEventTypes().GAME_STATE_UPDATED;
         this.mediator.call(GAME_STATE_UPDATED, response.data);
     }
 
-    private handleGameOver(data: any) {
+    private handleGameOver(data: TResponse<{ message: string }>) {
         const GAME_OVER_EVENT = this.mediator.getEventTypes().GAME_OVER;
         this.mediator.call(GAME_OVER_EVENT, data);
     }

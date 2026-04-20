@@ -4,7 +4,7 @@ import Login from './Login/Login';
 import Chat from './Chat/Chat'
 import Game from './Game/Game';
 import GameMenu from './GameMenu/GameMenu';
-import StartGame from './StartGame/StartGame'
+import StartGame from './StartGame/Lobby'
 
 import CONFIG from '../config';
 

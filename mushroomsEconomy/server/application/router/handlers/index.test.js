@@ -6,7 +6,7 @@ jest.mock('./game/useStartGameHandler', () => 'mockedStartGameHandler');
 
 describe('handlers index', () => {
     test('Проверка структуры экспорта', () => {
-        expect(handlers).toBeIstanceOf(Object);
+        expect(handlers).toBeInstanceOf(Object);
 
         expect(handlers).toHaveProperty('notFoundHandler');
         expect(handlers).toHaveProperty('useLobbyUpdatedHandler');
@@ -18,6 +18,6 @@ describe('handlers index', () => {
     });
 
     test('Проверка на то откуда импортируется notFoundHandler ', () => {
-        expect(require('./notFoundHandler')).toBe('mockedNotFoundHandler ')
+        expect(require('./notFoundHandler')).toBe('mockedNotFoundHandler');
     });
 });

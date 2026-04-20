@@ -1,3 +1,6 @@
+//GLOBAL
+const GLOBAL_CONFIG = require('../../../../global/globalConfig');
+
 //LOCAL
 const EasyStar = require('easystarjs');
 const CONFIG = require('../../config');
@@ -7,7 +10,7 @@ const SmallReactor = require('./entities/Buildings/SmallReactor');
 const Incubator = require('./entities/Buildings/Incubator');
 const Larva = require('./entities/Unit/Larva')
 
-const { INTERVAL } = CONFIG.ECONOMY;
+const { INTERVAL } = GLOBAL_CONFIG;
 
 class Economy {
     constructor({

@@ -42,9 +42,7 @@ class Army {
 
     /**
      * Создать юнита в этой армии.
-     * guid юнита генерируется внутри через Common.
-     * @param {{ x: number, y: number, type?: string }} data
-     * @returns {{ ok: true, data: object } | { ok: false, error: string }}
+     * guid юнита генерируется внутри через Common
      */
     createUnit({ x, y, type = 'soldier' }) {
         const unitType = String(type).toLowerCase();
@@ -61,6 +59,22 @@ class Army {
         this.setUnitsTarget();
         console.log('Юнит создан:', unit.get());
         console.log('Армия:', this.units);
+        return { ok: true, data: unit.get() };
+    }
+
+    
+    // Нанести урон юниту этой армии по его guid.
+    unitTakeDamage({ guid, damage }) {
+        const unit = this.units.find((u) => u.guid === guid);
+
+        if (!unit) {
+            return { ok: false, error: 'UNIT_NOT_FOUND' };
+        }
+
+        unit.takeDamage(damage);
+        this.updated = true;
+        console.log('Юнит получил урон (guid:', unit.guid, '), hp:', unit.hp);
+
         return { ok: true, data: unit.get() };
     }
 

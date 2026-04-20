@@ -14,6 +14,7 @@ const CONFIG = {
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',
 
             CREATE_UNIT: "CREATE_UNIT",           // создать юнита (см. ArmyManager)
+            UNIT_TAKE_DAMAGE: "UNIT_TAKE_DAMAGE", // нанести урон юниту (см. ArmyManager)
         },
     },
 

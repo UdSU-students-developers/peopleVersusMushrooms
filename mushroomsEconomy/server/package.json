@@ -11,6 +11,7 @@
     "sqlite3": "^5.1.7"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "test:coverage": "jest --coverage"
   }
 }

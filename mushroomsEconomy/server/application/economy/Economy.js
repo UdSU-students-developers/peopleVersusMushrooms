@@ -37,7 +37,11 @@ class Economy {
 
         //Не придумал куда сунуть
         this.peopleArmyGuid = '';
-        this.p
+        this.peopleEconomyGuid = '';
+        this.mushroomsArmy = '';
+        this.mushroomsEconomy = '';
+        this.spectatorGuid = '';
+        this.mapGuid = '';
 
         /**************/
 
@@ -53,6 +57,27 @@ class Economy {
         }
     }
 
+    
+    get() {
+        return {
+            guid: this.guid,
+            mushrooms: this.mycelium.map(m => m.get()),
+            buildings: Object.values(this.buildings).map(b => b.get()),
+            map: this.map,
+            larvae: this.larvae.map(l => l.get()),
+        }
+    }
+
+
+    initGuids(guids) {
+        this.peopleArmyGuid = guids.peopleArmy;
+        this.peopleEconomyGuid = guids.peopleEconomy;
+        this.mushroomsArmy = guids.mushroomArmy;
+        this.mushroomsEconomy = guids.mushroomEconomy;
+        this.spectatorGuid = guids.spectator;
+        this.mapGuid = guids.mapGuid;
+    }
+    
     addLarva(x, y, homeX, homeY) {
         const larvaGuid = this.common.guid();
         this.larvae.push(new Larva({
@@ -65,18 +90,7 @@ class Economy {
             easystar: this.easyStar
         }));
     }
-
-    get() {
-        return {
-            guid: this.guid,
-            mushrooms: this.mycelium.map(m => m.get()),
-            buildings: Object.values(this.buildings).map(b => b.get()),
-            map: this.map,
-            larvae: this.larvae.map(l => l.get()),
-        }
-    }
-
-
+    
     // Методы добавления объектов
 
     addSmallReactor(x, y) {

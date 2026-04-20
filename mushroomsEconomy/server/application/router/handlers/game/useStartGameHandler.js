@@ -1,13 +1,18 @@
-module.exports = (mediator, answer, common) => {
+module.exports = (mediator, answer) => {
     const { START_GAME } = mediator.getEventTypes();
+    const { SET_SERIVCES_GUIDS } = mediator.getTriggerTypes();
 
     return async (req, res) => {
-        const { guid } = req.body;
+        const guids = { mapGuid,
+            spectator,
+            peopleArmy,
+            peopleEconomy,
+            mushroomArmy,
+            mushroomEconomy 
+        } = req.body;
         
-        if (!common.checkGuid(guid)) {
-            return res.json(answer.bad(242));
-        }
 
+        this.mediator.call(SET_SERIVCES_GUIDS, guids);
         const response = await mediator.call(START_GAME, { guid });
 
         if (response && response.error) {

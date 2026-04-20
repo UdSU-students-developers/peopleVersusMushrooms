@@ -53,9 +53,9 @@ class GameManager extends BaseManager {
 
 	/* TRIGGERS */
 
-	triggerSetServicesGuids(guids = {}) {
+	triggerSetServicesGuids(guids = {}, data) {
 		if (guids) {
-			
+			this.economies[data.guid].initGuids(guids);
 		}
 	}
 

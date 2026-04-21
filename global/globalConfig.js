@@ -1,4 +1,6 @@
 const GLOBAL_CONFIG = {
+    INTERVAL: 200, //мс
+
     MAP: {
         URL: 'http://localhost:3001',
     },
@@ -42,6 +44,11 @@ const GLOBAL_CONFIG = {
         LOBBIES_LIST_UPDATED: 'LOBBYS_LIST_UPDATED',
         SET_READY: 'SET_READY',
         START_GAME: 'START_GAME',
+
+        //map
+        GENERATE_MAP: 'GENERATE_MAP',
+        UPDATE_MAP: 'UPDATE_MAP',
+        GET_MAP_PARAMS: 'GET_MAP_PARAMS',
 
         //user
         REGISTRATION: 'REGISTRATION',

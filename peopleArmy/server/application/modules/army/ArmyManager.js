@@ -18,6 +18,7 @@ class ArmyManager extends BaseManager {
         this.mediator.subscribe(this.EVENTS.USER_DISCONNECT, (data) => this.eventUserDisconnect(data));
         // mediator trigger setters
         this.mediator.set(this.TRIGGERS.CREATE_UNIT, (data) => this.createUnit(data));
+        this.mediator.set(this.TRIGGERS.UNIT_TAKE_DAMAGE, (data) => this.unitTakeDamage(data));
     }
 
     destructor() {
@@ -74,6 +75,31 @@ class ArmyManager extends BaseManager {
             return this.answer.bad(400);
         }
         return this.answer.good(result.data);
+    }
+
+    /**
+     * mediator.get(UNIT_TAKE_DAMAGE, { guid, damage })
+     * guid — guid юнита, которому наносится урон
+     * damage — количество урона
+     */
+    unitTakeDamage(data) {
+        const guid = data?.guid;
+        const damage = Number(data?.damage);
+
+        if (!guid || !Number.isFinite(damage)) {
+            return this.answer.bad(400);
+        }
+
+        // Поиск юнита во всех армиях
+        for (const ownerGuid in this.army) {
+            const army = this.army[ownerGuid];
+            const result = army.unitTakeDamage({ guid, damage });
+            if (result?.ok) {
+                return this.answer.good(result.data);
+            }
+        }
+
+        return this.answer.bad(404);
     }
 
     /* EVENTS */

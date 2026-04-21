@@ -64,6 +64,30 @@ class Army {
         return { ok: true, data: unit.get() };
     }
 
+    /**
+     * Нанести урон юниту по его guid.
+     * Если hp <= 0 — юнит удаляется из армии.
+     */
+    unitTakeDamage({ guid, damage }) {
+        const unit = this.units.find((u) => u.guid === guid);
+
+        if (!unit) {
+            return { ok: false, error: 'UNIT_NOT_FOUND' };
+        }
+
+        unit.takeDamage(damage);
+        console.log('Юнит получил урон:', unit.guid, 'damage:', damage, 'hp:', unit.hp);
+
+        if (unit.isDead()) {
+            this.units = this.units.filter((u) => u.guid !== guid);
+            console.log('Юнит уничтожен:', guid);
+        }
+
+        this.updated = true;
+
+        return { ok: true, data: { guid: unit.guid, hp: unit.hp } };
+    }
+
     // 1. выстрелить юнитами по врагам
     getTarget(unit) {
         const height = this.map.length;

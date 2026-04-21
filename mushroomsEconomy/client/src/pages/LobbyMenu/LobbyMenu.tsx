@@ -23,7 +23,6 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
 
     useEffect(() => {
         const handleLobbiesList = (list: TLobbies) => {
-            console.log('Получен список лобби:', list);
             setLobbies(list);
             setError(null);
         };
@@ -45,7 +44,6 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
 
                 if (isUserInLobby) {
                     activeLobby = normalizedLobby;
-
                     break;
                 }
             }

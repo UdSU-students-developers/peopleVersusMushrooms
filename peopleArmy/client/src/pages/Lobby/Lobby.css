@@ -109,18 +109,6 @@
     cursor: not-allowed;
 }
 
-.hidden {
-    display: none !important;
-}
-
-.lobby-btn-ready-toggle {
-    min-height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-}
-
 .lobby-list {
     margin-top: 18px;
     border-top: 1px solid #30363d;

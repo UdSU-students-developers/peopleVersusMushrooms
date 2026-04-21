@@ -59,21 +59,13 @@ const Lobby: React.FC<IBasePage> = ({ mediator, setPage }) => {
             }
         };
 
-        const onSetNotReadyResponse = (response: { result?: string; data?: unknown }) => {
-            if (response?.result === 'ok' && response.data === true) {
-                setReadySubmitted(false);
-            }
-        };
-
         socket.on(CONFIG.SOCKETS.LOBBY_UPDATED, applyLobbiesPayload);
         socket.on(CONFIG.SOCKETS.SET_READY, onSetReadyResponse);
-        socket.on(CONFIG.SOCKETS.SET_NOT_READY, onSetNotReadyResponse);
         socket.emit(CONFIG.SOCKETS.GET_LOBBIES, { guid });
 
         return () => {
             socket.off(CONFIG.SOCKETS.LOBBY_UPDATED, applyLobbiesPayload);
             socket.off(CONFIG.SOCKETS.SET_READY, onSetReadyResponse);
-            socket.off(CONFIG.SOCKETS.SET_NOT_READY, onSetNotReadyResponse);
         };
     }, [socket, guid]);
 
@@ -110,17 +102,10 @@ const Lobby: React.FC<IBasePage> = ({ mediator, setPage }) => {
         socket.emit(CONFIG.SOCKETS.SET_READY, { guid });
     };
 
+    /** Только локально: на map нет снятия готовности, оверлей не используем. */
     const setNotReady = () => {
-        if (!socket || !guid || !readySubmitted) return;
-        socket.emit(CONFIG.SOCKETS.SET_NOT_READY, { guid });
-    };
-
-    const toggleReady = () => {
-        if (readySubmitted) {
-            setNotReady();
-        } else {
-            setReady();
-        }
+        if (!readySubmitted) return;
+        setReadySubmitted(false);
     };
 
     const startGame = () => {
@@ -157,12 +142,19 @@ const Lobby: React.FC<IBasePage> = ({ mediator, setPage }) => {
                         <>
                             <button
                                 type="button"
-                                className={`lobby-btn lobby-btn-ready-toggle ${readySubmitted ? 'lobby-btn-secondary' : 'lobby-btn-primary'}`}
-                                onClick={toggleReady}
-                                disabled={!socket || !guid}
+                                className="lobby-btn lobby-btn-primary"
+                                onClick={setReady}
+                                disabled={!socket || !guid || readySubmitted}
                             >
-                                <span className={readySubmitted ? 'hidden' : ''}>Готов</span>
-                                <span className={readySubmitted ? '' : 'hidden'}>Не готов</span>
+                                Готов
+                            </button>
+                            <button
+                                type="button"
+                                className="lobby-btn lobby-btn-secondary"
+                                onClick={setNotReady}
+                                disabled={!readySubmitted}
+                            >
+                                Не готов
                             </button>
                             {isHost && (
                                 <button
@@ -171,7 +163,7 @@ const Lobby: React.FC<IBasePage> = ({ mediator, setPage }) => {
                                     onClick={startGame}
                                     disabled={!socket || !guid || !allPlayersReady}
                                 >
-                                    Начать игру
+                                    {allPlayersReady ? 'Начать игру' : 'Ждем других игроков'}
                                 </button>
                             )}
                             <button

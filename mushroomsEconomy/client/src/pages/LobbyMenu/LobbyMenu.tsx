@@ -33,7 +33,7 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
                 return;
             }
 
-            const candidates = Array.isArray(lobbyData) ? lobbyData : [lobbyData];
+            const candidates: TLobbyServer[] = (Array.isArray(lobbyData) ? lobbyData : [lobbyData]).map((item: any) => item.data ?? item);
             
             let activeLobby: TLobby | null = null;
             const currentUserGuid = user?.guid;
@@ -50,8 +50,6 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
 
             if (activeLobby) {
                 setCurrentLobby(activeLobby);
-            } else if (!Array.isArray(lobbyData)) {
-                setCurrentLobby(null);
             }
         };
 
@@ -136,11 +134,11 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
     };
 
     if (currentLobby) {
-        const players = currentLobby?.players 
-            ? (Array.isArray(currentLobby.players) 
-                ? currentLobby.players 
-                : Object.values(currentLobby.players))
-            : [];
+        const players: TPlayer[] = currentLobby?.players || [];
+
+        const currentPlayer = players.find((p) => p.guid === user?.guid);
+        
+        const isCurrentUserReady = currentPlayer?.ready || false;
 
         const isOwner = currentLobby.lobbyGuid === user?.guid;
 
@@ -161,9 +159,13 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
                     <div className="player-info-block">
                         <h4>Игроки:</h4>
                         <ul className="player-list">
-                            {players.map((p: any) => (
+                            {players.map((p) => (
                                 <li key={p.guid} className="player-list-item">
-                                    {p.guid === user?.guid ? <strong>Вы</strong> : `Игрок ${p.guid.slice(0,5)}`}
+                                    {p.guid === user?.guid 
+                                        ? <strong>Вы ({p.role})</strong> 
+                                        : `Игрок (${p.role})`
+                                    }
+                                    
                                     <span className={`player-status ${p.ready ? 'ready' : 'not-ready'}`}>
                                         {p.ready ? 'Готов' : 'Не готов'}
                                     </span>
@@ -175,13 +177,14 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
                     <div className="lobby-actions">
                         <Button 
                             onClick={handleSetReady} 
-                            text="Я готов" 
-                            variant="accent" 
+                            text={isCurrentUserReady ? "Не готов" : "Я готов"}
+                            variant={isCurrentUserReady ? "danger" : "accent"} 
                         />
+                        
                         <Button 
                             onClick={handleLeaveLobby} 
                             text="Выйти" 
-                            variant="danger" 
+                            variant="main" 
                         />
                         
                         {isOwner && (

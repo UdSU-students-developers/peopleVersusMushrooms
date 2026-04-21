@@ -3,6 +3,7 @@ import CONFIG from "../../config";
 import { MediatorContext, ServerContext } from "../../App";
 import { TLobbies, TLobby, TUser, TPlayer, TLobbyServer } from "../../services/Server/types";
 import { IBasePage, PAGES } from "../PageManager";
+import Button from "../../components/Button/Button";
 
 import "./LobbyMenu.css";
 
@@ -42,7 +43,6 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
 
             for (const serverLobby of candidates) {
                 const normalizedLobby = normalizeLobbyData(serverLobby);
-
                 const isUserInLobby = normalizedLobby.players.some(p => p.guid === currentUserGuid);
 
                 if (isUserInLobby) {
@@ -105,7 +105,6 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
         };
     };
 
-
     const handleCreateLobby = () => {
         setError(null);
         const nameToSend = lobbyNameInput.trim() || `${user?.name || 'Player'}'s Lobby`;
@@ -153,6 +152,13 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
 
         return (
             <div className="start-game-page">
+                {user && (
+                    <div className="user-info-corner">
+                        <span className="user-label">Вы:</span>
+                        <span className="user-name">{user.name}</span>
+                    </div>
+                )}
+
                 <div className="start-game-container">
                     <h2>Лобби: {currentLobby.lobbyName || 'Безымянное'}</h2>
                     
@@ -173,13 +179,23 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
                     </div>
 
                     <div className="lobby-actions">
-                        <button onClick={handleSetReady}>Я готов</button>
-                        <button onClick={handleLeaveLobby} className="btn-danger">Выйти</button>
+                        <Button 
+                            onClick={handleSetReady} 
+                            text="Я готов" 
+                            variant="accent" 
+                        />
+                        <Button 
+                            onClick={handleLeaveLobby} 
+                            text="Выйти" 
+                            variant="danger" 
+                        />
                         
                         {isOwner && (
-                            <button onClick={handleStartGameClick} className="btn-success">
-                                Начать игру
-                            </button>
+                            <Button 
+                                onClick={handleStartGameClick}
+                                text="Начать игру" 
+                                variant="primary" 
+                            />
                         )}
                     </div>
                 </div>
@@ -189,19 +205,32 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
 
     return (
         <div className="start-game-page">
+            {user && (
+                <div className="user-info-corner">
+                    <span className="user-label">Вы вошли как:</span>
+                    <span className="user-name">{user.name}</span>
+                </div>
+            )}
+
             <div className="start-game-container">
                 <h2>Доступные лобби</h2>
                 
                 {error && <div className="error-message">{error}</div>}
 
-                <div className="player-info-block">
-                    {user ? (
-                        <div className="info-row">
-                            <span className="info-label">Вы вошли как:</span>
-                            <span className="info-value">{user.name}</span>
-                        </div>
+                <div className="lobby-list-container">
+                    {lobbies.length === 0 ? (
+                        <div className="empty-list">Нет доступных лобби</div>
                     ) : (
-                        <div className="info-loading">Загрузка данных...</div>
+                        lobbies.map((lobby: any) => (
+                            <div key={lobby.lobbyGuid} className="lobby-item">
+                                <span>{lobby.lobbyName || 'Lobby'}</span>
+                                <Button 
+                                    onClick={() => handleJoinLobby(lobby.lobbyGuid)} 
+                                    text="Войти" 
+                                    variant="primary" 
+                                />
+                            </div>
+                        ))
                     )}
                 </div>
 
@@ -213,27 +242,21 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
                         placeholder="Название лобби"
                         className="lobby-input"
                     />
-                    <button onClick={handleCreateLobby} className="create-lobby-btn">
-                        Создать новое лобби
-                    </button>
+                    <Button
+                        onClick={handleCreateLobby} 
+                        text="Создать" 
+                        variant="primary" 
+                        className="create-lobby-btn-custom" 
+                    />
                 </div>
 
-                <div className="lobby-list-container">
-                    {lobbies.length === 0 ? (
-                        <div className="empty-list">Нет доступных лобби</div>
-                    ) : (
-                        lobbies.map((lobby: any) => (
-                            <div key={lobby.lobbyGuid} className="lobby-item">
-                                <span>{lobby.lobbyName || 'Lobby'}</span>
-                                <button onClick={() => handleJoinLobby(lobby.lobbyGuid)}>Войти</button>
-                            </div>
-                        ))
-                    )}
+                <div className="bottom-actions">
+                    <Button 
+                        onClick={handleBackToLogin} 
+                        text="Назад" 
+                        variant="main" 
+                    />
                 </div>
-
-                <button className="back-button" onClick={handleBackToLogin}>
-                    Назад
-                </button>
             </div>
         </div>
     );

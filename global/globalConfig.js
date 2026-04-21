@@ -4,22 +4,27 @@ const GLOBAL_CONFIG = {
     MAP: {
         PORT: 3001,
         URL: 'http://localhost:3001',
+        ROLE: 'spectator'
     },
     MUSHROOMS_ARMY: {
         PORT: 3003,
         URL: 'http://localhost:3003',
+        ROLE: 'mushroomsArmy'
     },
     MUSHROOMS_ECONOMY: {
         PORT: 3005,
         URL: 'http://localhost:3005',
+        ROLE: 'mushroomsEconomy'
     },
     PEOPLE_ARMY: {
         PORT: 3007,
         URL: 'http://localhost:3007',
+        ROLE: 'peopleArmy'
     },
     PEOPLE_ECONOMY: {
         PORT: 3009,
         URL: 'http://localhost:3009',
+        ROLE: 'peopleEconomy'
     },
 
     CORS: { //Подключается через app.use()

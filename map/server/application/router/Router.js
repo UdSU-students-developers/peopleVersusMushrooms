@@ -31,10 +31,10 @@ function Router(mediator, answer, common) {
     router.post(URLS.SET_READY, useSetReadyHandler(mediator, answer, common));
 
     // ============ MAP ROUTES ============
-    router.get(`${URLS.GET_RELIEF}{/:mapGuid}{/:userGuid}`, useGetReliefHandler(mediator, answer, common));
-    router.get(`${URLS.GET_VISIBILITY}{/:mapGuid}{/:userGuid}`, useGetVisibilityHandler(mediator, answer, common));
-    router.get(`${URLS.GET_RESOURSE_VISIBILITY}{/:mapGuid}{/:userGuid}`, useGetResourseVisibilityHandler(mediator, answer, common));
-    router.get('/getGeneratedMap', useGetGeneratedMapHandler(mediator, answer, common));
+    router.post(URLS.GET_RELIEF, useGetReliefHandler(mediator, answer, common));
+    router.post(URLS.GET_VISIBILITY, useGetVisibilityHandler(mediator, answer, common));
+    router.post(URLS.GET_RESOURSE_VISIBILITY, useGetResourseVisibilityHandler(mediator, answer, common));
+    router.post('/getGeneratedMap', useGetGeneratedMapHandler(mediator, answer, common));
 
     router.post(URLS.UPDATE_UNITS, useUpdateUnitsHandler(mediator, answer, common));
     router.post(URLS.UPDATE_BUILDINGS, useUpdateBuildingsHandler(mediator, answer, common));

@@ -4,7 +4,7 @@ class Message {
         this.guid = common.guid();
         this.author = author;
         this.message = message;
-        this.date = date;
+        this.date = new Date();
     }
 
     get() {

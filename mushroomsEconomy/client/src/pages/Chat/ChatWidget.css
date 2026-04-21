@@ -1,0 +1,116 @@
+.chat-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    font-family: 'Press Start 2P', monospace;
+}
+
+.chat-toggle-btn {
+    box-shadow: 4px 4px 0 #0d0a08;
+}
+
+.chat-window {
+    width: 350px;
+    height: 450px;
+    background: #e8d4b8;
+    border: 3px solid #3d2817;
+    box-shadow: 6px 6px 0 #0d0a08;
+    display: flex;
+    flex-direction: column;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.chat-window-header {
+    background: #3d2817;
+    color: #e8d4b8;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 3px solid #1a1410;
+}
+
+.chat-window-header h3 {
+    margin: 0;
+    font-size: 14px;
+    text-shadow: 2px 2px 0 #000;
+}
+
+.chat-close-btn {
+    padding: 2px 8px !important;
+    font-size: 12px !important;
+    min-width: auto !important;
+}
+
+.chat-messages-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    background: #f0f2f5;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.message {
+    max-width: 80%;
+    padding: 8px 12px;
+    font-size: 13px;
+    line-height: 1.4;
+    border: 2px solid #3d2817;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+    word-wrap: break-word;
+}
+
+.message-own {
+    background: #4a5d7e;
+    color: #e8d4b8;
+    margin-left: auto;
+    border-color: #1a1410;
+}
+
+.message:not(.message-own) {
+    background: white;
+    color: #1a1410;
+    margin-right: auto;
+}
+
+.message strong {
+    font-size: 13px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.chat-input-container {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    background: #3d2817;
+    border-top: 3px solid #1a1410;
+}
+
+.chat-input-container .pixel-input {
+    flex: 1;
+    padding: 8px;
+    font-size: 13px;
+}
+
+.empty-messages {
+    text-align: center;
+    color: #8b5e3c;
+    margin-top: 20px;
+    font-size: 10px;
+}
+
+.chat-messages-container::-webkit-scrollbar {
+    width: 8px;
+}
+.chat-messages-container::-webkit-scrollbar-track {
+    background: #e8d4b8; 
+}
+.chat-messages-container::-webkit-scrollbar-thumb {
+    background: #3d2817; 
+    border: 1px solid #1a1410;
+}

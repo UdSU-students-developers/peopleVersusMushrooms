@@ -9,16 +9,16 @@ class Lobby {
             spectator: null,
             peopleArmy: null,
             peopleEconomy: null,
-            mushroomArmy: null,
-            mushroomEconomy: null,
+            mushroomsArmy: null,
+            mushroomsEconomy: null,
         }
 
         this.playersIsReady = {
             spectator: false,
             peopleArmy: false,
             peopleEconomy: false,
-            mushroomArmy: false,
-            mushroomEconomy: false
+            mushroomsArmy: false,
+            mushroomsEconomy: false
         }
 
         this.playersGuids[role] = lobbyGuid;

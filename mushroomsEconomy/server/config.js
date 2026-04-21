@@ -12,6 +12,7 @@ const CONFIG = {
         TRIGGERS: {
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',
             GET_USER_BY_SOCKET_ID: 'GET_USER_BY_SOCKET_ID',
+            SET_SERIVCES_GUIDS: 'SET_SERIVCES_GUIDS',
         },
     },
 

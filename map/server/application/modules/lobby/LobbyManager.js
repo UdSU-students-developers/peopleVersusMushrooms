@@ -28,7 +28,7 @@ class LobbyManager extends BaseManager {
         this.mediator.subscribe(this.EVENTS.LEAVE_LOBBY, (data) => this._eventAnswer(data, '_leaveLobby'));
         this.mediator.subscribe(this.EVENTS.DROP_FROM_LOBBY, (data) => this._eventAnswer(data, '_dropFromLobby'));
         this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this._eventAnswer(data, '_startGame'));
-        this.mediator.subscribe(this.EVENTS.GET_LOBBIES, () => this._eventAnswer(_, '_getLobbies'));
+        this.mediator.subscribe(this.EVENTS.GET_LOBBIES, (_) => this._eventAnswer(_, '_getLobbies'));
         this.mediator.subscribe(this.EVENTS.SET_READY, (data) => this._eventAnswer(data, '_setReady'));
         this.mediator.subscribe(this.EVENTS.LOGOUT, (data) => this._eventAnswer(data, '_leaveLobby'));
 

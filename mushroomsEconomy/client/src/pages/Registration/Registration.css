@@ -5,64 +5,65 @@
   justify-content: center;
   height: 100vh;
   background-color: #f0f2f5;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Press Start 2P', monospace;
 }
 
-.registration-container h2 {
-  margin-bottom: 20px;
-  color: #2e7d32;
-  font-size: 28px;
-  font-weight: 600;
-}
-
-.registration-container .registration-form {
+.registration-box {
   background: white;
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  padding: 40px;
+  border: 3px solid #3d2817;
+  box-shadow: 6px 6px 0 #0d0a08;
   width: 100%;
-  max-width: 350px;
+  max-width: 400px;
+  text-align: center;
+}
+
+.registration-box h2 {
+  margin-bottom: 20px;
+  color: #3d2817;
+  font-size: 20px;
+  text-shadow: 2px 2px 0 #e8d4b8;
+}
+
+.registration-form {
   display: flex;
   flex-direction: column;
   gap: 15px;
+  margin-bottom: 20px;
 }
 
-.registration-container input {
+.pixel-input {
   padding: 12px;
-  border: 1px solid #28a745;
-  border-radius: 4px;
-  font-size: 16px;
-  transition: border-color 0.3s ease;
-}
-
-.registration-container input:focus {
-  border-color: #28a745;
+  border: 3px solid #3d2817;
+  background: #fff;
+  color: #3d2817;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
   outline: none;
+  box-shadow: 3px 3px 0 #0d0a08 inset;
 }
 
-.registration-container button {
-  padding: 12px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 16px;
-  font-weight: 500;
+.error-box {
+  color: #c9453d;
+  font-size: 10px;
+  text-align: left;
+  line-height: 1.5;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  font-size: 10px;
+  color: #3d2817;
+}
+
+.checkbox-container input {
+  margin-right: 10px;
+  transform: scale(1.2);
+}
+
+.link-style {
+  color: #4a5d7e;
   cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.registration-container button:hover {
-  background-color: #218838;
-}
-
-.registration-switch {
-  margin-top: 20px;
-  color: #28a745;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.registration-switch:hover {
-  text-decoration: underline;
+  font-size: 10px;
 }

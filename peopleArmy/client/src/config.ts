@@ -12,7 +12,7 @@ interface SocketEvents {
     CREATE_LOBBY: 'CREATE_LOBBY';
     JOIN_TO_LOBBY: 'JOIN_TO_LOBBY';
     LEAVE_LOBBY: 'LEAVE_LOBBY';
-    GET_LOBBIES: 'GET_LOBBIES';
+    GET_LOBBIES: 'GET_LOBBYS';
     LOBBY_UPDATED: 'LOBBY_UPDATED';
 }
 
@@ -41,14 +41,14 @@ const CONFIG: Config = {
         DISCONNECT: 'disconnect',
         MESSAGE_FROM_CLIENT: 'message_from_client',
         MESSAGE_TO_CLIENTS: 'message_to_clients',
-        REGISTRATION: 'registration',
-        LOGIN: 'login',
-        LOGOUT: 'logout',
+        REGISTRATION: 'REGISTRATION',
+        LOGIN: 'LOGIN',
+        LOGOUT: 'LOGOUT',
         UPDATE_ARMY: 'UPDATE_ARMY',
         CREATE_LOBBY: 'CREATE_LOBBY',
         JOIN_TO_LOBBY: 'JOIN_TO_LOBBY',
         LEAVE_LOBBY: 'LEAVE_LOBBY',
-        GET_LOBBIES: 'GET_LOBBIES',
+        GET_LOBBIES: 'GET_LOBBYS',
         LOBBY_UPDATED: 'LOBBY_UPDATED',
     },
     MEDIATOR: {

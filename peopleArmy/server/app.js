@@ -20,7 +20,7 @@ const DB = require('./application/modules/db/DB');
 const Mediator = require('./application/modules/mediator/Mediator');
 const ChatManager = require('./application/modules/chat/ChatManager');
 const ArmyManager = require('./application/modules/army/ArmyManager');
-const UserManager = require('./application/modules/user/UserManager');
+const UserManager = require('./application/modules/UserManager');
 const { NAME, PORT, DATABASE, ROLE } = CONFIG;
 
 // Создаем сокеты в app.js
@@ -36,9 +36,9 @@ const db = new DB({ DATABASE });
 const mediator = new Mediator(CONFIG.MEDIATOR);
 
 // Менеджеры создаём здесь, чтобы они зарегистрировали триггеры в медиаторе
-new UserManager({ mediator, db, io, common, answer });
+const userManager = new UserManager({ mediator, db, io, common, answer });
 new ChatManager({ mediator, db, io, common, answer });
-new ArmyManager({ mediator, db, io, common, answer });
+const armyManager = new ArmyManager({ mediator, db, io, common, answer });
 new LobbyManager({ mediator, db, io, common, answer }, ROLE);
 
 

@@ -22,7 +22,7 @@ class ChatManager extends BaseManager {
             const payload = {
                 type: 'message',
                 text,
-                from: user.username,
+                from: user.username || user.name,
                 timestamp
             };
             this.io.to(user.socketId).emit(MESSAGE_FROM_CLIENT, this.answer.good('ok'))

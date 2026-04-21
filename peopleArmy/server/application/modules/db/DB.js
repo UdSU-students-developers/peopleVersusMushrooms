@@ -33,15 +33,31 @@ class DB {
     }
 
     getUserByName(username) {
-        return this.orm.get('users', { username });
+        return this.orm.get('users', { username }).then((row) => {
+            if (!row) {
+                return null;
+            }
+
+            return {
+                ...row,
+                name: row.username,
+                passwordHash: row.password,
+            };
+        });
     }
 
     updateToken(id, token) {
         return this.orm.update('users', ['token'], [token], { id });
     }
 
-    registration(username, password, guid) {
-        this.orm.insert(
+    registration(first, second, third) {
+        const username = first;
+        const secondIsGuid = typeof second === 'string'
+            && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(second);
+        const guid = secondIsGuid ? second : third;
+        const password = secondIsGuid ? third : second;
+
+        return this.orm.insert(
             'users',
             ['username', 'password', 'guid'],
             [username, password, guid],

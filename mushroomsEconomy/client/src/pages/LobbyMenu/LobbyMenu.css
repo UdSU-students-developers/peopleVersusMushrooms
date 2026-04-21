@@ -5,6 +5,36 @@
     justify-content: center;
     align-items: center;
     background-color: #f0f2f5;
+    position: relative; 
+}
+
+.user-info-corner {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(61, 40, 23, 0.9); 
+    color: #e8d4b8; 
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: 2px solid #1a1410;
+    box-shadow: 4px 4px 0 rgba(0,0,0,0.3);
+    font-size: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 10;
+    font-family: 'Press Start 2P', monospace;
+}
+
+.user-info-corner .user-label {
+    font-size: 20px;
+    opacity: 0.8;
+    text-transform: uppercase;
+}
+
+.user-info-corner .user-name {
+    font-weight: bold;
+    font-size: 20px;
 }
 
 .start-game-container {
@@ -33,90 +63,50 @@
     border: 1px solid #e0e0e0;
 }
 
-.info-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    font-size: 14px;
-}
-
-.info-row:last-child {
-    margin-bottom: 0;
-}
-
-.info-label {
-    font-weight: 600;
-    color: #555;
-}
-
-.info-value {
-    color: #333;
-    word-break: break-all;
-    text-align: right;
-}
-
-.info-loading {
-    text-align: center;
-    color: #999;
-    padding: 10px;
-}
-
 .create-lobby-form {
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
     width: 100%;
+    align-items: center;
 }
 
 .lobby-input {
     flex: 1;
-    padding: 10px 15px;
-    border: 1px solid #ccc;
-    border-radius: 20px;
-    font-size: 14px;
+    padding: 12px;
+    border: 2px solid #3d2817;
+    border-radius: 4px;
+    font-size: 15px;
     outline: none;
     transition: border-color 0.3s;
+    box-shadow: 2px 2px 0 #0d0a08;
+    font-family: 'Press Start 2P', monospace;
 }
 
 .lobby-input:focus {
-    border-color: #28a745;
+    border-color: #4a5d7e;
 }
 
-.create-lobby-btn {
-    padding: 10px 20px;
-    background: #28a745;
-    color: white;
-    border: none;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    white-space: nowrap;
-}
-
-.create-lobby-btn:hover {
-    background: #218838;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+.create-lobby-btn-custom {
+    flex-shrink: 0; 
 }
 
 .lobby-list-container {
     width: 100%;
-    max-height: 200px;
+    max-height: 250px;
     overflow-y: auto;
-    border: 1px solid #e0e0e0;
+    border: 2px solid #3d2817;
     border-radius: 8px;
     margin-bottom: 25px;
     background: #fff;
+    box-shadow: 3px 3px 0 #0d0a08;
 }
 
 .empty-list {
     padding: 20px;
     color: #999;
     text-align: center;
-    font-size: 14px;
+    font-size: 15px;
 }
 
 .lobby-item {
@@ -124,7 +114,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 15px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 2px solid #eee;
 }
 
 .lobby-item:last-child {
@@ -134,38 +124,7 @@
 .lobby-item span {
     font-weight: 500;
     color: #333;
-}
-
-.lobby-item button {
-    background: #28a745;
-    color: white;
-    border: none;
-    padding: 6px 16px;
-    border-radius: 20px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.lobby-item button:hover {
-    background: #218838;
-}
-
-.start-game-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-.back-button {
-    background: #6c757d !important;
-}
-
-.back-button:hover {
-    background: #5a6268 !important;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3) !important;
+    font-size: 15px;
 }
 
 .player-list {
@@ -203,6 +162,21 @@
     background: #ffebee;
 }
 
+.lobby-actions {
+    display: flex;
+    flex-direction: row;
+    justify-content: center; 
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.bottom-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+}
+
 .lobby-list-container::-webkit-scrollbar {
     width: 6px;
 }
@@ -210,4 +184,11 @@
 .lobby-list-container::-webkit-scrollbar-thumb {
     background: #ccc;
     border-radius: 3px;
+}
+
+.error-message {
+    color: #c9453d;
+    margin-bottom: 15px;
+    font-size: 12px;
+    font-family: 'Press Start 2P', monospace;
 }

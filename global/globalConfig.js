@@ -91,6 +91,15 @@ const GLOBAL_CONFIG = {
         MUSHROOM_ECONOMY: 'mushroomEconomy',
         MUSHROOM_ARMY: 'mushroomArmy',
     },
+
+    //Mediator
+    TRIGGERS: {
+        TRIGGER: 'TRIGGER',
+    },
+
+    EVENTS: {
+        EVENT: 'EVENT',
+    }
 };
 
 module.exports = GLOBAL_CONFIG;

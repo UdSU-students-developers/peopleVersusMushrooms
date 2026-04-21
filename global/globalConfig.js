@@ -3,18 +3,23 @@ const GLOBAL_CONFIG = {
 
     MAP: {
         URL: 'http://localhost:3001',
+        ROLE: 'spectator'
     },
     MUSHROOMS_ARMY: {
         URL: 'http://localhost:3003',
+        ROLE: 'mushroomsArmy'
     },
     MUSHROOMS_ECONOMY: {
         URL: 'http://localhost:3005',
+        ROLE: 'mushroomsEconomy'
     },
     PEOPLE_ARMY: {
         URL: 'http://localhost:3007',
+        ROLE: 'peopleArmy'
     },
     PEOPLE_ECONOMY: {
         URL: 'http://localhost:3009',
+        ROLE: 'peopleEconomy'
     },
 
     CORS: { //Подключается через app.use()

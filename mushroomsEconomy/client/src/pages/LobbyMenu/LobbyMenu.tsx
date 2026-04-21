@@ -23,6 +23,7 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
 
     useEffect(() => {
         const handleLobbiesList = (list: TLobbies) => {
+            console.log('Получен список лобби:', list);
             setLobbies(list);
             setError(null);
         };
@@ -44,6 +45,7 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
 
                 if (isUserInLobby) {
                     activeLobby = normalizedLobby;
+
                     break;
                 }
             }
@@ -104,7 +106,7 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
         setError(null);
         const nameToSend = lobbyNameInput.trim() || `${user?.name || 'Player'}'s Lobby`;
         server.createLobby(nameToSend);
-        setLobbyNameInput(""); 
+        setLobbyNameInput("");
     };
     
     const handleJoinLobby = (lobbyGuid: string) => {
@@ -116,7 +118,6 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
         setError(null);
         server.leaveLobby();
         setCurrentLobby(null);
-        setPage(PAGES.GAME_MENU);
     };
 
     const handleSetReady = () => {

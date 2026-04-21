@@ -1,4 +1,4 @@
-const BaseManager = require('../../../global/modules/BaseManager');
+const BaseManager = require('../BaseManager');
 
 class LobbyManager extends BaseManager {
     constructor(options, role) { //Роль берите из своего конфига, она совпадает с названием вашего сервиса, например 'mushroomEconomy'
@@ -17,6 +17,7 @@ class LobbyManager extends BaseManager {
             socket.on(this.SOCKET.SET_READY, (data) => this.socketSetReady(data, socket));
         });
 		
+        this.mediator.subscribe(this.EVENTS.DELETE_USER, (guid) => this.eventDeleteUser(guid));
 		this.mediator.subscribe(this.EVENTS.LOBBY_UPDATED, (lobbies) => this.eventLobbyUpdated(lobbies));
     }
 
@@ -39,8 +40,18 @@ class LobbyManager extends BaseManager {
     //...
 	
 	/* EVENTS */
+    eventDeleteUser(guid) {
+        const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
+        if (user) {
+            this.sendToMap('/leaveLobby', { 
+                guid, 
+                role: this.role, 
+            });
+        }
+    }
+
 	eventLobbyUpdated(lobbies) {
-		this.io.emit(this.SOCKET.LOBBIES_LIST_UPDATED, this.answer.good(lobbies));
+		this.io.emit(this.SOCKET.LOBBY_UPDATED, this.answer.good(lobbies));
 	}
 	
 	/* SOCKETS */

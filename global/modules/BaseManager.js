@@ -17,6 +17,7 @@ class BaseManager {
 
     async send(url, data=null, method='POST') {
 		
+        console.log('========================================');
 		console.log('send to', url, data);
 		
         try {
@@ -31,11 +32,12 @@ class BaseManager {
             }
             const res = await fetch(url, params);
 			
-			console.log('res', res);
+			//console.log('res', res);
 			
             const answer = await res.json();
 			
-			console.log('answer', answer);
+			console.log('\nanswer', answer);
+            console.log('========================================');
 			
             if (answer && answer.result === 'ok') {
                 return answer.data;

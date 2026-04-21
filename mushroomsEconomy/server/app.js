@@ -30,7 +30,7 @@ const answer = new Answer();
 new GameManager( { mediator, db, io, answer, common } );
 new UserManager( { mediator, db, io, answer, common } );
 new ChatManager( { mediator, db, io, answer, common } );
-new LobbyManager({ mediator, db, io, answer, common }, CONFIG.NAME);
+new LobbyManager({ mediator, db, io, answer, common }, GLOBAL_CONFIG.ROLES.MUSHROOM_ECONOMY);
 
 
 app.use(GLOBAL_CONFIG.CORS.middleware);

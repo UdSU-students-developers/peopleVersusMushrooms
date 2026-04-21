@@ -73,6 +73,7 @@
     margin-bottom: 24px;
     width: 100%;
     align-items: center;
+    align-items: center;
 }
 
 .lobby-input {
@@ -95,10 +96,13 @@
 
 .create-lobby-btn-custom {
     flex-shrink: 0; 
+.create-lobby-btn-custom {
+    flex-shrink: 0; 
 }
 
 .lobby-list-container {
     width: 100%;
+    max-height: 250px;
     max-height: 250px;
     overflow-y: auto;
     border: 1px solid #334155;
@@ -111,7 +115,7 @@
     padding: 24px;
     color: #64748b;
     text-align: center;
-    font-size: 14px;
+    font-size: 15px;
 }
 
 .lobby-item {
@@ -179,6 +183,21 @@
     justify-content: center; 
     flex-wrap: wrap;
     gap: 12px;
+    margin-top: 20px;
+}
+
+.bottom-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.lobby-actions {
+    display: flex;
+    flex-direction: row;
+    justify-content: center; 
+    flex-wrap: wrap;
+    gap: 15px;
     margin-top: 20px;
 }
 

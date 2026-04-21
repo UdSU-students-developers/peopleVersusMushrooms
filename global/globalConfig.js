@@ -2,19 +2,29 @@ const GLOBAL_CONFIG = {
     INTERVAL: 200, //мс
 
     MAP: {
+        PORT: 3001,
         URL: 'http://localhost:3001',
+        ROLE: 'spectator'
     },
     MUSHROOMS_ARMY: {
+        PORT: 3003,
         URL: 'http://localhost:3003',
+        ROLE: 'mushroomsArmy'
     },
     MUSHROOMS_ECONOMY: {
+        PORT: 3005,
         URL: 'http://localhost:3005',
+        ROLE: 'mushroomsEconomy'
     },
     PEOPLE_ARMY: {
+        PORT: 3007,
         URL: 'http://localhost:3007',
+        ROLE: 'peopleArmy'
     },
     PEOPLE_ECONOMY: {
+        PORT: 3009,
         URL: 'http://localhost:3009',
+        ROLE: 'peopleEconomy'
     },
 
     CORS: { //Подключается через app.use()
@@ -27,7 +37,7 @@ const GLOBAL_CONFIG = {
     },
 
     DATABASES: {
-        MUSHROOMS_ECONOMY: 'data.db',
+        MUSHROOMS_ECONOMY: 'mushroomsEconomy.db',
         MUSHROOMS_ARMY: 'mushroomsArmy.db',
         PEOPLE_ECONOMY: 'peopleEconomy.db',
     },
@@ -39,9 +49,9 @@ const GLOBAL_CONFIG = {
         JOIN_TO_LOBBY: 'JOIN_TO_LOBBY',
         LEAVE_LOBBY: 'LEAVE_LOBBY',
         DROP_FROM_LOBBY: 'DROP_FROM_LOBBY',
-        GET_LOBBIES: 'GET_LOBBYS',
+        GET_LOBBIES: 'GET_LOBBIES',
         LOBBY_UPDATED: 'LOBBY_UPDATED',
-        LOBBIES_LIST_UPDATED: 'LOBBYS_LIST_UPDATED',
+        LOBBIES_LIST_UPDATED: 'LOBBIES_LIST_UPDATED',
         SET_READY: 'SET_READY',
         START_GAME: 'START_GAME',
 
@@ -72,7 +82,15 @@ const GLOBAL_CONFIG = {
         GET_RESOURSE_VISIBILITY: '/getResourseVisibility',
         UPDATE_UNITS: '/updateUnits',
         UPDATE_BUILDINGS: '/updateBuldings',
-    }
+    },
+
+    ROLES: {
+        SPECTATOR: 'spectator',
+        PEOPLE_ECONOMY: 'peopleEconomy',
+        PEOPLE_ARMY: 'peopleArmy',
+        MUSHROOM_ECONOMY: 'mushroomEconomy',
+        MUSHROOM_ARMY: 'mushroomArmy',
+    },
 };
 
 module.exports = GLOBAL_CONFIG;

@@ -40,7 +40,7 @@ class LobbyManager extends BaseManager {
 	
 	/* EVENTS */
 	eventLobbyUpdated(lobbies) {
-		this.io.emit(this.SOCKET.LOBBY_UPDATED, this.answer.good(lobbies));
+		this.io.emit(this.SOCKET.LOBBIES_LIST_UPDATED, this.answer.good(lobbies));
 	}
 	
 	/* SOCKETS */

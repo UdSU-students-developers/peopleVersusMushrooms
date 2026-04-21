@@ -36,7 +36,6 @@ class MapManager extends BaseManager {
         this.mediator.set(GET_RELIEF_HANDLER, (data) => this.getReliefHandler(data));
 
         this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
-        this.mediator.subscribe(this.EVENTS.LOGOUT, (data) => this._);
 
         // ДЛЯ ТЕСТОВ
         this.mediator.set(GET_GENERATED_MAP, (data) => this.getGeneratedMapHandler(data));
@@ -125,8 +124,8 @@ class MapManager extends BaseManager {
             spectator: null,
             peopleArmy: null,
             peopleEconomy: null,
-            mushroomArmy: null,
-            mushroomEconomy: null,
+            mushroomsArmy: null,
+            mushroomsEconomy: null,
         };
         const map = new Map({ guid, playerGuids, width, height });
         map.generateRelief({ seed, water, mountains });
@@ -140,8 +139,8 @@ class MapManager extends BaseManager {
             spectator: guid,
             peopleArmy: null,
             peopleEconomy: null,
-            mushroomArmy: null,
-            mushroomEconomy: null,
+            mushroomsArmy: null,
+            mushroomsEconomy: null,
         };
         const map = new Map({ playerGuids, ...data });
         map.generateRelief(data);

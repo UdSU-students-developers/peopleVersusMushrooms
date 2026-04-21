@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext } from 'react';
 import { IBasePage, PAGES } from '../PageManager';
 import { MediatorContext } from '../../App';
 import { TUser } from '../../services/Server/types';
@@ -21,36 +21,26 @@ const GameMenu: React.FC<IBasePage> = ({setPage}) => {
 
     return (
         <div className='game-menu-page'>
+            {user && (
+                <div className="user-info-corner">
+                    <span className="user-label">Игрок:</span>
+                    <span className="user-name">{user.name}</span>
+                </div>
+            )}
+
             <div className='game-menu-container'>
                 <h2>Меню игры</h2>
-
-                <div className="player-info-block">
-                    {user ? (
-                        <>
-                            <div className="info-row">
-                                <span className="info-label">Игрок:</span>
-                                <span className="info-value">{user.name}</span>
-                            </div>
-                            <div className="info-row">
-                                <span className="info-label">Socket ID:</span>
-                                <span className="info-value socket-id">{user.guid}</span>
-                            </div>
-                        </>
-                    ) : (
-                        <div className="info-loading">Загрузка данных...</div>
-                    )}
-                </div>
 
                 <div className="menu-actions">
                     <Button 
                         onClick={handleBackToGame} 
                         text="Вернуться в игру" 
-                        className="button button-primary"
+                        variant="primary" 
                     />
                     <Button 
                         onClick={handleGoToChat} 
                         text="Чат" 
-                        className="button button-secondary"
+                        variant="accent" 
                     />
                 </div>
             </div>

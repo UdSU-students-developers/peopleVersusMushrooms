@@ -4,60 +4,60 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #f0f2f5;
+    background-color: #0f172a;
     position: relative; 
-    font-family: 'Press Start 2P', monospace;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 .user-info-corner {
     position: absolute;
-    top: 20px;
-    left: 20px;
-    background: rgba(61, 40, 23, 0.9);
-    color: #e8d4b8;
-    padding: 12px 20px;
-    border-radius: 8px;
-    border: 2px solid #1a1410;
-    box-shadow: 4px 4px 0 rgba(0,0,0,0.3);
-    font-size: 12px;
+    top: 24px;
+    left: 24px;
+    background: rgba(30, 41, 59, 0.8);
+    backdrop-filter: blur(8px);
+    color: #f1f5f9;
+    padding: 16px 24px;
+    border-radius: 12px;
+    border: 1px solid #334155;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    font-size: 14px;
     z-index: 10;
 }
 
 .user-info-corner .user-label {
-    font-size: 8px;
-    opacity: 0.8;
+    font-size: 12px;
+    opacity: 0.7;
     text-transform: uppercase;
     display: block;
     margin-bottom: 4px;
 }
 
 .user-info-corner .user-name {
-    font-weight: bold;
-    font-size: 10px;
+    font-weight: 600;
+    font-size: 16px;
 }
 
 .game-menu-container {
-    background: white;
+    background: #1e293b;
     padding: 40px;
-    border-radius: 4px;
-    box-shadow: 6px 6px 0 #0d0a08;
-    border: 3px solid #3d2817;
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border: 1px solid #334155;
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
     text-align: center;
 }
 
 .game-menu-container h2 {
     margin-top: 0;
-    margin-bottom: 30px;
-    color: #3d2817;
-    font-size: 20px;
-    text-shadow: 2px 2px 0 #e8d4b8;
+    margin-bottom: 32px;
+    color: #f1f5f9;
+    font-size: 24px;
 }
 
 .menu-actions {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 16px;
     align-items: center;
 }

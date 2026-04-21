@@ -74,7 +74,7 @@ const ChatWidget: React.FC = () => {
         for (let i = 0; i < author.length; i++) {
             hash = author.charCodeAt(i) + ((hash << 5) - hash);
         }
-        return `hsl(${hash % 360}, 70%, 50%)`;
+        return `hsl(${hash % 360}, 60%, 70%)`;
     };
 
     if (!user) return null;
@@ -84,7 +84,7 @@ const ChatWidget: React.FC = () => {
             {!isOpen && (
                 <Button 
                     onClick={() => setIsOpen(true)} 
-                    text="Чат" 
+                    text="💬" 
                     variant="accent" 
                     className="chat-toggle-btn"
                 />
@@ -96,8 +96,8 @@ const ChatWidget: React.FC = () => {
                         <h3>Чат</h3>
                         <Button 
                             onClick={() => setIsOpen(false)} 
-                            text="X" 
-                            variant="danger" 
+                            text="✕" 
+                            variant="main" 
                             className="chat-close-btn"
                         />
                     </div>
@@ -113,8 +113,8 @@ const ChatWidget: React.FC = () => {
                                         key={index} 
                                         className={`message ${isOwnMessage ? 'message-own' : ''}`}
                                     >
-                                        <strong style={{ color: getAuthorColor(message.author) }}>
-                                            {message.author}:
+                                        <strong style={{ color: isOwnMessage ? 'rgba(255,255,255,0.8)' : getAuthorColor(message.author) }}>
+                                            {message.author}
                                         </strong>
                                         <span>{message.message}</span>
                                     </div>
@@ -128,12 +128,12 @@ const ChatWidget: React.FC = () => {
                         <input
                             ref={messageRef}
                             onKeyUp={handleKeyUp}
-                            placeholder='Сообщение'
+                            placeholder='Сообщение...'
                             className="pixel-input"
                         />
                         <Button 
                             onClick={handleSendMessage} 
-                            text=">>"
+                            text="→"
                             variant="primary"
                         />
                     </div>

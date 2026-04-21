@@ -14,6 +14,9 @@ interface SocketEvents {
     LEAVE_LOBBY: 'LEAVE_LOBBY';
     GET_LOBBIES: 'GET_LOBBIES';
     LOBBY_UPDATED: 'LOBBY_UPDATED';
+    SET_READY: 'SET_READY';
+    SET_NOT_READY: 'SET_NOT_READY';
+    START_GAME: 'START_GAME';
 }
 
 interface MediatorEvents {
@@ -50,6 +53,9 @@ const CONFIG: Config = {
         LEAVE_LOBBY: 'LEAVE_LOBBY',
         GET_LOBBIES: 'GET_LOBBIES',
         LOBBY_UPDATED: 'LOBBY_UPDATED',
+        SET_READY: 'SET_READY',
+        SET_NOT_READY: 'SET_NOT_READY',
+        START_GAME: 'START_GAME',
     },
     MEDIATOR: {
         EVENTS: {

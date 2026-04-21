@@ -88,8 +88,8 @@ const GLOBAL_CONFIG = {
         SPECTATOR: 'spectator',
         PEOPLE_ECONOMY: 'peopleEconomy',
         PEOPLE_ARMY: 'peopleArmy',
-        MUSHROOM_ECONOMY: 'mushroomEconomy',
-        MUSHROOM_ARMY: 'mushroomArmy',
+        MUSHROOM_ECONOMY: 'mushroomsEconomy',
+        MUSHROOM_ARMY: 'mushroomsArmy',
     },
 
     //Mediator
@@ -98,8 +98,8 @@ const GLOBAL_CONFIG = {
     },
 
     EVENTS: {
-        EVENT: 'EVENT',
-    }
+        DELETE_USER: "DELETE_USER",
+    },
 };
 
 module.exports = GLOBAL_CONFIG;

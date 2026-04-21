@@ -26,11 +26,11 @@ class LobbyManager extends BaseManager {
         const { guid } = data;
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
         if (user) {
-            this.sendToMap(METHOD, { 
+            const result = this.sendToMap(METHOD, { 
                 ...data, 
                 role: this.role, 
             });
-            socket.emit(SOCKET, this.answer.good(true));
+            socket.emit(SOCKET, this.answer.good(result));
             return;
         }
         socket.emit(SOCKET, this.answer.bad(1001));

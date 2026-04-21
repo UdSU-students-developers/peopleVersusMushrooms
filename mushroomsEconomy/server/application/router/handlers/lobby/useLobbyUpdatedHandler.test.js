@@ -2,7 +2,7 @@
 const handler = require('./useLobbyUpdatedHandler');
 
 describe('обработчик лобби', () => {
-  let mediator, answer, req, res, обработчик;
+  let mediator, answer, req, res, hand;
 
   beforeEach(() => {
     // Мокаем answer
@@ -21,12 +21,12 @@ describe('обработчик лобби', () => {
     req = { body: {} };
     res = { send: jest.fn() };
 
-    обработчик = handler(mediator, answer);
+    hand = handler(mediator, answer);
   });
 
   test('если лобби есть, вызываем медиатор и отдаём good', () => {
     req.body.lobbies = ['комната1', 'комната2'];
-    обработчик(req, res);
+    hand(req, res);
 
     expect(mediator.getEventTypes).toHaveBeenCalled();
     expect(mediator.call).toHaveBeenCalledWith('событие_лобби', ['комната1', 'комната2']);
@@ -35,7 +35,7 @@ describe('обработчик лобби', () => {
   });
 
   test('если лобби нет, сразу отдаём bad', () => {
-    обработчик(req, res);
+    hand(req, res);
 
     expect(mediator.getEventTypes).not.toHaveBeenCalled();
     expect(mediator.call).not.toHaveBeenCalled();

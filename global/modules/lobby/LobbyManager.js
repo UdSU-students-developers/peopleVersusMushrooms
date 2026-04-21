@@ -22,11 +22,11 @@ class LobbyManager extends BaseManager {
     }
 
     /* PRIVATE */
-    _socketHandler(data, socket, METHOD, SOCKET) {
+    async _socketHandler(data, socket, METHOD, SOCKET) {
         const { guid } = data;
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
         if (user) {
-            const result = this.sendToMap(METHOD, { 
+            const result = await this.sendToMap(METHOD, { 
                 ...data, 
                 role: this.role, 
             });

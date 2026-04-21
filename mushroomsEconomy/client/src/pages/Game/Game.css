@@ -2,21 +2,26 @@
     width: 100%;
     height: 100vh;
     position: relative;
-    background-color: #f0f2f5;
+    background-color: #0f172a;
     overflow: hidden;
 }
 
 .exit-button-container {
     position: absolute;
-    top: 20px;
-    right: 20px;
+    top: 24px;
+    right: 24px;
     z-index: 100;
 }
 
 .exit-btn {
-    padding: 10px 14px !important; 
-    min-width: auto !important;
-    font-size: 11px !important;
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: #ef4444 !important;
+    border: 1px solid rgba(239, 68, 68, 0.2) !important;
+    box-shadow: none !important;
+}
+
+.exit-btn:hover {
+    background: rgba(239, 68, 68, 0.2) !important;
 }
 
 .modal-overlay {
@@ -25,7 +30,8 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -33,32 +39,35 @@
 }
 
 .modal-window {
-    background: #e8d4b8;
-    border: 4px solid #3d2817;
-    box-shadow: 8px 8px 0 #0d0a08;
-    padding: 30px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    padding: 32px;
     width: 400px;
     max-width: 90%;
     text-align: center;
-    font-family: 'Press Start 2P', monospace;
-    color: #3d2817;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: #f1f5f9;
+    border-radius: 16px;
 }
 
 .modal-window h3 {
     margin-top: 0;
-    margin-bottom: 20px;
-    font-size: 18px;
-    color: #3d2817;
+    margin-bottom: 16px;
+    font-size: 20px;
+    color: #f1f5f9;
 }
 
 .modal-window p {
-    font-size: 12px;
-    margin-bottom: 30px;
+    font-size: 14px;
+    margin-bottom: 24px;
     line-height: 1.5;
+    color: #94a3b8;
 }
 
 .modal-actions {
     display: flex;
     justify-content: center;
-    gap: 20px;
+    gap: 16px;
 }
+

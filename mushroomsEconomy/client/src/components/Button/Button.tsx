@@ -34,6 +34,7 @@ const Button: React.FC<TButton> = (props: TButton) => {
             onClick={onClick}
             id={id}
             title={title}
+            disabled={isDisabled}
         >
             {text}
             {children}

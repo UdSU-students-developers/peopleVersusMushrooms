@@ -12,7 +12,6 @@ export enum PAGES {
     REGISTRATION,
     CHAT,
     GAME,
-    GAME_MENU,
     START_GAME,
 }
 

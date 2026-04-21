@@ -4,87 +4,93 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #f0f2f5;
+    background-color: #0f172a;
     position: relative; 
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 .user-info-corner {
     position: absolute;
-    top: 20px;
-    left: 20px;
-    background: rgba(61, 40, 23, 0.9); 
-    color: #e8d4b8; 
-    padding: 12px 20px;
-    border-radius: 8px;
-    border: 2px solid #1a1410;
-    box-shadow: 4px 4px 0 rgba(0,0,0,0.3);
-    font-size: 15px;
+    top: 24px;
+    left: 24px;
+    background: rgba(30, 41, 59, 0.8);
+    backdrop-filter: blur(8px);
+    color: #f1f5f9;
+    padding: 16px 24px;
+    border-radius: 12px;
+    border: 1px solid #334155;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    font-size: 14px;
     display: flex;
     flex-direction: column;
     gap: 4px;
     z-index: 10;
-    font-family: 'Press Start 2P', monospace;
 }
 
 .user-info-corner .user-label {
-    font-size: 20px;
-    opacity: 0.8;
+    font-size: 12px;
+    opacity: 0.7;
     text-transform: uppercase;
 }
 
 .user-info-corner .user-name {
-    font-weight: bold;
-    font-size: 20px;
+    font-weight: 600;
+    font-size: 16px;
 }
 
 .start-game-container {
-    background: white;
+    background: #1e293b;
     padding: 40px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border: 1px solid #334155;
     width: 100%;
-    max-width: 400px;
+    max-width: 450px;
     text-align: center;
 }
 
 .start-game-container h2 {
     margin-top: 0;
-    margin-bottom: 20px;
-    color: #333;
+    margin-bottom: 24px;
+    color: #f1f5f9;
+    font-size: 24px;
 }
 
 .player-info-block {
-    background-color: #f4f4f4;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 25px;
+    background-color: #0f172a;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 24px;
     width: 100%;
     box-sizing: border-box;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #334155;
+    color: #f1f5f9;
 }
 
 .create-lobby-form {
     display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: 12px;
+    margin-bottom: 24px;
     width: 100%;
     align-items: center;
 }
 
 .lobby-input {
     flex: 1;
-    padding: 12px;
-    border: 2px solid #3d2817;
-    border-radius: 4px;
-    font-size: 15px;
+    padding: 10px 14px;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    font-size: 14px;
     outline: none;
-    transition: border-color 0.3s;
-    box-shadow: 2px 2px 0 #0d0a08;
-    font-family: 'Press Start 2P', monospace;
+    transition: border-color 0.2s;
+    box-shadow: none;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: #0f172a;
+    color: #f1f5f9;
 }
 
 .lobby-input:focus {
-    border-color: #4a5d7e;
+    border-color: #3b82f6;
 }
 
 .create-lobby-btn-custom {
@@ -95,36 +101,40 @@
     width: 100%;
     max-height: 250px;
     overflow-y: auto;
-    border: 2px solid #3d2817;
-    border-radius: 8px;
-    margin-bottom: 25px;
-    background: #fff;
-    box-shadow: 3px 3px 0 #0d0a08;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    background: #0f172a;
 }
 
 .empty-list {
-    padding: 20px;
-    color: #999;
+    padding: 24px;
+    color: #64748b;
     text-align: center;
-    font-size: 15px;
+    font-size: 14px;
 }
 
 .lobby-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 15px;
-    border-bottom: 2px solid #eee;
+    padding: 12px 16px;
+    border-bottom: 1px solid #1e293b;
+    transition: background 0.2s;
 }
 
 .lobby-item:last-child {
     border-bottom: none;
 }
 
+.lobby-item:hover {
+    background: #1e293b;
+}
+
 .lobby-item span {
     font-weight: 500;
-    color: #333;
-    font-size: 15px;
+    color: #e2e8f0;
+    font-size: 14px;
 }
 
 .player-list {
@@ -138,7 +148,9 @@
     display: flex;
     justify-content: space-between;
     padding: 8px 0;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #334155;
+    font-size: 14px;
+    color: #e2e8f0;
 }
 
 .player-list-item:last-child {
@@ -147,19 +159,18 @@
 
 .player-status {
     font-size: 12px;
-    padding: 2px 8px;
-    border-radius: 10px;
+    padding: 2px 10px;
+    border-radius: 12px;
 }
 
 .player-status.ready {
-    color: #28a745;
-    background: #e8f5e9;
-    font-weight: bold;
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.1);
 }
 
 .player-status.not-ready {
-    color: #dc3545;
-    background: #ffebee;
+    color: #f87171;
+    background: rgba(248, 113, 113, 0.1);
 }
 
 .lobby-actions {
@@ -167,7 +178,7 @@
     flex-direction: row;
     justify-content: center; 
     flex-wrap: wrap;
-    gap: 15px;
+    gap: 12px;
     margin-top: 20px;
 }
 
@@ -182,13 +193,15 @@
 }
 
 .lobby-list-container::-webkit-scrollbar-thumb {
-    background: #ccc;
+    background: #475569;
     border-radius: 3px;
 }
 
 .error-message {
-    color: #c9453d;
-    margin-bottom: 15px;
+    color: #f87171;
+    margin-bottom: 16px;
     font-size: 12px;
-    font-family: 'Press Start 2P', monospace;
+    background: rgba(248, 113, 113, 0.1);
+    padding: 10px;
+    border-radius: 8px;
 }

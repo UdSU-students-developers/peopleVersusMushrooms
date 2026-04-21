@@ -1,116 +1,137 @@
 .chat-widget {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
+    bottom: 24px;
+    right: 24px;
     z-index: 1000;
-    font-family: 'Press Start 2P', monospace;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 .chat-toggle-btn {
-    box-shadow: 4px 4px 0 #0d0a08;
+    border-radius: 50px !important;
+    width: 60px !important;
+    height: 60px !important;
+    padding: 0 !important;
+    font-size: 20px !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .chat-window {
-    width: 350px;
-    height: 450px;
-    background: #e8d4b8;
-    border: 3px solid #3d2817;
-    box-shadow: 6px 6px 0 #0d0a08;
+    width: 360px;
+    height: 500px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     display: flex;
     flex-direction: column;
-    border-radius: 4px;
+    border-radius: 16px;
     overflow: hidden;
 }
 
 .chat-window-header {
-    background: #3d2817;
-    color: #e8d4b8;
-    padding: 10px 15px;
+    background: #1e293b;
+    color: #f1f5f9;
+    padding: 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 3px solid #1a1410;
+    border-bottom: 1px solid #334155;
 }
 
 .chat-window-header h3 {
     margin: 0;
-    font-size: 14px;
-    text-shadow: 2px 2px 0 #000;
+    font-size: 16px;
+    font-weight: 600;
 }
 
 .chat-close-btn {
-    padding: 2px 8px !important;
-    font-size: 12px !important;
+    background: transparent !important;
+    color: #94a3b8 !important;
+    padding: 4px 12px !important;
     min-width: auto !important;
+    font-size: 12px !important;
+    box-shadow: none !important;
 }
 
 .chat-messages-container {
     flex: 1;
     overflow-y: auto;
-    padding: 10px;
-    background: #f0f2f5;
+    padding: 16px;
+    background: transparent;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
 }
 
 .message {
     max-width: 80%;
-    padding: 8px 12px;
-    font-size: 13px;
-    line-height: 1.4;
-    border: 2px solid #3d2817;
-    box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+    padding: 10px 14px;
+    font-size: 14px;
+    line-height: 1.5;
+    border-radius: 12px 12px 12px 0;
+    background: #1e293b;
+    color: #e2e8f0;
     word-wrap: break-word;
+    box-shadow: none;
+    border: none;
 }
 
 .message-own {
-    background: #4a5d7e;
-    color: #e8d4b8;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
     margin-left: auto;
-    border-color: #1a1410;
+    border-radius: 12px 12px 0 12px;
 }
 
 .message:not(.message-own) {
-    background: white;
-    color: #1a1410;
-    margin-right: auto;
+    background: #334155;
+    color: #f1f5f9;
 }
 
 .message strong {
-    font-size: 13px;
+    font-size: 12px;
     display: block;
     margin-bottom: 4px;
+    opacity: 0.8;
 }
 
 .chat-input-container {
     display: flex;
-    gap: 10px;
-    padding: 10px;
-    background: #3d2817;
-    border-top: 3px solid #1a1410;
+    gap: 12px;
+    padding: 16px;
+    background: #1e293b;
+    border-top: 1px solid #334155;
 }
 
 .chat-input-container .pixel-input {
     flex: 1;
-    padding: 8px;
-    font-size: 13px;
+    background: #0f172a;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    color: #f1f5f9;
+    padding: 10px 14px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.chat-input-container .pixel-input:focus {
+    border-color: #3b82f6;
 }
 
 .empty-messages {
     text-align: center;
-    color: #8b5e3c;
+    color: #64748b;
     margin-top: 20px;
-    font-size: 10px;
+    font-size: 12px;
 }
 
 .chat-messages-container::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
 }
 .chat-messages-container::-webkit-scrollbar-track {
-    background: #e8d4b8; 
+    background: #0f172a; 
 }
 .chat-messages-container::-webkit-scrollbar-thumb {
-    background: #3d2817; 
-    border: 1px solid #1a1410;
+    background: #475569; 
+    border-radius: 3px;
 }

@@ -29,7 +29,7 @@ const Game: React.FC<IBasePage> = ({ setPage }) => {
             <div className="exit-button-container">
                 <Button 
                     onClick={handleOpenModal} 
-                    text="X" 
+                    text="Выйти" 
                     variant="danger" 
                     className="exit-btn"
                 />

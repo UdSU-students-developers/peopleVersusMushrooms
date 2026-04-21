@@ -23,14 +23,11 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
 
     useEffect(() => {
         const handleLobbiesList = (list: TLobbies) => {
-            console.log('Получен список лобби:', list);
             setLobbies(list);
             setError(null);
         };
 
         const handleLobbyUpdate = (lobbyData: TLobbyServer | TLobbyServer[] | null) => {
-            console.log('Обновление лобби:', lobbyData);
-
             if (!lobbyData) {
                 setCurrentLobby(null);
                 return;
@@ -59,12 +56,10 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
         };
 
         const handleStartGame = () => {
-            console.log('Игра начинается!');
             setPage(PAGES.GAME);
         };
 
         const handleError = (err: any) => {
-            console.error('Ошибка:', err);
             setError(err?.text || 'Неизвестная ошибка');
         };
 
@@ -171,7 +166,7 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
                                 <li key={p.guid} className="player-list-item">
                                     {p.guid === user?.guid ? <strong>Вы</strong> : `Игрок ${p.guid.slice(0,5)}`}
                                     <span className={`player-status ${p.ready ? 'ready' : 'not-ready'}`}>
-                                        ({p.ready ? 'Готов' : 'Не готов'})
+                                        {p.ready ? 'Готов' : 'Не готов'}
                                     </span>
                                 </li>
                             ))}

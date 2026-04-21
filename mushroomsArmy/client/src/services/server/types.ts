@@ -25,6 +25,25 @@ export type TUser = {
     guid?: string;
 }
 
+export interface ILobby {
+    lobbyGuid: string;
+    lobbyName: string;
+    playersGuids: {
+        spectator: string | null;
+        mushroomArmy: string | null;
+        mushroomEconomy: string | null;
+        peopleArmy: string | null;
+        peopleEconomy: string | null;
+    };
+    playersIsReady: {
+        spectator: boolean;
+        mushroomArmy: boolean;
+        mushroomEconomy: boolean;
+        peopleArmy: boolean;
+        peopleEconomy: boolean;
+    };
+}
+
 /**
  * Данные для регистрации
  */

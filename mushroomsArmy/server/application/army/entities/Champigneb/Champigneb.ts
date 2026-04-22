@@ -1,4 +1,4 @@
-import Unit, { TUnitOptions } from "./Units";
+import Unit, { TUnitOptions } from "../Units";
 
 export type TSlimePuddle = {
   x: number;

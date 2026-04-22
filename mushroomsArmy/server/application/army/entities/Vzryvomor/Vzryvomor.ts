@@ -1,5 +1,5 @@
-import Unit from "./Units";
-import { TMap } from "../Army";
+import Unit from "../Units";
+import { TMap } from "../../Army";
 
 export type TVzryvomorOptions = {
     guid: string;

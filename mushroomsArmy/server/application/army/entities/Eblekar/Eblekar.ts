@@ -1,5 +1,5 @@
-import { TMap } from "../Army";
-import Unit, { TUnitOptions, TUnitState } from "./Units";
+import { TMap } from "../../Army";
+import Unit, { TUnitOptions, TUnitState } from "../Units";
 
 class Eblekar extends Unit {
     public healRange: number = 10;

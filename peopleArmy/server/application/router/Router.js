@@ -5,6 +5,7 @@ const {
     createUnitHandler,
     unitTakeDamageHandler,
     useLobbyUpdatedHandler,
+    startGameHandler,
     notFoundHandler,
 } = require('./handlers');
 
@@ -14,6 +15,7 @@ function Router(mediator, answer) {
 
     // про лобби
 	router.post('/lobbyUpdated', useLobbyUpdatedHandler(mediator, answer));
+    router.post('/startGame', startGameHandler(mediator, answer));
 
     router.all('/*path', notFoundHandler);
     return router;

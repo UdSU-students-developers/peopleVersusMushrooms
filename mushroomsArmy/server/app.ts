@@ -16,7 +16,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import Router from './application/router/Router';
 import ArmyManager from './application/modules/army/ArmyManager';
 
-const { NAME, PORT } = CONFIG;
+const { NAME, ROLE, PORT } = CONFIG;
 const { DATABASES } = GLOBAL_CONFIG;
 
 const app = express();
@@ -30,7 +30,7 @@ const answer = new Answer();
 
 new UserManager({ mediator, db, io, answer, common });
 new ArmyManager({ mediator, db, common, io, answer });
-new LobbyManager({ mediator, db, io, answer, common }, CONFIG.NAME);
+new LobbyManager({ mediator, db, io, answer, common }, ROLE);
 
 app.use(GLOBAL_CONFIG.CORS.middleware);
 

@@ -74,6 +74,44 @@ function Router({ answer, mediator }: TRouterOptions): ExpressRouter {
         res.json(answer.good(true));
     });
 
+    router.post('/startGame', (req: Request, res: Response) => {
+        const payload = req.body as { mapGuid?: string; map?: unknown; buildings?: unknown, mushroomArmy?: string };
+
+        if (!payload.mushroomArmy || !payload.mapGuid || !payload.map) {
+            res.json(answer.bad(242));
+            return;
+        }
+
+        // call & business logic
+        mediator.call(CONFIG.MEDIATOR.EVENTS.START_GAME, {
+            guid: payload.mushroomArmy,
+            mapGuid: payload.mapGuid,
+            map: payload.map,
+            buildings: payload.buildings ?? [],
+        });
+
+        res.json(answer.good(true));
+    });
+
+    router.post('/getLobbies', async (req: Request, res: Response) => {
+        const params = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json;charset=utf-8'
+            },
+            body: JSON.stringify({guid: req.body.guid})
+        }
+        const getLobbiesUrl = `${GLOBAL_CONFIG.MAP.URL}${GLOBAL_CONFIG.URLS.GET_LOBBIES}`
+        const lobbiesResp = await fetch(getLobbiesUrl, params);
+        const lobbies: any = await lobbiesResp.json();
+
+        if (lobbies && lobbies.result === 'ok') {
+            res.json(answer.good(lobbies.data));
+        } else {
+            res.json(answer.bad(242));
+        }
+    });
+
     router.all('/*path', notFoundHandler);
     return router;
 }

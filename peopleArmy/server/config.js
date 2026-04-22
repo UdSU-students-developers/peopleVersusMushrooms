@@ -1,3 +1,5 @@
+const GLOBAL_CONFIG = require('../../global/globalConfig');
+
 const CONFIG = {
     NAME: 'PeopleArmy',
     PORT: 3007, //Порт соостветсвующий серверу вашего сервиса
@@ -30,12 +32,10 @@ const CONFIG = {
     },
 
     SOCKETS: {
+        ...GLOBAL_CONFIG.SOCKET,
+        // local-only events (not defined in global config)
         MESSAGE_FROM_CLIENT: "message_from_client",
         MESSAGE_TO_CLIENTS: "message_to_clients",
-        REGISTRATION: "registration",
-        LOGIN: "login",
-        LOGOUT: "logout",
-
         UPDATE_ARMY: 'UPDATE_ARMY',
     },
 
@@ -43,5 +43,16 @@ const CONFIG = {
         INTERVAL: 100, //ms
     }
 }
+
+CONFIG.MEDIATOR = {
+    EVENTS: {
+        ...GLOBAL_CONFIG.EVENTS,
+        ...CONFIG.MEDIATOR.EVENTS,
+    },
+    TRIGGERS: {
+        ...GLOBAL_CONFIG.TRIGGERS,
+        ...CONFIG.MEDIATOR.TRIGGERS,
+    },
+};
 
 module.exports = CONFIG;

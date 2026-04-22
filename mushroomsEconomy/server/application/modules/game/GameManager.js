@@ -28,6 +28,15 @@ class GameManager extends BaseManager {
 	/* PRIVATE */
 	callbackUpdate(guid, data) {
 		const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
+
+		// выплюнуть сообщение в карту
+		// получить ответ
+		// запросить рельеф
+		// запросить видимость
+		// запросить ресурсы под жопками рабочих
+		// обновить рельеф и видимость у себя в Экномике
+		// ответить на СВОЙ клиент
+
 		if (user) {
 			this.io.to(user.socketId).emit(
 				this.SOCKETS.UPDATE_SCENE,
@@ -36,19 +45,6 @@ class GameManager extends BaseManager {
 			return;
 		}
 		this.io.to(user.socketId).emit(this.SOCKETS.UPDATE_SCENE, this.answer.bad(1002));
-	}
-
-	_createEconomy(guid, startPoint, map) {
-		this.economies[guid] = new Economy({
-			db: this.db,
-			common: this.common,
-			callbacks: {
-				updated: (data) => this.callbackUpdate(guid, data)
-			},
-			map: map,
-			guid: guid,
-		});
-		return this.economies[guid];
 	}
 
 	/* TRIGGERS */
@@ -61,26 +57,27 @@ class GameManager extends BaseManager {
 
 	/* EVENTS */
 	eventStartGame(data = {}) {
-		const { guid, startPoint, map } = data;
-		const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
-		if (user && user.socketId) {
-			if (this.economies[guid]) {
+		const { guids, startPoint } = data;
+		if (guids?.mushroomsEconomy) {
+			const guid = guids.mushroomsEconomy;
+			const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
+			if (user && user.socketId) {
+				this.economies[guid] = new Economy({
+					db: this.db,
+					common: this.common,
+					callbacks: {
+						updated: (data) => this.callbackUpdate(guid, data)
+					},
+					guid,
+					guids, 
+					startPoint
+				});
 				this.io.to(user.socketId).emit(
 					this.SOCKETS.START_GAME,
 					this.answer.good(this.economies[guid].get())
 				);
-				return
+				console.log("Экдономика созана");
 			}
-			this.economies[guid] = this._createEconomy(guid, startPoint, map);
-			this.io.to(user.socketId).emit(
-				this.SOCKETS.START_GAME,
-				this.answer.good(this.economies[guid].get())
-			);
-			console.log("Экономика создана");
-			return;
-		}
-		if (user) {
-			this.io.to(user.socketId).emit(this.SOCKETS.START_GAME, this.answer.bad(1002));
 		}
 	}
 

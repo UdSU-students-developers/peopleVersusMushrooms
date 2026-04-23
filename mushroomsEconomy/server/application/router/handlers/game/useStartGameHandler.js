@@ -1,6 +1,6 @@
 module.exports = (mediator, answer) => {
     const { START_GAME } = mediator.getEventTypes();
-    const { SET_SERIVCES_GUIDS } = mediator.getTriggerTypes();
+    const { SET_SERVICES_GUIDS } = mediator.getTriggerTypes();
 
     return async (req, res) => {
         const guids = { mapGuid,
@@ -11,8 +11,9 @@ module.exports = (mediator, answer) => {
             mushroomEconomy 
         } = req.body;
         
+        console.log("SSSSSTTTTTTAAAAARRRRRTTTTT");
 
-        this.mediator.call(SET_SERIVCES_GUIDS, guids);
+        this.mediator.call(SET_SERVICES_GUIDS, guids);
         const response = await mediator.call(START_GAME, { guid });
 
         if (response && response.error) {

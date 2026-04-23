@@ -17,8 +17,9 @@ class Economy {
         db,
         common,
         callbacks: { updated },
-        map,
-        guid
+        guid,
+        guids,
+        startPoint,
     }) {
         this.easyStar = new EasyStar.js();
         this.easyStar.setGrid(map);
@@ -27,7 +28,6 @@ class Economy {
         this.db = db;
         this.common = common;
         this.callbacks = { updated };
-        this.map = map;
         // данные экономики
         this.resourceMap; // массив известных ресурсов [{x, y, value}]
         this.buildings = []; // здания
@@ -36,16 +36,18 @@ class Economy {
         this.larvae = []; // массив личинок
         // данные про врагов
         this.enemyBuildings = [];
-        //...
+        // данные про игроков
+        this.guids = {
+            spectator: null,
+            peopleArmy: null,
+            peopleEconomy: null,
+            mushroomsArmy: null,
+            mushroomsEconomy: null,
+        }
+        Object.keys(guids).forEach(key => this.guids[key] = guids[key]);
 
-        //Не придумал куда сунуть
-        this.peopleArmyGuid = '';
-        this.peopleEconomyGuid = '';
-        this.mushroomsArmy = '';
-        this.mushroomsEconomy = '';
-        this.spectatorGuid = '';
-        this.mapGuid = '';
-
+        this.map = this._initEmptyMap();
+        this._initBuildings(startPoint);
         /**************/
 
         // start game proccess
@@ -60,7 +62,6 @@ class Economy {
         }
     }
 
-    
     get() {
         return {
             guid: this.guid,
@@ -71,16 +72,26 @@ class Economy {
         }
     }
 
-
-    initGuids(guids) {
-        this.peopleArmyGuid = guids.peopleArmy;
-        this.peopleEconomyGuid = guids.peopleEconomy;
-        this.mushroomsArmy = guids.mushroomArmy;
-        this.mushroomsEconomy = guids.mushroomEconomy;
-        this.spectatorGuid = guids.spectator;
-        this.mapGuid = guids.mapGuid;
+    _initEmptyMap() {
+        const map = [];
+        for (let i = 0; i < 50; i++) {
+            map.push([]);
+            for (let j = 0; j < 50; j++) {
+                map[i].push(null);
+            }
+        }
+        return map;
     }
-    
+
+    _initBuildings(startPoint) {
+        // создать инкубатор
+        // создать маленький реактор
+        this.addSmallReactor(startPoint.x + 1, startPoint.y + 1);
+        // создать грибничку
+
+        this.callbacks.updated(this.get());
+    }
+
     addLarva(x, y, homeX, homeY) {
         const larvaGuid = this.common.guid();
         this.larvae.push(new Larva({
@@ -93,7 +104,7 @@ class Economy {
             easystar: this.easyStar
         }));
     }
-    
+
     // Методы добавления объектов
 
     addSmallReactor(x, y) {
@@ -148,10 +159,6 @@ class Economy {
         [...this.workers].forEach(unit => unit.calcPath({ x, y }));
     }
 
-    moveUnits() {
-        [...this.workers].forEach(unit => unit.moveOneStep())
-    }
-
     startIncubatorCreating() {
         this.buildings
             .filter(b => b instanceof Incubator)
@@ -164,7 +171,6 @@ class Economy {
 
     updateIncubator() {
         const availableEnergy = this.getAvailableEnergy();
-        
         this.buildings
             .filter(building => building instanceof Incubator)
             .forEach(incubator => {
@@ -172,7 +178,6 @@ class Economy {
                     this.updated = true;
                     this.consumeEnergyFromReactors(incubator.consumption);
                 }
-
                 const larva = incubator.createLarva();
                 if (larva) {
                     this.larvae.push(larva);
@@ -190,48 +195,67 @@ class Economy {
     consumeEnergyFromReactors(amount) {
         let remainingAmount = amount;
         const reactors = this.buildings.filter(b => b instanceof SmallReactor);
-
         for (const reactor of reactors) {
             if (remainingAmount <= 0) break;
-
             const consumeEnergy = Math.min(reactor.energy, remainingAmount);
             reactor.energy -= consumeEnergy;
             remainingAmount -= consumeEnergy;
         }
     }
 
-    update() {
+    updateLarvae() {
+        this.larvae.forEach(larva => larva.update());
+    }
 
-        //console.log(this.mycelium.length);
 
-        /****************/
-        /* про грибницу */
-        // 1. вырасти грибочки
+    // 4. передвинуть рабочих
+    moveWorkers() {
+        this.workers.forEach(unit => unit.moveOneStep());
+    }
+
+
+    // 10. вырастить грибочки на грибнице
+    myceliumGrow() {
         this.mycelium.forEach(mycelium => this.myceliumGrow(mycelium));
-        this.updateLarvae();
-        // 2. расширить грибницу при возможности
+    }
+
+    // 11. расширить грибницу
+    myceliumExtend() {
         this.mycelium.forEach(mycelium => this.myceliumExtend(mycelium));
+    }
+
+    update() {
+        // 1. Мутировать юнита из личинки (потратить железо)
+        // 2. Мутировать здание из рабочего (потратить железо)
+        // 3. передать боевых юнитов в армию (callback)
+        // 3.5. для рабочих определить цели и задачи
+        // 4. передвинуть рабочих
+        this.moveWorkers();
+        // 5. передвинуть личинки
+        // 6. добыть энергию (сожрать грибочки)
+        // 7. добыть железо (потратить энергию) и распределить их в инкубаторы, шахты или бочки для железа
+        // 8. породить личинок (потратить немного железа и немного энергии)
+        // 9. остаток непотраченной энергии (жир) распределить по бочкам для жира
+        // 10. вырастить грибочки на грибнице
+        this.myceliumGrow();
+        // 11. расширить грибницу
+        this.myceliumExtend();
+
+        /*
+        this.updateLarvae();
         // 3. реакторы потребляют мицелий
         this.reactorsConsume();
-        // 4. Переместить юнитов если нужно
-        this.moveUnits();
-        /****************/
-
-        /* про инкубатор */
         // 1. создать личинку
         this.startIncubatorCreating();
         // 2. обновить прогресс и создать личинку
         this.updateIncubator();
-        /****************/
+        */
 
+        // отбросить апдейт, если он случился
         if (this.updated) {
             this.updated = false;
             this.callbacks.updated(this.get());
         }
-    }
-
-    updateLarvae() {
-        this.larvae.forEach(larva => larva.update());
     }
 }
 

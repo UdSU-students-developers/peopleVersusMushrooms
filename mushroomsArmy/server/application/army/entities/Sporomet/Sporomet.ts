@@ -1,5 +1,5 @@
-import { TMap } from "../Army";
-import Unit, { TPoisonEffect, TUnitOptions } from "./Units";
+import { TMap } from "../../Army";
+import Unit, { TPoisonEffect, TUnitOptions } from "../Units";
 
 class Sporomet extends Unit {
     public retreatRange: number = 8;

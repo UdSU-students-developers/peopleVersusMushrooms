@@ -1,5 +1,6 @@
 const CONFIG = require('../../../config');
 const BaseManager = require('../../../../../global/modules/BaseManager');
+const { URLS, MAP } = require('../../../../../global/globalConfig');
 const Army = require('../../army/Army');
 const { UPDATE_ARMY } = CONFIG.SOCKETS;
 
@@ -11,8 +12,7 @@ class ArmyManager extends BaseManager {
 
         // sockets
         if (!this.io) return;
-        this.io.on('connection', (socket) => {
-        });
+        this.io.on('connection', (socket) => {});
         // mediator event subscribers
         this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
         this.mediator.subscribe(this.EVENTS.USER_DISCONNECT, (data) => this.eventUserDisconnect(data));
@@ -26,13 +26,25 @@ class ArmyManager extends BaseManager {
     }
 
     /* PRIVATE */
-    updateArmyCallback(guid, data) {
+    async updateArmyCallback(guid, data) {
+        const army = this.army[guid];
+        if (!army?.mapGuid) {
+            return;
+        }
+        // послать в карту И в экономику изменение положения юнитов (просто послать юниты)
+        //...
+        // запросить видимость
+        const visibility = await this.sendToMap(`${URLS.GET_VISIBILITY}`, { mapGuid: army.mapGuid, guid });
+        if (visibility) {
+            army.setVisibility(visibility);
+        }
+
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
         if (user) {
             this.io.to(user.socketId).emit(
                 UPDATE_ARMY,
-                this.answer.good(data)
-            )
+                this.answer.good(army.get())
+            );
         }
     }
 
@@ -103,18 +115,15 @@ class ArmyManager extends BaseManager {
     }
 
     /* EVENTS */
-    eventStartGame({ guid, map, buildings }) {
+    //eventStartGame({ guid, map, buildings, mapGuid = null }) {
+    eventStartGame({ guids, startPoint }) {
+        const guid = guids.peopleArmy;
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
         if (user) {
-            this.army[guid] = new Army({
-                map,
-                buildings,
-                common: this.common,
-                guid,
-                db: this.db,
-                callbacks: {
+            this.army[guid] = new Army({guids, startPoint, mapGuid, common: this.common, guid, db: this.db,
+            callbacks: {
                     update: (guid, data) => this.updateArmyCallback(guid, data)
-                }
+            }
             });
         }
     }

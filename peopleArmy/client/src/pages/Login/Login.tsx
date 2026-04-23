@@ -47,6 +47,7 @@ const Login: React.FC<IBasePage> = (props: IBasePage) => {
     return (
         <div className="login-page">
             <div className="login-card">
+                <p className="login-brand">peopleArmy</p>
                 <h1 className="login-title">Вход</h1>
                 <p className="login-subtitle">Войдите, чтобы перейти в чат</p>
                 <div className="login-form">

@@ -152,3 +152,65 @@
     font-size: 12px;
     margin-top: 2px;
 }
+
+.lobby-item-active {
+    background: #1a2332;
+    border-radius: 4px;
+    padding: 8px 6px;
+}
+
+.lobby-item-badge {
+    font-size: 11px;
+    color: #4a9eff;
+    border: 1px solid #4a9eff44;
+    border-radius: 4px;
+    padding: 2px 8px;
+    white-space: nowrap;
+}
+
+.lobby-btn-success {
+    background: #1f6feb;
+    border-color: #388bfd;
+    color: #fff;
+}
+
+.lobby-btn-success:hover:not(:disabled) {
+    background: #388bfd;
+}
+
+.lobby-current {
+    margin-top: 18px;
+    border-top: 1px solid #30363d;
+    padding-top: 14px;
+}
+
+.lobby-players {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.lobby-player-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    padding: 4px 0;
+    border-bottom: 1px solid #1f2733;
+}
+
+.lobby-player-row:last-child {
+    border-bottom: none;
+}
+
+.lobby-player-role {
+    color: #8b949e;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+}
+
+.lobby-player-status {
+    color: #c9d1d9;
+    font-size: 12px;
+}

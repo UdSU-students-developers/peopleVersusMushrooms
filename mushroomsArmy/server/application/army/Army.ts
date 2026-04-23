@@ -1,10 +1,10 @@
 import Common from "../modules/common/Common";
-import Champigneb, { TSlimePuddle } from "./entities/Champigneb";
-import Eblekar from "./entities/Eblekar";
-import Sporomet from "./entities/Sporomet";
-import SporovayaBashnya from "./entities/SporovayaBashnya";
+import Champigneb, { TSlimePuddle } from "./entities/Champigneb/Champigneb";
+import Eblekar from "./entities/Eblekar/Eblekar";
+import Sporomet from "./entities/Sporomet/Sporomet";
+import SporovayaBashnya from "./entities/SporovayaBashnya/SporovayaBashnya";
 import Unit, { TProjectile, TUnitState } from "./entities/Units";
-import { IBuilding, Vzryvomor } from "./entities/Vzryvomor";
+import { IBuilding, Vzryvomor } from "./entities/Vzryvomor/Vzryvomor";
 
 export type TMap = (number | null)[][];
 

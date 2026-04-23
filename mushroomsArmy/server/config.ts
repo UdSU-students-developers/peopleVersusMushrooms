@@ -1,5 +1,6 @@
 interface Config {
     NAME: string;
+    ROLE: string;
     PORT: number;
     MEDIATOR: {
         EVENTS: {
@@ -23,6 +24,7 @@ interface Config {
 
 const CONFIG: Config = {
     NAME: 'MUSHROOMS ARMY SERVER',
+    ROLE: 'mushroomArmy',
     PORT: 3003,
 
     MEDIATOR: {

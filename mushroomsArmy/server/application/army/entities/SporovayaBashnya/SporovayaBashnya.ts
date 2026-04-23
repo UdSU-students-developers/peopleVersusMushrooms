@@ -1,6 +1,6 @@
-import { TMap } from "../Army";
-import Unit, { TProjectile } from "./Units";
-import { IBuilding } from "./Vzryvomor";
+import { TMap } from "../../Army";
+import Unit, { TProjectile } from "../Units";
+import { IBuilding } from "../Vzryvomor/Vzryvomor";
 
 type TSporovayaBashnyaOptions = {
     guid: string;

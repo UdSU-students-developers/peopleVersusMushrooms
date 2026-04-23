@@ -51,6 +51,7 @@ const Registration: React.FC<IBasePage> = (props: IBasePage) => {
     return (
         <div className="registration-page">
             <div className="registration-card">
+                <p className="registration-brand">peopleArmy</p>
                 <h1 className="registration-title">Регистрация</h1>
                 <p className="registration-subtitle">Создайте аккаунт для доступа к чату</p>
                 <div className="registration-form">

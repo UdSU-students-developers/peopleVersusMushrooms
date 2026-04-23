@@ -41,12 +41,9 @@ new ChatManager({ mediator, db, io, common, answer });
 new ArmyManager({ mediator, db, io, common, answer });
 new LobbyManager({ mediator, db, io, common, answer }, ROLE);
 
-
 app.use(CONFIG.CORS.middleware);
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 app.use(express.static(`${__dirname}/public`));
 app.use('/', new Router(mediator, answer));
 

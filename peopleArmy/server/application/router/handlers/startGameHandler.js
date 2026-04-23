@@ -11,7 +11,11 @@ module.exports = (mediator, answer) => {
         // запрашиваем рельеф у map-сервиса
         let map = null;
         try {
-            const response = await fetch(`${MAP.URL}${URLS.GET_RELIEF}/${mapGuid}/${guid}`);
+            const response = await fetch(`${MAP.URL}${URLS.GET_RELIEF}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json;charset=utf-8' },
+                body: JSON.stringify({ mapGuid, userGuid: guid }),
+            });
             const body = await response.json();
             if (body?.result === 'ok') {
                 map = body.data;

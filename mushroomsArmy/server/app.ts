@@ -34,6 +34,15 @@ new LobbyManager({ mediator, db, io, answer, common }, ROLE);
 
 app.use(GLOBAL_CONFIG.CORS.middleware);
 
+app.use((req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) => {
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    if (req.method === 'OPTIONS') {
+        res.sendStatus(200);
+        return;
+    }
+    next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

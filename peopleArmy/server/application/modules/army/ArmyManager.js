@@ -12,8 +12,7 @@ class ArmyManager extends BaseManager {
 
         // sockets
         if (!this.io) return;
-        this.io.on('connection', (socket) => {
-        });
+        this.io.on('connection', (socket) => {});
         // mediator event subscribers
         this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
         this.mediator.subscribe(this.EVENTS.USER_DISCONNECT, (data) => this.eventUserDisconnect(data));
@@ -28,27 +27,25 @@ class ArmyManager extends BaseManager {
 
     /* PRIVATE */
     async updateArmyCallback(guid, data) {
-        const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
-        if (user) {
-            this.io.to(user.socketId).emit(
-                UPDATE_ARMY,
-                this.answer.good(data)
-            )
-        }
-
         const army = this.army[guid];
         if (!army?.mapGuid) {
             return;
         }
-
-        const visibility = await this.fetchVisibilityFromMap({ guid, mapGuid: army.mapGuid });
+        // послать в карту И в экономику изменение положения юнитов (просто послать юниты)
+        //...
+        // запросить видимость
+        const visibility = await this.sendToMap(`${URLS.GET_VISIBILITY}`, { mapGuid: army.mapGuid, guid });
         if (visibility) {
             army.setVisibility(visibility);
         }
-    }
 
-    fetchVisibilityFromMap({ guid, mapGuid }) {
-        return this.send(`${MAP.URL}${URLS.GET_VISIBILITY}/${mapGuid}/${guid}`, null, 'GET');
+        const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
+        if (user) {
+            this.io.to(user.socketId).emit(
+                UPDATE_ARMY,
+                this.answer.good(army.get())
+            );
+        }
     }
 
     /* TRIGGERS */
@@ -118,19 +115,15 @@ class ArmyManager extends BaseManager {
     }
 
     /* EVENTS */
-    eventStartGame({ guid, map, buildings, mapGuid = null }) {
+    //eventStartGame({ guid, map, buildings, mapGuid = null }) {
+    eventStartGame({ guids, startPoint }) {
+        const guid = guids.peopleArmy;
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
         if (user) {
-            this.army[guid] = new Army({
-                mapGuid,
-                map,
-                buildings,
-                common: this.common,
-                guid,
-                db: this.db,
-                callbacks: {
+            this.army[guid] = new Army({guids, startPoint, mapGuid, common: this.common, guid, db: this.db,
+            callbacks: {
                     update: (guid, data) => this.updateArmyCallback(guid, data)
-                }
+            }
             });
         }
     }

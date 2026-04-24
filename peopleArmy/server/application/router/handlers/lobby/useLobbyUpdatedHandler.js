@@ -2,7 +2,7 @@ module.exports = (mediator, answer) => {
     return (req, res) => {
         const { lobbies } = req.body;
 		if (!lobbies) {
-			return res.send(answer.bad(11));
+			return res.send(answer.bad(242));
 		}
 		const { LOBBY_UPDATED } = mediator.getEventTypes();
 		mediator.call(LOBBY_UPDATED, lobbies);

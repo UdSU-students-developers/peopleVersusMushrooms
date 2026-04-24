@@ -52,7 +52,7 @@ class UserManager extends BaseManager {
     async socketRegistration(data = {}, socket) {
         const { name, password } = data;
         if (!name || !password) {
-            return socket.emit(REGISTRATION, this.answer.bad(13));
+            return socket.emit(REGISTRATION, this.answer.bad(242));
         }
         const user = new User({
             db: this.db,
@@ -65,13 +65,13 @@ class UserManager extends BaseManager {
             socket.emit(REGISTRATION, this.answer.good(user.getSelf()));
             return;
         }
-        socket.emit(REGISTRATION, this.answer.bad(17));
+        socket.emit(REGISTRATION, this.answer.bad(1002));
     }
 
     async socketLogin(data = {}, socket) {
         const { name, password } = data;
         if (!name || !password) {
-            return socket.emit(LOGIN, this.answer.bad(13));
+            return socket.emit(LOGIN, this.answer.bad(242));
         }
         const user = new User({
             db: this.db,
@@ -84,17 +84,17 @@ class UserManager extends BaseManager {
             socket.emit(LOGIN, this.answer.good(user.getSelf()));
             return;
         }
-        socket.emit(LOGIN, this.answer.bad(11));
+        socket.emit(LOGIN, this.answer.bad(1004));
     }
 
     async socketLogout(data = {}, socket) {
         const { token, guid } = data;
         if (!token) {
-            return socket.emit(LOGOUT, this.answer.bad(13));
+            return socket.emit(LOGOUT, this.answer.bad(242));
         }
         const user = this.users[guid];
         if (!user || !user.isLogin()) {
-            return socket.emit(LOGOUT, this.answer.bad(11));
+            return socket.emit(LOGOUT, this.answer.bad(1004));
         }
         await user.logout();
         this.mediator.call(this.EVENTS.USER_DISCONNECT, { guid: user.guid });

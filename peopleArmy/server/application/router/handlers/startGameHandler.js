@@ -5,7 +5,7 @@ module.exports = (mediator, answer) => {
         const { mapGuid, peopleArmy: guid } = req.body;
 
         if (!guid || !mapGuid) {
-            return res.json(answer.bad(400));
+            return res.json(answer.bad(242));
         }
 
         // запрашиваем рельеф у map-сервиса

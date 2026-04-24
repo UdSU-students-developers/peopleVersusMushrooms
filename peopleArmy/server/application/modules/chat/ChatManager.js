@@ -29,7 +29,7 @@ class ChatManager extends BaseManager {
             this.io.emit(MESSAGE_TO_CLIENTS, this.answer.good(payload));
             return;
         }
-        socket.emit(MESSAGE_FROM_CLIENT, this.answer.bad(400));
+        socket.emit(MESSAGE_FROM_CLIENT, this.answer.bad(242));
     }
 }
 

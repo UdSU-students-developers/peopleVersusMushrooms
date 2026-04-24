@@ -1,5 +1,3 @@
-import { describe, test, expect } from '@jest/globals';
-import { jest } from '@jest/globals';
 import { render, screen } from '@testing-library/react';
 import Registration from './Registration';
 import { ServerContext, MediatorContext } from '../../App';

@@ -17,6 +17,13 @@ type TTakeDamageBody = {
     type: string;
 };
 
+type TMoveUnitBody = {
+    armyGuid: string;
+    unitGuid: string;
+    x: number;
+    y: number;
+};
+
 type TGetArmyBody = {
     armyGuid: string;
 };
@@ -33,6 +40,29 @@ function Router({ answer, mediator }: TRouterOptions): ExpressRouter {
         const { LOBBY_UPDATED } = mediator.getEventTypes();
         mediator.call(LOBBY_UPDATED, lobbies);
         return res.json(answer.good(true));
+    });
+
+    router.post('/moveUnit', (req: Request, res: Response) => {
+        const { armyGuid, unitGuid, x, y } = req.body as TMoveUnitBody;
+
+        if (!armyGuid || !unitGuid || x === undefined || y === undefined) {
+            res.json(answer.bad(242));
+            return;
+        }
+
+        if (typeof x !== 'number' || typeof y !== 'number' || !isFinite(x) || !isFinite(y)) {
+            res.json(answer.bad(242));
+            return;
+        }
+
+        const MOVE_UNIT = CONFIG.MEDIATOR.TRIGGERS.MOVE_UNIT;
+        const result = mediator.get(MOVE_UNIT, { armyGuid, unitGuid, x, y });
+
+        if (result) {
+            res.json(answer.good(true));
+        } else {
+            res.json(answer.bad(242));
+        }
     });
 
     router.post('/getArmy', (req: Request, res: Response) => {

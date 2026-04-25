@@ -213,7 +213,7 @@ class Economy {
         this.myceliumGrid = Array(50).fill().map(() => Array(50).fill(0));
 
         for (const mc of this.mycelium) {
-            if (mс.x >= 0 && mc.x < 50 && mc.y >= 0 && mc.y < 50) {
+            if (mc.x >= 0 && mc.x < 50 && mc.y >= 0 && mc.y < 50) {
                 this.myceliumGrid[mc.y][mc.x] = 1;
             }
         }

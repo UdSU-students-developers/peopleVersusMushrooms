@@ -1,5 +1,5 @@
 class Building {
-    constructor({type, guid, x, y, callbacks = {}, hp = null, size = null, consumption = null, production = null, capacity = null}) {
+    constructor({type, guid, x, y, callbacks = {}, hp = null, size = null, consumption = null, production = null, capacity = null, easyStar = null}) {
         this.x = x;
         this.y = y;
         this.type = type;
@@ -12,6 +12,8 @@ class Building {
         this.consumption = consumption; // энергопотребление за единицу времени
         this.production = production; // сколько производит за единицу времени
         this.capacity = capacity; // емкость внутреннего хранилища
+
+        this.easyStar = easyStar;
     }
 
     get() {
@@ -43,6 +45,22 @@ class Building {
 
     getCapacity() {
         return this.capacity;
+    }
+
+    async hasPathTo(grid, target) {
+        return new Promise((resolve) => {
+            if (!this.easyStar || !grid) {
+                resolve(false);
+                return;
+            }
+            this.easyStar.setGrid(grid);
+            this.easyStar.setAcceptableTiles([1]);
+            this.easyStar.findPath(this.x, this.y, target.x, target.y, (path) => {
+                resolve(path !== null && path.length > 0);
+            });
+            this.easyStar.calculate();
+        });
+
     }
 }
 

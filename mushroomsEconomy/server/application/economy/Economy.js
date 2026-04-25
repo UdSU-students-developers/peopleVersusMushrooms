@@ -34,6 +34,7 @@ class Economy {
         this.mycelium = []; // грибница
         this.workers = []; // рабочие
         this.larvae = []; // массив личинок
+        this.myceliumGrid = null;
         // данные про врагов
         this.enemyBuildings = [];
         // данные про игроков
@@ -114,6 +115,7 @@ class Economy {
             guid: reactorGuid,
             x,
             y,
+            easyStar: this.easyStar,
         }));
     }
 
@@ -207,6 +209,21 @@ class Economy {
         this.larvae.forEach(larva => larva.update());
     }
 
+    updateMyceliumGrid() {
+        this.myceliumGrid = Array(50).fill().map(() => Array(50).fill(0));
+
+        for (const mc of this.mycelium) {
+            if (mс.x >= 0 && mc.x < 50 && mc.y >= 0 && mc.y < 50) {
+                this.myceliumGrid[mc.y][mc.x] = 1;
+            }
+        }
+    }
+
+    async checkConnection(building1, building2) {
+        if (!this.myceliumGrid || !building1 || !building2) return false;
+        return await building1.hasPathTo(this.myceliumGrid, {x:building2.x, y:building2.y});
+    }
+
 
     // 4. передвинуть рабочих
     moveWorkers() {
@@ -225,6 +242,7 @@ class Economy {
     }
 
     update() {
+        this.updateMyceliumGrid();
         // 1. Мутировать юнита из личинки (потратить железо)
         // 2. Мутировать здание из рабочего (потратить железо)
         // 3. передать боевых юнитов в армию (callback)

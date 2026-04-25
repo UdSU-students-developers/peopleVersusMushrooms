@@ -127,18 +127,24 @@ function Router({ answer, mediator }: TRouterOptions): ExpressRouter {
     });
 
     router.post('/startGame', (req: Request, res: Response) => {
-        const payload = req.body as { mapGuid?: string; map?: unknown; buildings?: unknown, mushroomArmy?: string };
+        const payload = req.body as {
+            mapGuid?: string;
+            map?: unknown;
+            buildings?: unknown;
+            mushroomsArmy?: string;
+        };
 
-        if (!payload.mushroomArmy || !payload.mapGuid || !payload.map) {
+        // map шлёт: { mapGuid, spectator, peopleArmy, peopleEconomy, mushroomsArmy, mushroomsEconomy }
+        // map не шлёт map[] — eventStartGame сам запросит рельеф через GET_RELIEF
+        if (!payload.mushroomsArmy || !payload.mapGuid) {
             res.json(answer.bad(242));
             return;
         }
 
-        // call & business logic
         mediator.call(CONFIG.MEDIATOR.EVENTS.START_GAME, {
-            guid: payload.mushroomArmy,
+            guid: payload.mushroomsArmy,
             mapGuid: payload.mapGuid,
-            map: payload.map,
+            map: payload.map ?? null,
             buildings: payload.buildings ?? [],
         });
 

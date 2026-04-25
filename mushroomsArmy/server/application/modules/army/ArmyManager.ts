@@ -23,7 +23,8 @@ type TVisibleEntity = {
 };
 
 type TVisibilityResponse = {
-    entities: TVisibleEntity[];
+    units: TVisibleEntity[];
+    buildings: TVisibleEntity[];
 };
 
 type TReliefResponse = TMap;
@@ -126,23 +127,30 @@ class ArmyManager extends BaseManager {
 
         const { units, buildings } = armyState;
 
-        // Отправляем юниты и здания на отдельные эндпоинты карты
+        // Отправляем юниты и здания на карту
+        // карта читает поля units / buildings (см. useUpdateUnitsHandler.js / useUpdateBuildingsHandler.js)
         await this.send<{ mapGuid: string; userGuid: string; units: TArmyState['units'] }>(
-            `${GLOBAL_CONFIG.MAP.URL}/updateUnitsHandler`,
+            `${GLOBAL_CONFIG.MAP.URL}${GLOBAL_CONFIG.URLS.UPDATE_UNITS}`,
             { mapGuid: army.mapGuid, userGuid: army.guid, units }
         );
 
         await this.send<{ mapGuid: string; userGuid: string; buildings: TArmyState['buildings'] }>(
-            `${GLOBAL_CONFIG.MAP.URL}/updateBuildingsHandler`,
+            `${GLOBAL_CONFIG.MAP.URL}${GLOBAL_CONFIG.URLS.UPDATE_BUILDINGS}`,
             { mapGuid: army.mapGuid, userGuid: army.guid, buildings }
         );
 
-        const visibility = await this.sendToMap<null, TVisibilityResponse>(
-            '/getVisibility', army.mapGuid, army.guid
+        // карта возвращает { units, buildings } (см. Map.getVisbileEntitiesByRole)
+        const visibility = await this.sendToMap<TVisibilityResponse>(
+            GLOBAL_CONFIG.URLS.GET_VISIBILITY, army.mapGuid, army.guid
         );
 
-        if (visibility?.entities && visibility.entities.length > 0) {
-            const enemyEntities: TBuildingInput[] = visibility.entities.map(entity => ({
+        const visibleEnemies: TVisibleEntity[] = [
+            ...(visibility?.units ?? []),
+            ...(visibility?.buildings ?? []),
+        ];
+
+        if (visibleEnemies.length > 0) {
+            const enemyEntities: TBuildingInput[] = visibleEnemies.map(entity => ({
                 guid: entity.guid,
                 type: entity.type,
                 x: entity.x,

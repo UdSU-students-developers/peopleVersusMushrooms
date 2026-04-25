@@ -30,12 +30,23 @@ class Economy {
         this.callbacks = { updated };
         // данные экономики
         this.resourceMap; // массив известных ресурсов [{x, y, value}]
-        this.buildings = []; // здания
-        this.mycelium = []; // грибница
-        this.workers = []; // рабочие
-        this.larvae = []; // массив личинок
+
+        //Здания
+        this.buildings = {
+            smallReactors: [],// малые реакторы 
+            incubators: [], //инкубаторы
+            mycelium: [], // грибница
+        };
+
+        //Юниты всякие
+        this.units = {
+            workers: [], //рабочие
+            larvae: [], //личинки
+        };
+
         // данные про врагов
         this.enemyBuildings = [];
+
         // данные про игроков
         this.guids = {
             spectator: null,
@@ -65,8 +76,8 @@ class Economy {
     get() {
         return {
             guid: this.guid,
-            mushrooms: this.mycelium.map(m => m.get()),
-            buildings: Object.values(this.buildings).map(b => b.get()),
+            mushrooms: this.buildings.mycelium.map(m => m.get()), //изменть структуру на buildings и units
+            buildings: this.buildings.map(b => b.get()),
             map: this.map,
             larvae: this.larvae.map(l => l.get()),
         }
@@ -109,7 +120,7 @@ class Economy {
 
     addSmallReactor(x, y) {
         const reactorGuid = this.common.guid();
-        this.buildings.push(new SmallReactor({
+        this.buildings.smallReactors.push(new SmallReactor({
             type: CONFIG.ECONOMY.BIO_REACTOR_SMALL.TYPE,
             guid: reactorGuid,
             x,

@@ -30,6 +30,20 @@ class Economy {
         this.callbacks = { updated };
         // данные экономики
         this.resourceMap; // массив известных ресурсов [{x, y, value}]
+
+        //Здания
+        this.buildings = {
+            smallReactors: [],// малые реакторы 
+            incubators: [], //инкубаторы
+            mycelium: [], // грибница
+        };
+
+        //Юниты всякие
+        this.units = {
+            workers: [], //рабочие
+            larvae: [], //личинки
+        };
+
         this.buildings = []; // здания
         this.mycelium = []; // грибница
         this.workers = []; // рабочие
@@ -37,6 +51,7 @@ class Economy {
         this.myceliumGrid = null;
         // данные про врагов
         this.enemyBuildings = [];
+
         // данные про игроков
         this.guids = {
             spectator: null,
@@ -66,10 +81,16 @@ class Economy {
     get() {
         return {
             guid: this.guid,
-            mushrooms: this.mycelium.map(m => m.get()),
-            buildings: Object.values(this.buildings).map(b => b.get()),
+            buildings: {
+                smallReactors: this.buildings.smallReactors.map(r => r.get()),
+                incubators: this.buildings.incubators.map(i => i.get()),
+                mycelium: this.buildings.mycelium.map(m => m.get()),
+            },
+            units: {
+                workers: this.units.workers.map(w => w.get()),
+                larvae: this.units.larvae.map(l => l.get()),
+            },
             map: this.map,
-            larvae: this.larvae.map(l => l.get()),
         }
     }
 
@@ -95,7 +116,7 @@ class Economy {
 
     addLarva(x, y, homeX, homeY) {
         const larvaGuid = this.common.guid();
-        this.larvae.push(new Larva({
+        this.units.larvae.push(new Larva({
             x: x,
             y: y,
             homeX: homeX,
@@ -110,7 +131,7 @@ class Economy {
 
     addSmallReactor(x, y) {
         const reactorGuid = this.common.guid();
-        this.buildings.push(new SmallReactor({
+        this.buildings.smallReactors.push(new SmallReactor({
             type: CONFIG.ECONOMY.BIO_REACTOR_SMALL.TYPE,
             guid: reactorGuid,
             x,
@@ -120,7 +141,7 @@ class Economy {
     }
 
     addMycelium(x, y) {
-        this.mycelium.push(new Mycelium({
+        this.buildings.mycelium.push(new Mycelium({
             x,
             y,
             guid: this.common.guid(),
@@ -138,8 +159,8 @@ class Economy {
 
     // 2. расширить грибницу при возможности
     myceliumExtend(mycelium) {
-        if (mycelium.canExtend(this.map, this.mycelium, this.buildings, this.enemyBuildings)) {
-            const result = mycelium.extend(this.map, this.mycelium, this.buildings, this.enemyBuildings);
+        if (mycelium.canExtend(this.map, this.buildings.mycelium, this.buildings, this.enemyBuildings)) {
+            const result = mycelium.extend(this.map, this.buildings.mycelium, this.buildings, this.enemyBuildings);
             if (!result) {
                 return;
             }
@@ -149,21 +170,19 @@ class Economy {
     }
 
     reactorsConsume() {
-        this.buildings
-            .filter(b => b instanceof SmallReactor)
+        this.buildings.smallReactors
             .forEach(reactor => {
-                reactor.getConsumable(this.mycelium).forEach(mc => mc.consume());
+                reactor.getConsumable(this.buildings.mycelium).forEach(mc => mc.consume());
             });
     }
 
     setPathsUnits({ x, y }) {
         //пометка что надо будет сделать массив с юнитами общий
-        [...this.workers].forEach(unit => unit.calcPath({ x, y }));
+        [...this.units.workers].forEach(unit => unit.calcPath({ x, y }));
     }
 
     startIncubatorCreating() {
-        this.buildings
-            .filter(b => b instanceof Incubator)
+        this.buildings.incubators
             .forEach(incubator => {
                 if (incubator.startCreating()) {
                     this.updated = true;
@@ -173,8 +192,7 @@ class Economy {
 
     updateIncubator() {
         const availableEnergy = this.getAvailableEnergy();
-        this.buildings
-            .filter(building => building instanceof Incubator)
+        this.buildings.incubators
             .forEach(incubator => {
                 if (incubator.updateLarvaProgress(availableEnergy)) {
                     this.updated = true;
@@ -182,22 +200,20 @@ class Economy {
                 }
                 const larva = incubator.createLarva();
                 if (larva) {
-                    this.larvae.push(larva);
+                    this.units.larvae.push(larva);
                     this.updated = true;
                 }
             });
     }
 
     getAvailableEnergy() {
-        return this.buildings
-            .filter(b => b instanceof SmallReactor)
-            .reduce((sum, reactor) => sum + reactor.energy, 0);
+        return this.buildings.smallReactors
+            .reduce((sum, reactor) => sum + reactor.energy, 0); // Дописать сюда дпроверку достигаемости
     }
 
     consumeEnergyFromReactors(amount) {
         let remainingAmount = amount;
-        const reactors = this.buildings.filter(b => b instanceof SmallReactor);
-        for (const reactor of reactors) {
+        for (const reactor of this.buildings.smallReactors) {
             if (remainingAmount <= 0) break;
             const consumeEnergy = Math.min(reactor.energy, remainingAmount);
             reactor.energy -= consumeEnergy;
@@ -206,7 +222,7 @@ class Economy {
     }
 
     updateLarvae() {
-        this.larvae.forEach(larva => larva.update());
+        this.units.larvae.forEach(larva => larva.update());
     }
 
     updateMyceliumGrid() {
@@ -227,18 +243,18 @@ class Economy {
 
     // 4. передвинуть рабочих
     moveWorkers() {
-        this.workers.forEach(unit => unit.moveOneStep());
+        this.units.workers.forEach(unit => unit.moveOneStep());
     }
 
 
     // 10. вырастить грибочки на грибнице
-    myceliumGrow() {
-        this.mycelium.forEach(mycelium => this.myceliumGrow(mycelium));
+    myceliumGrowAll() {
+        this.buildings.mycelium.forEach(mycelium => this.myceliumGrow(mycelium));
     }
 
     // 11. расширить грибницу
-    myceliumExtend() {
-        this.mycelium.forEach(mycelium => this.myceliumExtend(mycelium));
+    myceliumExtendAll() {
+        this.buildings.mycelium.forEach(mycelium => this.myceliumExtend(mycelium));
     }
 
     update() {
@@ -255,9 +271,9 @@ class Economy {
         // 8. породить личинок (потратить немного железа и немного энергии)
         // 9. остаток непотраченной энергии (жир) распределить по бочкам для жира
         // 10. вырастить грибочки на грибнице
-        this.myceliumGrow();
+        this.myceliumGrowAll();
         // 11. расширить грибницу
-        this.myceliumExtend();
+        this.myceliumExtendAll();
 
         /*
         this.updateLarvae();

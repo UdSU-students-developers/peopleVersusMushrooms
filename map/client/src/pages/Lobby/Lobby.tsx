@@ -28,7 +28,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
 
     const confirmCreateLobby = () => {
         if (lobbyName.trim()) {
-            console.log(server.user.guid)
             server.createLobby(server.user.guid, lobbyName.trim(), 'spectator');
             setLobbyName('');
             setShowCreateModal(false);
@@ -97,19 +96,16 @@ const Lobby: React.FC<IBasePage> = (props) => {
         };
 
         const mapHandler = (data: TMap) => {
-            console.log('Карта получена:', data);
             server.setGeneratedMap(data);
         };
 
         const joinToLobbyHandler = (data: any) => {
-            console.log('Присоединились к комнате:', data);
             setCurrentLobby(data);
             setIsReady(false);
             setIsLoading(false);
         };
 
         const leaveLobbyHandler = (data: any) => {
-            console.log('Покинули комнату:', data);
             setCurrentLobby(null);
             setIsReady(false);
             setIsLoading(false);
@@ -117,22 +113,18 @@ const Lobby: React.FC<IBasePage> = (props) => {
 
         const getLobbiesHandler = () => {
             const data = server.getLobbies();
-            console.log('Список комнат:', data);
             setLobbies(data || []);
             setIsLoading(false);
         };
 
         const lobbyUpdatedHandler = (data: any) => {
-            console.log('Комната обновлена:', data);
         };
 
         const lobbiesListUpdatedHandler = (data: any) => {
-            console.log('Список комнат обновлен:', data);
             setLobbies(data || []);
         };
 
         const startGameHandler = (data: any) => {
-            console.log('Игра началась:', data);
         };
 
         const setReadyHandler = (data: any) => {
@@ -140,7 +132,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
         };
 
         const dropFromLobbyHandler = (data: any) => {
-            console.log('Игрок кикнут из лобби:', data);
         };
 
         mediator.subscribe(LOGOUT, logoutHandler);

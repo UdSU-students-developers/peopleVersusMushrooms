@@ -20,7 +20,7 @@ const DB = require('./application/modules/db/DB');
 const Mediator = require('./application/modules/mediator/Mediator');
 const ChatManager = require('./application/modules/chat/ChatManager');
 const ArmyManager = require('./application/modules/army/ArmyManager');
-const UserManager = require('./application/modules/user/UserManager');
+const UserManager = require('../../global/modules/user/UserManager');
 const { NAME, PORT, DATABASE, ROLE } = CONFIG;
 
 // Создаем сокеты в app.js
@@ -40,7 +40,13 @@ new UserManager({ mediator, db, io, common, answer });
 new ChatManager({ mediator, db, io, common, answer });
 new ArmyManager({ mediator, db, io, common, answer });
 new LobbyManager({ mediator, db, io, common, answer }, ROLE);
+// io.on('connection', (socket) => {
+//     console.log('connected:', socket.id);
 
+//     socket.onAny((event, ...args) => {
+//         console.log('SERVER EVENT:', event, args);
+//     });
+// });
 app.use(CONFIG.CORS.middleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

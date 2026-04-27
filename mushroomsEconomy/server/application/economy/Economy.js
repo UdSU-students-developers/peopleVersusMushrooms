@@ -44,7 +44,6 @@ class Economy {
             larvae: [], //личинки
         };
 
-        this.buildings = []; // здания
         this.myceliumGrid = null;
         // данные про врагов
         this.enemyBuildings = [];

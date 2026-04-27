@@ -2,76 +2,294 @@
     min-height: 100vh;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     background: linear-gradient(135deg, #eef2ff, #f0f0f0);
     font-family: Arial, sans-serif;
+    padding: 40px 20px;
 }
 
-.lobby__header {
-    position: absolute;
-    top: 20px;
-    right: 30px;
-}
-
-.lobby__userBlock {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.lobby__username {
-    font-size: 18px;
-    font-weight: 600;
-    color: #333;
-}
-
-.lobby__logoutButton {
-    padding: 8px 14px;
-    border: none;
-    border-radius: 8px;
-    background-color: #e74c3c;
-    color: white;
-    cursor: pointer;
-    font-size: 16px;
-    transition: 0.2s;
-}
-
-.lobby__logoutButton:hover {
-    background-color: #c0392b;
-}
-
-.lobby__content {
-    background: white;
-    padding: 50px 70px;
-    border-radius: 18px;
+.lobby__container {
+    width: 100%;
+    max-width: 900px;
+    background: #fff;
+    border-radius: 16px;
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
-    text-align: center;
+    padding: 24px;
+}
+
+.lobby__container > .lobby__secondaryButton {
+    margin-top: 4px;
+}
+
+.lobby__topBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 18px;
+}
+
+.lobby__userName {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2d3748;
 }
 
 .lobby__title {
-    margin: 0;
-    font-size: 44px;
-    color: #222;
+    margin: 0 0 16px;
+    font-size: 28px;
+    color: #1f2937;
 }
 
 .lobby__subtitle {
-    margin-top: 10px;
-    margin-bottom: 30px;
-    font-size: 18px;
-    color: #666;
+    margin: 0 0 16px;
+    color: #6b7280;
 }
 
-.lobby__startButton {
-    padding: 16px 36px;
-    border: none;
+.lobby__list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.lobby__card {
+    border: 1px solid #e5e7eb;
     border-radius: 12px;
-    background: linear-gradient(135deg, #4CAF50, #2e7d32);
-    color: white;
-    font-size: 21px;
-    cursor: pointer;
-    transition: 0.2s;
+    padding: 14px;
+    background: #f9fafb;
 }
 
-.lobby__startButton:hover {
-    transform: scale(1.05);
+.lobby__cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.lobby__cardTitle {
+    margin: 0;
+    font-size: 18px;
+    color: #111827;
+}
+
+.lobby__slots {
+    color: #4b5563;
+    font-weight: 600;
+}
+
+.lobby__cardActions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.lobby__roleLabel {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    padding: 0 4px;
+}
+
+.lobby__errorToast {
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+    color: #b91c1c;
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+}
+
+.lobby__select {
+    flex: 1;
+    min-height: 38px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 0 10px;
+    background: #fff;
+}
+
+.lobby__primaryButton,
+.lobby__secondaryButton,
+.lobby__dangerButton {
+    min-height: 38px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-size: 14px;
+}
+
+.lobby__primaryButton:disabled,
+.lobby__secondaryButton:disabled,
+.lobby__dangerButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.lobby__primaryButton {
+    background: #2563eb;
+}
+
+.lobby__primaryButton:hover {
+    background: #1d4ed8;
+}
+
+.lobby__secondaryButton {
+    background: #4b5563;
+}
+
+.lobby__secondaryButton:hover {
+    background: #374151;
+}
+
+.lobby__dangerButton {
+    background: #dc2626;
+}
+
+.lobby__dangerButton:hover {
+    background: #b91c1c;
+}
+
+.lobby__empty {
+    border: 1px dashed #d1d5db;
+    border-radius: 10px;
+    padding: 18px;
+    color: #6b7280;
+    text-align: center;
+}
+
+.lobby__rolesTable {
+    min-width: 720px;
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.lobby__tableWrap {
+    overflow-x: auto;
+    margin-bottom: 16px;
+}
+
+.lobby__rolesTable th,
+.lobby__rolesTable td {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 10px;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.lobby__rolesTable th {
+    background: #f3f4f6;
+    color: #111827;
+    font-weight: 600;
+}
+
+.lobby__rolesTable tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.lobby__readyBadge {
+    display: inline-block;
+    background: #e5e7eb;
+    color: #374151;
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.lobby__readyBadge--yes {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.lobby__roomActions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.lobby__modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 20;
+}
+
+.lobby__modal {
+    width: 100%;
+    max-width: 420px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+    padding: 16px;
+}
+
+.lobby__modalTitle {
+    margin: 0 0 12px;
+    font-size: 20px;
+    color: #111827;
+}
+
+.lobby__input {
+    width: 100%;
+    min-height: 38px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 0 10px;
+    margin-bottom: 10px;
+}
+
+.lobby__modalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+@media (max-width: 640px) {
+    .lobby {
+        padding: 20px 12px;
+    }
+
+    .lobby__container {
+        padding: 16px;
+    }
+
+    .lobby__title {
+        font-size: 24px;
+    }
+
+    .lobby__cardActions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .lobby__primaryButton,
+    .lobby__secondaryButton,
+    .lobby__dangerButton,
+    .lobby__select,
+    .lobby__input {
+        width: 100%;
+    }
+
+    .lobby__roomActions {
+        flex-direction: column;
+        align-items: stretch;
+    }
 }

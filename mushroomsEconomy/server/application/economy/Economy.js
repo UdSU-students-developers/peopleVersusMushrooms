@@ -178,31 +178,6 @@ class Economy {
         [...this.units.workers].forEach(unit => unit.calcPath({ x, y }));
     }
 
-    startIncubatorCreating() {
-        this.buildings.incubators
-            .forEach(incubator => {
-                if (incubator.startCreating()) {
-                    this.updated = true;
-                }
-            });
-    }
-
-    updateIncubator() {
-        const availableEnergy = this.getAvailableEnergy();
-        this.buildings.incubators
-            .forEach(incubator => {
-                if (incubator.updateLarvaProgress(availableEnergy)) {
-                    this.updated = true;
-                    this.consumeEnergyFromReactors(incubator.consumption);
-                }
-                const larva = incubator.createLarva();
-                if (larva) {
-                    this.units.larvae.push(larva);
-                    this.updated = true;
-                }
-            });
-    }
-
     getAvailableEnergy() {
         return this.buildings.smallReactors
             .reduce((sum, reactor) => sum + reactor.energy, 0); // Дописать сюда дпроверку достигаемости
@@ -243,6 +218,30 @@ class Economy {
         this.units.workers.forEach(unit => unit.moveOneStep());
     }
 
+    // 8. породить личинок (потратить немного железа и немного энергии)
+    produceLarvae() {
+        const availableEnergy = this.getAvailableEnergy();
+
+        for (const incubator of this.buildings.incubators) {
+            if (!incubator.isCreating()) {
+                const started = incubator.startCreating();
+                if (started) {
+                    this.updated = true;
+                }
+            }
+
+            if (incubator.isCreating && incubator.updateLarvaProgress(availableEnergy)) {
+                this.updated = true;
+                // Логика потребления энергии
+            }
+
+            const larva = incubator.createLarva();
+            if (larva) {
+                this.units.larvae.push(larva);
+                this.updated = true;
+            }
+        }
+    }
 
     // 10. вырастить грибочки на грибнице
     myceliumGrowAll() {
@@ -266,6 +265,7 @@ class Economy {
         // 6. добыть энергию (сожрать грибочки)
         // 7. добыть железо (потратить энергию) и распределить их в инкубаторы, шахты или бочки для железа
         // 8. породить личинок (потратить немного железа и немного энергии)
+        this.produceLarvae();
         // 9. остаток непотраченной энергии (жир) распределить по бочкам для жира
         // 10. вырастить грибочки на грибнице
         this.myceliumGrowAll();
@@ -273,13 +273,8 @@ class Economy {
         this.myceliumExtendAll();
 
         /*
-        this.updateLarvae();
         // 3. реакторы потребляют мицелий
         this.reactorsConsume();
-        // 1. создать личинку
-        this.startIncubatorCreating();
-        // 2. обновить прогресс и создать личинку
-        this.updateIncubator();
         */
 
         // отбросить апдейт, если он случился

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { io, Socket } from 'socket.io-client';
+import md5 from 'md5';
 import { IBasePage, PAGES } from '../PageManager';
 import CONFIG from '../../config';
 import './Registration.css';
@@ -44,7 +45,7 @@ const Registration: React.FC<IBasePage> = (props: IBasePage) => {
         setError('');
         socket?.emit(CONFIG.SOCKETS.REGISTRATION, {
             name: name.trim(),
-            password: password.trim(),
+            passwordHash: md5(password.trim()),
         });
     };
 
@@ -79,10 +80,19 @@ const Registration: React.FC<IBasePage> = (props: IBasePage) => {
                         />
                     </div>
                     <div className="registration-actions">
-                        <button type="button" className="registration-btn registration-btn-primary" onClick={register}>
+                        <button
+                            type="button"
+                            className="registration-btn registration-btn-primary"
+                            onClick={register}
+                        >
                             Зарегистрироваться
                         </button>
-                        <button type="button" className="registration-btn registration-btn-secondary" onClick={() => props.setPage(PAGES.LOGIN)}>
+
+                        <button
+                            type="button"
+                            className="registration-btn registration-btn-secondary"
+                            onClick={() => props.setPage(PAGES.LOGIN)}
+                        >
                             У меня уже есть аккаунт
                         </button>
                     </div>
@@ -91,6 +101,6 @@ const Registration: React.FC<IBasePage> = (props: IBasePage) => {
             </div>
         </div>
     );
-}
+};
 
 export default Registration;

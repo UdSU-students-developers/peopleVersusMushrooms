@@ -30,15 +30,15 @@ export interface ILobby {
     lobbyName: string;
     playersGuids: {
         spectator: string | null;
-        mushroomArmy: string | null;
-        mushroomEconomy: string | null;
+        mushroomsArmy: string | null;
+        mushroomsEconomy: string | null;
         peopleArmy: string | null;
         peopleEconomy: string | null;
     };
     playersIsReady: {
         spectator: boolean;
-        mushroomArmy: boolean;
-        mushroomEconomy: boolean;
+        mushroomsArmy: boolean;
+        mushroomsEconomy: boolean;
         peopleArmy: boolean;
         peopleEconomy: boolean;
     };

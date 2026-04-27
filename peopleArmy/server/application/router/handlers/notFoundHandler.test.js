@@ -58,7 +58,7 @@ describe('notFoundHandler', () => {
         expect(payload).toEqual(expected);
         expect(payload.result).toBe('error');
         expect(payload.code).toBe(404);
-        expect(payload.error).toBe('Не найдено');
+        expect(payload.error).toBe('NOT FOUND');
         expect(Object.keys(payload).sort()).toEqual(['code', 'error', 'result']);
     });
 
@@ -94,7 +94,7 @@ describe('notFoundHandler', () => {
             expect(localRes.json).toHaveBeenCalledTimes(1);
             expect(localRes.json.mock.calls[0][0].code).toBe(404);
             expect(localRes.json.mock.calls[0][0].result).toBe('error');
-            expect(localRes.json.mock.calls[0][0].error).toBe('Не найдено');
+            expect(localRes.json.mock.calls[0][0].error).toBe('NOT FOUND');
         }
     });
 

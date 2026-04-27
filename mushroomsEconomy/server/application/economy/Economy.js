@@ -16,7 +16,7 @@ class Economy {
     constructor({
         db,
         common,
-        callbacks: { updated },
+        callbacks: { updated, spawnArmyUnit },
         guid,
         guids,
         startPoint,
@@ -27,7 +27,7 @@ class Economy {
         this.guid = guid; // совпадает с guid игрока
         this.db = db;
         this.common = common;
-        this.callbacks = { updated };
+        this.callbacks = { updated, spawnArmyUnit };
         // данные экономики
         this.resourceMap; // массив известных ресурсов [{x, y, value}]
 
@@ -62,6 +62,7 @@ class Economy {
         /**************/
 
         // start game proccess
+        this.spawnArmyUnit(GLOBAL_CONFIG.UNIT_TYPES.MUSHROOMS_ARMY.CHAMPIGNEB, 4, 4)
         this.updated = false;
         this.interval = setInterval(() => this.update(), INTERVAL);
     }
@@ -161,6 +162,11 @@ class Economy {
             this.addMycelium(result.x, result.y);
             this.updated = true;
         }
+    }
+
+    // 3. передать боевых юнитов в армию (callback)
+    spawnArmyUnit(unitType, x, y) { //Получаются из личинок
+        this.callbacks.spawnArmyUnit(unitType, x, y, this.guids.armyGuid);
     }
 
     reactorsConsume() {

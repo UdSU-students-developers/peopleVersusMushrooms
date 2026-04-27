@@ -169,7 +169,8 @@ class Economy {
     reactorsConsume() {
         this.buildings.smallReactors
             .forEach(reactor => {
-                reactor.getConsumable(this.buildings.mycelium).forEach(mc => mc.consume());
+                const reachableMycelium = this.buildings.mycelium.filter(mc => this.checkConnection(reactor, mc));
+                reactor.getConsumable(reachableMycelium).forEach(mc => mc.consume());
             });
     }
 
@@ -179,8 +180,16 @@ class Economy {
     }
 
     getAvailableEnergy() {
-        return this.buildings.smallReactors
-            .reduce((sum, reactor) => sum + reactor.energy, 0); // Дописать сюда дпроверку достигаемости
+       let totalEnergy = 0;
+        for (const reactor of this.buildings.smallReactors) {
+            for (const incubator of this.buildings.incubators) {
+                if (this.checkConnection(reactor, incubator)) {
+                    totalEnergy += reactor.energy;
+                    break;
+                }
+            }
+        }
+        return totalEnergy;
     }
 
     consumeEnergyFromReactors(amount) {

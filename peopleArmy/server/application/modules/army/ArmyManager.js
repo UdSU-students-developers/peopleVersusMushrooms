@@ -63,7 +63,7 @@ class ArmyManager extends BaseManager {
         const type = data?.type ?? 'soldier';
 
         if (guid === null || data?.x === undefined || data?.y === undefined) {
-            return this.answer.bad(400);
+            return this.answer.bad(242);
         }
         if (!Number.isFinite(x) || !Number.isFinite(y)) {
             return this.answer.bad(400);
@@ -72,7 +72,7 @@ class ArmyManager extends BaseManager {
         // Проверяем залогиненность юзера (isLogin)
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
         if (!user || !user?.isLogin()) {
-            return this.answer.bad(11);
+            return this.answer.bad(1004);
         }
 
         // Проверяем наличие армии у этого юзера

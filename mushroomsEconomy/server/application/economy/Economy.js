@@ -45,9 +45,6 @@ class Economy {
         };
 
         this.buildings = []; // здания
-        this.mycelium = []; // грибница
-        this.workers = []; // рабочие
-        this.larvae = []; // массив личинок
         this.myceliumGrid = null;
         // данные про врагов
         this.enemyBuildings = [];
@@ -228,7 +225,7 @@ class Economy {
     updateMyceliumGrid() {
         this.myceliumGrid = Array(50).fill().map(() => Array(50).fill(0));
 
-        for (const mc of this.mycelium) {
+        for (const mc of this.buildings.mycelium) {
             if (mc.x >= 0 && mc.x < 50 && mc.y >= 0 && mc.y < 50) {
                 this.myceliumGrid[mc.y][mc.x] = 1;
             }

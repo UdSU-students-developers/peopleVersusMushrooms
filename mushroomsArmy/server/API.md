@@ -377,10 +377,10 @@ Answer<true>
 
 ```
 {
-    mushroomArmy: string; - гуид армии
-    mapGuid:      string; - гуид карты
-    map:          (number | null)[][]; - карта проходимости
-    buildings?:   [building-input]; - стартовый список зданий (опционально, по умолчанию [])
+    mushroomsArmy: string; - гуид армии
+    mapGuid:       string; - гуид карты
+    map?:          (number | null)[][]; - карта проходимости (опционально; если не передана, армия сама запросит рельеф у карты)
+    buildings?:    [building-input]; - стартовый список зданий (опционально, по умолчанию [])
 }
 ```
 
@@ -394,4 +394,4 @@ Answer<true>
 
 **Ошибки**
 
-* `242` - не переданы `mushroomArmy`, `mapGuid` или `map`
+* `242` - не переданы `mushroomsArmy` или `mapGuid`

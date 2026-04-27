@@ -66,7 +66,8 @@ class GameManager extends BaseManager {
 					db: this.db,
 					common: this.common,
 					callbacks: {
-						updated: (data) => this.callbackUpdate(guid, data)
+						updated: (data) => this.callbackUpdate(guid, data),
+						spawnArmyUnit: this.spawnArmyUnit(unitType, data),
 					},
 					guid,
 					guids, 
@@ -77,8 +78,15 @@ class GameManager extends BaseManager {
 					this.answer.good(this.economies[guid].get())
 				);
 				console.log("Экдономика созана");
+				return this.answer.good(true);
 			}
+			return this.answer.bad(1001)
 		}
+		return this.answer.bad(4001);
+	}
+
+	spawnArmyUnit(data) { //data = {unitType, x, y, armyGuid}
+		this.sendToMushroomsArmy(GLOBAL_CONFIG.URLS.SPAWN_UNIT, data);
 	}
 
 	/* SOCKETS */

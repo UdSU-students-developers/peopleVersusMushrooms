@@ -50,7 +50,7 @@ const Lobby: React.FC<IBasePage> = (props) => {
     }
 
     const startGameHandler = () => {
-        server.generateMap();
+        server.generateMap(server.user.guid);
         server.startGame(server.user.guid);
         setPage(PAGES.MAP);
     }

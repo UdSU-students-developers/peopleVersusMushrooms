@@ -33,8 +33,8 @@ class Pipeline extends Building {
         const grid = this.map;
         easystar.setGrid(grid);
         
-        //разрешаем ходить только по определенным тайлам (1)
-        easystar.setAcceptableTiles([1]);
+        //разрешаем ходить только по определенным полям матрицы (0)
+        easystar.setAcceptableTiles([0]);
         
         //ищем путь 
         easystar.findPath(this.startX, this.startY, this.endX, this.endY, (path) => {
@@ -57,10 +57,14 @@ class Pipeline extends Building {
         };
     }
     
-    //переместить ресурс
-    transferResources(resource) {
-        //сложна
-        //обдумать взамимодействие с другими путями труб
+    //получить начальную точку
+    getStartCoords() {
+        return { x: this.startX, y: this.startY };
+    }
+
+    //получить конечную точку
+    getEndCoords() {
+        return { x: this.endX, y: this.endY };
     }
     
     //проверить, проходит ли трубопровод через указанную клетку

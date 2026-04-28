@@ -10,7 +10,10 @@ class Building {
         this.size = size;
         this.consumption = consumption; // энергопотребление за единицу времени
         this.production = production; // сколько производит за единицу времени
-        this.capacity = capacity; // емкость внутреннего хранилища
+        this.capacity = capacity; // максимальная емкость внутреннего хранилища
+
+
+        this.resourceAmount = 0; //хранилище ресурсов
     }
 
     get() {
@@ -20,6 +23,7 @@ class Building {
             type: this.type,
             hp: this.hp,
             size: this.size,
+            resourceAmount: this.resourceAmount,
         }
     }
 
@@ -29,6 +33,7 @@ class Building {
             consumption: this.consumption,
             production: this.production,
             capacity: this.capacity,
+            resourceAmount: this.resourceAmount,
         }
     }
 
@@ -42,6 +47,22 @@ class Building {
 
     getCapacity() {
         return this.capacity;
+    }
+
+    //добавить ресурс
+    addResource(amount) {
+        const added = Math.min(amount, this.capacity - this.resourcesAmount);
+        this.resourcesAmount += added;
+        //возвращает сколько добавилось
+        return added;
+    }
+
+    //забрать ресурс
+    takeResource(amount) {
+        const taken = Math.min(amount, this.resourcesAmount);
+        this.resourcesAmount -= taken;
+        //возвращает сколько забрали
+        return taken;
     }
 
     //уничтожить здание ?? (переопределять у труб, вопрос)

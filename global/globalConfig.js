@@ -82,6 +82,7 @@ const GLOBAL_CONFIG = {
         GET_RESOURSE_VISIBILITY: '/getResourseVisibility',
         UPDATE_UNITS: '/updateUnits',
         UPDATE_BUILDINGS: '/updateBuldings',
+
     },
 
     ROLES: {

@@ -40,6 +40,16 @@ class Unit {
         this.path = [];
     }
 
+    // Нанести урон юниту
+    takeDamage(damage) {
+        this.hp -= damage;
+    }
+
+    // Проверка, мёртв ли юнит
+    isDead() {
+        return this.hp <= 0;
+    }
+
     // Получить информацию о юните
     get() {
         return {

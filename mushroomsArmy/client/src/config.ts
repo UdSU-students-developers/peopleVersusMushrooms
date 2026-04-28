@@ -8,6 +8,17 @@ const CONFIG = {
             USER_REGISTERED: 'USER_REGISTERED',
             USER_LOGGED_OUT: 'USER_LOGGED_OUT',
             LOGIN: 'LOGIN',
+
+            CREATE_LOBBY: 'CREATE_LOBBY',
+            JOIN_TO_LOBBY: 'JOIN_TO_LOBBY',
+            LEAVE_LOBBY: 'LEAVE_LOBBY',
+            DROP_FROM_LOBBY: 'DROP_FROM_LOBBY',
+            SET_READY: 'SET_READY',
+            LOBBY_UPDATED: 'LOBBY_UPDATED',
+            GET_LOBBYS: 'GET_LOBBYS',
+            LOBBYS_LIST_UPDATED: 'LOBBYS_LIST_UPDATED',
+            START_GAME: 'START_GAME',
+
             GAME_STARTED: 'GAME_STARTED',
             GAME_STATE_UPDATED: 'GAME_STATE_UPDATED',
             GAME_OVER: 'GAME_OVER',
@@ -20,11 +31,22 @@ const CONFIG = {
     },
 
     SOCKET: {
-        REGISTRATION: 'registration',
-        LOGIN: 'login',
-        LOGOUT: 'logout',
+        REGISTRATION: 'REGISTRATION',
+        LOGIN: 'LOGIN',
+        LOGOUT: 'LOGOUT',
+
+        CREATE_LOBBY: 'CREATE_LOBBY',
+        JOIN_TO_LOBBY: 'JOIN_TO_LOBBY',
+        LEAVE_LOBBY: 'LEAVE_LOBBY',
+        DROP_FROM_LOBBY: 'DROP_FROM_LOBBY',
+        SET_READY: 'SET_READY',
+        LOBBY_UPDATED: 'LOBBY_UPDATED',
+        GET_LOBBYS: 'GET_LOBBYS',
+        LOBBYS_LIST_UPDATED: 'LOBBIES_LIST_UPDATED',
+        START_GAME: 'START_GAME',
+
         LOBBY_START: 'lobby:start',
-        VALIDATE_TOKEN: 'auth:validate',
+        GAME_STARTED: 'GAME_STARTED',
         GAME_STATE: 'game:state',
         GAME_OVER: 'game:over',
     }

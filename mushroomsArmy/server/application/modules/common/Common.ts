@@ -1,6 +1,6 @@
-class Common { // Класс для того, что вроде как и не запихнуть в другие классы
+class Common {
 
-    guid(): string { // Можно найти лучший вариант
+    guid(): string {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
         .replace(/[xy]/g, function (c) {
             const r = Math.random() * 16 | 0,

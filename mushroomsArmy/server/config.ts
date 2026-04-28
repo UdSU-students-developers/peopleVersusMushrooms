@@ -1,76 +1,57 @@
 interface Config {
     NAME: string;
+    ROLE: string;
     PORT: number;
-    CORS: {
-        origin: string;
-    };
-    DATABASE: {
-        NAME: string;
-    };
-    SERVICES: {
-        MAP_URL: string;
-        PEOPLE_ARMY_URL: string;
-        PEOPLE_ECONOMY_URL: string;
-        MUSHROOMS_ECONOMY_URL: string;
-    };
     MEDIATOR: {
         EVENTS: {
+            DELETE_USER: string;
+            LOBBY_UPDATED: string;
             START_GAME: string;
         };
         TRIGGERS: {
             GET_USER_BY_GUID: string;
+            GET_USER_BY_SOCKET_ID: string;
             TAKE_DAMAGE_HANDLER: string;
             DESTROY_ARMY: string;
+            MOVE_UNIT: string;
+            GET_ARMY: string;
+            SPAWN_UNIT: string;
         };
     };
     SOCKET: {
-        REGISTRATION: string;
-        LOGIN: string;
-        LOGOUT: string;
         LOBBY_START: string;
-        VALIDATE_TOKEN: string;
-        GAME_STATE: string;      
-        GAME_OVER: string; 
+        GAME_STATE: string;
+        GAME_OVER: string;
     };
 }
 
 const CONFIG: Config = {
-    NAME: 'Mushroom Army server',
+    NAME: 'MUSHROOMS ARMY SERVER',
+    ROLE: 'mushroomsArmy',
     PORT: 3003,
-    CORS: {
-        origin: "*",
-    },
-
-    DATABASE: {
-        NAME: 'mushroomsArmy.db',
-    },
-
-    SERVICES: {
-        MAP_URL: 'http://localhost:3001',
-        PEOPLE_ARMY_URL: 'http://localhost:3007',
-        PEOPLE_ECONOMY_URL: 'http://localhost:3009',
-        MUSHROOMS_ECONOMY_URL: 'http://localhost:3005',
-    },
 
     MEDIATOR: {
         EVENTS: {
+            DELETE_USER: 'DELETE_USER',
+            LOBBY_UPDATED: 'LOBBY_UPDATED',
             START_GAME: 'START_GAME',
         },
         TRIGGERS: {
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',
+            GET_USER_BY_SOCKET_ID: 'GET_USER_BY_SOCKET_ID',
             TAKE_DAMAGE_HANDLER: 'TAKE_DAMAGE_HANDLER',
             DESTROY_ARMY: 'DESTROY_ARMY',
+            MOVE_UNIT: 'MOVE_UNIT',
+            GET_ARMY: 'GET_ARMY',
+            SPAWN_UNIT: 'SPAWN_UNIT',
         },
     },
+
     SOCKET: {
-        REGISTRATION: 'registration',
-        LOGIN: 'login',
-        LOGOUT: 'logout',
         LOBBY_START: 'lobby:start',
-        VALIDATE_TOKEN: 'auth:validate',
-        GAME_STATE: 'game:state',    
-        GAME_OVER: 'game:over' 
-    }
+        GAME_STATE: 'game:state',
+        GAME_OVER: 'game:over',
+    },
 };
 
 export default CONFIG;

@@ -8,6 +8,10 @@
     "sqlite3": "^5.1.7"
   },
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^30.3.0"
   }
 }

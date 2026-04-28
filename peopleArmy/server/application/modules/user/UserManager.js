@@ -1,5 +1,5 @@
 const CONFIG = require('../../../config');
-const BaseManager = require('../BaseManager');
+const BaseManager = require('../../../../../global/modules/BaseManager');
 const User = require('./User');
 
 const { REGISTRATION, LOGIN, LOGOUT } = CONFIG.SOCKETS;
@@ -63,14 +63,6 @@ class UserManager extends BaseManager {
             this.users[user.guid] = user;
             socket.data.guid = user.guid;
             socket.emit(REGISTRATION, this.answer.good(user.getSelf()));
-
-            const map = Array(50).fill().map(() => Array(50).fill(0));
-            map[39][25] = 1; map[40][25] = 1; map[41][25] = 1; map[42][25] = 1; map[43][25] = 1; map[44][25] = 1; map[45][25] = 1; map[46][25] = 1; map[47][25] = 1; map[48][25] = 1; map[49][25] = 1; map[5][25] = 1;
-            this.mediator.call(this.EVENTS.START_GAME, {
-                guid: user.guid,
-                map,
-                buildings: []
-            });
             return;
         }
         socket.emit(REGISTRATION, this.answer.bad(17));
@@ -90,14 +82,6 @@ class UserManager extends BaseManager {
             this.users[user.guid] = user;
             socket.data.guid = user.guid;
             socket.emit(LOGIN, this.answer.good(user.getSelf()));
-
-            const map = Array(50).fill().map(() => Array(50).fill(0));
-            map[39][25] = 1; map[40][25] = 1; map[41][25] = 1; map[42][25] = 1; map[43][25] = 1; map[44][25] = 1; map[45][25] = 1; map[46][25] = 1; map[47][25] = 1; map[48][25] = 1; map[49][25] = 1; map[5][25] = 1;
-            this.mediator.call(this.EVENTS.START_GAME, {
-                guid: user.guid,
-                map,
-                buildings: []
-            });
             return;
         }
         socket.emit(LOGIN, this.answer.bad(11));

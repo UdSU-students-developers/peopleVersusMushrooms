@@ -4,14 +4,13 @@ const CONFIG = {
 
     MEDIATOR: {
         EVENTS: {
-            DELETE_USER: "DELETE_USER",
-
             LOBBY_UPDATED: 'LOBBY_UPDATED',
             START_GAME: 'START_GAME',
         },
         TRIGGERS: {
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',
             GET_USER_BY_SOCKET_ID: 'GET_USER_BY_SOCKET_ID',
+            SET_SERVICES_GUIDS: 'SET_SERVICES_GUIDS',
         },
     },
 

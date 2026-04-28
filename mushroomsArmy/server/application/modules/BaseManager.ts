@@ -1,31 +1,45 @@
 import { Server as SocketIOServer } from 'socket.io';
-import Mediator, { TEvent } from './Mediator';
-import DB from './db/DB';
-import Answer, { TResponse } from '../Answer';
 import Common from './common/Common';
-import CONFIG from '../../config';
+
+const GLOBAL_CONFIG = require('../../../../global/globalConfig');
+
+type TAnswer = {
+    good: (data: unknown) => unknown;
+    bad: (code: number) => unknown;
+};
+
+type TMediator = {
+    subscribe: (event: string, callback: (data: unknown) => void) => void;
+    call: (event: string, data?: unknown) => unknown;
+    set: (trigger: string, callback: (data: unknown) => unknown) => void;
+    get: (trigger: string, data?: unknown) => unknown;
+    getEventTypes: () => { [key: string]: string };
+    getTriggerTypes: () => { [key: string]: string };
+};
+
+type TDB = object;
 
 export type TManagerOptions = {
-    mediator: Mediator;
-    db: DB;
+    mediator: TMediator;
+    db: TDB;
     io: SocketIOServer;
-    answer: Answer;
+    answer: TAnswer;
     common: Common;
 }
 
-type TServiceError = {
-    code: number;
-    text: string;
+type TApiResponse = {
+    result: string;
+    data: unknown;
 };
 
 class BaseManager {
-    protected answer: Answer;
-    protected mediator: Mediator;
-    protected db: DB;
+    protected answer: TAnswer;
+    protected mediator: TMediator;
+    protected db: TDB;
     protected io: SocketIOServer;
     protected common: Common;
-    protected EVENTS: TEvent;
-    protected TRIGGERS: TEvent;
+    protected EVENTS: { [key: string]: string };
+    protected TRIGGERS: { [key: string]: string };
 
     constructor(options: TManagerOptions) {
         const { mediator, db, io, answer, common } = options;
@@ -41,8 +55,8 @@ class BaseManager {
     }
 
     async send<T, K = undefined>(
-        url: string, 
-        data: T | null = null, 
+        url: string,
+        data: T | null = null,
         method = 'POST'
     ): Promise<K | null> {
         try {
@@ -58,78 +72,38 @@ class BaseManager {
             }
 
             const res = await fetch(url, params);
-            const answer = await res.json() as TResponse<K>;
+            const answer = await res.json() as TApiResponse;
 
-            if (answer.result === 'ok') {
-                return answer.data;
-            }
-
-            if (answer.result === 'error') {
-                await this.logErrorToDB(url, answer.error);
+            if (answer && answer.result === 'ok') {
+                return answer.data as K;
             }
 
             return null;
         } catch (error) {
             console.error(`[BaseManager] Ошибка запроса к ${url}:`, error);
-
-            await this.logErrorToDB(url, {
-                code: 9000,
-                text: error instanceof Error ? error.message : 'Unknown send error',
-            });
-
             return null;
         }
     }
 
-    /** Записывает ошибку в базу данных */
-    private async logErrorToDB(url: string, error: unknown): Promise<void> {
-        try {
-            if (
-                typeof error === 'object' &&
-                error !== null &&
-                'code' in error &&
-                'text' in error &&
-                typeof error.code === 'number' &&
-                typeof error.text === 'string'
-            ) {
-                const serviceError = error as TServiceError;
-                await this.db.logError(url, serviceError.code, serviceError.text);
-                return;
-            }
-
-            await this.db.logError(url, 9000, 'Unknown service error');
-        } catch (dbError) {
-            console.error('[BaseManager] Не удалось записать ошибку в БД:', dbError);
-        }
-    }
-
-    sendToMap<T, K = undefined>(
-        urlPath: string, 
+    sendToMap<K = undefined>(
+        urlPath: string,
         mapGuid: string,
         armyGuid: string,
-        data: T | null = null,
-        extraPath?: string
+        data: Record<string, unknown> | null = null,
     ): Promise<K | null> {
-        const extra = extraPath ? `/${extraPath}` : '';
-        return this.send(
-            `${CONFIG.SERVICES.MAP_URL}${urlPath}/${mapGuid}/${armyGuid}${extra}`,
-            data,
+        return this.send<Record<string, unknown>, K>(
+            `${GLOBAL_CONFIG.MAP.URL}${urlPath}`,
+            { mapGuid, userGuid: armyGuid, ...(data as Record<string, unknown> ?? {}) },
         );
-    }
-
-    sendToPeopleArmy<T, K = undefined>(
-        urlPath: string,
-        data: T | null = null
-    ): Promise<K | null> {
-        return this.send(`${CONFIG.SERVICES.PEOPLE_ARMY_URL}${urlPath}`, data);
     }
 
     sendToMushroomsEconomy<T, K = undefined>(
         urlPath: string,
         data: T | null = null
     ): Promise<K | null> {
-        return this.send(`${CONFIG.SERVICES.MUSHROOMS_ECONOMY_URL}${urlPath}`, data);
+        return this.send(`${GLOBAL_CONFIG.MUSHROOMS_ECONOMY.URL}${urlPath}`, data);
     }
+
 }
 
 export default BaseManager;

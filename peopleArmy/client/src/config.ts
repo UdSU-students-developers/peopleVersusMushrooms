@@ -8,7 +8,15 @@ interface SocketEvents {
     REGISTRATION: string;
     LOGIN: string;
     LOGOUT: string;
-    UPDATE_ARMY: 'UPDATE_ARMY',
+    UPDATE_ARMY: 'UPDATE_ARMY';
+    CREATE_LOBBY: 'CREATE_LOBBY';
+    JOIN_TO_LOBBY: 'JOIN_TO_LOBBY';
+    LEAVE_LOBBY: 'LEAVE_LOBBY';
+    GET_LOBBIES: 'GET_LOBBIES';
+    LOBBY_UPDATED: 'LOBBY_UPDATED';
+    LOBBIES_LIST_UPDATED: 'LOBBIES_LIST_UPDATED';
+    SET_READY: 'SET_READY';
+    START_GAME: 'START_GAME';
 }
 
 interface MediatorEvents {
@@ -36,10 +44,18 @@ const CONFIG: Config = {
         DISCONNECT: 'disconnect',
         MESSAGE_FROM_CLIENT: 'message_from_client',
         MESSAGE_TO_CLIENTS: 'message_to_clients',
-        REGISTRATION: 'registration',
-        LOGIN: 'login',
-        LOGOUT: 'logout',
+        REGISTRATION: 'REGISTRATION',
+        LOGIN: 'LOGIN',
+        LOGOUT: 'LOGOUT',
         UPDATE_ARMY: 'UPDATE_ARMY',
+        CREATE_LOBBY: 'CREATE_LOBBY',
+        JOIN_TO_LOBBY: 'JOIN_TO_LOBBY',
+        LEAVE_LOBBY: 'LEAVE_LOBBY',
+        GET_LOBBIES: 'GET_LOBBIES',
+        LOBBY_UPDATED: 'LOBBY_UPDATED',
+        LOBBIES_LIST_UPDATED: 'LOBBIES_LIST_UPDATED',
+        SET_READY: 'SET_READY',
+        START_GAME: 'START_GAME',
     },
     MEDIATOR: {
         EVENTS: {

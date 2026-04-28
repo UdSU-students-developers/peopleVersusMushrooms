@@ -5,13 +5,23 @@ const BMP = require("./entities/BMP");
 const { INTERVAL } = CONFIG.ARMY;
 
 class Army {
-    constructor({ map, buildings, common, callbacks = {}, guid, db }) {
+    constructor({ guids, startPoint, common, callbacks = {}, guid, db }) {
+
+        Object.keys(guids).forEach(key => this.guids[key] = guids[key]);
+
+        /*
+        this.guids = {
+            spectator: null,
+            peopleArmy: null,
+            peopleEconomy: null,
+            mushroomsArmy: null,
+            mushroomsEconomy: null,
+        }
+        */
         this.guid = guid;
+        this.mapGuid = this.guids.spectator;
         this.common = common;
         this.callbacks = callbacks;
-
-        this.map = map;
-
         this.units = []; // наши юниты
         this.towers = []; // наши здания
         this.buildings = buildings; // постройки на карте
@@ -21,8 +31,10 @@ class Army {
         this.unitTypes = {};
         db.getUnitTypes().then(types => { this.unitTypes = types; });
 
-        this.interval = setInterval(() => this.update(), INTERVAL); // интервал обновления игры
+        this._initMap();
+        this._initUnits(startPoint);
 
+        this.interval = setInterval(() => this.update(), INTERVAL); // интервал обновления игры
         this.updated = false;
     }
 
@@ -36,8 +48,29 @@ class Army {
     get() {
         return {
             units: this.units,
-            //...
         }
+    }
+
+    _initMap() {
+        this.map = [];
+        for (let i = 0; i < 50; i++) {
+            this.map.push([]);
+            for (let j = 0; j < 50; j++) {
+                this.map[i][j] = null;
+            }
+        }
+    }
+
+    _initUnits(startPoint) {
+        // создать пехотинца
+        // создать бэху
+        this.callbacks.update(this.guid, this.get());
+    }
+
+    setVisibility({ units = [], buildings = [] } = {}) {
+        this.enemyUnits = Array.isArray(units) ? units : [];
+        this.enemyBuildings = Array.isArray(buildings) ? buildings : [];
+        this.updated = true;
     }
 
     /**
@@ -62,6 +95,30 @@ class Army {
         console.log('Юнит создан:', unit.get());
         console.log('Армия:', this.units);
         return { ok: true, data: unit.get() };
+    }
+
+    /**
+     * Нанести урон юниту по его guid.
+     * Если hp <= 0 — юнит удаляется из армии.
+     */
+    unitTakeDamage({ guid, damage }) {
+        const unit = this.units.find((u) => u.guid === guid);
+
+        if (!unit) {
+            return { ok: false, error: 'UNIT_NOT_FOUND' };
+        }
+
+        unit.takeDamage(damage);
+        console.log('Юнит получил урон:', unit.guid, 'damage:', damage, 'hp:', unit.hp);
+
+        if (unit.isDead()) {
+            this.units = this.units.filter((u) => u.guid !== guid);
+            console.log('Юнит уничтожен:', guid);
+        }
+
+        this.updated = true;
+
+        return { ok: true, data: { guid: unit.guid, hp: unit.hp } };
     }
 
     // 1. выстрелить юнитами по врагам

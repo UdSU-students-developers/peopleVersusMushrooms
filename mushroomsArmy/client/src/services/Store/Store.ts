@@ -3,7 +3,7 @@ import { TUser } from "../server/types";
 type TData = {
     token: string | null;
     user: TUser | null;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 class Store {
@@ -12,7 +12,7 @@ class Store {
         user: null
     }
 
-    set(name: string, value: any) {
+    set(name: string, value: unknown) {
         this.data[name] = value;
     }
 

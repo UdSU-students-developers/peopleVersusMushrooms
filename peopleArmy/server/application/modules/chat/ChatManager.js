@@ -1,5 +1,5 @@
 const CONFIG = require('../../../config');
-const BaseManager = require('../BaseManager');
+const BaseManager = require('../../../../../global/modules/BaseManager');
 
 const { MESSAGE_FROM_CLIENT, MESSAGE_TO_CLIENTS } = CONFIG.SOCKETS;
 

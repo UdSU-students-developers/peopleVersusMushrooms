@@ -3,7 +3,7 @@
  */
 export type TError = {
     code: number;
-    text: string;
+    message: string;
 }
 
 /**
@@ -20,9 +20,28 @@ export type TResponse<T> = {
  */
 export type TUser = {
     token: string;
-    username: string;
+    name: string;
     id?: number;
     guid?: string;
+}
+
+export interface ILobby {
+    lobbyGuid: string;
+    lobbyName: string;
+    playersGuids: {
+        spectator: string | null;
+        mushroomsArmy: string | null;
+        mushroomsEconomy: string | null;
+        peopleArmy: string | null;
+        peopleEconomy: string | null;
+    };
+    playersIsReady: {
+        spectator: boolean;
+        mushroomsArmy: boolean;
+        mushroomsEconomy: boolean;
+        peopleArmy: boolean;
+        peopleEconomy: boolean;
+    };
 }
 
 /**
@@ -58,6 +77,7 @@ export type TUnit = {
     y: number;
     hp: number;
     maxHp: number;
+    isHealing?: boolean;
 }
 
 // Здание (цель для армии грибов)
@@ -68,6 +88,11 @@ export type TBuilding = {
     y: number;
     hp: number;
     maxHp: number;
+    sizeX?: number;
+    sizeY?: number;
+    isAlive?: boolean;
+    isExploding?: boolean;
+    isAttacking?: boolean;
 }
 
 // Лужа слайма
@@ -78,13 +103,25 @@ export type TSlimePool = {
     ttl: number;
 }
 
-// Карта — матрица 50x50 (0=равнина, 1=вода, 2=горы, null=неизвестно)
+// Снаряд
+export type TProjectile = {
+    guid: string;
+    type: 'sporomet' | 'sporovaya_bashnya' | 'eblekar';
+    fromX: number;
+    fromY: number;
+    toX: number;
+    toY: number;
+    createdAt: number;
+}
+
+// Карта — матрица 100x100 (0=равнина, 1=вода, 2=горы, null=неизвестно)
 export type TMapData = (number | null)[][];
 
 // Состояние армии (приходит каждые 200мс через game:state)
 export type TArmyState = {
-    map: (number | null)[][];
+    map: TMapData;
     units: TUnit[];
     buildings: TBuilding[];
     slimePuddles: TSlimePool[];
-}
+    projectiles: TProjectile[];
+};

@@ -1,32 +1,53 @@
+//GLOBAL
+const GLOBAL_CONFIG = require('../../global/globalConfig');
+const DB = require('../../global/modules/db/DB');
+const Mediator = require('../../global/modules/Mediator');
+const Answer = require('../../global/Answer');
+const UserManager = require('../../global/modules/user/UserManager');
+const Common = require('../../global/modules/common/Common');
+const LobbyManager = require('../../global/modules/lobby/LobbyManager');
+
+//LOCAL
 import CONFIG from './config';
 import express from 'express';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 
 import Router from './application/router/Router';
-import DB from './application/modules/db/DB';
-import Mediator from './application/modules/Mediator';
-import Answer from './application/Answer';
-import UserManager from './application/modules/user/UserManager';
 import ArmyManager from './application/modules/army/ArmyManager';
-import Common from './application/modules/common/Common';
 
-const { NAME, PORT, DATABASE } = CONFIG;
+const { NAME, ROLE, PORT } = CONFIG;
+const { DATABASES } = GLOBAL_CONFIG;
 
 const app = express();
 const server = createServer(app);
-const io = new SocketIOServer(server, { cors: CONFIG.CORS });
+const io = new SocketIOServer(server, { cors: GLOBAL_CONFIG.CORS });
 
-const db = new DB({ DATABASE });
-const mediator = new Mediator(CONFIG.MEDIATOR);
 const common = new Common();
+const db = new DB({ DATABASE: DATABASES.MUSHROOMS_ARMY });
+const mediator = new Mediator(CONFIG.MEDIATOR);
 const answer = new Answer();
 
-new UserManager({ mediator, db, common, io, answer });
+new UserManager({ mediator, db, io, answer, common });
 new ArmyManager({ mediator, db, common, io, answer });
+new LobbyManager({ mediator, db, io, answer, common }, ROLE);
+
+app.use(GLOBAL_CONFIG.CORS.middleware);
+
+app.use((req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) => {
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    if (req.method === 'OPTIONS') {
+        res.sendStatus(200);
+        return;
+    }
+    next();
+});
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static(`${__dirname}/public`));
-app.use(express.json());
 app.use('/', Router({ answer, mediator }));
 
 function deinit(): void {
@@ -34,7 +55,7 @@ function deinit(): void {
     setTimeout(() => process.exit(), 500);
 }
 
-const startLog = `${NAME} started at port ${PORT}`;
+const startLog = `${NAME} started at port ${PORT}\nYou can connect to server ONLY from CORS: \n ${GLOBAL_CONFIG.CORS.origin}`;
 
 server.listen(PORT, () => console.log(startLog));
 

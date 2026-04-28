@@ -49,22 +49,30 @@ export type TLarva = {
 export type TScene = {
     guid: string;
     mushrooms: TMushroom[]; 
-    buildings: (TSmallReactor | number)[]; //number тут временно, загатовка на разные типы
+    buildings: (TSmallReactor | number)[];
     map: number[][];
     larvae: TLarva[];
 }
 
 export type TMessages = TMessage[];
 
-type TPlayer = {
-    guid: string;
-    ready: boolean;
+export type TLobbies = TLobby[];
+
+export type TLobbyServer = {
+    lobbyGuid: string;
+    lobbyName: string;
+    playersGuids: Record<string, string | null>; 
+    playersIsReady?: Record<string, boolean>;
 }
 
-type TLobby = {
+export type TPlayer = {
+    guid: string;
+    ready: boolean;
+    role: string;
+}
+
+export type TLobby = {
     lobbyGuid: string;
     lobbyName: string;
     players: TPlayer[];
 }
-
-export type TLobbies = TLobby[];

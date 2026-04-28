@@ -1,66 +1,64 @@
 .button {
-    padding: 12px 16px;
-    border: 3px solid #3d2817;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
     cursor: pointer;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
     text-align: center;
     user-select: none;
     min-width: 120px;
-    background: #3d2817;
-    color: #e8d4b8;
-    box-shadow: 3px 3px 0 #0d0a08;
-    image-rendering: pixelated;
-    line-height: 1.6;
-    transition: all 0.1s;
+    background: #334155;
+    color: #f1f5f9;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease-in-out;
+    line-height: 1.5;
     
     &:hover {
-        background: #4a3320;
-        box-shadow: 2px 2px 0 #0d0a08;
-        transform: translate(1px, 1px);
+        transform: translateY(-1px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        opacity: 0.9;
     }
     
     &:active {
-        box-shadow: 1px 1px 0 #0d0a08;
-        transform: translate(2px, 2px);
+        transform: translateY(0);
+        box-shadow: none;
     }
     
     &:disabled {
-        background: #1a1410 !important;
-        color: #3d2817 !important;
+        background: #1e293b !important;
+        color: #475569 !important;
         cursor: not-allowed !important;
-        box-shadow: 3px 3px 0 #0d0a08 !important;
+        box-shadow: none !important;
         transform: none !important;
-        opacity: 0.5;
+        opacity: 0.6;
     }
 }
 
 .button-primary {
-    background: #4a5d7e;
-    border-color: #3d2817;
-    color: #e8d4b8;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
     
     &:hover {
-        background: #5a6d8e;
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
     }
 }
 
 .button-danger {
-    background: #c9453d;
-    border-color: #3d2817;
-    color: #e8d4b8;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
     
     &:hover {
-        background: #d94f47;
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
     }
 }
 
 .button-accent {
-    background: #d4a574;
-    border-color: #3d2817;
-    color: #1a1410;
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    color: white;
     
     &:hover {
-        background: #e6b886;
+        background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
     }
 }

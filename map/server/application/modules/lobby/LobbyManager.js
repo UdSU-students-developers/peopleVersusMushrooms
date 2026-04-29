@@ -55,14 +55,6 @@ class LobbyManager extends BaseManager {
     _destroyLobby(lobbyGuid) {
         const lobby = this.lobbies[lobbyGuid];
         if (!lobby) return;
-        for (const guid of Object.values(lobby.playersGuids)) {
-            if (guid) {
-                const user = this.getUserByGuid(guid);
-                if (user) {
-                    this.io.to(user.socketId).emit(MESSAGES.LOBBY_DESTROYED, this.answer.good({ lobbyGuid }));
-                }
-            }
-        }
         delete this.lobbies[lobbyGuid];
         this._notifyLobbiesListUpdated();
     }
@@ -172,14 +164,11 @@ class LobbyManager extends BaseManager {
 
         //проверка, что все готовы
         if (e = this._checkError(!lobby.canStarted(), 2012)) return e;
-
         //оповещаем через медиатор о старте игры
-        this.mediator.call(this.EVENTS.START_GAME, lobby.getGuids());
-
+        this.mediator.call(this.EVENTS.START_GAME_MAP, lobby.getGuids());
         //удаляем лобби
         const lobbyGuid = lobby.lobbyGuid;
         this._destroyLobby(lobbyGuid);
-
         return this.answer.good(true);
     }
 

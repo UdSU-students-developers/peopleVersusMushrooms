@@ -5,21 +5,13 @@ const BMP = require("./entities/BMP");
 const { INTERVAL } = CONFIG.ARMY;
 
 class Army {
-    constructor({ guids, startPoint, common, callbacks = {}, guid, db }) {
+    constructor({ guids = {}, startPoint = null, map = null, buildings = [], mapGuid = null, common, callbacks = {}, guid, db }) {
+        this.guids = {};
 
         Object.keys(guids).forEach(key => this.guids[key] = guids[key]);
 
-        /*
-        this.guids = {
-            spectator: null,
-            peopleArmy: null,
-            peopleEconomy: null,
-            mushroomsArmy: null,
-            mushroomsEconomy: null,
-        }
-        */
         this.guid = guid;
-        this.mapGuid = this.guids.spectator;
+        this.mapGuid = mapGuid || this.guids.spectator;
         this.common = common;
         this.callbacks = callbacks;
         this.units = []; // наши юниты
@@ -31,7 +23,7 @@ class Army {
         this.unitTypes = {};
         db.getUnitTypes().then(types => { this.unitTypes = types; });
 
-        this._initMap();
+        this._initMap(map);
         this._initUnits(startPoint);
 
         this.interval = setInterval(() => this.update(), INTERVAL); // интервал обновления игры
@@ -51,14 +43,13 @@ class Army {
         }
     }
 
-    _initMap() {
-        this.map = [];
-        for (let i = 0; i < 50; i++) {
-            this.map.push([]);
-            for (let j = 0; j < 50; j++) {
-                this.map[i][j] = null;
-            }
+    _initMap(map = null) {
+        if (Array.isArray(map)) {
+            this.map = map;
+            return;
         }
+
+        this.map = Array.from({ length: 50 }, () => Array.from({ length: 50 }, () => null));
     }
 
     _initUnits(startPoint) {

@@ -127,7 +127,7 @@ class Map {
                 roleEntities.push(entity);
             }
         });
-        const sources = getVisibleEntities(this.sources, roleEntities).map(source => source.get());
+        const sources = this.getVisibleEntities(this.sources, roleEntities).map(source => source.get());
         return { sources };
     }
 

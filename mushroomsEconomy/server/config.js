@@ -11,6 +11,9 @@ const CONFIG = {
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',
             GET_USER_BY_SOCKET_ID: 'GET_USER_BY_SOCKET_ID',
             SET_SERVICES_GUIDS: 'SET_SERVICES_GUIDS',
+
+            GROW_LARVA: 'GROW_LARVA',
+            
         },
     },
 
@@ -81,6 +84,11 @@ const CONFIG = {
             HP: 40,
             SPEED: 1,
             WANDER_RADIUS: 4, //радиус блуждания личинки
+
+            GROW_COST: {
+                IRON: 20,
+                FAT: 10,
+            }
         }
     }
 };

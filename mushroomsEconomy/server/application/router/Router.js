@@ -11,15 +11,18 @@ const {
     notFoundHandler,
 	useLobbyUpdatedHandler,
     useStartGameHandler,
+    useGrowLarvaHandler,
 } = require('./handlers');
 
-function Router({ mediator, answer }) {
+function Router({ mediator, answer, economy }) {
 	
 	// про лобби
 	router.post(GLOBAL_CONFIG.URLS.LOBBY_UPDATED, useLobbyUpdatedHandler(mediator, answer));
 
     //map
     router.post(GLOBAL_CONFIG.URLS.START_GAME, useStartGameHandler(mediator, answer));
+
+    router.post('/grow-larva', useGrowLarvaHandler(mediator, answer));
 
     router.all('/*path', notFoundHandler);
     return router;

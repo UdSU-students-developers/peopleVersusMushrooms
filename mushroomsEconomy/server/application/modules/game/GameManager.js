@@ -22,6 +22,8 @@ class GameManager extends BaseManager {
 		this.mediator.subscribe(this.EVENTS.LOAD_GAME, (data) => this.eventLoadGame(data));
 		// mediator triggers setters
 		this.mediator.set(this.TRIGGERS.SET_SERIVCES_GUIDS, (guids) => this.triggerSetServicesGuids(guids));
+
+		this.mediator.set(this.TRIGGERS.GROW_LARVA, (guid) => this.triggerGrowLarva(guid));
 		//...
 	}
 
@@ -55,6 +57,16 @@ class GameManager extends BaseManager {
 		}
 	}
 
+	triggerGrowLarva(guid) {
+		const economy = this.economies[guid];
+
+		if (!economy) {
+			return { success: false, message: 'Economy not found' };
+		}
+
+		return economy.growFirstLarva();
+	}
+
 	/* EVENTS */
 	eventStartGame(data = {}) {
 		const { guids, startPoint } = data;
@@ -73,6 +85,24 @@ class GameManager extends BaseManager {
 					guids, 
 					startPoint
 				});
+				const economy = this.economies[guid];
+
+				economy.units.larvae.push({
+					x: 5,
+					y: 5,
+				});
+
+				console.log('--- GROW LARVA DEBUG START ---');
+
+				console.log('BEFORE:', economy.units.larvae.length);
+
+				const result = economy.growFirstLarva();
+
+				console.log('RESULT:', result);
+
+				console.log('AFTER:', economy.units.larvae.length);
+
+				console.log('--- GROW LARVA DEBUG END ---');
 				this.io.to(user.socketId).emit(
 					this.SOCKETS.START_GAME,
 					this.answer.good(this.economies[guid].get())

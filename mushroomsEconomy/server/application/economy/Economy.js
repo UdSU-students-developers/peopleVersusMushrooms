@@ -56,6 +56,12 @@ class Economy {
             mushroomsArmy: null,
             mushroomsEconomy: null,
         }
+
+        this.resources = {
+            iron: 100,
+            fat: 100,
+        };
+
         Object.keys(guids).forEach(key => this.guids[key] = guids[key]);
 
         this.map = this._initEmptyMap();
@@ -205,6 +211,43 @@ class Economy {
             reactor.energy -= consumeEnergy;
             remainingAmount -= consumeEnergy;
         }
+    }
+
+    getResources() {
+        return this.resources;
+    }
+
+    hasResources(cost) {
+        return (
+            this.resources.iron >= cost.IRON &&
+            this.resources.fat >= cost.FAT
+        );
+    }
+
+    consumeResources(cost) {
+        this.resources.iron -= cost.IRON;
+        this.resources.fat -= cost.FAT;
+    }
+
+    growFirstLarva() {
+        const larva = this.units.larvae[0];
+        if (!larva) return { success: false, message: 'Нет личинок' };
+
+        const cost = CONFIG.ECONOMY.LARVA.GROW_COST;
+
+        if (!this.hasResources(cost)) {
+            return { success: false, message: 'Недостаточно ресурсов' };
+        }
+
+        this.consumeResources(cost);
+
+        this.units.larvae.shift();
+
+        console.log(`Личинка выросла в ТИРАНИДА!`);
+
+        this.updated = true;
+
+        return { success: true };
     }
 
     updateLarvae() {

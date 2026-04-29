@@ -64,7 +64,11 @@ class Economy {
         /**************/
 
         // start game proccess
-        this.spawnArmyUnit(GLOBAL_CONFIG.UNIT_TYPES.MUSHROOMS_ARMY.CHAMPIGNEB, 4, 4)
+        this.spawnArmyUnit({ 
+            armyGuid: guids.armyGuid,
+            type: GLOBAL_CONFIG.UNIT_TYPES.MUSHROOMS_ARMY.CHAMPIGNEB, 
+            x: 4, 
+            y: 4 });
         this.updated = false;
         this.interval = setInterval(() => this.update(), INTERVAL);
     }

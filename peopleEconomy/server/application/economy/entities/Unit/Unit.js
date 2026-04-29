@@ -5,6 +5,7 @@ class Unit {
         this.y = y;
         this.hp = 1;
         this.speed = 1;
+        this.cost = 0;
 
         this.easystar = easystar;
         this.map = map;    
@@ -23,7 +24,8 @@ class Unit {
             x: this.x,
             y: this.y,
             hp: this.hp,
-            speed: this.speed,   
+            speed: this.speed, 
+            cost: this.cost,  
         };
     }
 

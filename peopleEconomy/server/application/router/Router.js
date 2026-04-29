@@ -12,11 +12,12 @@ const {
 	useLobbyUpdatedHandler,
 } = require('./handlers');
 
-function Router({ mediator, answer }) {
-	
-	// про лобби
-	router.post(URLS.LOBBY_UPDATED, useLobbyUpdatedHandler(mediator, answer));
+function Router({ mediator, answer, common }) {
 
+    // ============ LOBBY ROUTES ============
+	router.post(URLS.LOBBY_UPDATED, useLobbyUpdatedHandler(mediator, answer, common));
+
+    // ============ NOT FOUND ============
     router.all('/*path', notFoundHandler);
     return router;
 }

@@ -206,8 +206,8 @@ class Server {
         return this.mediator.get<ILobby[]>(MEDIATOR.TRIGGERS.GET_LOBBIES);
     }
 
-    generateMap(): void {
-        this.socket.emit(MEDIATOR.EVENTS.GENERATE_MAP, { width: CONFIG.WIDTH, height: CONFIG.HEIGHT });
+    generateMap(guid: string): void {
+        this.socket.emit(MEDIATOR.EVENTS.GENERATE_MAP, { guid, width: CONFIG.WIDTH, height: CONFIG.HEIGHT });
     }
 
     setGeneratedMap(data: TMap): void {

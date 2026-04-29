@@ -35,7 +35,7 @@ class MapManager extends BaseManager {
         //отдать всю проходимость
         this.mediator.set(GET_RELIEF_HANDLER, (data) => this.getReliefHandler(data));
 
-        this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
+        this.mediator.subscribe(this.EVENTS.START_GAME_MAP, (data) => this.eventStartGame(data));
 
         // ДЛЯ ТЕСТОВ
         this.mediator.set(GET_GENERATED_MAP, (data) => this.getGeneratedMapHandler(data));

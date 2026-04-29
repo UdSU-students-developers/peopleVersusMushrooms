@@ -21,9 +21,6 @@ class Economy {
         guids,
         startPoint,
     }) {
-        this.easyStar = new EasyStar.js();
-        this.easyStar.setGrid(map);
-        this.easyStar.setAcceptableTiles([0]);
         this.guid = guid; // совпадает с guid игрока
         this.db = db;
         this.common = common;
@@ -60,6 +57,10 @@ class Economy {
 
         this.map = this._initEmptyMap();
         this._initBuildings(startPoint);
+
+        this.easyStar = new EasyStar.js();
+        this.easyStar.setGrid(this.map);
+        this.easyStar.setAcceptableTiles([0]);
         /**************/
 
         // start game proccess
@@ -103,6 +104,7 @@ class Economy {
     }
 
     _initBuildings(startPoint) {
+        if (!startPoint) {startPoint = {x: 3, y: 3}};
         // создать инкубатор
         // создать маленький реактор
         this.addSmallReactor(startPoint.x + 1, startPoint.y + 1);
@@ -133,7 +135,6 @@ class Economy {
             guid: reactorGuid,
             x,
             y,
-            easyStar: this.easyStar,
         }));
     }
 

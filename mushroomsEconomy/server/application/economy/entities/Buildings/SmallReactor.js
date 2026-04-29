@@ -5,7 +5,7 @@ const { HP, SIZE, CONSUMPTION, PRODUCTION, CAPACITY } = CONFIG.ECONOMY.BIO_REACT
 
 class SmallReactor extends Building {
     constructor({ type, guid, x, y, callbacks = {} }) {
-        super({ type, guid, x, y, callbacks, hp: HP, size: SIZE, consumption: CONSUMPTION, production: PRODUCTION, capacity: CAPACITY, easyStar });
+        super({ type, guid, x, y, callbacks, hp: HP, size: SIZE, consumption: CONSUMPTION, production: PRODUCTION, capacity: CAPACITY });
 
         this.energy = 0;
         this.consumed = false;

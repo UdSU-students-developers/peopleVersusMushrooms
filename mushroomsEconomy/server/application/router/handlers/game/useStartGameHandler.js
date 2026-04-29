@@ -12,11 +12,8 @@ module.exports = (mediator, answer) => {
             mushroomEconomy 
         } = req.body;
         
-        console.log('\n\n\n\n\ 1');
-
         const response = mediator.call(START_GAME, { guids }); //Тут startPoint дополнительно к guid
-        this.mediator.call(SET_SERVICES_GUIDS, guids);
-        console.log('\n\n\n\n\ 2');
+        mediator.call(SET_SERVICES_GUIDS, guids);
 
         if (response && response.error) {
             return res.send(answer.bad(response.error));

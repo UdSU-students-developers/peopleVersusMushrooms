@@ -30,6 +30,7 @@ const Lobby: React.FC<IBasePage> = (props) => {
         if (lobbyName.trim()) {
             console.log(server.user.guid)
             server.createLobby(server.user.guid, lobbyName.trim(), 'spectator');
+            server.generateMap(server.user.guid);
             setLobbyName('');
             setShowCreateModal(false);
         }
@@ -42,6 +43,8 @@ const Lobby: React.FC<IBasePage> = (props) => {
 
     const joinLobbyHandler = (lobbyGuid: string) => {
         server.joinToLobby(server.user.guid, lobbyGuid, 'spectator');
+        server.generateMap(server.user.guid);
+
     }
 
     const leaveLobbyHandler = () => {
@@ -50,7 +53,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
     }
 
     const startGameHandler = () => {
-        server.generateMap(server.user.guid);
         server.startGame(server.user.guid);
         setPage(PAGES.MAP);
     }

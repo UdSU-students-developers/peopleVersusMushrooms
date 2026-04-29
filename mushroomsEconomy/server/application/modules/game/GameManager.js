@@ -39,12 +39,12 @@ class GameManager extends BaseManager {
 
 		if (user) {
 			this.io.to(user.socketId).emit(
-				this.SOCKETS.UPDATE_SCENE,
+				GLOBAL_CONFIG.SOCKET.UPDATE_SCENE,
 				this.answer.good(data)
 			);
 			return;
 		}
-		this.io.to(user.socketId).emit(this.SOCKETS.UPDATE_SCENE, this.answer.bad(1002));
+		this.io.to(user.socketId).emit(GLOBAL_CONFIG.SOCKET.UPDATE_SCENE, this.answer.bad(1002));
 	}
 
 	/* TRIGGERS */
@@ -67,14 +67,14 @@ class GameManager extends BaseManager {
 					common: this.common,
 					callbacks: {
 						updated: (data) => this.callbackUpdate(guid, data),
-						spawnArmyUnit: this.spawnArmyUnit(unitType, data),
+						spawnArmyUnit: (data) => this.spawnArmyUnit(data),
 					},
 					guid,
 					guids, 
 					startPoint
 				});
 				this.io.to(user.socketId).emit(
-					this.SOCKETS.START_GAME,
+					GLOBAL_CONFIG.SOCKET.START_GAME,
 					this.answer.good(this.economies[guid].get())
 				);
 				console.log("Экдономика созана");

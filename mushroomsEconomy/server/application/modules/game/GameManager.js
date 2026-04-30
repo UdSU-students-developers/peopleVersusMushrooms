@@ -78,11 +78,25 @@ class GameManager extends BaseManager {
 					this.answer.good(this.economies[guid].get())
 				);
 				console.log("Экдономика созана");
+				this.getRelief(guids.mapGuid, guid, user.socketId);
 				return this.answer.good(true);
 			}
 			return this.answer.bad(1001)
 		}
 		return this.answer.bad(4001);
+	}
+
+	getRelief(mapGuid, userGuid, socketId) {
+		const relief = this.mediator.get(this.TRIGGERS.GET_RELIEF_HANDLER, { mapGuid, userGuid });
+		if (relief) {
+			this.io.to(socketId).emit(
+				GLOBAL_CONFIG.SOCKET.RELIEF_LOADED,
+				this.answer.good({ mapGuid, map: relief })
+			);
+			console.log("Рельеф отправлен на фронт");
+		} else {
+			console.log("Не удалось получить рельеф");
+		}
 	}
 
 	spawnArmyUnit(data) { //data = {unitType, x, y, armyGuid}

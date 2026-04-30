@@ -14,7 +14,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [lobbyName, setLobbyName] = useState('');
     const [currentLobby, setCurrentLobby] = useState<ILobby | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
     const [isReady, setIsReady] = useState(false);
 
     const logoutClickHandler = async () => {
@@ -28,7 +27,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
 
     const confirmCreateLobby = () => {
         if (lobbyName.trim()) {
-            console.log(server.user.guid)
             server.createLobby(server.user.guid, lobbyName.trim(), 'spectator');
             server.generateMap(server.user.guid);
             setLobbyName('');
@@ -44,7 +42,10 @@ const Lobby: React.FC<IBasePage> = (props) => {
     const joinLobbyHandler = (lobbyGuid: string) => {
         server.joinToLobby(server.user.guid, lobbyGuid, 'spectator');
         server.generateMap(server.user.guid);
+<<<<<<< HEAD
 
+=======
+>>>>>>> af659b8a7d26bbf0e2e00775ebdb5c707b025260
     }
 
     const leaveLobbyHandler = () => {
@@ -89,17 +90,15 @@ const Lobby: React.FC<IBasePage> = (props) => {
 
         const serverErrorHandler = (error: TError) => {
             setError(error);
-            setIsLoading(false);
         };
 
         const createLobbyHandler = (data: any) => {
             setCurrentLobby(data);
             setIsReady(false);
-            setIsLoading(false);
         };
 
         const mapHandler = (data: TMap) => {
-            console.log('Карта получена:', data);
+            console.log('Получена карта: ', data);
             server.setGeneratedMap(data);
         };
 
@@ -107,21 +106,18 @@ const Lobby: React.FC<IBasePage> = (props) => {
             console.log('Присоединились к комнате:', data);
             setCurrentLobby(data);
             setIsReady(false);
-            setIsLoading(false);
         };
 
         const leaveLobbyHandler = (data: any) => {
             console.log('Покинули комнату:', data);
             setCurrentLobby(null);
             setIsReady(false);
-            setIsLoading(false);
         };
 
         const getLobbiesHandler = () => {
             const data = server.getLobbies();
             console.log('Список комнат:', data);
             setLobbies(data || []);
-            setIsLoading(false);
         };
 
         const lobbyUpdatedHandler = (data: any) => {
@@ -264,11 +260,10 @@ const Lobby: React.FC<IBasePage> = (props) => {
 
             <div className="lobbies-list">
                 <h2>Доступные комнаты</h2>
-                {isLoading && <p>Загрузка...</p>}
-                {!isLoading && lobbies.length === 0 && (
+                {lobbies.length === 0 && (
                     <p>Нет доступных комнат. Создайте первую!</p>
                 )}
-                {!isLoading && lobbies.length > 0 && (
+                {lobbies.length > 0 && (
                     <div className="lobbies-grid">
                         {lobbies.map((lobby) => (
                             <div key={lobby.lobbyGuid} className="lobby-card">

@@ -42,6 +42,10 @@ const Lobby: React.FC<IBasePage> = (props) => {
     const joinLobbyHandler = (lobbyGuid: string) => {
         server.joinToLobby(server.user.guid, lobbyGuid, 'spectator');
         server.generateMap(server.user.guid);
+<<<<<<< HEAD
+
+=======
+>>>>>>> af659b8a7d26bbf0e2e00775ebdb5c707b025260
     }
 
     const leaveLobbyHandler = () => {

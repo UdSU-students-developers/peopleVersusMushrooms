@@ -21,7 +21,6 @@ class GameManager extends BaseManager {
 		this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
 		this.mediator.subscribe(this.EVENTS.LOAD_GAME, (data) => this.eventLoadGame(data));
 		// mediator triggers setters
-		this.mediator.set(this.TRIGGERS.SET_SERIVCES_GUIDS, (guids) => this.triggerSetServicesGuids(guids));
 		//...
 	}
 
@@ -39,25 +38,30 @@ class GameManager extends BaseManager {
 
 		if (user) {
 			this.io.to(user.socketId).emit(
-				this.SOCKETS.UPDATE_SCENE,
+				GLOBAL_CONFIG.SOCKET.UPDATE_SCENE,
 				this.answer.good(data)
 			);
 			return;
 		}
-		this.io.to(user.socketId).emit(this.SOCKETS.UPDATE_SCENE, this.answer.bad(1002));
+		this.io.to(user.socketId).emit(GLOBAL_CONFIG.SOCKET.UPDATE_SCENE, this.answer.bad(1002));
 	}
 
 	/* TRIGGERS */
 
-	triggerSetServicesGuids(guids = {}, data) {
-		if (guids) {
-			this.economies[data.guid].initGuids(guids);
+	triggerSetServicesGuids(data = {}) {
+		console.log(data.guids);
+		if (data.guids) {
+			this.economies[data.guids.mushroomsEconomy].initGuids(data.guids);
 		}
 	}
 
 	/* EVENTS */
 	eventStartGame(data = {}) {
+
 		const { guids, startPoint } = data;
+		//console.log(guids);
+		//console.log(SET_SERVICES_GUIDS);
+
 		if (guids?.mushroomsEconomy) {
 			const guid = guids.mushroomsEconomy;
 			const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
@@ -67,17 +71,16 @@ class GameManager extends BaseManager {
 					common: this.common,
 					callbacks: {
 						updated: (data) => this.callbackUpdate(guid, data),
-						spawnArmyUnit: this.spawnArmyUnit(unitType, data),
+						spawnArmyUnit: (data) => this.spawnArmyUnit(data),
 					},
-					guid,
 					guids, 
 					startPoint
 				});
 				this.io.to(user.socketId).emit(
-					this.SOCKETS.START_GAME,
+					GLOBAL_CONFIG.SOCKET.START_GAME,
 					this.answer.good(this.economies[guid].get())
 				);
-				console.log("Экдономика созана");
+				console.log("Экономика создана");
 				return this.answer.good(true);
 			}
 			return this.answer.bad(1001)

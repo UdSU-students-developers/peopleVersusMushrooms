@@ -132,9 +132,15 @@ function buildDefaultMap(): number[][] {
     return map;
 }
 
+function isValidMap(map: unknown): map is number[][] {
+    return Array.isArray(map) &&
+        map.length > 0 &&
+        map.every((row) => Array.isArray(row) && row.every((cell) => Number.isFinite(cell)));
+}
+
 const Game: React.FC<IBasePage> = ({ mediator, server, setPage }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const mapRef = useRef<number[][]>(buildDefaultMap());
+    const mapRef = useRef<number[][]>((storedMap => isValidMap(storedMap) ? storedMap : buildDefaultMap())(mediator.get(CONFIG.MEDIATOR.TRIGGERS.GET_STORE, 'map')));
     const unitsRef = useRef<UnitData[]>([]);
     const animFrameRef = useRef<number>(0);
     const [selectedType, setSelectedType] = useState<'soldier' | 'bmp'>('soldier');
@@ -143,7 +149,9 @@ const Game: React.FC<IBasePage> = ({ mediator, server, setPage }) => {
 
     const guid: string | null = mediator.get(CONFIG.MEDIATOR.TRIGGERS.GET_STORE, 'guid');
     const socket: any = mediator.get(CONFIG.MEDIATOR.TRIGGERS.GET_STORE, 'socket');
-
+    if (mapRef) {
+        console.log("карта дошла до game")
+    }
     // Игровой цикл — рисуем каждый кадр
     const render = useCallback(() => {
         const canvas = canvasRef.current;

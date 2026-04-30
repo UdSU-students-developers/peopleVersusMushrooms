@@ -17,14 +17,10 @@ class Economy {
         db,
         common,
         callbacks: { updated, spawnArmyUnit },
-        guid,
         guids,
         startPoint,
     }) {
-        this.easyStar = new EasyStar.js();
-        this.easyStar.setGrid(map);
-        this.easyStar.setAcceptableTiles([0]);
-        this.guid = guid; // совпадает с guid игрока
+        this.guid = guids.mushroomsEconomy; // совпадает с guid игрока
         this.db = db;
         this.common = common;
         this.callbacks = { updated, spawnArmyUnit };
@@ -60,10 +56,14 @@ class Economy {
 
         this.map = this._initEmptyMap();
         this._initBuildings(startPoint);
+
+        this.easyStar = new EasyStar.js();
+        this.easyStar.setGrid(this.map);
+        this.easyStar.setAcceptableTiles([0]);
         /**************/
 
         // start game proccess
-        this.spawnArmyUnit(GLOBAL_CONFIG.UNIT_TYPES.MUSHROOMS_ARMY.CHAMPIGNEB, 4, 4)
+        this.spawnArmyUnit({armyGuid: guids.mushroomsArmy, type: GLOBAL_CONFIG.UNIT_TYPES.MUSHROOMS_ARMY.CHAMPIGNEB, x: 4, y: 4 });
         this.updated = false;
         this.interval = setInterval(() => this.update(), INTERVAL);
     }
@@ -103,6 +103,7 @@ class Economy {
     }
 
     _initBuildings(startPoint) {
+        if (!startPoint) {startPoint = {x: 3, y: 3}};
         // создать инкубатор
         // создать маленький реактор
         this.addSmallReactor(startPoint.x + 1, startPoint.y + 1);
@@ -133,7 +134,6 @@ class Economy {
             guid: reactorGuid,
             x,
             y,
-            easyStar: this.easyStar,
         }));
     }
 
@@ -167,8 +167,8 @@ class Economy {
     }
 
     // 3. передать боевых юнитов в армию (callback)
-    spawnArmyUnit(unitType, x, y) { //Получаются из личинок
-        this.callbacks.spawnArmyUnit(unitType, x, y, this.guids.armyGuid);
+    spawnArmyUnit(unitData) { //Получаются из личинок
+        this.callbacks.spawnArmyUnit(unitData);
     }
 
     reactorsConsume() {

@@ -15,43 +15,6 @@ const MapCanvas: React.FC = () => {
     const Canvas = useCanvas(render);
     const { WINDOW } = CONFIG;
 
-
-    useEffect(() => {
-        const { GENERATE_MAP } = mediator.getEventTypes();
-
-        const renderMap = (mapData: TMap) => {
-            const cells = mapData.map.flatMap((row: any[], y: number) =>
-                row.map((type, x) => ({
-                    x,
-                    y,
-                    type,
-                    color: type === 1 ? 'blue'
-                        : type === 2 ? 'gray'
-                            : 'green',
-                }))
-            );
-            map?.setCells(cells);
-        };
-
-        mediator.subscribe(GENERATE_MAP, renderMap);
-        
-        return () => {
-            mediator.unsubscribe(GENERATE_MAP, renderMap);
-            map?.destructor();
-        };
-    }, []);
-
-    function render(fps: number): void {
-        if (canvas && map) {
-            canvas.clear();
-            map.cells.forEach((cell) => {
-                canvas.rect(cell.x * 8, cell.y * 8, 100, cell.color);
-            });
-            canvas.text(WINDOW.LEFT + 20, WINDOW.TOP + 50, String(fps), 'red');
-            canvas.render();
-        }
-    }
-
     useEffect(() => {
         map = new Map(CONFIG.WINDOW.WIDTH, CONFIG.WINDOW.HEIGHT);
         canvas = Canvas({
@@ -71,8 +34,37 @@ const MapCanvas: React.FC = () => {
         };
     });
 
-    // выстреливает только при уничтожении компоненты
-    useEffect(() => () => map?.destructor());
+    useEffect(() => {
+        const renderMap = (mapData: TMap) => {
+            const cells = mapData.map.flatMap((row: any[], y: number) =>
+                row.map((type, x) => ({
+                    x,
+                    y,
+                    type,
+                    color: type === 1 ? 'blue'
+                        : type === 2 ? 'gray'
+                            : 'green',
+                }))
+            );
+            map?.setCells(cells);
+        };
+        renderMap(server.getGeneratedMap()!);
+        
+        return () => {
+            map?.destructor();
+        };
+    }, []);
+
+    function render(fps: number): void {
+        if (canvas && map) {
+            canvas.clear();
+            map.cells.forEach((cell) => {
+                canvas.rect(cell.x * 8, cell.y * 8, 100, cell.color);
+            });
+            canvas.text(WINDOW.LEFT + 20, WINDOW.TOP + 50, String(fps), 'red');
+            canvas.render();
+        }
+    }
 
     return (<div id={mapField} className={mapField}></div>);
 };

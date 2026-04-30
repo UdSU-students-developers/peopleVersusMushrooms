@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { io, Socket } from 'socket.io-client';
+import md5 from 'md5';
 import { IBasePage, PAGES } from '../PageManager';
 import CONFIG from '../../config';
 import './Login.css';
@@ -21,7 +22,6 @@ const Login: React.FC<IBasePage> = (props: IBasePage) => {
                 const token = userData?.token ?? null;
                 mediator.get(CONFIG.MEDIATOR.TRIGGERS.SET_STORE, { name: 'user', value: userData });
                 mediator.get(CONFIG.MEDIATOR.TRIGGERS.SET_STORE, { name: 'token', value: token });
-                
                 mediator.get(CONFIG.MEDIATOR.TRIGGERS.SET_STORE, { name: 'socket', value: client });
                 mediator.get(CONFIG.MEDIATOR.TRIGGERS.SET_STORE, { name: 'guid', value: userData?.guid ?? null });
                 setPage(PAGES.GAME);
@@ -32,7 +32,7 @@ const Login: React.FC<IBasePage> = (props: IBasePage) => {
 
         return () => {
             client.off(CONFIG.SOCKETS.LOGIN);
-
+            setSocket(null);
         };
     }, [setPage, mediator]);
 
@@ -40,7 +40,7 @@ const Login: React.FC<IBasePage> = (props: IBasePage) => {
         setError('');
         socket?.emit(CONFIG.SOCKETS.LOGIN, {
             name: name.trim(),
-            password: password.trim(),
+            passwordHash: md5(password.trim()),
         });
     };
 
@@ -75,10 +75,19 @@ const Login: React.FC<IBasePage> = (props: IBasePage) => {
                         />
                     </div>
                     <div className="login-actions">
-                        <button type="button" className="login-btn login-btn-primary" onClick={login}>
+                        <button
+                            type="button"
+                            className="login-btn login-btn-primary"
+                            onClick={login}
+                        >
                             Войти
                         </button>
-                        <button type="button" className="login-btn login-btn-secondary" onClick={() => props.setPage(PAGES.REGISTRATION)}>
+
+                        <button
+                            type="button"
+                            className="login-btn login-btn-secondary"
+                            onClick={() => props.setPage(PAGES.REGISTRATION)}
+                        >
                             Регистрация
                         </button>
                     </div>
@@ -87,6 +96,6 @@ const Login: React.FC<IBasePage> = (props: IBasePage) => {
             </div>
         </div>
     );
-}
+};
 
 export default Login;

@@ -10,7 +10,8 @@ class Building {
         this.size = size;
         this.consumption = consumption; // энергопотребление за единицу времени
         this.production = production; // сколько производит за единицу времени
-        this.capacity = capacity; // емкость внутреннего хранилища
+        this.capacity = capacity; // максимальная емкость внутреннего хранилища
+
     }
 
     get() {
@@ -44,12 +45,6 @@ class Building {
         return this.capacity;
     }
 
-    //уничтожить здание ?? (переопределять у труб, вопрос)
-    destroy() {
-        if (this.callbacks.onDestroy) {
-            this.callbacks.onDestroy(this.guid);
-        }
-    }
 }
 
 module.exports = Building;

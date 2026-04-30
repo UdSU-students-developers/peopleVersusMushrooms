@@ -39,12 +39,12 @@ class GameManager extends BaseManager {
 
 		if (user) {
 			this.io.to(user.socketId).emit(
-				this.SOCKETS.UPDATE_SCENE,
+				GLOBAL_CONFIG.SOCKET.UPDATE_SCENE,
 				this.answer.good(data)
 			);
 			return;
 		}
-		this.io.to(user.socketId).emit(this.SOCKETS.UPDATE_SCENE, this.answer.bad(1002));
+		this.io.to(user.socketId).emit(GLOBAL_CONFIG.SOCKET.UPDATE_SCENE, this.answer.bad(1002));
 	}
 
 	/* TRIGGERS */
@@ -66,19 +66,27 @@ class GameManager extends BaseManager {
 					db: this.db,
 					common: this.common,
 					callbacks: {
-						updated: (data) => this.callbackUpdate(guid, data)
+						updated: (data) => this.callbackUpdate(guid, data),
+						spawnArmyUnit: (data) => this.spawnArmyUnit(data),
 					},
 					guid,
 					guids, 
 					startPoint
 				});
 				this.io.to(user.socketId).emit(
-					this.SOCKETS.START_GAME,
+					GLOBAL_CONFIG.SOCKET.START_GAME,
 					this.answer.good(this.economies[guid].get())
 				);
 				console.log("Экдономика созана");
+				return this.answer.good(true);
 			}
+			return this.answer.bad(1001)
 		}
+		return this.answer.bad(4001);
+	}
+
+	spawnArmyUnit(data) { //data = {unitType, x, y, armyGuid}
+		this.sendToMushroomsArmy(GLOBAL_CONFIG.URLS.SPAWN_UNIT, data);
 	}
 
 	/* SOCKETS */

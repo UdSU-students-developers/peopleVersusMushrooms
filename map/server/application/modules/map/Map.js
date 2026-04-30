@@ -109,7 +109,7 @@ class Map {
                 notRoleEntities.push(entity);
             }
         });
-        const visibleEntities = getVisibleEntities(notRoleEntities, roleEntities);
+        const visibleEntities = this.getVisibleEntities(notRoleEntities, roleEntities);
         visibleEntities.forEach(entity => {
             if (entity instanceof Unit) {
                 units.push(entity.get());
@@ -127,7 +127,7 @@ class Map {
                 roleEntities.push(entity);
             }
         });
-        const sources = getVisibleEntities(this.sources, roleEntities).map(source => source.get());
+        const sources = this.getVisibleEntities(this.sources, roleEntities).map(source => source.get());
         return { sources };
     }
 

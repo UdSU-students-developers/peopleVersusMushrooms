@@ -85,17 +85,15 @@ class BaseManager {
         }
     }
 
-    sendToMap<T, K = undefined>(
+    sendToMap<K = undefined>(
         urlPath: string,
         mapGuid: string,
         armyGuid: string,
-        data: T | null = null,
-        extraPath?: string
+        data: Record<string, unknown> | null = null,
     ): Promise<K | null> {
-        const extra = extraPath ? `/${extraPath}` : '';
-        return this.send(
-            `${GLOBAL_CONFIG.MAP.URL}${urlPath}/${mapGuid}/${armyGuid}${extra}`,
-            data,
+        return this.send<Record<string, unknown>, K>(
+            `${GLOBAL_CONFIG.MAP.URL}${urlPath}`,
+            { mapGuid, userGuid: armyGuid, ...(data as Record<string, unknown> ?? {}) },
         );
     }
 

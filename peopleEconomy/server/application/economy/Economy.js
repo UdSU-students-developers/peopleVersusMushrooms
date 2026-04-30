@@ -38,42 +38,120 @@ class Economy {
         }
     }
 
-    //создать юнита 
-    createUnit(x, y, type) {
-        //а надо ли? ну откуда то же воркер должен взяться? а про остальные юниты?
+
+    //создать юнита
+    createUnit({x, y, unitType, barracksGuid}) {
+
+        //СОЗДАНИЕ ЮНИТА ПОКА БЕЗ ТРАТЫ РЕСУРСА 
+
+        //находим здание по guid
+        const barracks = this.buildings.find(b => b.guid === barracksGuid);
+        if (!barracks) return false;
+        
+        //проверяем, что здание - казарма
+        if (barracks.type !== 'barracks') return false;
+
+        const unitGuid = this.common.guid();
+        const unit = {
+            guid: unitGuid,
+            x: x,
+            y: y,
+            type: unitType
+        };
+        
+        if (unitType === 'worker') {
+            this.workers.push(unit);
+        }
+        
+        this.updated = true;
+        return unit;
     }
 
-    //движение юнитов
-    moveUnits() {
-        [...this.workers].forEach(unit => unit.moveOneStep())
-    }
-
-    //создание трубопровода
-    addPipeline(startX, startY, endX, endY) {
-        const pipelineGuid = this.common.guid();
-        this.buildings.push(new Pipeline({
-            startX,
-            startY,
-            endX,
-            endY,
-            map: this.map,
-            guid: pipelineGuid,
-            economy: this
+    /***** ПОСТРОЙКА ЗДАНИЙ *****/
+    //PS: если все же эти методы не будут отличаться, засунуть в один createBuilding 
+    //создание трубы
+    createPipe({x, y}) {
+        const pipeGuid = this.common.guid();
+        this.buildings.push(new Pipe({
+            guid: pipeGuid,
+            x,
+            y,
         }));
         this.updated = true;
     }
 
-    //перемещение ресурсов
-    transferResources(pipelineGuid, resource) {
-        const pipeline = this.buildings.find(b => b.guid === pipelineGuid);
-        if (pipeline) {
-            pipeline.transferResources(resource);
-        }
+    //создание казармы
+    createBarracks({x, y}) {
+        const barracksGuid = this.common.guid();
+        this.buildings.push(new Barracks({
+            guid: barracksGuid,
+            x,
+            y,
+        }));
+        this.updated = true;
     }
 
+    //создание малого генератора
+    createSmallGenerator({x, y}) {
+        const generatorGuid = this.common.guid();
+        this.buildings.push(new SmallGenerator({
+            guid: generatorGuid,
+            x,
+            y,
+        }));
+        this.updated = true;
+    }
+
+    //создание буровой установки
+    createDriller({x, y}) {
+        const drillerGuid = this.common.guid();
+        this.buildings.push(new Driller({
+            guid: drillerGuid,
+            x,
+            y,
+        }));
+        this.updated = true;
+    }
+
+    // 1. выработать энергию (потратить нефть)
+    generateEnergy() {
+        //пробежаться по всем реакторам
+        //для каждого реактора взять нефть для производства энергии
+        //если в реакторе этой нефти нет,
+        //то с помощтю матрицы достижимости выяснить ближайшую нефть и сразу потратить её
+        //энергию записать в реакторы
+    }
+
+    // 2.1. потребить энергию шахтами (добыть нефть и железо)
+    miningConsumption() {
+        // пробежаться по всем буровым
+        // для каждой уровой взять (вычесть) необходимую энергию из достижимых реакторов
+        // добыть нефть
+        // распределить нефть куда-нибудь
+        // то же самое сделать для шахт
+    }
+
+    // 3. переместить юнитов
+    moveUnits() {
+        this.workers.forEach(unit => unit.moveOneStep())
+    }
+    
+
     update() {
-        //переместить юнитов
+        /***********************/
+        /* Про заводы */
+        // 1. выработать энергию (потратить нефть)
+        this.generateEnergy();
+        // 2.1. потребить энергию шахтами (добыть нефть и железо)
+        this.miningConsumption();
+        // 2.5. потребить остаток энергиизаводами (потратить железо)
+
+        /************************/
+        /* Про рабочих/крестьян */
+        // 3. переместить юнитов
         this.moveUnits();
+        // 4. выдать ресурсы рабочему, если надо
+        // 5. рабочим построить что-нибудь
 
         if (this.updated) {
             this.updated = false;

@@ -1,7 +1,7 @@
 const Building = require('./Building');
 
 class Barracks extends Building {
-    constructor({ type, guid, x, y, callbacks = {} }) {
+    constructor({ guid, x, y, callbacks = {} }) {
         super({
             type: 'barracks',
             guid,

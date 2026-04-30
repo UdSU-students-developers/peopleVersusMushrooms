@@ -48,12 +48,6 @@ class GameManager extends BaseManager {
 
 	/* TRIGGERS */
 
-	triggerSetServicesGuids(data = {}) {
-		console.log(data.guids);
-		if (data.guids) {
-			this.economies[data.guids.mushroomsEconomy].initGuids(data.guids);
-		}
-	}
 
 	/* EVENTS */
 	eventStartGame(data = {}) {

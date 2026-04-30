@@ -76,3 +76,8 @@ export type TLobby = {
     lobbyName: string;
     players: TPlayer[];
 }
+
+export type TRelief = {
+    mapGuid: string;
+    map: number[][];
+}

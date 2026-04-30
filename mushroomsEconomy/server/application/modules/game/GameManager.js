@@ -21,6 +21,7 @@ class GameManager extends BaseManager {
 		this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
 		this.mediator.subscribe(this.EVENTS.LOAD_GAME, (data) => this.eventLoadGame(data));
 		// mediator triggers setters
+		this.mediator.set(this.TRIGGERS.SET_SERIVCES_GUIDS, (guids) => this.triggerSetServicesGuids(guids));
 		//...
 	}
 
@@ -48,20 +49,15 @@ class GameManager extends BaseManager {
 
 	/* TRIGGERS */
 
-	triggerSetServicesGuids(data = {}) {
-		console.log(data.guids);
-		if (data.guids) {
-			this.economies[data.guids.mushroomsEconomy].initGuids(data.guids);
+	triggerSetServicesGuids(guids = {}, data) {
+		if (guids) {
+			this.economies[data.guid].initGuids(guids);
 		}
 	}
 
 	/* EVENTS */
 	eventStartGame(data = {}) {
-
 		const { guids, startPoint } = data;
-		//console.log(guids);
-		//console.log(SET_SERVICES_GUIDS);
-
 		if (guids?.mushroomsEconomy) {
 			const guid = guids.mushroomsEconomy;
 			const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
@@ -73,6 +69,7 @@ class GameManager extends BaseManager {
 						updated: (data) => this.callbackUpdate(guid, data),
 						spawnArmyUnit: (data) => this.spawnArmyUnit(data),
 					},
+					guid,
 					guids, 
 					startPoint
 				});
@@ -80,7 +77,7 @@ class GameManager extends BaseManager {
 					GLOBAL_CONFIG.SOCKET.START_GAME,
 					this.answer.good(this.economies[guid].get())
 				);
-				console.log("Экономика создана");
+				console.log("Экдономика созана");
 				return this.answer.good(true);
 			}
 			return this.answer.bad(1001)

@@ -32,7 +32,6 @@ class Server {
             if (result) {
                 const { LOGIN } = this.mediator.getEventTypes();
                 this.mediator.call(LOGIN, result);
-                console.log(result)
                 this.user = result
             }
         });

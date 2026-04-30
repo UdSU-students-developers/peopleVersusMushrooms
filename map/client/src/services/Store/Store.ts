@@ -165,11 +165,9 @@ class Store {
 
     setGeneratedMap(mapData: TMap): void {
         this.generatedMap = mapData;
-        console.log("КАРТА ЗАПИСАНА");
     }
 
     getGeneratedMap(): TMap | null {
-        console.log("КАРТА ОТДАНА");
         return this.generatedMap;
     }
 }

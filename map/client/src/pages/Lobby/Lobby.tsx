@@ -27,7 +27,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
 
     const confirmCreateLobby = () => {
         if (lobbyName.trim()) {
-            console.log(server.user.guid)
             server.createLobby(server.user.guid, lobbyName.trim(), 'spectator');
             server.generateMap(server.user.guid);
             setLobbyName('');
@@ -95,6 +94,7 @@ const Lobby: React.FC<IBasePage> = (props) => {
         };
 
         const mapHandler = (data: TMap) => {
+            console.log('Получена карта: ', data);
             server.setGeneratedMap(data);
         };
 

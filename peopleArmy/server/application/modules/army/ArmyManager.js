@@ -10,6 +10,8 @@ class ArmyManager extends BaseManager {
 
         // хранит армии
         this.army = {};
+        this.unitTypes = {};
+        this.unitTypesLoaded = false;
 
         // хранит данные о лобби (mapGuid, guids))
         this.lobbyData = {};
@@ -24,6 +26,16 @@ class ArmyManager extends BaseManager {
         this.mediator.set(this.TRIGGERS.CREATE_UNIT, (data) => this.createUnit(data));
         this.mediator.set(this.TRIGGERS.UNIT_TAKE_DAMAGE, (data) => this.unitTakeDamage(data));
         this.mediator.set(this.TRIGGERS.MOVE_UNIT, (data) => this.unitMove(data));
+    }
+
+    async loadUnitTypes() {
+        if (this.unitTypesLoaded) {
+            return this.unitTypes;
+        }
+        const types = await this.db.getUnitTypes();
+        this.unitTypes = types || {};
+        this.unitTypesLoaded = true;
+        return this.unitTypes;
     }
 
     destructor() {
@@ -164,6 +176,7 @@ class ArmyManager extends BaseManager {
         if (!map || !Array.isArray(map)) {
             return;
         }
+        await this.loadUnitTypes();
 
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
         if (user) {
@@ -171,7 +184,7 @@ class ArmyManager extends BaseManager {
                 this.army[guid].destructor();
                 delete this.army[guid];
             }
-            this.army[guid] = new Army({ guids, mapGuid, map, buildings: [], common: this.common, guid, db: this.db,
+            this.army[guid] = new Army({ guids, mapGuid, map, buildings: [], unitTypes: this.unitTypes, common: this.common, guid,
                 callbacks: {
                     update: (guid, data) => this.updateArmyCallback(guid, data)
                 }

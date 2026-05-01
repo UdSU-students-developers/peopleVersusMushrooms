@@ -1,6 +1,6 @@
 module.exports = (mediator, answer) => {
     return (req, res) => {
-        const {userGuid, unitGuid, x, y} = req.params;
+        const { userGuid, unitGuid, x, y } = req.body || {};
         const result = mediator.get(mediator.TRIGGERS.MOVE_UNIT, {
             userGuid,
             unitGuid,

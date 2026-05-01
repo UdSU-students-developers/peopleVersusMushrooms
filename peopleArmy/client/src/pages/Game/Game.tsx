@@ -19,7 +19,6 @@ const COLOR = {
     bmpBorder: '#7ee787',
     target: 'rgba(255, 200, 50, 0.25)',
     targetBorder: 'rgba(255, 200, 50, 0.7)',
-    path: 'rgba(74, 158, 255, 0.15)',
 };
 
 interface UnitData {
@@ -138,16 +137,13 @@ function isValidMap(map: unknown): map is number[][] {
         map.every((row) => Array.isArray(row) && row.every((cell) => Number.isFinite(cell)));
 }
 
-const Game: React.FC<IBasePage> = ({ mediator, server, setPage }) => {
+const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const mapRef = useRef<number[][]>((storedMap => isValidMap(storedMap) ? storedMap : buildDefaultMap())(mediator.get(CONFIG.MEDIATOR.TRIGGERS.GET_STORE, 'map')));
     const unitsRef = useRef<UnitData[]>([]);
     const animFrameRef = useRef<number>(0);
-    const [selectedType, setSelectedType] = useState<'soldier' | 'bmp'>('soldier');
-    const [status, setStatus] = useState('Кликните по карте, чтобы создать юнита');
     const [unitCount, setUnitCount] = useState(0);
 
-    const guid: string | null = mediator.get(CONFIG.MEDIATOR.TRIGGERS.GET_STORE, 'guid');
     const socket: any = mediator.get(CONFIG.MEDIATOR.TRIGGERS.GET_STORE, 'socket');
     if (mapRef) {
         console.log("карта дошла до game")
@@ -187,50 +183,6 @@ const Game: React.FC<IBasePage> = ({ mediator, server, setPage }) => {
 
     }, [socket]);
 
-    // Клик по канвасу — создать юнита
-    const handleCanvasClick = useCallback(
-        async (e: React.MouseEvent<HTMLCanvasElement>) => {
-            const canvas = canvasRef.current;
-            if (!canvas || !guid) return;
-
-            const rect = canvas.getBoundingClientRect();
-            // Учитываем масштаб если канвас отображается не 1:1
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            const px = (e.clientX - rect.left) * scaleX;
-            const py = (e.clientY - rect.top) * scaleY;
-
-            const x = Math.floor(px / CELL);
-            const y = Math.floor(py / CELL);
-
-            // Нельзя ставить на стену
-            if (mapRef.current[y]?.[x] !== 0) {
-                setStatus('Нельзя поставить юнита на стену');
-                return;
-            }
-
-            setStatus(`Создаём ${selectedType} на [${x}, ${y}]…`);
-
-            try {
-                const body = await server.createUnit(guid, x, y, selectedType);
-
-                if (!body) {
-                    setStatus('Ошибка сети');
-                    return;
-                }
-                if (body.result === 'ok') {
-                    setStatus(`${selectedType} создан на [${x}, ${y}]`);
-                } else {
-                    setStatus(`Ошибка: ${body.error ?? 'неизвестная'}`);
-                }
-            } catch (err) {
-                setStatus('Ошибка сети');
-                console.error(err);
-            }
-        },
-        [guid, selectedType, server]
-    );
-
     return (
         <div className="game-page">
             <div className="game-sidebar">
@@ -239,26 +191,6 @@ const Game: React.FC<IBasePage> = ({ mediator, server, setPage }) => {
                 <div className="game-stat">
                     <span className="game-stat-label">Юнитов</span>
                     <span className="game-stat-value">{unitCount}</span>
-                </div>
-
-                <div className="game-section">
-                    <p className="game-section-label">Тип юнита</p>
-                    <div className="game-type-btns">
-                        <button
-                            className={`game-type-btn ${selectedType === 'soldier' ? 'active' : ''}`}
-                            onClick={() => setSelectedType('soldier')}
-                        >
-                            <span className="game-type-dot soldier" />
-                            Солдат
-                        </button>
-                        <button
-                            className={`game-type-btn ${selectedType === 'bmp' ? 'active' : ''}`}
-                            onClick={() => setSelectedType('bmp')}
-                        >
-                            <span className="game-type-dot bmp" />
-                            БМП
-                        </button>
-                    </div>
                 </div>
 
                 <div className="game-section">
@@ -287,8 +219,6 @@ const Game: React.FC<IBasePage> = ({ mediator, server, setPage }) => {
                         Стена
                     </div>
                 </div>
-
-                <p className="game-status">{status}</p>
             </div>
 
             <div className="game-canvas-wrap">
@@ -296,9 +226,7 @@ const Game: React.FC<IBasePage> = ({ mediator, server, setPage }) => {
                     ref={canvasRef}
                     width={COLS * CELL}
                     height={ROWS * CELL}
-                    onClick={handleCanvasClick}
                     className="game-canvas"
-                    title="Кликните чтобы создать юнита"
                 />
             </div>
         </div>

@@ -5,7 +5,7 @@ const BMP = require("./entities/BMP");
 const { INTERVAL } = CONFIG.ARMY;
 
 class Army {
-    constructor({ guids = {}, startPoint = null, map = null, buildings = [], mapGuid = null, common, callbacks = {}, guid, db }) {
+    constructor({ guids = {}, startPoint = null, map = null, buildings = [], unitTypes = {}, mapGuid = null, common, callbacks = {}, guid }) {
         this.guids = {};
 
         Object.keys(guids).forEach(key => this.guids[key] = guids[key]);
@@ -20,8 +20,7 @@ class Army {
         this.enemyUnits = []; // юниты-врагм
         this.enemyBuildings = []; // здания-враги
 
-        this.unitTypes = {};
-        db.getUnitTypes().then(types => { this.unitTypes = types; });
+        this.unitTypes = unitTypes;
 
         this._initMap(map);
         this._initUnits(startPoint);

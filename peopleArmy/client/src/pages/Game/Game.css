@@ -133,14 +133,6 @@
     flex-shrink: 0;
 }
 
-.game-status {
-    margin: auto 0 0 0;
-    font-size: 11px;
-    color: #6e7681;
-    line-height: 1.5;
-    word-break: break-word;
-}
-
 .game-canvas-wrap {
     flex: 1;
     overflow: auto;
@@ -151,7 +143,7 @@
 }
 
 .game-canvas {
-    cursor: crosshair;
+    cursor: default;
     display: block;
     image-rendering: pixelated;
     border: 1px solid #1a2332;

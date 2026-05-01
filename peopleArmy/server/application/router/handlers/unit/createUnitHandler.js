@@ -1,7 +1,6 @@
 module.exports = (mediator, answer) => {
     return (req, res) => {
-        const { guid, x, y } = req.params;
-        const type = req.query.type;
+        const { guid, x, y, type } = req.body || {};
         const result = mediator.get(mediator.TRIGGERS.CREATE_UNIT, {
             guid,
             x,

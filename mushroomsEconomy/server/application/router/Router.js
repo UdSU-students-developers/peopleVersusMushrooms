@@ -11,6 +11,7 @@ const {
     notFoundHandler,
 	useLobbyUpdatedHandler,
     useStartGameHandler,
+    useDamageHandler,
 } = require('./handlers');
 
 function Router({ mediator, answer }) {
@@ -20,6 +21,8 @@ function Router({ mediator, answer }) {
 
     //map
     router.post(GLOBAL_CONFIG.URLS.START_GAME, useStartGameHandler(mediator, answer));
+
+    router.post('/damage', useDamageHandler(mediator, answer));
 
     router.all('/*path', notFoundHandler);
     return router;

@@ -10,6 +10,7 @@ const CONFIG = {
         TRIGGERS: {
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',
             GET_USER_BY_SOCKET_ID: 'GET_USER_BY_SOCKET_ID',
+            GET_MUSHROOMS_ECONOMY: 'GET_MUSHROOMS_ECONOMY',
         },
     },
 
@@ -73,7 +74,7 @@ const CONFIG = {
             RADIUS: 10, //максимальный радиус расчета ближайшей точки от центра стремления(больше 20 не ставить)
         },
         WORKER: {
-            HP: 1,
+            HP: 100,
             SPEED: 1,
         },
         LARVA: {

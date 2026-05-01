@@ -70,6 +70,10 @@ class GameManager extends BaseManager {
 					guids, 
 					startPoint
 				});
+				this.mediator.set(
+					CONFIG.MEDIATOR.TRIGGERS.GET_MUSHROOMS_ECONOMY,
+					({ guid }) => this.economies[guid]
+				);
 				this.io.to(user.socketId).emit(
 					GLOBAL_CONFIG.SOCKET.START_GAME,
 					this.answer.good(this.economies[guid].get())

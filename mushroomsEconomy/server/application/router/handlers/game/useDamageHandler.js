@@ -1,4 +1,5 @@
 const CONFIG = require('../../../../config');
+const economy = require('./Economy');
 
 module.exports = (mediator, answer) => (req, res) => {
     try {
@@ -7,11 +8,6 @@ module.exports = (mediator, answer) => (req, res) => {
         if (!guid || typeof damage !== 'number' || !economyGuid) {
             return res.json(answer.error('Invalid params'));
         }
-
-        const economy = mediator.get(
-            CONFIG.MEDIATOR.TRIGGERS.GET_MUSHROOMS_ECONOMY,
-            { guid: economyGuid }
-        );
 
         if (!economy) {
             return res.json(answer.error('Economy not found'));

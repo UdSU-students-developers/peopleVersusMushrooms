@@ -12,7 +12,6 @@ const {
 	useLobbyUpdatedHandler,
     useStartGameHandler,
 } = require('./handlers');
-const useGetReliefHandler = require('./handlers/game/useGetReliefHandler');
 
 function Router({ mediator, answer }) {
 	
@@ -21,7 +20,6 @@ function Router({ mediator, answer }) {
 
     //map
     router.post(GLOBAL_CONFIG.URLS.START_GAME, useStartGameHandler(mediator, answer));
-    router.post(GLOBAL_CONFIG.URLS.GET_RELIEF, useGetReliefHandler(mediator, answer));
 
     router.all('/*path', notFoundHandler);
     return router;

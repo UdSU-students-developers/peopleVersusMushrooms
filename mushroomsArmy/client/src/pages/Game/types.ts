@@ -70,3 +70,12 @@ export type GameState = {
   slimePuddles: SlimePuddle[]; 
   projectiles: Projectile[];
 };
+
+export type TCamera {
+  scale: number;
+  offsetX: number;
+  offsetY: number;
+  isDragging: boolean;
+  lastMouseX: number;
+  lastMouseY: number;
+}

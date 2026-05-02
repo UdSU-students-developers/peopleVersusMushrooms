@@ -1,0 +1,79 @@
+/* реализована логика визуального оформления и позиционирования выпадающего окна (свитка) */
+
+.menu-dropdown {
+  position: fixed;
+  top: var(--header-height); 
+  right: var(--menu-gap);
+  width: var(--menu-width);
+  
+  height: calc(var(--font-base) * 20); 
+
+  background-image: url('../../../../assets/map/menu_background.png');
+
+  background-size: cover; 
+  background-position: bottom;
+  background-repeat: no-repeat;
+  
+  z-index: 95; 
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+
+  justify-content: flex-start;
+
+  gap: calc(var(--font-base) * 0.7);
+
+  padding-top: 0px;
+  padding-bottom: 20px;
+  box-sizing: border-box;
+}
+
+.menu-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+}
+
+.size-toggle-buttons {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px; /* Микро-отступ между кнопками выбора */
+  margin-bottom: 15px;
+}
+
+
+body[data-game-ui-size] .menu-btn.btn-exit-lobby {
+  width: 140px; 
+  margin: 10px auto 0; 
+  flex-shrink: 0; 
+}
+
+.btn-exit-lobby:hover {
+  background-color: #8b2e2e !important;
+  border-color: #a34242 !important;
+  color: #fff !important;
+  transform: scale(1.05);
+}
+
+
+.btn-exit-lobby:hover {
+  background-color: #8b2e2e !important; 
+  
+  border-color: #481a1a !important; 
+  
+  color: #f0d8b4 !important; 
+  
+  transform: scale(1.02);
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.btn-exit-lobby:active {
+  background-color: #5c1f1f !important;
+  transform: scale(0.95);
+}

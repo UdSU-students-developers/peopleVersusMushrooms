@@ -1,4 +1,4 @@
-import { GameState, MapTile, Projectile, TerrainType, Unit } from './types';
+import { GameState, TCamera, MapTile, Projectile, TerrainType, Unit } from './types';
 import sporometSrc from '../../assets/units/Sporomet.png';
 import champignebSrc from '../../assets/units/Champigneb.png';
 import eblekarSrc from '../../assets/units/Eblekar.png';
@@ -26,10 +26,15 @@ import champignebExplFrame1 from '../../assets/units/champigneb_explosion/frame_
 import champignebExplFrame2 from '../../assets/units/champigneb_explosion/frame_2.png';
 import champignebExplFrame3 from '../../assets/units/champigneb_explosion/frame_3.png';
 import champignebExplFrame4 from '../../assets/units/champigneb_explosion/frame_4.png';
+import { camera, MIN_SCALE, MAX_SCALE } from '../../utils/camera';
+
+import grassTextureSrc from '../../assets/map/grass.webp'; 
+
+const grassImg = new Image();
+grassImg.src = grassTextureSrc;
 
 const CHAMPIGNEB_EXPL_DURATION = 1000; // 1 секунда
 const CHAMPIGNEB_EXPLOSION_FRAME_COUNT = 5;
-
 
 const unitImages: Record<string, HTMLImageElement> = {};
 const activeProjectiles = new Map<string, Projectile & { duration: number }>();
@@ -164,45 +169,101 @@ function getUnitImage(unit: Unit): HTMLImageElement | undefined {
   return unitImages[unit.type];
 }
 
-export function drawGame(
-  ctx: CanvasRenderingContext2D,
+export function drawGame(ctx: CanvasRenderingContext2D,
   state: GameState | null,
   widthCSS: number,
-  heightCSS: number
+  heightCSS: number,
+  camera: TCamera
 ) {
-  if (!state) {
-    drawPlaceholder(ctx, widthCSS, heightCSS);
-    return;
+  const canvas = ctx.canvas;
+
+  // Синхронизируем внутренний размер канваса с его реальным размером на экране
+  const rect = canvas.getBoundingClientRect();
+  if (canvas.width !== rect.width || canvas.height !== rect.height) {
+    canvas.width = rect.width;
+    canvas.height = rect.height;
   }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Инициализация один раз
+  if (!(canvas as any).__cameraInitialized) {
+    initCameraListeners(canvas);
+    (canvas as any).__cameraInitialized = true;
+  }
+
+  if (!state) return;
 
   const rows = state.map.length;
   const cols = state.map[0]?.length ?? 0;
 
-  const cellW = cols > 0 ? widthCSS / cols : widthCSS;
-  const cellH = cellW; // по ТЗ: размер тайла = canvasWidth / map[0].length
+  const cellW = (canvas.width / cols) * camera.scale;
+  const cellH = cellW;
 
-  // 1. Отрисовка карты (тайлы по state.map)
+  // 2. Считаем полный размер карты
+  const mapFullWidth = cols * cellW;
+  const mapFullHeight = rows * cellH;
+
+  const EPSILON = 0.1;
+
+  // --- ЕДИНЫЙ БЛОК УПРАВЛЕНИЯ КАМЕРОЙ ---
+  if (mapFullWidth > canvas.width + EPSILON) {
+    camera.offsetX = Math.min(0, Math.max(camera.offsetX, canvas.width - mapFullWidth));
+  } else {
+    camera.offsetX = (canvas.width - mapFullWidth) / 2;
+  }
+
+  if (mapFullHeight > canvas.height + EPSILON) {
+    camera.offsetY = Math.min(0, Math.max(camera.offsetY, canvas.height - mapFullHeight));
+  } else {
+    camera.offsetY = (canvas.height - mapFullHeight) / 2;
+  }
+
+  // 3. ПЕРЕД ВСЕМ рисуем бесконечный фон (траву)
+  ctx.fillStyle = '#45a049'; // Тот же зеленый, что на карте
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.save();
+  ctx.translate(camera.offsetX, camera.offsetY);
+
+  // --- НАЧАЛО ОТРИСОВКИ ОБЪЕКТОВ ---
+
+  // 1. Отрисовка карты (ландшафт)[cite: 1]
+  //[cite: 1] - Внутри цикла y/x
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       const terrain = state.map[y]?.[x] ?? null;
+
+      if (terrain === 0 && isImageDrawable(grassImg)) {
+        // Используем простые числа побольше, чтобы избежать видимых диагональных узоров
+        const seed = (x * 15485863 + y * 2038074743); 
+    
+        ctx.save();
+        // 1. Сначала перемещаемся в центр клетки карты
+        ctx.translate(x * cellW + cellW / 2, y * cellH + cellH / 2);
+    
+        // 2. Выбираем один из 4-х углов (0, 90, 180, 270 градусов)
+        // 360 градусов — это то же самое, что 0, поэтому Math.PI * 2 не нужен
+        const rotation = (Math.abs(seed % 4) * Math.PI) / 2;
+        ctx.rotate(rotation);
+    
+        // 3. Рисуем картинку строго симметрично относительно центра[cite: 1]
+        // Координаты (-cellW / 2) гарантируют, что центр картинки совпадет с точкой translate
+        ctx.drawImage(grassImg, -cellW / 2, -cellH / 2, cellW, cellH);
+    
+        ctx.restore();
+      }
+    
+    else {
+      // Для воды, гор или если картинка не загрузилась — оставляем заливку цветом[cite: 1]
       ctx.fillStyle = getTerrainColor(terrain);
       ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
     }
   }
+}
 
   // 1.5. Сетка
-  drawGrid(ctx, widthCSS, heightCSS, cellW, cellH, rows, cols);
-
-  // 2. Отрисовка луж слизи (полупрозрачные, под юнитами)
-  state.slimePuddles.forEach(puddle => {
-    const cx = puddle.x * cellW + cellW / 2;
-    const cy = puddle.y * cellH + cellH / 2;
-    const radiusPx = puddle.radius * Math.min(cellW, cellH);
-    ctx.beginPath();
-    ctx.arc(cx, cy, radiusPx, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(76, 175, 80, 0.4)'; // зелёный с прозрачностью 0.4
-    ctx.fill();
-  });
+  drawGrid(ctx, cols * cellW, rows * cellH, cellW, cellH, rows, cols);
 
   // 3. Отрисовка зданий (вражеские — красные; сооружения грибов — отдельный вид)
   const activeVzryvomorGuids = new Set(
@@ -440,6 +501,76 @@ export function drawGame(
     ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight);
   });
 
+  ctx.restore(); // Возвращаем контекст в норму
+
+}
+
+/**
+ * Вспомогательная функция для отрисовки полосок HP[cite: 1]
+ */
+function drawHealthBar(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, percent: number) {
+  ctx.fillStyle = '#d32f2f';
+  ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = '#4caf50';
+  ctx.fillRect(x, y, w * percent, h);
+}
+
+// 4. ФУНКЦИЯ ИНИЦИАЛИЗАЦИИ СОБЫТИЙ
+
+function initCameraListeners(canvas: HTMLCanvasElement) {
+  // Ловим событие на уровне окна, чтобы никакие слои не мешали
+  window.addEventListener('wheel', (e: WheelEvent) => {
+    const rect = canvas.getBoundingClientRect();
+
+    // Проверяем, находится ли мышь над канвасом
+    const isOverCanvas =
+      e.clientX >= rect.left &&
+      e.clientX <= rect.right &&
+      e.clientY >= rect.top &&
+      e.clientY <= rect.bottom;
+
+    if (!isOverCanvas) return;
+
+    // Блокируем стандартный скролл страницы
+    e.preventDefault();
+
+    const oldScale = camera.scale;
+    // Чувствительность зума
+    const zoomDelta = -e.deltaY * 0.0015;
+    camera.scale = Math.min(Math.max(camera.scale + zoomDelta, MIN_SCALE), MAX_SCALE);
+
+    if (oldScale !== camera.scale) {
+      // Учитываем разницу между размером в CSS и внутренним разрешением (1125 vs 900)
+      const scaleFactor = canvas.width / rect.width;
+      const mouseX = (e.clientX - rect.left) * scaleFactor;
+      const mouseY = (e.clientY - rect.top) * scaleFactor;
+
+      // Формула зума в точку курсора
+      camera.offsetX -= (mouseX - camera.offsetX) * (camera.scale / oldScale - 1);
+      camera.offsetY -= (mouseY - camera.offsetY) * (camera.scale / oldScale - 1);
+
+      console.log("Масштаб:", camera.scale.toFixed(2));
+    }
+  }, { passive: false, capture: true }); // capture: true — критически важно!
+
+  // Аналогично для перемещения (drag-n-drop)
+  canvas.addEventListener('mousedown', (e) => {
+    if (e.button === 0) {
+      camera.isDragging = true;
+      camera.lastMouseX = e.clientX;
+      camera.lastMouseY = e.clientY;
+    }
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!camera.isDragging) return;
+    camera.offsetX += e.clientX - camera.lastMouseX;
+    camera.offsetY += e.clientY - camera.lastMouseY;
+    camera.lastMouseX = e.clientX;
+    camera.lastMouseY = e.clientY;
+  });
+
+  window.addEventListener('mouseup', () => camera.isDragging = false);
 }
 
 function getTerrainColor(type: MapTile | undefined): string {
@@ -481,9 +612,6 @@ function getProjectileColor(type: Projectile['type']): string {
   }
 }
 
-/**
- * Рисует тонкую серую сетку 100×100
- */
 function drawGrid(
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -494,7 +622,7 @@ function drawGrid(
   cols: number
 ) {
   ctx.beginPath();
-  ctx.strokeStyle = '#cccccc';
+  ctx.strokeStyle = '#1518143c';
   ctx.lineWidth = 0.5;
   for (let x = 0; x <= cols; x++) {
     const px = x * cellW;

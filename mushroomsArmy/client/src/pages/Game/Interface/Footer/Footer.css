@@ -1,0 +1,134 @@
+.game-economy-resources,
+.game-footer-stats-container {
+  display: flex;
+  background-color: rgba(37, 24, 1, 0.578);
+  box-shadow:
+    inset 4px 4px 10px rgba(0, 0, 0, 0.8),
+    0 1px 0 rgba(255, 255, 255, 0.15);
+  border: 2px solid #2a1d15;
+  border-radius: 4px;
+  padding: calc(var(--font-base) * 0.7);
+
+  align-self: stretch;
+  box-sizing: border-box;
+}
+
+.game-footer-wrapper {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  box-sizing: border-box;
+  z-index: 100;
+}
+
+.game-footer-main-panel {
+  flex: 1;
+  height: var(--footer-height);
+  display: flex;
+  align-items: center;
+  padding: 15px 40px;
+  gap: 20px;
+
+  background-image:
+    linear-gradient(rgba(25, 13, 1, 0.5), rgba(25, 13, 1, 0.5)),
+    url('../../../../assets/map/tree.webp');
+  background-repeat: repeat;
+  background-size: calc(var(--footer-height) * 2) calc(var(--footer-height) * 2);
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5), 0 -4px 14px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+}
+
+.game-footer-stats-container {
+  flex: 1;
+  margin-left: 0;
+  justify-content: space-around;
+  align-items: center;
+  min-width: 0;
+}
+
+.game-footer-stats {
+  display: flex;
+  width: 100%;
+  justify-content: space-around;
+  gap: 10px;
+}
+
+.game-economy-resources-title {
+  color: #d8c7a7;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.game-economy-resources-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 15px;
+}
+
+.game-economy-resource {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #d8c7a7;
+  font-size: 14px;
+  font-weight: 400;
+  padding: 0;
+}
+
+.game-economy-resource-value {
+  color: #ffd966;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.game-economy-resources {
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: calc(var(--font-base) * 15);
+  flex-shrink: 0;
+}
+
+.game-stat-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+.game-stat-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.game-stat-label {
+  color: #d8c7a7;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.game-stat-value {
+  color: #ffd966;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.minimap-container {
+  width: var(--minimap-size);
+  height: var(--minimap-size);
+  flex-shrink: 0;
+  background-color: #000;
+  border: 3px solid #7a5237;
+  box-sizing: border-box;
+  border-radius: 4px;
+}

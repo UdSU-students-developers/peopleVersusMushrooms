@@ -818,7 +818,7 @@ function initCameraListeners(canvas: HTMLCanvasElement) {
 
     const oldScale = camera.scale;
     // Чувствительность зума
-    const zoomDelta = -e.deltaY * 0.0015;
+    const zoomDelta = -e.deltaY * 0.005;
     camera.scale = Math.min(Math.max(camera.scale + zoomDelta, MIN_SCALE), MAX_SCALE);
 
     if (oldScale !== camera.scale) {

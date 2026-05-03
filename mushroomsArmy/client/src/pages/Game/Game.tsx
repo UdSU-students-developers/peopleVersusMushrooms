@@ -47,8 +47,18 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   };
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => { keysPressed.current[e.code] = true; };
-    const handleKeyUp = (e: KeyboardEvent) => { keysPressed.current[e.code] = false; };
+    const movementKeys = new Set([
+      'KeyW', 'KeyA', 'KeyS', 'KeyD',
+      'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+    ]);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (movementKeys.has(e.code)) e.preventDefault();
+      keysPressed.current[e.code] = true;
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (movementKeys.has(e.code)) e.preventDefault();
+      keysPressed.current[e.code] = false;
+    };
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
@@ -64,7 +74,7 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
 
     const renderLoop = () => {
   // Скорость движения, которая не зависит от зума
-      const moveSpeed = 10 / camera.scale; 
+      const moveSpeed = 20 / camera.scale; 
 
       if (keysPressed.current['KeyW'] || keysPressed.current['ArrowUp']) {
         camera.offsetY += moveSpeed;

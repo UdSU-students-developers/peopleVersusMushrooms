@@ -16,10 +16,10 @@ class Sporomet extends Unit {
 
     constructor(options: TUnitOptions) {
         super(options);
-        this.hp = 8;
-        this.maxHp = 8;
-        this.speed = 1;
-        this.attackRange = 12;
+        this.hp = options.hp ?? 8;
+        this.maxHp = options.maxHp ?? 8;
+        this.speed = options.speed ?? 1;
+        this.attackRange = options.attackRange ?? 12;
         this.lastShotTime = -this.cooldown;
     }
 

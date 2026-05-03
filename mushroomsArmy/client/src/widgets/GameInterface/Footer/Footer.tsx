@@ -1,10 +1,10 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { MediatorContext } from '../../../../App';
-import CONFIG from '../../../../config';
-import Minimap from '../Minimap/Minimap';
+import { MediatorContext } from '../../../App';
+import CONFIG from '../../../config';
+import Minimap from '../MiniMap/Minimap';
 import './Footer.css';
-import { GameState, TCamera } from '../../types';
-import { camera as globalCamera } from '../../../../utils/camera'
+import { GameState, TCamera } from '../../../pages/Game/types';
+import { camera as globalCamera } from '../../../utils/camera'
 
 type FooterResource = {
   label: string;

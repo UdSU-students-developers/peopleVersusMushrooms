@@ -17,9 +17,10 @@ class Champigneb extends Unit {
 
     constructor(options: TUnitOptions) {
         super(options);
-        this.hp = 35;
-        this.maxHp = 35;
-        this.speed = 3;
+        this.hp = options.hp ?? 35;
+        this.maxHp = options.maxHp ?? 35;
+        this.speed = options.speed ?? 3;
+        this.attackRange = options.attackRange ?? 6;
     }
 
     protected explode(): void {

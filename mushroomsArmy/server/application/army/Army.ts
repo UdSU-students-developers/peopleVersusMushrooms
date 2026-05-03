@@ -13,8 +13,8 @@ export type TBuildingInput = {
     type: string;
     x: number;
     y: number;
-    hp: number;
-    maxHp: number;
+    hp?: number;
+    maxHp?: number;
     attackRange?: number;
     sizeX?: number;
     sizeY?: number;
@@ -77,12 +77,12 @@ export class Army {
     }
 
     private create(common: Common, initialBuildings: TBuildingInput[] = []) {
-        this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 0, y: 0, hp: 8, maxHp: 8, speed: 1, attackRange: 12, projectiles: this.projectiles }));
-        this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 10, y: 10, hp: 8, maxHp: 8, speed: 1, attackRange: 12, projectiles: this.projectiles }));
-        this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 20, y: 20, hp: 8, maxHp: 8, speed: 1, attackRange: 12, projectiles: this.projectiles }));
-        this.units.push(new Champigneb({ guid: common.guid(), type: 'champigneb', x: 5, y: 5, hp: 35, maxHp: 35, speed: 3, attackRange: 6 }));
-        this.units.push(new Champigneb({ guid: common.guid(), type: 'champigneb', x: 45, y: 50, hp: 35, maxHp: 35, speed: 3, attackRange: 6 }));
-        this.units.push(new Eblekar({ guid: common.guid(), type: 'eblekar', x: 15, y: 20, hp: 40, maxHp: 40, speed: 1, attackRange: 1, projectiles: this.projectiles }));
+        this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 0, y: 0, projectiles: this.projectiles }));
+        this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 10, y: 10, projectiles: this.projectiles }));
+        this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 20, y: 20, projectiles: this.projectiles }));
+        this.units.push(new Champigneb({ guid: common.guid(), type: 'champigneb', x: 5, y: 5 }));
+        this.units.push(new Champigneb({ guid: common.guid(), type: 'champigneb', x: 45, y: 50 }));
+        this.units.push(new Eblekar({ guid: common.guid(), type: 'eblekar', x: 15, y: 20, projectiles: this.projectiles }));
         // Создание своих зданий из initialBuildings
         for (const building of initialBuildings) {
             if (building.type === 'sporovaya_bashnya') {
@@ -132,8 +132,8 @@ export class Army {
             type: entity.type,
             x: entity.x,
             y: entity.y,
-            hp: entity.hp,
-            maxHp: entity.maxHp,
+            hp: entity.hp ?? 1,
+            maxHp: entity.maxHp ?? 1,
             speed: 0,
             attackRange: 0,
         });
@@ -152,112 +152,64 @@ export class Army {
         const mapRows = map.length;
         const mapCols = map[0]?.length ?? 0;
         if (mapRows === 0 || mapCols === 0) return [];
-        const startX = mapCols - 1;
-        const startY = mapRows - 1;
-        const RADIUS = 20;
+
         const result: TBuildingInput[] = [];
-    
+
         const isFree = (y: number, x: number): boolean =>
             y >= 0 && y < mapRows &&
             x >= 0 && x < mapCols &&
             map[y][x] === 0;
-    
-        const isInRadius = (y: number, x: number): boolean => {
-            const dx = x - startX;
-            const dy = y - startY;
-            return Math.sqrt(dx * dx + dy * dy) <= RADIUS;
-        };
-    
-        const freeCells: { y: number; x: number }[] = [];
-        for (let y = 0; y < mapRows; y++) {
-            for (let x = 0; x < mapCols; x++) {
-                if (isFree(y, x) && isInRadius(y, x)) {
-                    freeCells.push({ y, x });
+
+        // Стартовая зона грибов — нижний правый 15×15 угол (гарантированно зелёный)
+        const zoneX0 = mapCols - 15; // левая граница зоны (включительно)
+        const zoneY0 = mapRows - 15; // верхняя граница зоны (включительно)
+        const zoneX1 = mapCols - 1;  // правая граница (включительно)
+        const zoneY1 = mapRows - 1;  // нижняя граница (включительно)
+
+        // Вспомогательная функция: разместить башню 2×2 с левым верхним тайлом (topY, leftX)
+        const tryPlaceTower = (topY: number, leftX: number): void => {
+            for (let dy = 0; dy <= 1; dy++) {
+                for (let dx = 0; dx <= 1; dx++) {
+                    if (!isFree(topY + dy, leftX + dx)) return;
                 }
             }
-        }
-    
-        if (freeCells.length === 0) return [];
-    
-        freeCells.sort((a, b) => {
-            const distA = Math.hypot(a.x - startX, a.y - startY);
-            const distB = Math.hypot(b.x - startX, b.y - startY);
-            return distA - distB;
-        });
-    
-        const minX = Math.min(...freeCells.map(cell => cell.x));
-
-        //Расставляем взрывоморов
-        const wallX = minX;
-        const wallCells = freeCells.filter(cell => cell.x >= wallX && cell.x < wallX + 3).sort((a, b) => a.x - b.x || a.y - b.y);
-        const vzryvomorCount = Math.min(5, Math.max(3, wallCells.length));
-        const vzryvomorCells = wallCells.slice(0, vzryvomorCount);
-    
-        for (const cell of vzryvomorCells) {
             result.push({
                 guid: common.guid(),
-                type: 'vzryvomor',
-                x: cell.x,
-                y: cell.y,
-                hp: 8,
-                maxHp: 8,
-                attackRange: 12,
+                type: 'sporovaya_bashnya',
+                x: leftX,
+                y: topY,
             });
-        }
-    
-        const usedCells = new Set(vzryvomorCells.map(c => `${c.y},${c.x}`));
-        
-        //Расставляем Споровые башни
-        const find2x2SpotBehindWall = (): { y: number; x: number } | null => {
-            const cellsBehindWall = [...freeCells].filter(cell => 
-                    !usedCells.has(`${cell.y},${cell.x}`) && 
-                    cell.x > wallX 
-                ).sort((a, b) => a.x - b.x); 
-            
-            for (const cell of cellsBehindWall) {
-                const positions = [
-                    { y: cell.y, x: cell.x },
-                    { y: cell.y + 1, x: cell.x },
-                    { y: cell.y, x: cell.x + 1 },
-                    { y: cell.y + 1, x: cell.x + 1 },
-                ];
-                
-                const allValid = positions.every(pos => 
-                    pos.y >= 0 && pos.y < mapRows &&
-                    pos.x >= 0 && pos.x < mapCols &&
-                    map[pos.y][pos.x] === 0 &&
-                    isInRadius(pos.y, pos.x) &&
-                    !usedCells.has(`${pos.y},${pos.x}`) &&
-                    pos.x > wallX 
-                );
-                
-                if (allValid) {
-                    for (const pos of positions) {
-                        usedCells.add(`${pos.y},${pos.x}`);
-                    }
-                    return { y: cell.y, x: cell.x };
-                }
-            }
-            return null;
         };
-    
-        const bashnyaCount = Math.min(2, Math.floor(freeCells.length / 4));
-        for (let i = 0; i < bashnyaCount; i++) {
-            const spot = find2x2SpotBehindWall();
-            if (spot) {
+
+        // Три башни: угловая (пересечение стен), правая верхняя, левая нижняя
+        tryPlaceTower(zoneY0 + 1, zoneX0 + 1); // угол стен
+        tryPlaceTower(zoneY0 + 1, zoneX1 - 1); // правый верхний
+        tryPlaceTower(zoneY1 - 1, zoneX0 + 1); // левый нижний
+
+        // Левая стена: x=zoneX0, вся высота зоны
+        for (let y = zoneY0; y <= zoneY1; y++) {
+            if (isFree(y, zoneX0)) {
                 result.push({
                     guid: common.guid(),
-                    type: 'sporovaya_bashnya',
-                    x: spot.x,
-                    y: spot.y,
-                    hp: 8,
-                    maxHp: 8,
+                    type: 'vzryvomor',
+                    x: zoneX0,
+                    y,
                 });
-            } else {
-                break;
             }
         }
-    
+
+        // Верхняя стена: y=zoneY0, вся ширина зоны кроме x=zoneX0 (уже занят левой стеной)
+        for (let x = zoneX0 + 1; x <= zoneX1; x++) {
+            if (isFree(zoneY0, x)) {
+                result.push({
+                    guid: common.guid(),
+                    type: 'vzryvomor',
+                    x,
+                    y: zoneY0,
+                });
+            }
+        }
+
         return result;
     }
 
@@ -354,7 +306,7 @@ export class Army {
             units: this.units.map(u => u.getState()),
             buildings: [
                 ...this.buildings.map(b => b.getState()),
-                ...this.enemyBuildings,
+                ...this.enemyBuildings.map(b => ({ ...b, hp: b.hp ?? 0, maxHp: b.maxHp ?? 0 })),
             ],
             slimePuddles: this.units
                 .filter(u => u.type === 'champigneb' && !u.isAlive)

@@ -3,11 +3,11 @@ import { TMap } from "../../Army";
 
 export type TVzryvomorOptions = {
     guid: string;
-    hp: number;
-    maxHp: number;
+    hp?: number;
+    maxHp?: number;
     x: number;
     y: number;
-    attackRange: number;
+    attackRange?: number;
 };
 
 type Point = {
@@ -72,9 +72,9 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
         this.guid = guid;
         this.x = x;
         this.y = y;
-        this.hp = hp;
-        this.maxHp = maxHp;
-        this.attackRange = attackRange;
+        this.hp = hp ?? 70;
+        this.maxHp = maxHp ?? 70;
+        this.attackRange = attackRange ?? 7;
         this.isAlive = true;
     };
 

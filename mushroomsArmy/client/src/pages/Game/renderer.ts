@@ -28,10 +28,31 @@ import champignebExplFrame3 from '../../assets/units/champigneb_explosion/frame_
 import champignebExplFrame4 from '../../assets/units/champigneb_explosion/frame_4.png';
 import { camera, MIN_SCALE, MAX_SCALE } from '../../utils/camera';
 
-import grassTextureSrc from '../../assets/map/grass.webp'; 
+import grassTextureSrc from '../../assets/map/grass/grass.webp';
+import waterTextureSrc from '../../assets/map/water/water.webp';
+import waterFlowersSrc from '../../assets/map/water/water_with_flowers.webp';
+import lilyWhiteSrc from '../../assets/map/water/water_lily_with_white_flowers.webp';
+import lilyYellowSrc from '../../assets/map/water/water_lily_with_yellow_flowers.webp';
+import lilyBaseSrc from '../../assets/map/water/water_lily.webp'; 
+import mountainsTextureSrc from '../../assets/map/mountains/moutains.webp';
 
 const grassImg = new Image();
 grassImg.src = grassTextureSrc;
+
+const waterBaseImg = new Image();
+waterBaseImg.src = waterTextureSrc;
+const waterFlowersImg = new Image();
+waterFlowersImg.src = waterFlowersSrc;
+const lilyWhiteImg = new Image();
+lilyWhiteImg.src = lilyWhiteSrc;
+const lilyYellowImg = new Image();
+lilyYellowImg.src = lilyYellowSrc;
+const lilyBaseImg = new Image();
+lilyBaseImg.src = lilyBaseSrc;
+const waterLilies = [lilyWhiteImg, lilyYellowImg, lilyBaseImg];
+
+const mountainImg = new Image();
+mountainImg.src = mountainsTextureSrc;
 
 const CHAMPIGNEB_EXPL_DURATION = 1000; // 1 секунда
 const CHAMPIGNEB_EXPLOSION_FRAME_COUNT = 5;
@@ -234,31 +255,73 @@ export function drawGame(ctx: CanvasRenderingContext2D,
     for (let x = 0; x < cols; x++) {
       const terrain = state.map[y]?.[x] ?? null;
 
+      //равнина
       if (terrain === 0 && isImageDrawable(grassImg)) {
-        // Используем простые числа побольше, чтобы избежать видимых диагональных узоров
         const seed = (x * 15485863 + y * 2038074743); 
     
         ctx.save();
-        // 1. Сначала перемещаемся в центр клетки карты
         ctx.translate(x * cellW + cellW / 2, y * cellH + cellH / 2);
     
-        // 2. Выбираем один из 4-х углов (0, 90, 180, 270 градусов)
-        // 360 градусов — это то же самое, что 0, поэтому Math.PI * 2 не нужен
+        //выбираемм один из 4-х углов (0, 90, 180, 270 градусов)
         const rotation = (Math.abs(seed % 4) * Math.PI) / 2;
         ctx.rotate(rotation);
     
-        // 3. Рисуем картинку строго симметрично относительно центра[cite: 1]
-        // Координаты (-cellW / 2) гарантируют, что центр картинки совпадет с точкой translate
+        //строго симметрично относительно центра[cite: 1]
+        //координаты (-cellW / 2) гарантируют, что центр картинки совпадет с точкой translate
         ctx.drawImage(grassImg, -cellW / 2, -cellH / 2, cellW, cellH);
     
         ctx.restore();
+      } 
+      //вода
+      else if (terrain === 1 && isImageDrawable(waterBaseImg)) {
+      // Отрисовка воды
+      const seed = (x * 15485863 + y * 2038074743);
+      const probability = Math.abs(seed % 100);
+      
+      let currentImg: HTMLImageElement;
+
+      // Распределение по весам
+      if (probability < 70) {
+          currentImg = waterBaseImg; // 70% обычная вода
+      } else if (probability < 90) {
+          currentImg = waterFlowersImg; // 20% вода с цветочками
+      } else {
+          // 10% кувшинки (выбираем одну из массива)
+          currentImg = waterLilies[Math.abs(seed % waterLilies.length)];
       }
-    
-    else {
-      // Для воды, гор или если картинка не загрузилась — оставляем заливку цветом[cite: 1]
-      ctx.fillStyle = getTerrainColor(terrain);
-      ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
-    }
+
+      ctx.save();
+      //перемещение в центр ячейки[cite: 1]
+      ctx.translate(x * cellW + cellW / 2, y * cellH + cellH / 2);
+            
+      ctx.drawImage(currentImg, -cellW / 2, -cellH / 2, cellW, cellH);
+      ctx.restore();
+      }
+      //горы
+       else if (terrain === 2 && isImageDrawable(mountainImg)) {
+        // Используем уникальные множители для гор, чтобы разнообразить паттерн
+        const seed = (x * 73856093 ^ y * 19349663 + x * y);
+        
+        ctx.save();
+        ctx.translate(x * cellW + cellW / 2, y * cellH + cellH / 2);
+        
+        // Вращение на 0, 90, 180 или 270 градусов
+        const rotation = (Math.abs(seed % 4) * Math.PI) / 2;
+        ctx.rotate(rotation);
+        
+        // Добавляем случайное отражение по горизонтали
+        if ((seed >> 2) % 2 === 0) {
+            ctx.scale(-1, 1);
+        }
+        
+        // Рисуем гору
+        ctx.drawImage(mountainImg, -cellW / 2, -cellH / 2, cellW, cellH);
+        ctx.restore();
+      }
+      else {
+        ctx.fillStyle = getTerrainColor(terrain);
+        ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
+      }
   }
 }
 

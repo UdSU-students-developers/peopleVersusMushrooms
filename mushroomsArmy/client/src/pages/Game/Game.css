@@ -1,33 +1,50 @@
-/* --- СИСТЕМА МАСШТАБИРОВАНИЯ (Ваша база) --- */
+/* --- СИСТЕМА МАСШТАБИРОВАНИЯ (ГОСТ) --- */
 
-/* МАЛЕНЬКИЙ */
+:root {
+  /* золотой стандарт (Medium) */
+  --gost-menu-w: 250px;
+  --gost-menu-h: 400px;
+  
+  --gost-header-h: 60px;
+  --gost-footer-h: 145px;
+  --gost-gap: -15px;
+  --gost-btn-h: 42px;
+  --gost-font: 16px;
+  --gost-title-font: 18px;
+}
+
+/* МАЛЕНЬКИЙ (Коэффициент 0.8) */
 body[data-game-ui-size="small"] {
-  --header-height: 5vh;  
-  --footer-height: 115px;         
-  --minimap-size: 150px; 
-  --font-base: 12px;
-  --menu-width: 230px;
-  --menu-gap: -13px; 
+  --scale: 0.8;
 }
 
-/* СРЕДНИЙ (Обычный) */
+/* СРЕДНИЙ (Коэффициент 0.9) */
 body[data-game-ui-size="medium"], body:not([data-game-ui-size]) {
-  --header-height: 6vh;
-  --footer-height: 145px; 
-  --minimap-size: 240px;
-  --font-base: 14px;
-  --menu-width: 260px;
-  --menu-gap: -15px; 
+  --scale: 0.9;
 }
 
-/* БОЛЬШОЙ */
+/* БОЛЬШОЙ (Коэффициент 1.1) */
 body[data-game-ui-size="large"] {
-  --header-height: 10vh;    
-  --footer-height: 180px;    
-  --minimap-size: 280px;
-  --font-base: 19px;
-  --menu-width: 290px;
-  --menu-gap: -15px;
+  --scale: 1.1;
+}
+
+/* АВТОМАТИЧЕСКИЙ РАСЧЕТ ПЕРЕМЕННЫХ */
+body {
+  --menu-width: calc(var(--gost-menu-w) * var(--scale));
+  --menu-height: calc(var(--gost-menu-h) * var(--scale));
+  --header-height: calc(var(--gost-header-h) * var(--scale));
+  --footer-height: calc(var(--gost-footer-h) * var(--scale));
+  --menu-gap: calc(var(--gost-gap) * var(--scale));
+  --btn-height: calc(var(--gost-btn-h) * var(--scale));
+  --btn-font-size: calc(var(--gost-font) * var(--scale));
+  --title-font-size: calc(var(--gost-title-font) * var(--scale));
+
+  font-family: var(--font-main);
+
+}
+
+button, input, select, textarea {
+  font-family: inherit;
 }
 
 /* --- БАЗОВЫЕ СТИЛИ СТРАНИЦЫ --- */
@@ -39,14 +56,15 @@ body[data-game-ui-size="large"] {
   width: 100vw;
   background-color: #1d1010;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
-  /* УБРАНО: padding: 16px (чтобы карта касалась краев) */
   margin: 0;
   overflow: hidden;
   position: relative;
+  padding-top: var(--header-height);
+  padding-bottom: var(--footer-height);
+  box-sizing: border-box;
 }
 
 /* --- КОНТЕЙНЕР ДЛЯ КАРТЫ (Растягивание) --- */
-
 .game-canvas-wrapper {
   flex: 1; /* Занимает все место между хедером и футером */
   position: relative;
@@ -60,46 +78,12 @@ body[data-game-ui-size="large"] {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* Важно, если это видео или изображение */
-  /* УБРАНО: max-width, aspect-ratio, border, border-radius */
+  object-fit: cover;
   background-color: #1a1a1a;
 }
 
-/* --- ВАШИ КНОПКИ МЕНЮ (Без изменений) --- */
-
-.menu-btn {
-  width: 83%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 7px auto; /* Центрируем кнопку в её контейнере */
-  
-  background-color: #7a5237;
-  color: #d8c7a7;
-  border: 2px solid #966642;
-  border-radius: 4px;
-  
-  font-family: inherit;
-  text-transform: uppercase;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-sizing: border-box;
-}
-
-.menu-btn.active {
-  background-color: #b5926d;
-  color: #3b2a20;
-  border-color: #6a4f1c;
-}
-
-/* Адаптив высоты кнопок (Ваш блок) */
-body[data-game-ui-size="small"] .menu-btn { height: 25px; font-size: calc(var(--font-base) * 0.9); }
-body[data-game-ui-size="medium"] .menu-btn { height: 30px; font-size: calc(var(--font-base) * 0.9); }
-body[data-game-ui-size="large"] .menu-btn { height: 36px; font-size: calc(var(--font-base) * 1.1); }
 
 /* --- OVERLAY (GameOver) --- */
-
 .game-overlay {
   position: fixed; 
   top: 0;

@@ -1,43 +1,39 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './Header.css';
-import Menu from '../Menu/Menu'; 
 
 interface HeaderProps {
   username: string;
-  onExit: () => void;
+  gameTitle?: string;
+  isMenuOpen: boolean;
+  onMenuToggle: () => void;
+  
 }
 
-const Header: React.FC<HeaderProps> = ({ username, onExit }) => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
+const Header: React.FC<HeaderProps> = ({ 
+  username, 
+  gameTitle = "Армия грибов", 
+  isMenuOpen,
+  onMenuToggle 
+}) => {
   return (
     <header className="game-header">
-
-
       <div className="header-left">
         <span className="user-nickname">{username}</span>
       </div>
       
       <div className="header-center">
-        <h1 className="game-title">Армия грибов</h1>
+        <h1 className="game-title">{gameTitle}</h1>
       </div>
-      
-
-
 
       <div className="header-right">
         <button 
           id="header-menu-btn" 
-          className="menu-button" 
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className={`menu-button ${isMenuOpen ? 'active' : ''}`} 
+          onClick={onMenuToggle}
         >
           МЕНЮ
         </button>
-
-        <Menu 
-          isOpen={isMenuOpen} 
-          onExit={onExit} 
-        />
+     
       </div>
     </header>
   );

@@ -220,7 +220,7 @@ class ArmyManager extends BaseManager {
         let finalBuildings = buildings;
         if (!finalBuildings || finalBuildings.length === 0) {
             finalBuildings = Army.generateDefensiveLayout(resolvedMap, this.common);
-        } 
+        }
 
         this.army[guid] = new Army({
             mapGuid,

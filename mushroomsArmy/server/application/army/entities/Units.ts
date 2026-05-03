@@ -9,12 +9,12 @@ const ACCEPTABLE_TILES = [0, 2];
 export type TUnitOptions = {
     guid: string;
     type: string;
-    hp: number;
-    maxHp: number;
-    speed: number;
+    hp?: number;
+    maxHp?: number;
+    speed?: number;
     x: number;
     y: number;
-    attackRange: number;
+    attackRange?: number;
     fireDamageMultiplier?: number;
     projectiles?: TProjectile[];
 };

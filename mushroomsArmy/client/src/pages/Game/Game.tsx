@@ -6,10 +6,11 @@ import { drawGame } from './renderer';
 import { GameState } from './types';
 import { PAGES } from '../PageManager';
 import { TUser } from '../../services/server/types';
-import Footer from './Interface/Footer/Footer';
 import './Game.css';
-import Header from './Interface/Header/Header';
 import { camera } from '../../utils/camera';
+import Header from '../../widgets/GameInterface/Header/Header';
+import Footer from '../../widgets/GameInterface/Footer/Footer';
+import Menu from '../../widgets/GameInterface/Menu/Menu';
 
 const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -24,6 +25,7 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   const GET_STORE = mediator.getTriggerTypes().GET_STORE;
   const user = mediator.get(GET_STORE, 'user') as TUser | null;
   const username = user?.name || 'Игрок';
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const redrawCanvas = () => {
     const canvas = canvasRef.current;
@@ -201,7 +203,15 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     <div className="game-page">
       <Header
         username={username}
-        onExit={handleExitToLobby}
+        isMenuOpen={isMenuOpen}
+        onMenuToggle={() => setIsMenuOpen(!isMenuOpen)}
+        //onExit={handleExitToLobby}
+      />
+
+      {/* Меню теперь живет здесь, на уровне страницы, что архитектурно правильнее */}
+      <Menu 
+        isOpen={isMenuOpen} 
+        onExit={handleExitToLobby} 
       />
 
       <div className="game-canvas-wrapper">

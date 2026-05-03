@@ -6,8 +6,8 @@ type TSporovayaBashnyaOptions = {
     guid: string;
     x: number;
     y: number;
-    hp: number;
-    maxHp: number;
+    hp?: number;
+    maxHp?: number;
     projectiles?: TProjectile[];
 };
 
@@ -40,7 +40,7 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
     private readonly attackAnimDuration: number = 0.6; // держим флаг 600ms
     private readonly attackRange: number = 20;
     private readonly attackCooldown: number = 2;
-    private readonly attackDamage: number = 50;
+    private readonly attackDamage: number = 15;
     private attackTimer: number = 0;
     private projectiles: TProjectile[] = [];
 
@@ -48,8 +48,8 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
         this.guid = options.guid;
         this.x = options.x;
         this.y = options.y;
-        this.hp = options.hp;
-        this.maxHp = options.maxHp;
+        this.hp = options.hp ?? 160;
+        this.maxHp = options.maxHp ?? 160;
         this.projectiles = options.projectiles ?? [];
     }
 

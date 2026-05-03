@@ -24,17 +24,17 @@
   pointer-events: none; 
 }
 
-/* Названия и никнеймы */
-.user-nickname, .units-info, .game-title {
+/* Название и никнейм */
+.user-nickname, .game-title {
   color: #d8c7a7; 
-  font-family: sans-serif;
+  font-family: Handjet;
   font-size: var(--font-base);
 }
 
 .game-title {
   margin: 0;
   color: #d8c7a7;   
-  font-size: calc(var(--font-base) * 1.2);
+  font-size: calc(var(--font-base) * 1.4);
   text-transform: uppercase;
 }
 
@@ -49,10 +49,10 @@ body {
   cursor: pointer;
 
 
-  width: auto;             
+  width: 60px;             
   min-width: 1px;       
-  height: 80%;           
-  padding: 0 15px;        
+  height: 40px;           
+  padding: 10px 0;        
   
   font-size: calc(var(--font-base) * 0.9);
 
@@ -73,7 +73,11 @@ body {
 
 #header-menu-btn:hover {
   background: #b5926d;
+  border-color: #481a1a;
+  color: #481a1a;
+  transform: scale(0.99);
 }
+
 
 .header-right {
   position: relative;

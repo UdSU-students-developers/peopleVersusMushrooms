@@ -50,6 +50,54 @@ import tumanSrc from '../../assets/map/fog/tuman.png';
 import tuman2Src from '../../assets/map/fog/tuman2.png';
 import tuman3Src from '../../assets/map/fog/tuman3.png';
 
+//ассеты перехода воды
+import waterEdgeTop from '../../assets/map/water-edges/edge-t.webp';
+import waterEdgeBottom from '../../assets/map/water-edges/edge-b.webp';
+import waterEdgeLeft from '../../assets/map/water-edges/edge-l.webp';
+import waterEdgeRight from '../../assets/map/water-edges/edge-r.webp';
+import waterCornerTopLeft from '../../assets/map/water-edges/corner-tl.webp';
+import waterCornerTopRight from '../../assets/map/water-edges/corner-tr.webp';
+import waterCornerBottomLeft from '../../assets/map/water-edges/corner-bl.webp';
+import waterCornerBottomRight from '../../assets/map/water-edges/corner-br.webp';
+import landCornerSrc from '../../assets/map/water-edges/corner-earth-tr.webp';
+//внутренние уголки (скругление заливов)
+import waterInnerCornerTopLeft from '../../assets/map/water-edges/innerCorner-tl.webp';
+import waterInnerCornerTopRight from '../../assets/map/water-edges/innerCorner-tr.webp';
+import waterInnerCornerBottomLeft from '../../assets/map/water-edges/innerCorner-bl.webp';
+import waterInnerCornerBottomRight from '../../assets/map/water-edges/innerCorner-br.webp';
+
+import bushImgSrc from '../../assets/map/decoration/bushbush.webp';
+
+const bushImg = new Image();
+bushImg.src = bushImgSrc;
+
+const edgeImages = {
+  top: new Image(),
+  bottom: new Image(),
+  left: new Image(),
+  right: new Image(),
+  topLeft: new Image(),
+  topRight: new Image(),
+  bottomLeft: new Image(),
+  bottomRight: new Image(),
+  landCorner: new Image(),
+  //внутренние уголки
+  innerTopLeft: Object.assign(new Image(), { src: waterInnerCornerTopLeft }),
+  innerTopRight: Object.assign(new Image(), { src: waterInnerCornerTopRight }),
+  innerBottomLeft: Object.assign(new Image(), { src: waterInnerCornerBottomLeft }),
+  innerBottomRight: Object.assign(new Image(), { src: waterInnerCornerBottomRight }),
+};
+
+edgeImages.top.src = waterEdgeTop;
+edgeImages.bottom.src = waterEdgeBottom;
+edgeImages.left.src = waterEdgeLeft;
+edgeImages.right.src = waterEdgeRight;
+edgeImages.topLeft.src = waterCornerTopLeft;
+edgeImages.topRight.src = waterCornerTopRight;
+edgeImages.bottomLeft.src = waterCornerBottomLeft;
+edgeImages.bottomRight.src = waterCornerBottomRight;
+edgeImages.landCorner.src = landCornerSrc;
+
 //трава
 const grass1Img: HTMLImageElement = new Image();
 grass1Img.src = grassTextureSrc1;
@@ -385,6 +433,16 @@ function getUnitImage(unit: Unit): HTMLImageElement | undefined {
   return unitImages[unit.type];
 }
 
+/** Получает типы террейна для 4-х основных соседей */
+function getNeighbors(map: MapTile[][], x: number, y: number) {
+  return {
+    top: coerceTerrainCell(map[y - 1]?.[x]),
+    bottom: coerceTerrainCell(map[y + 1]?.[x]),
+    left: coerceTerrainCell(map[y]?.[x - 1]),
+    right: coerceTerrainCell(map[y]?.[x + 1]),
+  };
+}
+
 export function drawGame(ctx: CanvasRenderingContext2D,
   state: GameState | null,
   widthCSS: number,
@@ -455,48 +513,112 @@ export function drawGame(ctx: CanvasRenderingContext2D,
     // Отрисовка ландшафта: Равнина (terrain === 0)
     // Внутри цикла отрисовки по x и y
     if (terrain === 0) {
-      // Агрессивный хэш для устранения линейных паттернов
-      // Числа 12.9898 и 78.233 — классические константы для генерации шума
-      const hash = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
-      const seed = Math.abs(hash - Math.floor(hash)); 
-      
-      // Выбираем индекс из подготовленного пула
-      const assetIndex = Math.floor(seed * weightedPool.length);
-      const activeImg = weightedPool[assetIndex];
+    const hash = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+    const seed = Math.abs(hash - Math.floor(hash));       
+    const assetIndex = Math.floor(seed * weightedPool.length);
+    const activeImg = weightedPool[assetIndex];
 
-      if (isImageDrawable(activeImg)) {
-        ctx.save();
-        
-        // Отрисовка без вращения, строго по сетке
-        ctx.translate(x * cellW, y * cellH);
-        ctx.drawImage(activeImg, 0, 0, cellW, cellH);
-        
-        ctx.restore();
-      }
+    if (isImageDrawable(activeImg)) {
+        ctx.drawImage(activeImg, x * cellW, y * cellH, cellW, cellH);
     }
+
+    //логика кустов (поверх травы)
+    if (isImageDrawable(bushImg)) {
+        const bushSeed = Math.abs((x * 73856093) ^ (y * 19349663));
+        
+        // Шанс 5%
+        if ((bushSeed % 100) < 3) {
+            ctx.save();
+            const offsetX = (bushSeed % 7) - 3; 
+            const offsetY = (bushSeed % 5) - 2; 
+
+            ctx.drawImage(
+                bushImg, 
+                x * cellW + offsetX, 
+                y * cellH + offsetY, 
+                cellW, 
+                cellH
+            );
+            ctx.restore();
+        }
+    }
+  }
       //вода
       else if (terrain === 1 && isImageDrawable(waterBaseImg)) {
-      // Отрисовка воды
+      // 1. Детерминированный выбор базового слоя воды
       const seed = (x * 15485863 + y * 2038074743);
       const probability = Math.abs(seed % 100);
-      
+      const neighbors = getNeighbors(state.map, x, y);      
       let currentImg: HTMLImageElement;
 
-      // Распределение по весам
       if (probability < 70) {
-          currentImg = waterBaseImg; // 70% обычная вода
+          currentImg = waterBaseImg; 
       } else if (probability < 90) {
-          currentImg = waterFlowersImg; // 20% вода с цветочками
+          currentImg = waterFlowersImg; 
       } else {
-          // 10% кувшинки (выбираем одну из массива)
           currentImg = waterLilies[Math.abs(seed % waterLilies.length)];
       }
 
       ctx.save();
-      //перемещение в центр ячейки
-      ctx.translate(x * cellW + cellW / 2, y * cellH + cellH / 2);
-            
+      // Переходим в центр ячейки для удобства наложения слоев
+      ctx.translate(x * cellW + cellW / 2, y * cellH + cellH / 2);            
+      
+      // Рисуем базу
       ctx.drawImage(currentImg, -cellW / 2, -cellH / 2, cellW, cellH);
+
+      // 2. Отрисовка прямых берегов (если сосед — трава/0)
+      if (neighbors.top === 0 && isImageDrawable(edgeImages.top)) {
+          ctx.drawImage(edgeImages.top, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+      if (neighbors.bottom === 0 && isImageDrawable(edgeImages.bottom)) {
+          ctx.drawImage(edgeImages.bottom, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+      if (neighbors.left === 0 && isImageDrawable(edgeImages.left)) {
+          ctx.drawImage(edgeImages.left, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+      if (neighbors.right === 0 && isImageDrawable(edgeImages.right)) {
+          ctx.drawImage(edgeImages.right, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+
+      // 3. Внешние уголки (выступы земли в воду)
+      // Рисуются, когда две смежные стороны — земля
+      if (neighbors.top === 0 && neighbors.left === 0 && isImageDrawable(edgeImages.topLeft)) {
+          ctx.drawImage(edgeImages.topLeft, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+      if (neighbors.top === 0 && neighbors.right === 0 && isImageDrawable(edgeImages.topRight)) {
+          ctx.drawImage(edgeImages.topRight, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+      if (neighbors.bottom === 0 && neighbors.left === 0 && isImageDrawable(edgeImages.bottomLeft)) {
+          ctx.drawImage(edgeImages.bottomLeft, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+      if (neighbors.bottom === 0 && neighbors.right === 0 && isImageDrawable(edgeImages.bottomRight)) {
+          ctx.drawImage(edgeImages.bottomRight, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+
+      // 4. Внутренние уголки (скругление вогнутых углов воды)
+      // Рисуются, когда основные соседи — вода, а диагональный — земля
+      const tTopLeft = coerceTerrainCell(state.map[y - 1]?.[x - 1]);
+      const tTopRight = coerceTerrainCell(state.map[y - 1]?.[x + 1]);
+      const tBottomLeft = coerceTerrainCell(state.map[y + 1]?.[x - 1]);
+      const tBottomRight = coerceTerrainCell(state.map[y + 1]?.[x + 1]);
+
+      if (neighbors.top !== 0 && neighbors.left !== 0 && tTopLeft === 0) {
+          if (isImageDrawable(edgeImages.innerTopLeft)) 
+              ctx.drawImage(edgeImages.innerTopLeft, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+      if (neighbors.top !== 0 && neighbors.right !== 0 && tTopRight === 0) {
+          if (isImageDrawable(edgeImages.innerTopRight)) 
+              ctx.drawImage(edgeImages.innerTopRight, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+      if (neighbors.bottom !== 0 && neighbors.left !== 0 && tBottomLeft === 0) {
+          if (isImageDrawable(edgeImages.innerBottomLeft)) 
+              ctx.drawImage(edgeImages.innerBottomLeft, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+      if (neighbors.bottom !== 0 && neighbors.right !== 0 && tBottomRight === 0) {
+          if (isImageDrawable(edgeImages.innerBottomRight)) 
+              ctx.drawImage(edgeImages.innerBottomRight, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+
       ctx.restore();
       }
       //горы

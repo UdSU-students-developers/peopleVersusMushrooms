@@ -28,6 +28,14 @@ class DB {
         return await this.orm.get('users', { name });
     }
 
+    async getUnitByType(type) {
+        return await this.orm.get('units', { type });
+    }
+
+    async getBuildingByType(type) {
+        return await this.orm.get('builings', { type });
+    }
+
     async getUserByToken(token) {
         return await this.orm.get('users', { token });
     }

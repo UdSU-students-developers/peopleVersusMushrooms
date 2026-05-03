@@ -131,13 +131,48 @@ class ArmyManager extends BaseManager {
         return army.spawnBuilding(type, x, y, this.common);
     }
 
+    private buildFogMap(armyState: TArmyState, fullMap: TMap, visionRadius: number = 8): TMap {
+        const rows = fullMap.length;
+        const cols = fullMap[0]?.length ?? 0;
+        const visible = new Uint8Array(rows * cols);
+
+        const reveal = (cx: number, cy: number, r: number) => {
+            const x0 = Math.max(0, Math.floor(cx - r));
+            const x1 = Math.min(cols - 1, Math.ceil(cx + r));
+            const y0 = Math.max(0, Math.floor(cy - r));
+            const y1 = Math.min(rows - 1, Math.ceil(cy + r));
+            for (let y = y0; y <= y1; y++) {
+                for (let x = x0; x <= x1; x++) {
+                    visible[y * cols + x] = 1;
+                }
+            }
+        };
+
+        for (const unit of armyState.units) {
+            if (unit.hp > 0) reveal(unit.x, unit.y, visionRadius);
+        }
+        for (const building of armyState.buildings) {
+            const hp = building.hp ?? 0;
+            if (hp > 0 && building.type !== 'house' && building.type !== 'barracks' && building.type !== 'tower') {
+                const sizeX = building.sizeX ?? 1;
+                const sizeY = building.sizeY ?? 1;
+                reveal(building.x + sizeX / 2, building.y + sizeY / 2, visionRadius);
+            }
+        }
+
+        return fullMap.map((row, y) =>
+            row.map((tile, x) => (visible[y * cols + x] ? tile : null))
+        );
+    }
+
     private async updateArmyCallback(guid: string, armyState: TArmyState) {
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid) as { socketId: string } | null;
         if (!user) return;
 
-        this.io.to(user.socketId).emit(GAME_STATE, this.answer.good(armyState));
-
         const army = this.army[guid];
+        const fogMap = army ? this.buildFogMap(armyState, army.map) : armyState.map;
+        this.io.to(user.socketId).emit(GAME_STATE, this.answer.good({ ...armyState, map: fogMap }));
+
         if (army && army.getAliveUnits().length === 0) {
             this.io.to(user.socketId).emit(GAME_OVER, this.answer.good({ message: 'Все юниты погибли' }));
             this.destroyArmy(guid);

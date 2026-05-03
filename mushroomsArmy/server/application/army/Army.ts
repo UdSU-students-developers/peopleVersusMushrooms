@@ -148,6 +148,119 @@ export class Army {
         return proxy;
     }
 
+     static generateDefensiveLayout(map: TMap, common: Common): TBuildingInput[] {
+        const mapRows = map.length;
+        const mapCols = map[0]?.length ?? 0;
+        if (mapRows === 0 || mapCols === 0) return [];
+        const startX = mapCols - 1;
+        const startY = mapRows - 1;
+        const RADIUS = 20;
+        const result: TBuildingInput[] = [];
+    
+        const isFree = (y: number, x: number): boolean =>
+            y >= 0 && y < mapRows &&
+            x >= 0 && x < mapCols &&
+            map[y][x] === 0;
+    
+        const isInRadius = (y: number, x: number): boolean => {
+            const dx = x - startX;
+            const dy = y - startY;
+            return Math.sqrt(dx * dx + dy * dy) <= RADIUS;
+        };
+    
+        const freeCells: { y: number; x: number }[] = [];
+        for (let y = 0; y < mapRows; y++) {
+            for (let x = 0; x < mapCols; x++) {
+                if (isFree(y, x) && isInRadius(y, x)) {
+                    freeCells.push({ y, x });
+                }
+            }
+        }
+    
+        if (freeCells.length === 0) return [];
+    
+        freeCells.sort((a, b) => {
+            const distA = Math.hypot(a.x - startX, a.y - startY);
+            const distB = Math.hypot(b.x - startX, b.y - startY);
+            return distA - distB;
+        });
+    
+        const minX = Math.min(...freeCells.map(cell => cell.x));
+
+        //Расставляем взрывоморов
+        const wallX = minX;
+        const wallCells = freeCells.filter(cell => cell.x >= wallX && cell.x < wallX + 3).sort((a, b) => a.x - b.x || a.y - b.y);
+        const vzryvomorCount = Math.min(5, Math.max(3, wallCells.length));
+        const vzryvomorCells = wallCells.slice(0, vzryvomorCount);
+    
+        for (const cell of vzryvomorCells) {
+            result.push({
+                guid: common.guid(),
+                type: 'vzryvomor',
+                x: cell.x,
+                y: cell.y,
+                hp: 8,
+                maxHp: 8,
+                attackRange: 12,
+            });
+        }
+    
+        const usedCells = new Set(vzryvomorCells.map(c => `${c.y},${c.x}`));
+        
+        //Расставляем Споровые башни
+        const find2x2SpotBehindWall = (): { y: number; x: number } | null => {
+            const cellsBehindWall = [...freeCells].filter(cell => 
+                    !usedCells.has(`${cell.y},${cell.x}`) && 
+                    cell.x > wallX 
+                ).sort((a, b) => a.x - b.x); 
+            
+            for (const cell of cellsBehindWall) {
+                const positions = [
+                    { y: cell.y, x: cell.x },
+                    { y: cell.y + 1, x: cell.x },
+                    { y: cell.y, x: cell.x + 1 },
+                    { y: cell.y + 1, x: cell.x + 1 },
+                ];
+                
+                const allValid = positions.every(pos => 
+                    pos.y >= 0 && pos.y < mapRows &&
+                    pos.x >= 0 && pos.x < mapCols &&
+                    map[pos.y][pos.x] === 0 &&
+                    isInRadius(pos.y, pos.x) &&
+                    !usedCells.has(`${pos.y},${pos.x}`) &&
+                    pos.x > wallX 
+                );
+                
+                if (allValid) {
+                    for (const pos of positions) {
+                        usedCells.add(`${pos.y},${pos.x}`);
+                    }
+                    return { y: cell.y, x: cell.x };
+                }
+            }
+            return null;
+        };
+    
+        const bashnyaCount = Math.min(2, Math.floor(freeCells.length / 4));
+        for (let i = 0; i < bashnyaCount; i++) {
+            const spot = find2x2SpotBehindWall();
+            if (spot) {
+                result.push({
+                    guid: common.guid(),
+                    type: 'sporovaya_bashnya',
+                    x: spot.x,
+                    y: spot.y,
+                    hp: 8,
+                    maxHp: 8,
+                });
+            } else {
+                break;
+            }
+        }
+    
+        return result;
+    }
+
     /** Обновляет цели из видимости: существующим proxy меняет координаты, и создаёт новых по guid. */
     public updateEnemyEntities(entities: TBuildingInput[]): void {
         const existingEnemiesByGuid = new Map(

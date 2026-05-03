@@ -26,6 +26,7 @@ class Economy {
         this.callbacks = { updated, spawnArmyUnit };
         // данные экономики
         this.resourceMap; // массив известных ресурсов [{x, y, value}]
+        this.relief = null;
 
         //Здания
         this.buildings = {
@@ -89,6 +90,10 @@ class Economy {
             },
             map: this.map,
         }
+    }
+
+    setRelief(relief) {
+        this.relief = relief;
     }
 
     _initEmptyMap() {

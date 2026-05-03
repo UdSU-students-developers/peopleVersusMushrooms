@@ -75,10 +75,10 @@ class Unit {
         this.type = type;
         this.x = x;
         this.y = y;
-        this.hp = hp;
-        this.maxHp = maxHp;
-        this.speed = speed;
-        this.attackRange = attackRange;
+        this.hp = hp ?? 0;
+        this.maxHp = maxHp ?? 0;
+        this.speed = speed ?? 0;
+        this.attackRange = attackRange ?? 0;
         this.fireDamageMultiplier = fireDamageMultiplier;
         this.projectiles = projectiles;
         this.targetX = x;

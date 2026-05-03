@@ -26,6 +26,7 @@ class Economy {
         this.callbacks = { updated, spawnArmyUnit };
         // данные экономики
         this.resourceMap; // массив известных ресурсов [{x, y, value}]
+        this.relief = null;
 
         //Здания
         this.buildings = {
@@ -89,6 +90,10 @@ class Economy {
             },
             map: this.map,
         }
+    }
+
+    setRelief(relief) {
+        this.relief = relief;
     }
 
     _initEmptyMap() {
@@ -296,6 +301,32 @@ class Economy {
             this.updated = false;
             this.callbacks.updated(this.get());
         }
+    }
+
+    findEntityByGuid(guid) {
+        for (const type of Object.values(this.units)) {
+            const found = type.find(u => u.guid === guid);
+            if (found) return found;
+        }
+
+        for (const type of Object.values(this.buildings)) {
+            const found = type.find(b => b.guid === guid);
+            if (found) return found;
+        }
+
+        return null;
+    }
+
+    applyDamage(guid, damage) {
+        const entity = this.findEntityByGuid(guid);
+
+        if (!entity) return false;
+
+        entity.takeDamage(damage);
+
+        this.updated = true;
+
+        return true;
     }
 }
 

@@ -170,6 +170,13 @@ class Unit {
 
         return true;
     }
+
+     takeDamage(amount) {
+        if (amount <= 0) return false;
+
+        this.hp = Math.max(0, this.hp - amount);
+        return this.hp === 0;
+    }
 }
 
 module.exports = Unit;

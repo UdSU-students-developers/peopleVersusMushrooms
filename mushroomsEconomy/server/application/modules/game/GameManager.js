@@ -25,7 +25,7 @@ class GameManager extends BaseManager {
 	}
 
 	/* PRIVATE */
-	callbackUpdate(guid, data) {
+	async callbackUpdate(guid, mapGuid, data) {
 		const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
 
 		// выплюнуть сообщение в карту
@@ -35,11 +35,16 @@ class GameManager extends BaseManager {
 		// запросить ресурсы под жопками рабочих
 		// обновить рельеф и видимость у себя в Экномике
 		// ответить на СВОЙ клиент
-
 		if (user) {
+			const relief = await this.sendToMap(GLOBAL_CONFIG.URLS.GET_RELIEF, { mapGuid, userGuid: guid });
+
+			if (relief && Array.isArray(relief)) {
+				this.setRelief(guid, relief);
+			}
+
 			this.io.to(user.socketId).emit(
 				GLOBAL_CONFIG.SOCKET.UPDATE_SCENE,
-				this.answer.good(data)
+				this.answer.good({...data, relief})
 			);
 			return;
 		}
@@ -52,7 +57,7 @@ class GameManager extends BaseManager {
 	/* EVENTS */
 	eventStartGame(data = {}) {
 
-		const { guids, startPoint } = data;
+		const { guids, startPoint, mapGuid } = data;
 		//console.log(guids);
 		//console.log(SET_SERVICES_GUIDS);
 
@@ -64,7 +69,7 @@ class GameManager extends BaseManager {
 					db: this.db,
 					common: this.common,
 					callbacks: {
-						updated: (data) => this.callbackUpdate(guid, data),
+						updated: (data) => this.callbackUpdate(guid, mapGuid, data),
 						spawnArmyUnit: (data) => this.spawnArmyUnit(data),
 					},
 					guids, 
@@ -80,6 +85,12 @@ class GameManager extends BaseManager {
 			return this.answer.bad(1001)
 		}
 		return this.answer.bad(4001);
+	}
+
+	setRelief(guid, relief) {
+		if (this.economies[guid]) {
+			this.economies[guid].setRelief(relief);
+		}
 	}
 
 	spawnArmyUnit(data) { //data = {unitType, x, y, armyGuid}

@@ -27,6 +27,7 @@ class Economy {
         // данные экономики
         this.resourceMap; // массив известных ресурсов [{x, y, value}]
         this.relief = null;
+        this.lastUpdateTime = Date.now();
 
         //Здания
         this.buildings = {
@@ -57,11 +58,6 @@ class Economy {
 
         this.map = this._initEmptyMap();
         this._initBuildings(startPoint);
-
-        this.easyStar = new EasyStar.js();
-        this.easyStar.setGrid(this.map);
-        this.easyStar.setAcceptableTiles([0]);
-        /**************/
 
         // start game proccess
         this.spawnArmyUnit({armyGuid: guids.mushroomsArmy, type: GLOBAL_CONFIG.UNIT_TYPES.MUSHROOMS_ARMY.CHAMPIGNEB, x: 4, y: 4 });
@@ -94,6 +90,25 @@ class Economy {
 
     setRelief(relief) {
         this.relief = relief;
+        this.buildGridFromRelief();
+    }
+
+    buildGridFromRelief() {
+        if (!this.relief) return;
+
+        this.map = this.relief.map(row =>
+            row.map(tile => {
+                if (tile === null) return 3;
+                return tile;
+            })
+        );
+
+        const allUnits = [
+            ...this.units.workers,
+            ...this.units.larvae
+        ];
+
+        allUnits.forEach(u => u.setMap(this.map));
     }
 
     setResources(resources) {
@@ -130,7 +145,6 @@ class Economy {
             homeY: homeY,
             guid: larvaGuid,
             map: this.map,
-            easystar: this.easyStar
         }));
     }
 
@@ -236,9 +250,13 @@ class Economy {
     }
 
 
-    // 4. передвинуть рабочих
-    moveWorkers() {
-        this.units.workers.forEach(unit => unit.moveOneStep());
+    updateUnits(deltaTime) {
+        const allUnits = [
+            ...this.units.workers,
+            ...this.units.larvae
+        ];
+
+        allUnits.forEach(unit => unit.update(deltaTime));
     }
 
     // 8. породить личинок (потратить немного железа и немного энергии)
@@ -282,8 +300,11 @@ class Economy {
         // 2. Мутировать здание из рабочего (потратить железо)
         // 3. передать боевых юнитов в армию (callback)
         // 3.5. для рабочих определить цели и задачи
-        // 4. передвинуть рабочих
-        this.moveWorkers();
+
+        const now = Date.now();
+        const deltaTime = (now - this.lastUpdateTime) / 1000;
+        this.lastUpdateTime = now;
+        this.updateUnits(deltaTime);
         // 5. передвинуть личинки
         // 6. добыть энергию (сожрать грибочки)
         // 7. добыть железо (потратить энергию) и распределить их в инкубаторы, шахты или бочки для железа

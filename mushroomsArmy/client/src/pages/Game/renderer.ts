@@ -1,4 +1,4 @@
-import { GameState, Projectile, TerrainType, Unit } from './types';
+import { GameState, TCamera, MapTile, Projectile, TerrainType, Unit } from './types';
 import sporometSrc from '../../assets/units/Sporomet.png';
 import champignebSrc from '../../assets/units/Champigneb.png';
 import eblekarSrc from '../../assets/units/Eblekar.png';
@@ -26,10 +26,290 @@ import champignebExplFrame1 from '../../assets/units/champigneb_explosion/frame_
 import champignebExplFrame2 from '../../assets/units/champigneb_explosion/frame_2.png';
 import champignebExplFrame3 from '../../assets/units/champigneb_explosion/frame_3.png';
 import champignebExplFrame4 from '../../assets/units/champigneb_explosion/frame_4.png';
+import { camera, MIN_SCALE, MAX_SCALE } from '../../utils/camera';
+
+//ассеты травы
+import grassTextureSrc1 from '../../assets/map/grass/grass1.webp';
+import grassTextureSrc2 from '../../assets/map/grass/grass2.webp';
+import grassTextureSrc3 from '../../assets/map/grass/grass3.webp';
+import grassWithFrlowersTextureSrc from '../../assets/map/grass/grass_with_flowers.webp';
+import grassWithFlowersTextureSrc2 from '../../assets/map/grass/grass_with_flowers2.webp';
+import grass1TextureSrc22 from '../../assets/map/grass/grass_with_flowers22.webp';
+import grassWithOneFlowerTextureSrc from '../../assets/map/grass/grass_with_one_flower.webp';
+
+//ассеты водички
+import waterTextureSrc from '../../assets/map/water/water.webp';
+import waterFlowersSrc from '../../assets/map/water/water_with_flowers.webp';
+import lilyWhiteSrc from '../../assets/map/water/water_lily_with_white_flowers.webp';
+import lilyYellowSrc from '../../assets/map/water/water_lily_with_yellow_flowers.webp';
+import lilyBaseSrc from '../../assets/map/water/water_lily.webp'; 
+
+//ассеты гор
+import mountainsTextureSrc from '../../assets/map/mountains/mountains.webp';
+import tumanSrc from '../../assets/map/fog/tuman.png';
+import tuman2Src from '../../assets/map/fog/tuman2.png';
+import tuman3Src from '../../assets/map/fog/tuman3.png';
+
+//ассеты перехода воды
+import waterEdgeTop from '../../assets/map/water-edges/edge-t.webp';
+import waterEdgeBottom from '../../assets/map/water-edges/edge-b.webp';
+import waterEdgeLeft from '../../assets/map/water-edges/edge-l.webp';
+import waterEdgeRight from '../../assets/map/water-edges/edge-r.webp';
+import waterCornerTopLeft from '../../assets/map/water-edges/corner-tl.webp';
+import waterCornerTopRight from '../../assets/map/water-edges/corner-tr.webp';
+import waterCornerBottomLeft from '../../assets/map/water-edges/corner-bl.webp';
+import waterCornerBottomRight from '../../assets/map/water-edges/corner-br.webp';
+import landCornerSrc from '../../assets/map/water-edges/corner-earth-tr.webp';
+//внутренние уголки (скругление заливов)
+import waterInnerCornerTopLeft from '../../assets/map/water-edges/innerCorner-tl.webp';
+import waterInnerCornerTopRight from '../../assets/map/water-edges/innerCorner-tr.webp';
+import waterInnerCornerBottomLeft from '../../assets/map/water-edges/innerCorner-bl.webp';
+import waterInnerCornerBottomRight from '../../assets/map/water-edges/innerCorner-br.webp';
+
+import bushImgSrc from '../../assets/map/decoration/bushbush.webp';
+
+/** Максимальное HP по типу — совпадает с хардкодом сервера */
+const MAX_HP: Record<string, number> = {
+  sporomet: 8,
+  champigneb: 35,
+  eblekar: 40,
+  vzryvomor: 70,
+  sporovaya_bashnya: 160,
+};
+
+const getMaxHp = (type: string): number => MAX_HP[type] ?? 100;
+
+const bushImg = new Image();
+bushImg.src = bushImgSrc;
+
+const edgeImages = {
+  top: new Image(),
+  bottom: new Image(),
+  left: new Image(),
+  right: new Image(),
+  topLeft: new Image(),
+  topRight: new Image(),
+  bottomLeft: new Image(),
+  bottomRight: new Image(),
+  landCorner: new Image(),
+  //внутренние уголки
+  innerTopLeft: Object.assign(new Image(), { src: waterInnerCornerTopLeft }),
+  innerTopRight: Object.assign(new Image(), { src: waterInnerCornerTopRight }),
+  innerBottomLeft: Object.assign(new Image(), { src: waterInnerCornerBottomLeft }),
+  innerBottomRight: Object.assign(new Image(), { src: waterInnerCornerBottomRight }),
+};
+
+edgeImages.top.src = waterEdgeTop;
+edgeImages.bottom.src = waterEdgeBottom;
+edgeImages.left.src = waterEdgeLeft;
+edgeImages.right.src = waterEdgeRight;
+edgeImages.topLeft.src = waterCornerTopLeft;
+edgeImages.topRight.src = waterCornerTopRight;
+edgeImages.bottomLeft.src = waterCornerBottomLeft;
+edgeImages.bottomRight.src = waterCornerBottomRight;
+edgeImages.landCorner.src = landCornerSrc;
+
+//трава
+const grass1Img: HTMLImageElement = new Image();
+grass1Img.src = grassTextureSrc1;
+const grass2Img: HTMLImageElement = new Image();
+grass2Img.src = grassTextureSrc2;
+const grass3Img: HTMLImageElement = new Image();
+grass3Img.src = grassTextureSrc3;
+const flower1Img: HTMLImageElement = new Image();
+flower1Img.src = grassWithFrlowersTextureSrc;
+const flower2Img: HTMLImageElement = new Image();
+flower2Img.src = grassWithFlowersTextureSrc2;
+const flower3Img: HTMLImageElement = new Image();
+flower3Img.src = grass1TextureSrc22;
+const flower4Img: HTMLImageElement = new Image();
+flower4Img.src = grassWithOneFlowerTextureSrc;
+
+const weightedPool: HTMLImageElement[] = [
+  ...Array(15).fill(grass1Img),
+
+  ...Array(15).fill(grass2Img), 
+  ...Array(4).fill(grass3Img),
+
+  ...Array(1).fill(flower1Img),
+  ...Array(1).fill(flower2Img),
+  ...Array(1).fill(flower3Img),
+  ...Array(1).fill(flower4Img),
+];
+
+const waterBaseImg = new Image();
+waterBaseImg.src = waterTextureSrc;
+const waterFlowersImg = new Image();
+waterFlowersImg.src = waterFlowersSrc;
+const lilyWhiteImg = new Image();
+lilyWhiteImg.src = lilyWhiteSrc;
+const lilyYellowImg = new Image();
+lilyYellowImg.src = lilyYellowSrc;
+const lilyBaseImg = new Image();
+lilyBaseImg.src = lilyBaseSrc;
+const waterLilies = [lilyWhiteImg, lilyYellowImg, lilyBaseImg];
+
+const mountainImg = new Image();
+mountainImg.src = mountainsTextureSrc;
+
+/** Туман войны: несколько текстур, детерминированный выбор по координатам ячейки */
+const FOG_WAR_TEXTURE_SRCS = [tumanSrc, tuman2Src, tuman3Src] as const;
+const fogWarImages: HTMLImageElement[] = FOG_WAR_TEXTURE_SRCS.map(src => {
+  const img = new Image();
+  img.src = src;
+  return img;
+});
+
+/** Длительность растворения тумана при открытии клетки (мс) */
+const FOG_REVEAL_MS = 640;
+
+let fogPrevMap: MapTile[][] | null = null;
+/** key "x,y" → performance.now() в момент открытия клетки */
+const fogRevealAt = new Map<string, number>();
+
+function easeOutCubic(t: number): number {
+  const u = Math.max(0, Math.min(1, t));
+  return 1 - Math.pow(1 - u, 3);
+}
+
+/**
+ * Приводит значение тайла с сервера/JSON к MapTile.
+ * Туман часто приходит как null; иногда как строка "null" или лишние числа — иначе рисовалась серая заливка.
+ */
+function coerceTerrainCell(raw: unknown): MapTile {
+  if (raw === null || raw === undefined) return null;
+  if (raw === 0 || raw === 1 || raw === 2) return raw;
+  if (typeof raw === 'string') {
+    const s = raw.trim().toLowerCase();
+    if (s === '' || s === 'null') return null;
+    const n = parseInt(s, 10);
+    if (n === 0 || n === 1 || n === 2) return n as TerrainType;
+    return null;
+  }
+  if (typeof raw === 'number' && !Number.isNaN(raw)) {
+    if (raw === 0 || raw === 1 || raw === 2) return raw;
+    return null;
+  }
+  return null;
+}
+
+function getFogWarVariant(x: number, y: number): { imgIndex: number; rotation: number; flip: boolean } {
+  const seed = (x * 15485863 + y * 2038074743) ^ 0x9e3779b9;
+  return {
+    imgIndex: Math.abs(seed) % fogWarImages.length,
+    rotation: (Math.abs(seed >> 3) % 4) * (Math.PI / 2),
+    flip: (seed >> 5) % 2 === 0,
+  };
+}
+
+/**
+ * Отрисовка тумана войны по текстурам из assets/tuman (alpha 0…1).
+ * Для alpha < 1 — плавное «растворение» поверх уже нарисованного рельефа.
+ */
+function drawFogOfWarCell(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  cellW: number,
+  cellH: number,
+  nowMs: number,
+  alpha: number
+): void {
+  // Целочисленные границы + лёгкое перекрытие соседей — без субпиксельных «щелей»
+  const px0 = x * cellW;
+  const py0 = y * cellH;
+  const px = Math.floor(px0);
+  const py = Math.floor(py0);
+  const cw = Math.ceil(px0 + cellW) - px + 1;
+  const ch = Math.ceil(py0 + cellH) - py + 1;
+  const { imgIndex, rotation, flip } = getFogWarVariant(x, y);
+  const fogImg: HTMLImageElement | undefined = fogWarImages[imgIndex];
+  const breathe = 0.9 + 0.1 * Math.sin(nowMs * 0.0015 + x * 0.47 + y * 0.39);
+  const a = Math.max(0, Math.min(1, alpha * breathe));
+
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.fillStyle = `rgba(16, 20, 26, ${a * 0.45})`;
+  ctx.fillRect(px, py, cw, ch);
+  const cx = px + cw / 2;
+  const cy = py + ch / 2;
+  ctx.translate(cx, cy);
+  ctx.rotate(rotation);
+  if (flip) ctx.scale(-1, 1);
+
+  let drawn = false;
+  if (fogImg !== undefined) {
+    if (fogImg.complete && fogImg.naturalWidth > 0) {
+      drawn = tryDrawImageScaled(ctx, fogImg, -cw / 2, -ch / 2, cw, ch);
+    } else if (fogImg.src) {
+      try {
+        ctx.drawImage(fogImg, -cw / 2, -ch / 2, cw, ch);
+        drawn = fogImg.naturalWidth > 0 && fogImg.naturalHeight > 0;
+      } catch {
+        drawn = false;
+      }
+    }
+  }
+  if (!drawn) {
+    ctx.fillStyle = `rgba(32, 38, 46, ${a * 0.85})`;
+    ctx.fillRect(-cw / 2, -ch / 2, cw, ch);
+  }
+  ctx.restore();
+}
+
+function syncFogRevealTracking(map: MapTile[][]): void {
+  const rows = map.length;
+  const cols = map[0]?.length ?? 0;
+  if (rows === 0 || cols === 0) return;
+
+  if (!fogPrevMap || fogPrevMap.length !== rows || (fogPrevMap[0]?.length ?? 0) !== cols) {
+    fogPrevMap = map.map(row => row.map(cell => coerceTerrainCell(cell)));
+    fogRevealAt.clear();
+    return;
+  }
+
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const prevT = fogPrevMap[y][x];
+      const currT = coerceTerrainCell(map[y][x]);
+      if (prevT === null && currT !== null) {
+        fogRevealAt.set(`${x},${y}`, performance.now());
+      }
+    }
+  }
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      fogPrevMap[y][x] = coerceTerrainCell(map[y][x]);
+    }
+  }
+}
+
+/** Предзагрузка текстур тумана (вызывать при монтировании игры). */
+export function preloadFogWarTextures(): Promise<void> {
+  return Promise.all(
+    fogWarImages.map(
+      img =>
+        new Promise<void>(resolve => {
+          const finish = () => {
+            if (typeof img.decode === 'function') {
+              img.decode().then(() => resolve()).catch(() => resolve());
+            } else {
+              resolve();
+            }
+          };
+          if (img.complete && img.naturalWidth > 0) {
+            finish();
+            return;
+          }
+          img.addEventListener('load', finish, { once: true });
+          img.addEventListener('error', () => resolve(), { once: true });
+        })
+    )
+  ).then(() => undefined);
+}
 
 const CHAMPIGNEB_EXPL_DURATION = 1000; // 1 секунда
 const CHAMPIGNEB_EXPLOSION_FRAME_COUNT = 5;
-
 
 const unitImages: Record<string, HTMLImageElement> = {};
 const activeProjectiles = new Map<string, Projectile & { duration: number }>();
@@ -164,42 +444,240 @@ function getUnitImage(unit: Unit): HTMLImageElement | undefined {
   return unitImages[unit.type];
 }
 
-export function drawGame(
-  ctx: CanvasRenderingContext2D,
+/** Получает типы террейна для 4-х основных соседей */
+function getNeighbors(map: MapTile[][], x: number, y: number) {
+  return {
+    top: coerceTerrainCell(map[y - 1]?.[x]),
+    bottom: coerceTerrainCell(map[y + 1]?.[x]),
+    left: coerceTerrainCell(map[y]?.[x - 1]),
+    right: coerceTerrainCell(map[y]?.[x + 1]),
+  };
+}
+
+export function drawGame(ctx: CanvasRenderingContext2D,
   state: GameState | null,
   widthCSS: number,
-  heightCSS: number
+  heightCSS: number,
+  camera: TCamera
 ) {
-  if (!state) {
-    drawPlaceholder(ctx, widthCSS, heightCSS);
-    return;
+  const canvas = ctx.canvas;
+
+  // Синхронизируем внутренний размер канваса с его реальным размером на экране
+  const rect = canvas.getBoundingClientRect();
+  if (canvas.width !== rect.width || canvas.height !== rect.height) {
+    canvas.width = rect.width;
+    canvas.height = rect.height;
   }
 
-  const cellW = widthCSS / 100;
-  const cellH = heightCSS / 100;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // 1. Отрисовка карты (тайлы 100×100)
-  for (let y = 0; y < 100; y++) {
-    for (let x = 0; x < 100; x++) {
-      const terrain = state.map[y]?.[x];
-      ctx.fillStyle = getTerrainColor(terrain);
-      ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
+  // Инициализация один раз
+  if (!(canvas as any).__cameraInitialized) {
+    initCameraListeners(canvas);
+    (canvas as any).__cameraInitialized = true;
+  }
+
+  if (!state) return;
+
+  const rows = state.map.length;
+  const cols = state.map[0]?.length ?? 0;
+
+  const fogNow = performance.now();
+  syncFogRevealTracking(state.map);
+
+  const cellW = (canvas.width / cols) * camera.scale;
+  const cellH = cellW;
+
+  // 2. Считаем полный размер карты
+  const mapFullWidth = cols * cellW;
+  const mapFullHeight = rows * cellH;
+
+  const EPSILON = 0.1;
+
+  // --- ЕДИНЫЙ БЛОК УПРАВЛЕНИЯ КАМЕРОЙ ---
+  if (mapFullWidth > canvas.width + EPSILON) {
+    camera.offsetX = Math.min(0, Math.max(camera.offsetX, canvas.width - mapFullWidth));
+  } else {
+    camera.offsetX = (canvas.width - mapFullWidth) / 2;
+  }
+
+  if (mapFullHeight > canvas.height + EPSILON) {
+    camera.offsetY = Math.min(0, Math.max(camera.offsetY, canvas.height - mapFullHeight));
+  } else {
+    camera.offsetY = (canvas.height - mapFullHeight) / 2;
+  }
+
+  // 3. ПЕРЕД ВСЕМ рисуем бесконечный фон (траву)
+  ctx.fillStyle = '#45a049'; // Тот же зеленый, что на карте
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.save();
+  ctx.translate(camera.offsetX, camera.offsetY);
+
+  // --- НАЧАЛО ОТРИСОВКИ ОБЪЕКТОВ ---
+
+  // 1. Отрисовка карты (ландшафт)
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const terrain = coerceTerrainCell(state.map[y]?.[x]);
+
+    // Отрисовка ландшафта: Равнина (terrain === 0)
+    // Внутри цикла отрисовки по x и y
+    if (terrain === 0) {
+    const hash = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+    const seed = Math.abs(hash - Math.floor(hash));       
+    const assetIndex = Math.floor(seed * weightedPool.length);
+    const activeImg = weightedPool[assetIndex];
+
+    if (isImageDrawable(activeImg)) {
+        ctx.drawImage(activeImg, x * cellW, y * cellH, cellW, cellH);
+    }
+
+    //логика кустов (поверх травы)
+    if (isImageDrawable(bushImg)) {
+        const bushSeed = Math.abs((x * 73856093) ^ (y * 19349663));
+        
+        // Шанс 5%
+        if ((bushSeed % 100) < 3) {
+            ctx.save();
+            const offsetX = (bushSeed % 7) - 3; 
+            const offsetY = (bushSeed % 5) - 2; 
+
+            ctx.drawImage(
+                bushImg, 
+                x * cellW + offsetX, 
+                y * cellH + offsetY, 
+                cellW, 
+                cellH
+            );
+            ctx.restore();
+        }
     }
   }
+      //вода
+      else if (terrain === 1 && isImageDrawable(waterBaseImg)) {
+      // 1. Детерминированный выбор базового слоя воды
+      const seed = (x * 15485863 + y * 2038074743);
+      const probability = Math.abs(seed % 100);
+      const neighbors = getNeighbors(state.map, x, y);      
+      let currentImg: HTMLImageElement;
 
-  // 1.5. Сетка
-  drawGrid(ctx, widthCSS, heightCSS, cellW, cellH);
+      if (probability < 70) {
+          currentImg = waterBaseImg; 
+      } else if (probability < 90) {
+          currentImg = waterFlowersImg; 
+      } else {
+          currentImg = waterLilies[Math.abs(seed % waterLilies.length)];
+      }
 
-  // 2. Отрисовка луж слизи (полупрозрачные, под юнитами)
-  state.slimePuddles.forEach(puddle => {
-    const cx = puddle.x * cellW + cellW / 2;
-    const cy = puddle.y * cellH + cellH / 2;
-    const radiusPx = puddle.radius * Math.min(cellW, cellH);
-    ctx.beginPath();
-    ctx.arc(cx, cy, radiusPx, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(76, 175, 80, 0.4)'; // зелёный с прозрачностью 0.4
-    ctx.fill();
-  });
+      ctx.save();
+      // Переходим в центр ячейки для удобства наложения слоев
+      ctx.translate(x * cellW + cellW / 2, y * cellH + cellH / 2);            
+      
+      // Рисуем базу
+      ctx.drawImage(currentImg, -cellW / 2, -cellH / 2, cellW, cellH);
+
+      // 2. Отрисовка прямых берегов (если сосед — трава/0)
+      if (neighbors.top === 0 && isImageDrawable(edgeImages.top)) {
+          ctx.drawImage(edgeImages.top, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+      if (neighbors.bottom === 0 && isImageDrawable(edgeImages.bottom)) {
+          ctx.drawImage(edgeImages.bottom, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+      if (neighbors.left === 0 && isImageDrawable(edgeImages.left)) {
+          ctx.drawImage(edgeImages.left, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+      if (neighbors.right === 0 && isImageDrawable(edgeImages.right)) {
+          ctx.drawImage(edgeImages.right, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+
+      // 3. Внешние уголки (выступы земли в воду)
+      // Рисуются, когда две смежные стороны — земля
+      if (neighbors.top === 0 && neighbors.left === 0 && isImageDrawable(edgeImages.topLeft)) {
+          ctx.drawImage(edgeImages.topLeft, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+      if (neighbors.top === 0 && neighbors.right === 0 && isImageDrawable(edgeImages.topRight)) {
+          ctx.drawImage(edgeImages.topRight, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+      if (neighbors.bottom === 0 && neighbors.left === 0 && isImageDrawable(edgeImages.bottomLeft)) {
+          ctx.drawImage(edgeImages.bottomLeft, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+      if (neighbors.bottom === 0 && neighbors.right === 0 && isImageDrawable(edgeImages.bottomRight)) {
+          ctx.drawImage(edgeImages.bottomRight, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+
+      // 4. Внутренние уголки (скругление вогнутых углов воды)
+      // Рисуются, когда основные соседи — вода, а диагональный — земля
+      const tTopLeft = coerceTerrainCell(state.map[y - 1]?.[x - 1]);
+      const tTopRight = coerceTerrainCell(state.map[y - 1]?.[x + 1]);
+      const tBottomLeft = coerceTerrainCell(state.map[y + 1]?.[x - 1]);
+      const tBottomRight = coerceTerrainCell(state.map[y + 1]?.[x + 1]);
+
+      if (neighbors.top !== 0 && neighbors.left !== 0 && tTopLeft === 0) {
+          if (isImageDrawable(edgeImages.innerTopLeft)) 
+              ctx.drawImage(edgeImages.innerTopLeft, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+      if (neighbors.top !== 0 && neighbors.right !== 0 && tTopRight === 0) {
+          if (isImageDrawable(edgeImages.innerTopRight)) 
+              ctx.drawImage(edgeImages.innerTopRight, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+      if (neighbors.bottom !== 0 && neighbors.left !== 0 && tBottomLeft === 0) {
+          if (isImageDrawable(edgeImages.innerBottomLeft)) 
+              ctx.drawImage(edgeImages.innerBottomLeft, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+      if (neighbors.bottom !== 0 && neighbors.right !== 0 && tBottomRight === 0) {
+          if (isImageDrawable(edgeImages.innerBottomRight)) 
+              ctx.drawImage(edgeImages.innerBottomRight, -cellW / 2, -cellH / 2, cellW, cellH);
+      }
+
+      ctx.restore();
+      }
+      //горы
+       else if (terrain === 2 && isImageDrawable(mountainImg)) {
+        // Используем уникальные множители для гор, чтобы разнообразить паттерн
+        const seed = (x * 73856093 ^ y * 19349663 + x * y);
+        
+        ctx.save();
+        ctx.translate(x * cellW + cellW / 2, y * cellH + cellH / 2);
+        
+        // Вращение на 0, 90, 180 или 270 градусов
+        const rotation = (Math.abs(seed % 4) * Math.PI) / 2;
+        ctx.rotate(rotation);
+        
+        // Добавляем случайное отражение по горизонтали
+        if ((seed >> 2) % 2 === 0) {
+            ctx.scale(-1, 1);
+        }
+        
+        // Рисуем гору
+        ctx.drawImage(mountainImg, -cellW / 2, -cellH / 2, cellW, cellH);
+        ctx.restore();
+      }
+      else if (terrain === null) {
+        drawFogOfWarCell(ctx, x, y, cellW, cellH, fogNow, 1);
+      } else {
+        ctx.fillStyle = getTerrainColor(terrain);
+        ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
+      }
+
+      if (terrain !== null) {
+        const key = `${x},${y}`;
+        const started = fogRevealAt.get(key);
+        if (started !== undefined) {
+          const elapsed = fogNow - started;
+          if (elapsed >= FOG_REVEAL_MS) {
+            fogRevealAt.delete(key);
+          } else {
+            const fadeAlpha = 1 - easeOutCubic(elapsed / FOG_REVEAL_MS);
+            drawFogOfWarCell(ctx, x, y, cellW, cellH, fogNow, fadeAlpha);
+          }
+        }
+      }
+  }
+}
+
+  // 1.5. Сетка (без линий между двумя клетками тумана — иначе «просветы» по шву)
+  drawGridFogAware(ctx, cols * cellW, rows * cellH, cellW, cellH, rows, cols, state.map);
 
   // 3. Отрисовка зданий (вражеские — красные; сооружения грибов — отдельный вид)
   const activeVzryvomorGuids = new Set(
@@ -213,10 +691,7 @@ export function drawGame(
 
     const bx = building.x * cellW;
     const by = building.y * cellH;
-    const hpPercent =
-      building.maxHp > 0
-        ? Math.max(0, Math.min(1, building.hp / building.maxHp))
-        : 0;
+    const hpPercent = Math.max(0, Math.min(1, building.hp / getMaxHp(building.type)));
 
     if (building.type === 'vzryvomor') {
       const frameIndex = updateVzryvomorAnimation(building.guid, building.isExploding === true);
@@ -432,19 +907,94 @@ export function drawGame(
     ctx.fillStyle = '#d32f2f';
     ctx.fillRect(barX, barY, barWidth, barHeight);
 
-    const hpPercent = Math.max(0, Math.min(1, unit.hp / unit.maxHp));
+    const hpPercent = Math.max(0, Math.min(1, unit.hp / getMaxHp(unit.type)));
     ctx.fillStyle = '#4caf50';
     ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight);
   });
 
+  ctx.restore(); // Возвращаем контекст в норму
+
 }
 
-function getTerrainColor(type: TerrainType): string {
+/**
+ * Вспомогательная функция для отрисовки полосок HP
+ */
+function drawHealthBar(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, percent: number) {
+  ctx.fillStyle = '#d32f2f';
+  ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = '#4caf50';
+  ctx.fillRect(x, y, w * percent, h);
+}
+
+// 4. ФУНКЦИЯ ИНИЦИАЛИЗАЦИИ СОБЫТИЙ
+
+function initCameraListeners(canvas: HTMLCanvasElement) {
+  // Ловим событие на уровне окна, чтобы никакие слои не мешали
+  window.addEventListener('wheel', (e: WheelEvent) => {
+    const rect = canvas.getBoundingClientRect();
+
+    // Проверяем, находится ли мышь над канвасом
+    const isOverCanvas =
+      e.clientX >= rect.left &&
+      e.clientX <= rect.right &&
+      e.clientY >= rect.top &&
+      e.clientY <= rect.bottom;
+
+    if (!isOverCanvas) return;
+
+    // Блокируем стандартный скролл страницы
+    e.preventDefault();
+
+    const oldScale = camera.scale;
+    // Чувствительность зума
+    const zoomDelta = -e.deltaY * 0.005;
+    camera.scale = Math.min(Math.max(camera.scale + zoomDelta, MIN_SCALE), MAX_SCALE);
+
+    if (oldScale !== camera.scale) {
+      // Учитываем разницу между размером в CSS и внутренним разрешением (1125 vs 900)
+      const scaleFactor = canvas.width / rect.width;
+      const mouseX = (e.clientX - rect.left) * scaleFactor;
+      const mouseY = (e.clientY - rect.top) * scaleFactor;
+
+      // Формула зума в точку курсора
+      camera.offsetX -= (mouseX - camera.offsetX) * (camera.scale / oldScale - 1);
+      camera.offsetY -= (mouseY - camera.offsetY) * (camera.scale / oldScale - 1);
+
+      console.log("Масштаб:", camera.scale.toFixed(2));
+    }
+  }, { passive: false, capture: true }); // capture: true — критически важно!
+
+  // Аналогично для перемещения (drag-n-drop)
+  canvas.addEventListener('mousedown', (e) => {
+    if (e.button === 0) {
+      camera.isDragging = true;
+      camera.lastMouseX = e.clientX;
+      camera.lastMouseY = e.clientY;
+    }
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!camera.isDragging) return;
+    camera.offsetX += e.clientX - camera.lastMouseX;
+    camera.offsetY += e.clientY - camera.lastMouseY;
+    camera.lastMouseX = e.clientX;
+    camera.lastMouseY = e.clientY;
+  });
+
+  window.addEventListener('mouseup', () => camera.isDragging = false);
+}
+
+function getTerrainColor(type: MapTile | undefined): string {
   switch (type) {
-    case 0: return '#a0d6a0';
-    case 1: return '#4a7db4';
-    case 2: return '#555555';
-    default: return '#a0d6a0';
+    case 0:
+      return '#2ecc71'; // равнина - зелёный
+    case 1:
+      return '#7fd3ff'; // вода - голубой
+    case 2:
+      return '#8b5a2b'; // горы - коричневый
+    case null:
+    default:
+      return '#2a3338'; // туман / неизвестно (fallback без текстуры)
   }
 }
 
@@ -473,32 +1023,89 @@ function getProjectileColor(type: Projectile['type']): string {
   }
 }
 
-/**
- * Рисует тонкую серую сетку 100×100
- */
-function drawGrid(ctx: CanvasRenderingContext2D, width: number, height: number, cellW: number, cellH: number) {
+function drawGrid(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  cellW: number,
+  cellH: number,
+  rows: number,
+  cols: number
+) {
   ctx.beginPath();
-  ctx.strokeStyle = '#cccccc';
+  ctx.strokeStyle = '#1518143c';
   ctx.lineWidth = 0.5;
-  for (let i = 0; i <= 100; i++) {
-    const x = i * cellW;
-    const y = i * cellH;
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, height);
-    ctx.moveTo(0, y);
-    ctx.lineTo(width, y);
+  for (let x = 0; x <= cols; x++) {
+    const px = x * cellW;
+    ctx.moveTo(px, 0);
+    ctx.lineTo(px, height);
+  }
+  for (let y = 0; y <= rows; y++) {
+    const py = y * cellH;
+    ctx.moveTo(0, py);
+    ctx.lineTo(width, py);
   }
   ctx.stroke();
 }
 
+/** Сетка без отрезков между двумя соседними клетками тумана (туман+туман). */
+function drawGridFogAware(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  cellW: number,
+  cellH: number,
+  rows: number,
+  cols: number,
+  map: MapTile[][]
+) {
+  ctx.beginPath();
+  ctx.strokeStyle = '#1518143c';
+  ctx.lineWidth = 0.5;
+
+  for (let x = 1; x < cols; x++) {
+    const px = x * cellW;
+    for (let y = 0; y < rows; y++) {
+      const left = coerceTerrainCell(map[y]?.[x - 1]);
+      const right = coerceTerrainCell(map[y]?.[x]);
+      if (left === null && right === null) continue;
+      ctx.moveTo(px, y * cellH);
+      ctx.lineTo(px, (y + 1) * cellH);
+    }
+  }
+
+  for (let y = 1; y < rows; y++) {
+    const py = y * cellH;
+    for (let x = 0; x < cols; x++) {
+      const up = coerceTerrainCell(map[y - 1]?.[x]);
+      const down = coerceTerrainCell(map[y]?.[x]);
+      if (up === null && down === null) continue;
+      ctx.moveTo(x * cellW, py);
+      ctx.lineTo((x + 1) * cellW, py);
+    }
+  }
+
+  ctx.moveTo(0, 0);
+  ctx.lineTo(width, 0);
+  ctx.moveTo(0, height);
+  ctx.lineTo(width, height);
+  ctx.moveTo(0, 0);
+  ctx.lineTo(0, height);
+  ctx.moveTo(width, 0);
+  ctx.lineTo(width, height);
+  ctx.stroke();
+}
+
 function drawPlaceholder(ctx: CanvasRenderingContext2D, width: number, height: number) {
-  const cellW = width / 100;
-  const cellH = height / 100;
-  for (let y = 0; y < 100; y++) {
-    for (let x = 0; x < 100; x++) {
-      ctx.fillStyle = '#a0d6a0';
+  const rows = 100;
+  const cols = 100;
+  const cellW = width / cols;
+  const cellH = cellW;
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      ctx.fillStyle = getTerrainColor(0);
       ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
     }
   }
-  drawGrid(ctx, width, height, cellW, cellH);
+  drawGrid(ctx, width, height, cellW, cellH, rows, cols);
 }

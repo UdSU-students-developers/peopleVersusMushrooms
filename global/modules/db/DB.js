@@ -28,32 +28,51 @@ class DB {
         return await this.orm.get('users', { name });
     }
 
-    async getUnitByType(type) {
-        const unit = await this.orm.get('units', { type });
+    async getAllUnits() {
+        const units = await this.orm.all('units');
+        if (!units || units.length === 0) return [];
 
-        if (!unit) return null;
-
-        const property = await this.orm.all('units_property', { unit_id: unit.id });
-        const result = { ...unit };
-        for (const attr of property) {
-            result[attr.name] = attr.value; // result["hp"] = 100
+        const allProperties = await this.orm.all('units_property');
+        
+        const propsByUnitId = {};
+        for (const prop of allProperties) {
+            if (!propsByUnitId[prop.unit_id]) {
+                propsByUnitId[prop.unit_id] = [];
+            }
+            propsByUnitId[prop.unit_id].push(prop);
         }
-
-        return result;
+        return units.map(unit => {
+            const props = propsByUnitId[unit.id] || [];
+            const unitWithProps = { ...unit };
+            for (const attr of props) {
+                unitWithProps[attr.name] = attr.value;
+            }
+            return unitWithProps;
+        });
     }
 
-    async getBuildingByType(type) {
-        const building = await this.orm.get('builings', { type });
+    async getAllBuildings() {
+        const buildings = await this.orm.all('builings');
+        if (!buildings || buildings.length === 0) return [];
 
-        if (!building) return null;
+        const allProperties = await this.orm.all('building_property');
 
-        const property = await this.orm.all('building_property', { building_id: building.id });
-        const result = { ...building };
-        for (const attr of property) {
-            result[attr.name] = attr.value; // result["hp"] = 100
+        const propsByBuildingId = {};
+        for (const prop of allProperties) {
+            if (!propsByBuildingId[prop.building_id]) {
+                propsByBuildingId[prop.building_id] = [];
+            }
+            propsByBuildingId[prop.building_id].push(prop);
         }
 
-        return result;
+        return buildings.map(building => {
+            const props = propsByBuildingId[building.id] || [];
+            const buildingWithProps = { ...building };
+            for (const attr of props) {
+                buildingWithProps[attr.name] = attr.value;
+            }
+            return buildingWithProps;
+        });
     }
 
     async getUserByToken(token) {

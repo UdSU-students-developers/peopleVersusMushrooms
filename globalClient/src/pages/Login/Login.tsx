@@ -4,7 +4,7 @@ import { MediatorContext, ServerContext } from '../../App';
 import Button from '../../components/Button/Button';
 import './Login.css';
 
-const Login: React.FC<IBasePage> = ({ setPage }) => {
+const Login: React.FC<IBasePage> = ({ setPage, onChangeRole }) => {
     const server = useContext(ServerContext);
     const mediator = useContext(MediatorContext);
 
@@ -13,7 +13,6 @@ const Login: React.FC<IBasePage> = ({ setPage }) => {
     const [rememberMe, setRememberMe] = useState<boolean>(false);
     const [disableChecks, setDisableChecks] = useState<boolean>(false);
     const [errors, setErrors] = useState<string[]>([]);
-    const [isForgotMode, setIsForgotMode] = useState<boolean>(false);
 
     useEffect(() => {
         if (!mediator) return;
@@ -30,19 +29,12 @@ const Login: React.FC<IBasePage> = ({ setPage }) => {
         }
         const errs = [];
         if (!login) errs.push('Введите логин');
-        if (!isForgotMode && !password) errs.push('Введите пароль');
+        if (!password) errs.push('Введите пароль');
         setErrors(errs);
-    }, [login, password, isForgotMode, disableChecks]);
+    }, [login, password, disableChecks]);
 
     const handleSubmit = async () => {
         if (!disableChecks && errors.length > 0) return;
-
-        if (isForgotMode) {
-            alert(`Инструкция по восстановлению отправлена для логина: ${login}`);
-            setIsForgotMode(false);
-            return;
-        }
-
         await server.login(login, password);
     };
 
@@ -53,7 +45,7 @@ const Login: React.FC<IBasePage> = ({ setPage }) => {
     return (
         <div className="login-container">
             <div className="login-box">
-                <h2>{isForgotMode ? 'Восстановление' : 'Вход'}</h2>
+                <h2>Вход</h2>
 
                 <div className="login-form">
                     <input
@@ -65,29 +57,25 @@ const Login: React.FC<IBasePage> = ({ setPage }) => {
                         className="pixel-input"
                     />
 
-                    {!isForgotMode && (
-                        <>
-                            <input
-                                id="testing-login-password"
-                                type="password"
-                                placeholder="Пароль"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="pixel-input"
-                            />
+                    <input
+                        id="testing-login-password"
+                        type="password"
+                        placeholder="Пароль"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pixel-input"
+                    />
 
-                            <div className="checkbox-container">
-                                <input
-                                    type="checkbox"
-                                    id="testing-login-remember"
-                                    checked={rememberMe}
-                                    onChange={() => setRememberMe(!rememberMe)}
-                                />
-                                <label htmlFor="testing-login-remember">Запомнить меня</label>
-                            </div>
-                        </>
-                    )}
-                    
+                    <div className="checkbox-container">
+                        <input
+                            type="checkbox"
+                            id="testing-login-remember"
+                            checked={rememberMe}
+                            onChange={() => setRememberMe(!rememberMe)}
+                        />
+                        <label htmlFor="testing-login-remember">Запомнить меня</label>
+                    </div>
+
                     {errors.length > 0 && (
                         <div className="error-box">
                             {errors.map((err, idx) => <div key={idx}>{err}</div>)}
@@ -104,9 +92,9 @@ const Login: React.FC<IBasePage> = ({ setPage }) => {
                         <label htmlFor="testing-login-disable-checks">Отключить проверки</label>
                     </div>
 
-                    <Button 
+                    <Button
                         onClick={handleSubmit}
-                        text={isForgotMode ? 'Восстановить' : 'Войти'}
+                        text="Войти"
                         variant="primary"
                         isDisabled={!disableChecks && errors.length > 0}
                         className="login-btn"
@@ -114,15 +102,15 @@ const Login: React.FC<IBasePage> = ({ setPage }) => {
                 </div>
 
                 <div className="links-section">
-                    <p className="link-style" onClick={() => { setIsForgotMode(!isForgotMode); setErrors([]); }}>
-                        {isForgotMode ? 'Вспомнили пароль? Войти' : 'Забыли пароль?'}
-                    </p>
-
-                    {!isForgotMode && (
-                        <p className="link-style" onClick={switchToRegister}>
-                            Нет аккаунта? Зарегистрироваться
+                    {onChangeRole && (
+                        <p className="link-style" onClick={onChangeRole}>
+                            Сменить роль
                         </p>
                     )}
+
+                    <p className="link-style" onClick={switchToRegister}>
+                        Нет аккаунта? Зарегистрироваться
+                    </p>
                 </div>
             </div>
         </div>

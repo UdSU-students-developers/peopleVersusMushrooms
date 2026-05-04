@@ -4,7 +4,7 @@ import { MediatorContext, ServerContext } from '../../App';
 import Button from '../../components/Button/Button';
 import './Registration.css';
 
-const Registration: React.FC<IBasePage> = ({ setPage }) => {
+const Registration: React.FC<IBasePage> = ({ setPage, onChangeRole }) => {
     const server = useContext(ServerContext);
     const mediator = useContext(MediatorContext);
 
@@ -133,9 +133,16 @@ const Registration: React.FC<IBasePage> = ({ setPage }) => {
                     />
                 </div>
 
-                <p className="link-style" onClick={() => setPage(PAGES.LOGIN)}>
-                    Уже есть аккаунт? Войти
-                </p>
+                <div className="registration-links-section">
+                    {onChangeRole && (
+                        <p className="link-style" onClick={onChangeRole}>
+                            Сменить роль
+                        </p>
+                    )}
+                    <p className="link-style" onClick={() => setPage(PAGES.LOGIN)}>
+                        Уже есть аккаунт? Войти
+                    </p>
+                </div>
             </div>
         </div>
     );

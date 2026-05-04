@@ -10,8 +10,24 @@ export type TPoint = {
     y: number;
 }
 
+/** Роль клиента Global; URL бэкенда — в HOST_BY_ROLE. */
+export type GameRole =
+    | 'map'
+    | 'mushroomsArmy'
+    | 'mushroomsEconomy'
+    | 'peopleArmy'
+    | 'peopleEconomy';
+
 const CONFIG = {
-    HOST: 'http://localhost:3005', // Адрес сервера
+    /** Адрес сокет-сервера для каждой роли (совпадает с global/globalConfig.js). */
+    HOST_BY_ROLE: {
+        map: 'http://localhost:3001',
+        mushroomsArmy: 'http://localhost:3003',
+        mushroomsEconomy: 'http://localhost:3005',
+        peopleArmy: 'http://localhost:3007',
+        peopleEconomy: 'http://localhost:3009',
+    } satisfies Record<GameRole, string>,
+
     CHAT_MAX_MESSAGE_LENGTH: 255,
 
     MEDIATOR: {

@@ -88,3 +88,55 @@
   color: #60a5fa;
   text-decoration: underline;
 }
+.pixel-select {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pixel-select.select-empty {
+  color: #64748b;
+}
+
+.pixel-select option {
+  background: #1e293b;
+  color: #f1f5f9;
+  font-size: 14px;
+}
+
+.pixel-select option:disabled {
+  color: #475569;
+}
+
+.role-radio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+
+.role-radio-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #e2e8f0;
+  cursor: pointer;
+}
+
+.role-radio-row input {
+  accent-color: #3b82f6;
+}
+
+.role-radio-host {
+  margin-left: auto;
+  font-size: 12px;
+  color: #64748b;
+  font-family: ui-monospace, monospace;
+}

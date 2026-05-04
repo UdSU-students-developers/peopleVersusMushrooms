@@ -1,21 +1,17 @@
 import { io, Socket } from "socket.io-client";
 import CONFIG from '../../config';
 import Mediator from '../Mediator/Mediator';
-import { 
-    TMessages, 
-    TResponse, 
-    TScene, 
-    TUser, 
-    TError, 
-    TMessage, 
+import {
+    TMessages,
+    TResponse,
+    TScene,
+    TUser,
+    TMessage,
     TLobbies,
-    TLobby,
     TLobbyServer,
     TRelief
 } from "../Server/types";
 import md5 from 'md5';
-
-const { HOST } = CONFIG;
 
 interface ServerToClientEvents {
     [key: string]: (response: any) => void;
@@ -27,37 +23,51 @@ interface ClientToServerEvents {
 
 class Server {
     private mediator: Mediator;
-    private socket: Socket<ServerToClientEvents, ClientToServerEvents>;
+    private socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null;
 
     constructor(mediator: Mediator) {
         this.mediator = mediator;
-        this.socket = io(HOST);
-        this.setupSocketListeners();
     }
 
-    private setupSocketListeners(): void {
+    /** Подключение к сокету (после выбора роли и известного URL). Повторный вызов пересоздаёт клиент. */
+    public connect(host: string): void {
+        this.disconnect();
+        this.socket = io(host);
+        this.attachSocketHandlers();
         this.socket.on("connect", () => {
-            console.log('connect');
-
-            const { SOCKET } = CONFIG;
-
-            this.socket.on(SOCKET.REGISTRATION, (data: TResponse<TUser>) => this.handleRegistration(data));
-            this.socket.on(SOCKET.LOGIN, (data: TResponse<TUser>) => this.handleLogin(data));
-            this.socket.on(SOCKET.LOGOUT, (data: TResponse<null>) => this.handleLogout(data));
-            this.socket.on(SOCKET.MESSAGE, (data: TResponse<{ message: string }>) => this.handleSendMessage(data));
-            this.socket.on(SOCKET.MESSAGES, (data: TResponse<{ messages: TMessages }>) => this.handleGetMessage(data));
-            this.socket.on(SOCKET.NEW_MESSAGE, (data: TResponse<TMessage>) => this.handleNewMessage(data));
-            this.socket.on(SOCKET.START_GAME, (data: TResponse<TScene>) => this.handleStartGame(data));
-            this.socket.on(SOCKET.UPDATE_SCENE, (data: TResponse<TScene>) => this.handleUpdateScene(data));
-            this.socket.on(SOCKET.CREATE_LOBBY, (data: TResponse<TLobbyServer>) => this.handleCreateLobby(data));
-            this.socket.on(SOCKET.LOBBIES_LIST_UPDATED, (data: TResponse<TLobbies>) => this.handleLobbiesListUpdated(data));
-            this.socket.on(SOCKET.LOBBY_UPDATED, (data: TResponse<TLobbyServer>) => this.handleLobbyUpdated(data));
-            this.socket.on(SOCKET.JOIN_TO_LOBBY, (data: TResponse<TLobbyServer>) => this.handleJoinToLobby(data));
-            this.socket.on(SOCKET.LEAVE_LOBBY, (data: TResponse<TLobbies>) => this.handleLeaveLobby(data));
-            this.socket.on(SOCKET.SET_READY, (data: TResponse<any>) => this.handleSetReady(data));
-            this.socket.on(SOCKET.DROP_FROM_LOBBY, (data: TResponse<TLobbies>) => this.handleDropFromLobby(data));
-            this.socket.on(SOCKET.RELIEF_LOADED, (data: TResponse<TRelief>) => this.handleReliefLoaded(data));
+            console.log('connect', host);
         });
+    }
+
+    public disconnect(): void {
+        if (this.socket) {
+            this.socket.removeAllListeners();
+            this.socket.disconnect();
+            this.socket = null;
+        }
+    }
+
+    private attachSocketHandlers(): void {
+        if (!this.socket) return;
+
+        const { SOCKET } = CONFIG;
+
+        this.socket.on(SOCKET.REGISTRATION, (data: TResponse<TUser>) => this.handleRegistration(data));
+        this.socket.on(SOCKET.LOGIN, (data: TResponse<TUser>) => this.handleLogin(data));
+        this.socket.on(SOCKET.LOGOUT, (data: TResponse<null>) => this.handleLogout(data));
+        this.socket.on(SOCKET.MESSAGE, (data: TResponse<{ message: string }>) => this.handleSendMessage(data));
+        this.socket.on(SOCKET.MESSAGES, (data: TResponse<{ messages: TMessages }>) => this.handleGetMessage(data));
+        this.socket.on(SOCKET.NEW_MESSAGE, (data: TResponse<TMessage>) => this.handleNewMessage(data));
+        this.socket.on(SOCKET.START_GAME, (data: TResponse<TScene>) => this.handleStartGame(data));
+        this.socket.on(SOCKET.UPDATE_SCENE, (data: TResponse<TScene>) => this.handleUpdateScene(data));
+        this.socket.on(SOCKET.CREATE_LOBBY, (data: TResponse<TLobbyServer>) => this.handleCreateLobby(data));
+        this.socket.on(SOCKET.LOBBIES_LIST_UPDATED, (data: TResponse<TLobbies>) => this.handleLobbiesListUpdated(data));
+        this.socket.on(SOCKET.LOBBY_UPDATED, (data: TResponse<TLobbyServer>) => this.handleLobbyUpdated(data));
+        this.socket.on(SOCKET.JOIN_TO_LOBBY, (data: TResponse<TLobbyServer>) => this.handleJoinToLobby(data));
+        this.socket.on(SOCKET.LEAVE_LOBBY, (data: TResponse<TLobbies>) => this.handleLeaveLobby(data));
+        this.socket.on(SOCKET.SET_READY, (data: TResponse<any>) => this.handleSetReady(data));
+        this.socket.on(SOCKET.DROP_FROM_LOBBY, (data: TResponse<TLobbies>) => this.handleDropFromLobby(data));
+        this.socket.on(SOCKET.RELIEF_LOADED, (data: TResponse<TRelief>) => this.handleReliefLoaded(data));
     }
 
     private getCredentials(): { guid: string; token: string } | null {
@@ -79,6 +89,7 @@ class Server {
     }
 
     private request(event: string, payload: object = {}): void {
+        if (!this.socket) return;
         const credentials = this.getCredentials();
         const fullPayload = credentials ? { ...payload, ...credentials } : payload;
         this.socket.emit(event, fullPayload);
@@ -258,7 +269,7 @@ class Server {
 
     private handleLobbiesListUpdated(response: TResponse<TLobbies>): void {
         if (this.checkError(response)) return;
-        
+
         if (response.data) {
             const { LOBBIES_LIST_UPDATED } = this.mediator.getEventTypes();
             this.mediator.call(LOBBIES_LIST_UPDATED, response.data);
@@ -276,7 +287,7 @@ class Server {
 
     private handleLeaveLobby(response: TResponse<TLobbies>): void {
         if (this.checkError(response)) return;
-        
+
         const { LOBBY_UPDATED } = this.mediator.getEventTypes();
         this.mediator.call(LOBBY_UPDATED, null);
     }

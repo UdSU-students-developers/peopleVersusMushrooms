@@ -34,7 +34,6 @@ describe('Login markup', () => {
 
     expect(screen.getByRole('button', { name: /Войти/i })).toBeInTheDocument();
 
-    expect(screen.getByText('Забыли пароль?')).toBeInTheDocument();
     expect(screen.getByText('Нет аккаунта? Зарегистрироваться')).toBeInTheDocument();
 
     expect(screen.getByRole('button', { name: /Войти/i })).toBeDisabled();

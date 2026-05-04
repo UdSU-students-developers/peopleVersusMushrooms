@@ -24,9 +24,6 @@ class Economy {
         this.db = db;
         this.common = common;
         this.callbacks = { updated, spawnArmyUnit };
-        // данные экономики
-        this.resourceMap; // массив известных ресурсов [{x, y, value}]
-        this.relief = null;
 
         //Здания
         this.buildings = {
@@ -52,10 +49,14 @@ class Economy {
             peopleEconomy: null,
             mushroomsArmy: null,
             mushroomsEconomy: null,
+            mapGuid: null,
         }
         Object.keys(guids).forEach(key => this.guids[key] = guids[key]);
 
-        this.map = this._initEmptyMap();
+        this.map = {
+            resourceMap: null, // массив известных ресурсов [{x, y, value}]
+            relief: this._initEmptyMap(),
+        };
         this._initBuildings(startPoint);
 
         this.easyStar = new EasyStar.js();
@@ -78,29 +79,28 @@ class Economy {
 
     get() {
         return {
-            guid: this.guid,
+            guids: this.guid,
             buildings: {
-                smallReactors: this.buildings.smallReactors.map(r => r.get()),
-                incubators: this.buildings.incubators.map(i => i.get()),
-                mycelium: this.buildings.mycelium.map(m => m.get()),
+                ...this.buildings.smallReactors.map(r => r.get()),
+                ...this.buildings.incubators.map(i => i.get()),
+                ...this.buildings.mycelium.map(m => m.get()),
             },
             units: {
-                workers: this.units.workers.map(w => w.get()),
-                larvae: this.units.larvae.map(l => l.get()),
+                ...this.units.larvae.map(l => l.get()),
             },
             map: this.map,
         }
     }
 
     setRelief(relief) {
-        this.relief = relief;
+        this.map.relief = relief;
     }
 
     _initEmptyMap() {
         const map = [];
-        for (let i = 0; i < 50; i++) {
+        for (let i = 0; i < 100; i++) {
             map.push([]);
-            for (let j = 0; j < 50; j++) {
+            for (let j = 0; j < 100; j++) {
                 map[i].push(null);
             }
         }
@@ -114,6 +114,7 @@ class Economy {
         // создать маленький реактор
         this.addSmallReactor(startPoint.x + 1, startPoint.y + 1);
         // создать грибничку
+        this.addMycelium(startPoint.x - 1, startPoint.y - 1)
 
         this.callbacks.updated(this.get());
     }
@@ -227,18 +228,18 @@ class Economy {
     }
 
     updateMyceliumGrid() {
-        this.myceliumGrid = Array(50).fill().map(() => Array(50).fill(0));
+        this.myceliumGrid = Array(100).fill().map(() => Array(100).fill(0));
 
         for (const mc of this.buildings.mycelium) {
-            if (mc.x >= 0 && mc.x < 50 && mc.y >= 0 && mc.y < 50) {
+            if (mc.x >= 0 && mc.x < 100 && mc.y >= 0 && mc.y < 100) {
                 this.myceliumGrid[mc.y][mc.x] = 1;
             }
         }
     }
 
-    async checkConnection(building1, building2) {
+    checkConnection(building1, building2) {
         if (!this.myceliumGrid || !building1 || !building2) return false;
-        return await building1.hasPathTo(this.myceliumGrid, {x:building2.x, y:building2.y});
+        return building1.hasPathTo(this.myceliumGrid, {x:building2.x, y:building2.y});
     }
 
 
@@ -267,6 +268,32 @@ class Economy {
     // 10. вырастить грибочки на грибнице
     myceliumGrowAll() {
         this.buildings.mycelium.forEach(mycelium => this.myceliumGrow(mycelium));
+    }
+
+    findEntityByGuid(guid) {
+        for (const type of Object.values(this.units)) {
+            const found = type.find(u => u.guid === guid);
+            if (found) return found;
+        }
+
+        for (const type of Object.values(this.buildings)) {
+            const found = type.find(b => b.guid === guid);
+            if (found) return found;
+        }
+
+        return null;
+    }
+
+    applyDamage(guid, damage) {
+        const entity = this.findEntityByGuid(guid);
+
+        if (!entity) return false;
+
+        entity.takeDamage(damage);
+
+        this.updated = true;
+
+        return true;
     }
 
     // 11. расширить грибницу
@@ -305,31 +332,6 @@ class Economy {
         }
     }
 
-    findEntityByGuid(guid) {
-        for (const type of Object.values(this.units)) {
-            const found = type.find(u => u.guid === guid);
-            if (found) return found;
-        }
-
-        for (const type of Object.values(this.buildings)) {
-            const found = type.find(b => b.guid === guid);
-            if (found) return found;
-        }
-
-        return null;
-    }
-
-    applyDamage(guid, damage) {
-        const entity = this.findEntityByGuid(guid);
-
-        if (!entity) return false;
-
-        entity.takeDamage(damage);
-
-        this.updated = true;
-
-        return true;
-    }
 }
 
 module.exports = Economy;

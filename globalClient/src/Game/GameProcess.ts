@@ -18,9 +18,9 @@ export default class GameProcess {
         this.server = server;
         this.mediator = mediator;
 
-        this.mediator.subscribe(START_GAME, (data: TScene) => this.startGame(data));
-        this.mediator.subscribe(UPDATE_SCENE, (data: TScene) => this.updateScene(data));
-        this.mediator.subscribe(RELIEF_LOADED, (data: TRelief) => this.reliefLoaded(data));
+        this.mediator.subscribe(START_GAME, (data: TScene) => this.eventStartGame(data));
+        this.mediator.subscribe(UPDATE_SCENE, (data: TScene) => this.eventUpdateScene(data));
+        this.mediator.subscribe(RELIEF_LOADED, (data: TRelief) => this.eventReliefLoaded(data));
     }
     
     get () {
@@ -29,16 +29,23 @@ export default class GameProcess {
         }
     }
 
-    startGame(data: TScene): void {
-        console.log('Iya startanUUUlsOO!!1', data);
-    }
 
-    updateScene(data: TScene): void {
+    //EVENTS
+    eventStartGame(data: TScene): void {
+        console.log('Данные о игре: ', data);
         this.scene = data;
-        //console.log('update!', data);
     }
 
-    reliefLoaded(data: TRelief): void {
+    eventUpdateScene(data: TScene): void {
+        console.log('[updateScene] map length:', data?.map?.relief?.length, 'map[0]:', data?.map?.relief?.[0]?.slice(0,5));
+        
+        if (this.scene && (!data.map || !data.map.relief || data.map.relief.length === 0)) {
+            data = { ...data, map: this.scene.map };
+        }
+        this.scene = data;
+    }
+
+    eventReliefLoaded(data: TRelief): void {
         console.log("Relief loaded");
         this.relief = data;
     }

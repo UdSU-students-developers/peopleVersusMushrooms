@@ -26,7 +26,9 @@ class GameManager extends BaseManager {
 	}
 
 	/* PRIVATE */
-	async callbackUpdate(guid, mapGuid, data) {
+	callbackUpdate(guids, data) {
+
+		const guid = guids.mushroomsEconomy;
 		const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
 
 		// выплюнуть сообщение в карту
@@ -37,7 +39,7 @@ class GameManager extends BaseManager {
 		// обновить рельеф и видимость у себя в Экномике
 		// ответить на СВОЙ клиент
 		if (user) {
-			const relief = await this.sendToMap(GLOBAL_CONFIG.URLS.GET_RELIEF, { mapGuid, userGuid: guid });
+			const relief = this.sendToMap(GLOBAL_CONFIG.URLS.GET_RELIEF, { mapGuid, userGuid: guid });
 
 			if (relief && Array.isArray(relief)) {
 				this.setRelief(guid, relief);
@@ -58,7 +60,7 @@ class GameManager extends BaseManager {
 	/* EVENTS */
 	eventStartGame(data = {}) {
 		
-		const { guids, startPoint, mapGuid } = data;
+		const { guids, startPoint } = data;
 		//console.log(guids);
 		//console.log(SET_SERVICES_GUIDS);
 		
@@ -70,18 +72,20 @@ class GameManager extends BaseManager {
 					db: this.db,
 					common: this.common,
 					callbacks: {
-						updated: (data) => this.callbackUpdate(guid, mapGuid, data),
+						updated: (data) => this.callbackUpdate(data.guids, data),
 						spawnArmyUnit: (data) => this.spawnArmyUnit(data),
 					},
 					guids, 
 					startPoint
 				});
+				const sceneData = this.economies[guid].get();
+
 				this.io.to(user.socketId).emit(
 					GLOBAL_CONFIG.SOCKET.START_GAME,
-					this.answer.good(this.economies[guid].get())
+					sceneData
 				);
 				console.log("Экономика создана");
-				return this.answer.good(true);
+				return sceneData;
 			}
 			return this.answer.bad(1001)
 		}

@@ -38,6 +38,12 @@ const CONFIG = {
             // остальные события
             MESSAGE_LOADED: 'MESSAGE_LOADED',
             MESSAGE_SENT: 'MESSAGE_SEND',
+            // игра
+            START_GAME: 'START_GAME',
+            UPDATE_SCENE: 'UPDATE_SCENE',
+            LOBBY_UPDATED: 'LOBBY_UPDATED',
+            LOBBIES_LIST_UPDATED: 'LOBBIES_LIST_UPDATED',
+            RELIEF_LOADED: 'RELIEF_LOADED',
         },
         TRIGGERS: {
 

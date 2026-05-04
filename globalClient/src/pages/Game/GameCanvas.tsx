@@ -53,8 +53,8 @@ const GameCanvas: React.FC = () => {
     };
 
     const drawMap = (scene: TScene, tileWorldSize: number, tileSizePx: number) => {
-        for (let rowIndex = 0; rowIndex < scene.map.length; rowIndex++) {
-            const row = scene.map[rowIndex];
+        for (let rowIndex = 0; rowIndex < scene.map.relief.length; rowIndex++) {
+            const row = scene.map.relief[rowIndex];
             for (let colIndex = 0; colIndex < row.length; colIndex++) {
                 const block = new TerrainBlock({ x: colIndex, y: rowIndex }, row[colIndex]);
                 drawTile(block.sprite, colIndex * tileWorldSize, rowIndex * tileWorldSize, tileSizePx);
@@ -63,10 +63,12 @@ const GameCanvas: React.FC = () => {
     };
 
     const drawMushrooms = (scene: TScene, tileWorldSize: number, tileSizePx: number) => {
-        for (let i = 0; i < scene.mushrooms.length; i++) {
-            const m = scene.mushrooms[i];
-            const mushroom = new Mushroom(m.guid, m.coords, m.level);
-            drawTile(mushroom.sprite, m.coords.x * tileWorldSize, m.coords.y * tileWorldSize, tileSizePx);
+        const mushrooms = (scene as any).mushrooms as TMushroom[] || [];
+        for (let i = 0; i < mushrooms.length; i++) {
+            const m = mushrooms[i];
+            const coords = m.coords ?? { x: (m as any).x, y: (m as any).y };
+            const mushroom = new Mushroom(m.guid, coords, m.level);
+            drawTile(mushroom.sprite, coords.x * tileWorldSize, coords.y * tileWorldSize, tileSizePx);
         }
     };
 
@@ -76,21 +78,22 @@ const GameCanvas: React.FC = () => {
             const b = scene.buildings[i];
             if ((b as TSmallReactor).type !== 'small_reactor') continue;
             const sr = b as TSmallReactor;
-            const reactor = new SmallReactor(sr.guid, sr.coords);
+            const coords = sr.coords ?? { x: (sr as any).x, y: (sr as any).y };
+            const reactor = new SmallReactor(sr.guid, coords);
             const [sx, sy, sSize] = getSprite(reactor.sprite[0]);
             canvas.contextV.drawImage(
                 spritesImage,
                 sx, sy, sSize, sSize,
-                canvas.xs(sr.coords.x * tileWorldSize), canvas.ys(sr.coords.y * tileWorldSize), tileSizePx, tileSizePx
+                canvas.xs(coords.x * tileWorldSize), canvas.ys(coords.y * tileWorldSize), tileSizePx, tileSizePx
             );
 
             if (sr.consumed) {
-                const [animX, animY, animSize] = getSprite(9); // спрайт анимации
+                const [animX, animY, animSize] = getSprite(9);
                 canvas.contextV.drawImage(
                     spritesImage,
                     animX, animY, animSize, animSize,
-                    canvas.xs(sr.coords.x * tileWorldSize), 
-                    canvas.ys(sr.coords.y * tileWorldSize - 15), 
+                    canvas.xs(coords.x * tileWorldSize), 
+                    canvas.ys(coords.y * tileWorldSize - 15), 
                     tileSizePx, 
                     tileSizePx
                 );
@@ -101,17 +104,18 @@ const GameCanvas: React.FC = () => {
     const drawLarvae = (scene: TScene, tileWorldSize: number, tileSizePx: number) => {
         if (!canvas) return;
         
-        for (let i = 0; i < scene.larvae.length; i++) {
-            const l = scene.larvae[i];
-            const larva = new Larva(l.guid, l.coords);
+        for (let i = 0; i < scene.units.length; i++) {
+            const l = scene.units[i];
+            const coords = l.coords ?? { x: (l as any).x, y: (l as any).y };
+            const larva = new Larva(l.guid, coords);
             
             const [sx, sy, sSize] = getSprite(larva.sprite[0]);
             
             canvas.contextV.drawImage(
                 spritesImage,
                 sx, sy, sSize, sSize,
-                canvas.xs(l.coords.x * tileWorldSize), 
-                canvas.ys(l.coords.y * tileWorldSize), 
+                canvas.xs(coords.x * tileWorldSize), 
+                canvas.ys(coords.y * tileWorldSize), 
                 tileSizePx, 
                 tileSizePx
             );
@@ -122,9 +126,10 @@ const GameCanvas: React.FC = () => {
         if (!canvas) return;
 
         const { scene } = game.get();
-        if (!scene) return;
+        if (!scene || !scene.map || !scene.map.relief || scene.map.relief.length === 0) return;
 
-        const tileWorldSize = INITIAL_WINDOW_WIDTH / scene.map.length;
+        const mapSize = scene.map.relief.length; // 100x100
+        const tileWorldSize = INITIAL_WINDOW_WIDTH / mapSize;
         const tileSizePx = canvas.dec(tileWorldSize);
 
         drawMap(scene, tileWorldSize, tileSizePx);

@@ -238,6 +238,7 @@ class Server {
     private handleStartGame(response: TResponse<TScene>): void {
         if (this.checkError(response)) return;
         const { START_GAME } = this.mediator.getEventTypes();
+        console.log('Игра началась', response.data);
         this.mediator.call(START_GAME, response.data);
     }
 

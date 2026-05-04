@@ -79,7 +79,6 @@ class ArmyManager extends BaseManager {
         const unit = army.units.find(u => u.guid === unitGuid);
         if (unit) {
             unit.takeDamage(sanitizedAmount);
-            this.sendToMushroomsEconomy('/takeDamage', { armyGuid, unitGuid, amount: sanitizedAmount });
             return true;
         }
 
@@ -89,7 +88,6 @@ class ArmyManager extends BaseManager {
             if ('takeDamage' in building && typeof building.takeDamage === 'function') {
                 building.takeDamage(sanitizedAmount);
             }
-            this.sendToMushroomsEconomy('/takeDamage', { armyGuid, unitGuid, amount: sanitizedAmount });
             return true;
         }
 

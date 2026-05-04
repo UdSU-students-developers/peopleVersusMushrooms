@@ -1,34 +1,40 @@
 const CONFIG = require('../../../../config')
-const Larva = require('../Unit/Larva');
 const Building = require('../Buildings/Building');
 
-const { HP, SIZE, CONSUMPTION, PRODUCTION, CAPACITY } = CONFIG.ECONOMY.INCUBATOR;
+const {
+    TYPE,
+    HP,
+    SIZE,
+    CONSUMPTION,
+    PRODUCTION,
+    CAPACITY,
+    LARVA_ENERGY_COST,
+    LARVA_COOLDOWN_MS,
+} = CONFIG.ECONOMY.INCUBATOR;
 
 class Incubator extends Building {
-    constructor({ type, guid, x, y, callbacks = {} }) {
+    constructor({ type = TYPE, guid, x, y, callbacks = {} }) {
         super({ type, guid, x, y, callbacks, hp: HP, size: SIZE, consumption: CONSUMPTION, production: PRODUCTION, capacity: CAPACITY });
 
-        this.currentIron = 0;
-        this.larvaProgress = 0;
-        this.isCreating = false;
+        this.larvaEnergyCost = LARVA_ENERGY_COST;
+        this.larvaCooldownMs = LARVA_COOLDOWN_MS;
+        this.lastLarvaeCreateAt = 0;
     }
 
     getSelf() {
         return {
             ...super.getSelf(),
-            currentIron: this.currentIron,
-            larvaProgress: this.larvaProgress,
-            isCreating: this.isCreating
+            larvaEnergyCost: this.larvaEnergyCost,
+            larvaCooldownMs: this.larvaCooldownMs,
+            lastLarvaeCreateAt: this.lastLarvaeCreateAt,
         }
     }
 
-    canCreateLarva() {
-        if (this.currentIron < 60 || this.isCreating) return false;
-        const freeCells = this.checkAround();
-        return freeCells.length > 0;
+    isCooldownReady(now = Date.now()) {
+        return now - this.lastLarvaeCreateAt >= this.larvaCooldownMs;
     }
 
-    checkAround() {
+    getFreeCellsAround() {
         const directions = [
             { dx: 0, dy: -1 },
             { dx: 0, dy: 1 },
@@ -49,10 +55,27 @@ class Incubator extends Building {
             .filter(({ x: nx, y: ny }) =>
                 nx >= 0 && nx < m &&
                 ny >= 0 && ny < n &&
-                map[ny][nx] === 0
+                (map[ny][nx] === 0 || map[ny][nx] === null)
             );
     }
 
+    createLarvae({ availableEnergy, now = Date.now() }) {
+        if (!this.isCooldownReady(now)) return null;
+        if (availableEnergy < this.larvaEnergyCost) return null;
+
+        const freeCells = this.getFreeCellsAround();
+        if (!freeCells.length) return null;
+
+        const spawnCell = freeCells[Math.floor(Math.random() * freeCells.length)];
+        this.callbacks.addLarva?.(spawnCell.x, spawnCell.y, this.x, this.y);
+        this.lastLarvaeCreateAt = now;
+
+        return {
+            x: spawnCell.x,
+            y: spawnCell.y,
+            energySpent: this.larvaEnergyCost,
+        };
+    }
 }
 
 module.exports = Incubator;

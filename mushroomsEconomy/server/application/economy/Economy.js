@@ -110,6 +110,7 @@ class Economy {
     _initBuildings(startPoint) {
         if (!startPoint) {startPoint = {x: 3, y: 3}};
         // создать инкубатор
+        this.addIncubator(startPoint.x, startPoint.y);
         // создать маленький реактор
         this.addSmallReactor(startPoint.x + 1, startPoint.y + 1);
         // создать грибничку
@@ -139,6 +140,20 @@ class Economy {
             guid: reactorGuid,
             x,
             y,
+        }));
+    }
+
+    addIncubator(x, y) {
+        const incubatorGuid = this.common.guid();
+        this.buildings.incubators.push(new Incubator({
+            type: CONFIG.ECONOMY.INCUBATOR.TYPE,
+            guid: incubatorGuid,
+            x,
+            y,
+            callbacks: {
+                getMap: () => this.map,
+                addLarva: (lx, ly, homeX, homeY) => this.addLarva(lx, ly, homeX, homeY),
+            },
         }));
     }
 
@@ -233,7 +248,21 @@ class Economy {
     }
 
     // 8. породить личинок (потратить немного железа и немного энергии)
-    
+    incubatorProduce() {
+        if (!this.buildings.incubators.length) return;
+
+        const now = Date.now();
+
+        for (const incubator of this.buildings.incubators) {
+            const availableEnergy = this.getAvailableEnergy();
+            const createResult = incubator.createLarvae({ availableEnergy, now });
+
+            if (!createResult) continue;
+
+            this.consumeEnergyFromReactors(createResult.energySpent);
+            this.updated = true;
+        }
+    }
 
     // 10. вырастить грибочки на грибнице
     myceliumGrowAll() {
@@ -257,7 +286,7 @@ class Economy {
         // 6. добыть энергию (сожрать грибочки)
         // 7. добыть железо (потратить энергию) и распределить их в инкубаторы, шахты или бочки для железа
         // 8. породить личинок (потратить немного железа и немного энергии)
-        this.produceLarvae();
+        this.incubatorProduce();
         // 9. остаток непотраченной энергии (жир) распределить по бочкам для жира
         // 10. вырастить грибочки на грибнице
         this.myceliumGrowAll();

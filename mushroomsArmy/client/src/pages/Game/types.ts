@@ -8,6 +8,8 @@
  */
 export type TerrainType = 0 | 1 | 2;
 
+export type MapTile = TerrainType | null;
+
 /**
  * Игровой юнит (споромёт или шампиньеб)
  * isAlive вычисляется: hp > 0
@@ -18,7 +20,6 @@ export type Unit = {
   y: number;                
   type: 'sporomet' | 'champigneb' | 'eblekar';
   hp: number;               
-  maxHp: number;  
   isHealing?: boolean;          
 };
 
@@ -31,7 +32,6 @@ export type Building = {
   x: number;
   y: number;
   hp: number;
-  maxHp: number;
   sizeX?: number;
   sizeY?: number;
   isAlive?: boolean;
@@ -62,9 +62,18 @@ export type Projectile = {
  * Полное состояние игры
  */
 export type GameState = {
-  map: TerrainType[][];
+  map: MapTile[][];
   units: Unit[];
   buildings: Building[];
   slimePuddles: SlimePuddle[]; 
   projectiles: Projectile[];
 };
+
+export type TCamera {
+  scale: number;
+  offsetX: number;
+  offsetY: number;
+  isDragging: boolean;
+  lastMouseX: number;
+  lastMouseY: number;
+}

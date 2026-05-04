@@ -28,7 +28,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
     const confirmCreateLobby = () => {
         if (lobbyName.trim()) {
             server.createLobby(server.user.guid, lobbyName.trim(), 'spectator');
-            server.generateMap(server.user.guid);
             setLobbyName('');
             setShowCreateModal(false);
         }
@@ -40,8 +39,7 @@ const Lobby: React.FC<IBasePage> = (props) => {
     }
 
     const joinLobbyHandler = (lobbyGuid: string) => {
-        server.joinToLobby(server.user.guid, lobbyGuid, 'spectator');
-        server.generateMap(server.user.guid);
+        server.joinToLobby(server.user.guid, lobbyGuid, 'spectator')
     }
 
     const leaveLobbyHandler = () => {
@@ -95,7 +93,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
 
         const mapHandler = (data: TMap) => {
             console.log('Получена карта: ', data);
-            server.setGeneratedMap(data);
         };
 
         const joinToLobbyHandler = (data: any) => {
@@ -136,6 +133,7 @@ const Lobby: React.FC<IBasePage> = (props) => {
 
         const startGameHandler = (data: any) => {
             console.log('Игра началась:', data);
+            setPage(PAGES.MAP);
         };
 
         const setReadyHandler = (data: any) => {

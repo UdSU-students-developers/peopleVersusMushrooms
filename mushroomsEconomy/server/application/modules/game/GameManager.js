@@ -37,9 +37,13 @@ class GameManager extends BaseManager {
 		// ответить на СВОЙ клиент
 		if (user) {
 			const relief = await this.sendToMap(GLOBAL_CONFIG.URLS.GET_RELIEF, { mapGuid, userGuid: guid });
-
 			if (relief && Array.isArray(relief)) {
 				this.setRelief(guid, relief);
+			}
+
+			const visibility = await this.sendToMap(GLOBAL_CONFIG.URLS.GET_VISIBILITY, { mapGuid, userGuid: guid });
+			if (visibility) {
+				this.economies[guid].setVisibility(visibility);
 			}
 
 			this.io.to(user.socketId).emit(

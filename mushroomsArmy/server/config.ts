@@ -15,6 +15,7 @@ interface Config {
             DESTROY_ARMY: string;
             MOVE_UNIT: string;
             GET_ARMY: string;
+            SPAWN_UNIT: string;
         };
     };
     SOCKET: {
@@ -42,6 +43,7 @@ const CONFIG: Config = {
             DESTROY_ARMY: 'DESTROY_ARMY',
             MOVE_UNIT: 'MOVE_UNIT',
             GET_ARMY: 'GET_ARMY',
+            SPAWN_UNIT: 'SPAWN_UNIT',
         },
     },
 

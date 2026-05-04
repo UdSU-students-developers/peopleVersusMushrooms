@@ -28,6 +28,13 @@ type TGetArmyBody = {
     armyGuid: string;
 };
 
+type TSpawnUnitBody = {
+    armyGuid: string;
+    type: 'sporomet' | 'champigneb' | 'eblekar';
+    x: number;
+    y: number;
+};
+
 function Router({ answer, mediator }: TRouterOptions): ExpressRouter {
     const router = express.Router();
 
@@ -60,6 +67,30 @@ function Router({ answer, mediator }: TRouterOptions): ExpressRouter {
 
         if (result) {
             res.json(answer.good(true));
+        } else {
+            res.json(answer.bad(242));
+        }
+    });
+
+    router.post('/spawnUnit', (req: Request, res: Response) => {
+        const { armyGuid, type, x, y } = req.body as TSpawnUnitBody;
+
+        const validTypes = ['sporomet', 'champigneb', 'eblekar'];
+        if (!armyGuid || !type || !validTypes.includes(type) || x === undefined || y === undefined) {
+            res.json(answer.bad(242));
+            return;
+        }
+
+        if (typeof x !== 'number' || typeof y !== 'number' || !isFinite(x) || !isFinite(y)) {
+            res.json(answer.bad(242));
+            return;
+        }
+
+        const SPAWN_UNIT = CONFIG.MEDIATOR.TRIGGERS.SPAWN_UNIT;
+        const result = mediator.get(SPAWN_UNIT, { armyGuid, type, x, y });
+
+        if (result) {
+            res.json(answer.good(result));
         } else {
             res.json(answer.bad(242));
         }
@@ -127,18 +158,24 @@ function Router({ answer, mediator }: TRouterOptions): ExpressRouter {
     });
 
     router.post('/startGame', (req: Request, res: Response) => {
-        const payload = req.body as { mapGuid?: string; map?: unknown; buildings?: unknown, mushroomArmy?: string };
+        const payload = req.body as {
+            mapGuid?: string;
+            map?: unknown;
+            buildings?: unknown;
+            mushroomsArmy?: string;
+        };
 
-        if (!payload.mushroomArmy || !payload.mapGuid || !payload.map) {
+        // map шлёт: { mapGuid, spectator, peopleArmy, peopleEconomy, mushroomsArmy, mushroomsEconomy }
+        // map не шлёт map[] — eventStartGame сам запросит рельеф через GET_RELIEF
+        if (!payload.mushroomsArmy || !payload.mapGuid) {
             res.json(answer.bad(242));
             return;
         }
 
-        // call & business logic
         mediator.call(CONFIG.MEDIATOR.EVENTS.START_GAME, {
-            guid: payload.mushroomArmy,
+            guid: payload.mushroomsArmy,
             mapGuid: payload.mapGuid,
-            map: payload.map,
+            map: payload.map ?? null,
             buildings: payload.buildings ?? [],
         });
 

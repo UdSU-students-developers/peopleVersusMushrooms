@@ -1,8 +1,9 @@
 module.exports = (mediator, answer) => {
     return (req, res) => {
-        const { guid, damage } = req.params;
+        const { userGuid, unitGuid, damage } = req.body || {};
         const result = mediator.get(mediator.TRIGGERS.UNIT_TAKE_DAMAGE, {
-            guid,
+            userGuid,
+            unitGuid,
             damage,
         });
         
@@ -10,7 +11,7 @@ module.exports = (mediator, answer) => {
             console.log('UNIT_TAKE_DAMAGE error:', result);
             return res.status(400).json(result);
         }
-        console.log('unitTakeDamageHandler', guid, damage);
+        console.log('unitTakeDamageHandler', userGuid, unitGuid, damage);
         res.json(result || answer.bad(9000));
     };
 };

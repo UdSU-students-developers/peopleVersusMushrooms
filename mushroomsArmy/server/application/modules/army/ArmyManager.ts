@@ -11,6 +11,7 @@ type TStartGame = { guid: string; map?: TMap; buildings: TBuildingInput[]; mapGu
 type TTakeDamage = { armyGuid: string; unitGuid: string; amount: number; type: string };
 type TMoveUnit = { armyGuid: string; unitGuid: string; x: number; y: number };
 type TGetArmy = string;
+type TSpawnUnit = { armyGuid: string; type: 'sporomet' | 'champigneb' | 'eblekar'; x: number; y: number };
 type TUser = { guid: string; token: string; socketId: string; name: string };
 
 type TVisibleEntity = {
@@ -23,7 +24,8 @@ type TVisibleEntity = {
 };
 
 type TVisibilityResponse = {
-    entities: TVisibleEntity[];
+    units: TVisibleEntity[];
+    buildings: TVisibleEntity[];
 };
 
 type TReliefResponse = TMap;
@@ -50,6 +52,10 @@ class ArmyManager extends BaseManager {
 
         this.mediator.set(CONFIG.MEDIATOR.TRIGGERS.GET_ARMY, (data: unknown) =>
             this.triggerGetArmy(data as TGetArmy)
+        );
+
+        this.mediator.set(CONFIG.MEDIATOR.TRIGGERS.SPAWN_UNIT, (data: unknown) =>
+            this.triggerSpawnUnit(data as TSpawnUnit)
         );
 
         if (!this.io) return;
@@ -105,6 +111,13 @@ class ArmyManager extends BaseManager {
         return army.getState();
     }
 
+    private triggerSpawnUnit({ armyGuid, type, x, y }: TSpawnUnit): { guid: string } | null {
+        const army = this.army[armyGuid];
+        if (!army) return null;
+
+        return army.spawnUnit(type, x, y, this.common);
+    }
+
     private async updateArmyCallback(guid: string, armyState: TArmyState) {
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid) as { socketId: string } | null;
         if (!user) return;
@@ -126,23 +139,30 @@ class ArmyManager extends BaseManager {
 
         const { units, buildings } = armyState;
 
-        // Отправляем юниты и здания на отдельные эндпоинты карты
+        // Отправляем юниты и здания на карту
+        // карта читает поля units / buildings (см. useUpdateUnitsHandler.js / useUpdateBuildingsHandler.js)
         await this.send<{ mapGuid: string; userGuid: string; units: TArmyState['units'] }>(
-            `${GLOBAL_CONFIG.MAP.URL}/updateUnitsHandler`,
+            `${GLOBAL_CONFIG.MAP.URL}${GLOBAL_CONFIG.URLS.UPDATE_UNITS}`,
             { mapGuid: army.mapGuid, userGuid: army.guid, units }
         );
 
         await this.send<{ mapGuid: string; userGuid: string; buildings: TArmyState['buildings'] }>(
-            `${GLOBAL_CONFIG.MAP.URL}/updateBuildingsHandler`,
+            `${GLOBAL_CONFIG.MAP.URL}${GLOBAL_CONFIG.URLS.UPDATE_BUILDINGS}`,
             { mapGuid: army.mapGuid, userGuid: army.guid, buildings }
         );
 
-        const visibility = await this.sendToMap<null, TVisibilityResponse>(
-            '/getVisibility', army.mapGuid, army.guid
+        // карта возвращает { units, buildings } (см. Map.getVisbileEntitiesByRole)
+        const visibility = await this.sendToMap<TVisibilityResponse>(
+            GLOBAL_CONFIG.URLS.GET_VISIBILITY, army.mapGuid, army.guid
         );
 
-        if (visibility?.entities && visibility.entities.length > 0) {
-            const enemyEntities: TBuildingInput[] = visibility.entities.map(entity => ({
+        const visibleEnemies: TVisibleEntity[] = [
+            ...(visibility?.units ?? []),
+            ...(visibility?.buildings ?? []),
+        ];
+
+        if (visibleEnemies.length > 0) {
+            const enemyEntities: TBuildingInput[] = visibleEnemies.map(entity => ({
                 guid: entity.guid,
                 type: entity.type,
                 x: entity.x,

@@ -21,12 +21,11 @@ class GameManager extends BaseManager {
 		this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
 		this.mediator.subscribe(this.EVENTS.LOAD_GAME, (data) => this.eventLoadGame(data));
 		// mediator triggers setters
-		this.mediator.set(this.TRIGGERS.SET_SERIVCES_GUIDS, (guids) => this.triggerSetServicesGuids(guids));
 		//...
 	}
 
 	/* PRIVATE */
-	callbackUpdate(guid, data) {
+	async callbackUpdate(guid, mapGuid, data) {
 		const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
 
 		// выплюнуть сообщение в карту
@@ -36,28 +35,57 @@ class GameManager extends BaseManager {
 		// запросить ресурсы под жопками рабочих
 		// обновить рельеф и видимость у себя в Экномике
 		// ответить на СВОЙ клиент
-
 		if (user) {
+			const relief = await this.sendToMap(GLOBAL_CONFIG.URLS.GET_RELIEF, { mapGuid, userGuid: guid });
+
+			if (relief && Array.isArray(relief)) {
+				this.setRelief(guid, relief);
+			}
+
 			this.io.to(user.socketId).emit(
-				this.SOCKETS.UPDATE_SCENE,
-				this.answer.good(data)
+				GLOBAL_CONFIG.SOCKET.UPDATE_SCENE,
+				this.answer.good({...data, relief})
 			);
 			return;
 		}
-		this.io.to(user.socketId).emit(this.SOCKETS.UPDATE_SCENE, this.answer.bad(1002));
+		this.io.to(user.socketId).emit(GLOBAL_CONFIG.SOCKET.UPDATE_SCENE, this.answer.bad(1002));
+	}
+
+	async getResources(guid, mapGuid) {
+		const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
+
+		if (!user) {
+			return this.answer.bad(1002);
+		}
+
+		const resources = await this.sendToMap(
+			GLOBAL_CONFIG.URLS.GET_RESOURSE_VISIBILITY,
+			{ mapGuid, userGuid: guid }
+		);
+		console.log("RESOURCES FROM MAP:", resources);
+
+		if (this.economies[guid]) {
+			this.economies[guid].setResources(resources);
+		}
+
+		this.io.to(user.socketId).emit(
+			GLOBAL_CONFIG.SOCKET.UPDATE_SCENE,
+			this.answer.good({ resources })
+		);
+
+		return this.answer.good(resources);
 	}
 
 	/* TRIGGERS */
 
-	triggerSetServicesGuids(guids = {}, data) {
-		if (guids) {
-			this.economies[data.guid].initGuids(guids);
-		}
-	}
 
 	/* EVENTS */
 	eventStartGame(data = {}) {
-		const { guids, startPoint } = data;
+
+		const { guids, startPoint, mapGuid } = data;
+		//console.log(guids);
+		//console.log(SET_SERVICES_GUIDS);
+
 		if (guids?.mushroomsEconomy) {
 			const guid = guids.mushroomsEconomy;
 			const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
@@ -66,19 +94,33 @@ class GameManager extends BaseManager {
 					db: this.db,
 					common: this.common,
 					callbacks: {
-						updated: (data) => this.callbackUpdate(guid, data)
+						updated: (data) => this.callbackUpdate(guid, mapGuid, data),
+						spawnArmyUnit: (data) => this.spawnArmyUnit(data),
 					},
-					guid,
 					guids, 
 					startPoint
 				});
 				this.io.to(user.socketId).emit(
-					this.SOCKETS.START_GAME,
+					GLOBAL_CONFIG.SOCKET.START_GAME,
 					this.answer.good(this.economies[guid].get())
 				);
-				console.log("Экдономика созана");
+				this.getResources(guid, mapGuid);
+				console.log("Экономика создана");
+				return this.answer.good(true);
 			}
+			return this.answer.bad(1001)
 		}
+		return this.answer.bad(4001);
+	}
+
+	setRelief(guid, relief) {
+		if (this.economies[guid]) {
+			this.economies[guid].setRelief(relief);
+		}
+	}
+
+	spawnArmyUnit(data) { //data = {unitType, x, y, armyGuid}
+		this.sendToMushroomsArmy(GLOBAL_CONFIG.URLS.SPAWN_UNIT, data);
 	}
 
 	/* SOCKETS */

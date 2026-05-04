@@ -255,6 +255,31 @@ export class Army {
         return this.units.filter(u => u.isAlive);
     }
 
+    public spawnUnit(type: 'sporomet' | 'champigneb' | 'eblekar', x: number, y: number, common: Common): { guid: string } | null {
+        // Проверяем границы карты
+        if (y < 0 || y >= this.map.length || x < 0 || x >= (this.map[0]?.length ?? 0)) {
+            return null;
+        }
+
+        // Тайл должен быть 0 (равнина) или 2 (горы) — не вода (1) и не null (туман)
+        const tile = this.map[y][x];
+        if (tile !== 0 && tile !== 2) {
+            return null;
+        }
+
+        const guid = common.guid();
+
+        if (type === 'sporomet') {
+            this.units.push(new Sporomet({ guid, type, x, y, hp: 8, maxHp: 8, speed: 1, attackRange: 12, projectiles: this.projectiles }));
+        } else if (type === 'champigneb') {
+            this.units.push(new Champigneb({ guid, type, x, y, hp: 35, maxHp: 35, speed: 3, attackRange: 6 }));
+        } else if (type === 'eblekar') {
+            this.units.push(new Eblekar({ guid, type, x, y, hp: 40, maxHp: 40, speed: 1, attackRange: 1, projectiles: this.projectiles }));
+        }
+
+        return { guid };
+    }
+
     public destructor(): void {
         clearInterval(this.intervalId);
     }

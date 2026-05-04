@@ -67,6 +67,7 @@ const GLOBAL_CONFIG = {
     },
 
     URLS: {
+        //lobby
         CREATE_LOBBY: '/createLobby',
         JOIN_TO_LOBBY: '/joinToLobby',
         LEAVE_LOBBY: '/leaveLobby',
@@ -77,11 +78,15 @@ const GLOBAL_CONFIG = {
         SET_READY: '/setReady',
         START_GAME: '/startGame',
 
+        //map
         GET_RELIEF: '/getRelief',
         GET_VISIBILITY: '/getVisibility',
         GET_RESOURSE_VISIBILITY: '/getResourseVisibility',
         UPDATE_UNITS: '/updateUnits',
         UPDATE_BUILDINGS: '/updateBuldings',
+
+        //mushrooms army
+        SPAWN_UNIT: '/spawnUnit',
     },
 
     ROLES: {
@@ -100,6 +105,14 @@ const GLOBAL_CONFIG = {
     EVENTS: {
         DELETE_USER: "DELETE_USER",
     },
+
+    UNIT_TYPES: {
+        MUSHROOMS_ARMY: {
+            SPOROMET: 'sporomet',
+            CHAMPIGNEB: 'champigneb',
+            EBLEKAR: 'eblekar',
+        }
+    }
 };
 
 module.exports = GLOBAL_CONFIG;

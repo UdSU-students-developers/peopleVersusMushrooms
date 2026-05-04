@@ -1,25 +1,26 @@
 module.exports = (mediator, answer) => {
     const { START_GAME } = mediator.getEventTypes();
-    const { SET_SERVICES_GUIDS } = mediator.getTriggerTypes();
 
-    return async (req, res) => {
-        const guids = { mapGuid,
-            spectator,
-            peopleArmy,
-            peopleEconomy,
-            mushroomArmy,
-            mushroomEconomy 
+    return (req, res) => {
+
+        const guids = {
+            spectator: spectator,
+            peopleArmy: peopleArmy,
+            peopleEconomy: peopleEconomy,
+            mushroomsArmy: mushroomsArmy,
+            mushroomsEconomy: mushroomsEconomy,
+            mapGuid
         } = req.body;
-        
-        console.log("SSSSSTTTTTTAAAAARRRRRTTTTT");
 
-        this.mediator.call(SET_SERVICES_GUIDS, guids);
-        const response = await mediator.call(START_GAME, { guid });
+        //console.log(guids);
+        
+        const response = mediator.call(START_GAME, { guids, mapGuid }); //Тут startPoint дополнительно к guid
 
         if (response && response.error) {
-            return res.json(answer.bad(response.error));
+            return res.send(answer.bad(response.error));
         }
         
-        res.json(answer.good(response));
+        console.log("SSSSSTTTTTTAAAAARRRRRTTTTT");
+        res.send(answer.good(response));
     };
 };

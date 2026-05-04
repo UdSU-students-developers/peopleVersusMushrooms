@@ -4,14 +4,17 @@ const router = express.Router();
 const {
     createUnitHandler,
     unitTakeDamageHandler,
+    unitMoveHandler,
     useLobbyUpdatedHandler,
     startGameHandler,
     notFoundHandler,
 } = require('./handlers');
 
 function Router(mediator, answer) {
-    router.get('/unit/create/:guid/:x/:y', createUnitHandler(mediator, answer));
-    router.get('/unit/takeDamage/:guid/:damage', unitTakeDamageHandler(mediator, answer));
+    router.post('/unit/create', createUnitHandler(mediator, answer));
+    router.post('/unit/takeDamage', unitTakeDamageHandler(mediator, answer));
+    router.post('/unit/move', unitMoveHandler(mediator, answer));
+
 
     // про лобби
 	router.post('/lobbyUpdated', useLobbyUpdatedHandler(mediator, answer));

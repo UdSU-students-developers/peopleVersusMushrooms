@@ -14,6 +14,8 @@ class Unit {
         this.inertia = 0; // Накпление инерции
         this.target = null; //клетка цели
         this.pathRequested = false; // флаг, что путь запрошен
+
+        this.pockets = [] //карманы, внутрий склад юнита
         
     }
 
@@ -23,82 +25,12 @@ class Unit {
             x: this.x,
             y: this.y,
             hp: this.hp,
-            speed: this.speed,   
+            speed: this.speed, 
         };
-    }
-
-    //найти ближайшую проходимую клетку к заданной
-    _findNearestWalkable(targetX, targetY, maxRadius = CONFIG.ECONOMY.UNIT.RADIUS) {
-        
-        if (this._isCellWalkable(targetX, targetY)) {
-            return { x: targetX, y: targetY };
-        }
-
-        return this._searchNearestWalkable(targetX, targetY, maxRadius);
-    }
-
-    _isCellWalkable(x, y) { //клетка находится в пределах карты и имеет значение 0
-        return this.map[y] && this.map[y][x] === 0;
-    }
-
-    _searchNearestWalkable(startX, startY, maxRadius) { //поиск ближайшей проходимой клетки
-        const queue = [{ x: startX, y: startY, distance: 0 }];
-        const visited = new Set();
-
-        const getKey = (x, y) => `${x},${y}`;
-        const addToQueue = (x, y, distance) => {
-            const key = getKey(x, y);
-            if (!visited.has(key)) {
-                visited.add(key);
-                queue.push({ x, y, distance });
-            }
-        };
-
-        while (queue.length > 0) {
-            const { x, y, distance } = queue.shift();
-
-            if (distance > maxRadius) break;
-
-            if (this._isCellWalkable(x, y)) {
-                return { x, y };
-            }
-
-            this._addNeighborsToQueue(x, y, distance + 1, addToQueue);
-        }
-
-        return null;
-    }
-
-    _addNeighborsToQueue(x, y, newDistance, addToQueue) { //Вспомогательный метод верх низ и тд
-        const neighbors = [
-            { x: x + 1, y: y },
-            { x: x - 1, y: y },
-            { x: x, y: y + 1 },
-            { x: x, y: y - 1 }
-        ];
-
-        for (const neighbor of neighbors) {
-            if (this._isCellWithinBounds(neighbor.x, neighbor.y)) {
-                addToQueue(neighbor.x, neighbor.y, newDistance);
-            }
-        }
-    }
-
-    _isCellWithinBounds(x, y) { // клетка существует в матрице
-        return this.map[y] && this.map[y][x] !== undefined;
     }
 
     calcPath({ x, y }) { //строит путь
-        let corrected = this._findNearestWalkable(x, y);
-        if (!corrected) {
-            this.isMoving = false;
-            this.path = null;
-            this.target = null;
-            this.pathRequested = false;
-            return;
-        }
-
-        this.target = corrected;
+        this.target = { x, y };
         this.pathRequested = true;
 
         if (this.easystar.setGrid) this.easystar.setGrid(this.map);
@@ -119,7 +51,7 @@ class Unit {
 
     _recalculatePath() { // Перестраивает путь к текущей цели
         if (!this.target) return;
-        this.calcPath(this.target.x, this.target.y);
+        this.calcPath({ x: this.target.x, y: this.target.y });
     }
 
     moveOneStep() { // Продвигает юнита на один шаг
@@ -167,8 +99,43 @@ class Unit {
 
         return true;
     }
-    
-    
+
+    //установка цели
+    setTarget({x, y}) {
+  
+        //сбрасываем старую цель и путь
+        this.target = null;
+        this.path = [];
+        this.isMoving = false;
+        this.pathRequested = false;
+        
+        //устанавливаем цель и строим путь
+        this.calcPath({ x, y });
+    }
+
+    move() {
+        //если нет цели -> определить её
+        //если цель отличается от текущей цели -> сбросить цель
+        //если нет пути -> найти путь до цели
+        //если есть найденный путь -> идти к цели
+        //если накопилась инерция, сделать шаг
+        //если клетка, на которую хочет наступить ненаступаема -> сбросить путь
+        
+        //если нет цели - выходим
+        if (!this.target) return;
+        
+        //если путь пустой - пробуем построить
+        if (this.path.length === 0) {
+            if (!this.pathRequested) {
+                this.calcPath({ x: this.target.x, y: this.target.y });
+            }
+            return;
+        }
+        
+        //есть найденный путь -> идти к цели
+        //если накопилась инерция, сделать шаг
+        this.moveOneStep();
+    }
 }
 
 module.exports = Unit;

@@ -96,6 +96,10 @@ class Economy {
         this.relief = relief;
     }
 
+    setResources(resources) {
+        this.resourceMap = resources;
+    }
+
     _initEmptyMap() {
         const map = [];
         for (let i = 0; i < 50; i++) {

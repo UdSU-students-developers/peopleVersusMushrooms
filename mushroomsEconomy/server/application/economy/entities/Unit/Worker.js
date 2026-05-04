@@ -1,14 +1,13 @@
 const Unit = require("./Unit");
-const CONFIG = require("../../../../config");
-
-const { HP, SPEED } = CONFIG.ECONOMY.WORKER;
 
 class Worker extends Unit {
     constructor(options) {
         super(options);
 
-        this.hp = HP;
-        this.speed = SPEED;
+        this.options = options.options;
+
+        this.hp = this.options.hp;
+        this.speed = this.options.speed;
     }
 }
 

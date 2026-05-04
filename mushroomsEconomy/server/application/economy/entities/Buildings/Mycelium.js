@@ -1,15 +1,21 @@
-const CONFIG = require("../../../../config");
-
-const { HP, GROW_SPEED, GROW_LEVEL_UP, MAX_LEVEL, POWER } = CONFIG.ECONOMY.MYCELIUM;
-
 class Mycelium {
-    constructor({ x, y, guid, callbacks = {} }) {
+    constructor({ x, y, guid, callbacks = {}, options }) {
+
+
+        this.options = options.options;
+
+        this.hp = this.options.hp;
+        this.grow_speed = this.options.grow_speed;
+        this.grow_level_up = this.options.grow_level_up;
+        this.max_level = this.options.max_level;
+        this.power = this.options.power;
+
+
         this.x = x;
         this.y = y;
         this.guid = guid;
         this.callbacks = callbacks;
 
-        this.hp = HP;
         this.level = 1; // уровень выросших грибочков
         this.grow = 0; // скорость роста
         this.canGrow = true; // может ли расти грибница (не стоит ли на ней здание)
@@ -27,10 +33,10 @@ class Mycelium {
         if (!this.canGrow) {
             return false;
         }
-        this.grow += GROW_SPEED;
-        if (this.grow >= GROW_LEVEL_UP) {
+        this.grow += this.grow_speed;
+        if (this.grow >= this.grow_level_up) {
             this.grow = 0;
-            if (this.level < MAX_LEVEL) {
+            if (this.level < this.max_level) {
                 this.level += 1;
                 return true;
             } else {
@@ -48,7 +54,7 @@ class Mycelium {
     }
 
     getPower() {
-        return POWER;
+        return this.power;
     }
 
     checkAroundMycelium(map, mycelium, buildings, enemyBuildings) {
@@ -86,7 +92,7 @@ class Mycelium {
 
     // породить новую грибницу
     canExtend(map, mycelium, buildings, enemyBuildings) {
-        if (this.level >= MAX_LEVEL) {
+        if (this.level >= this.max_level) {
             // могу вырасти или нет
             const freeCells = this.checkAroundMycelium(map, mycelium, buildings, enemyBuildings);
             return freeCells.length > 0;

@@ -1,16 +1,21 @@
-const CONFIG = require('../../../../config')
 const Larva = require('../Unit/Larva');
 const Building = require('../Buildings/Building');
 
-const { HP, SIZE, CONSUMPTION, PRODUCTION, CAPACITY } = CONFIG.ECONOMY.INCUBATOR;
-
 class Incubator extends Building {
-    constructor({ type, guid, x, y, callbacks = {} }) {
-        super({ type, guid, x, y, callbacks, hp: HP, size: SIZE, consumption: CONSUMPTION, production: PRODUCTION, capacity: CAPACITY });
+    constructor({ type, guid, x, y, callbacks = {}, options }) {
+        this.options = options.options;
+
+        this.hp = this.options.hp;
+        this.size = this.options.size;
+        this.consumption = this.options.consumption;
+        this.production = this.options.production;
+        this.capacity = this.options.capacity;
 
         this.currentIron = 0;
         this.larvaProgress = 0;
         this.isCreating = false;
+
+        super({ type, guid, x, y, callbacks, hp: this.hp, size: this.size, consumption: this.consumption, production: this.production, capacity: this.capacity });
     }
 
     getSelf() {

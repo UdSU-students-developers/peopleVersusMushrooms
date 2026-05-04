@@ -1,11 +1,20 @@
 const Building = require("./Building");
-const CONFIG = require("../../../../config");
-
-const { HP, SIZE, CONSUMPTION, PRODUCTION, CAPACITY } = CONFIG.ECONOMY.BIO_REACTOR_SMALL;
 
 class SmallReactor extends Building {
-    constructor({ type, guid, x, y, callbacks = {} }) {
-        super({ type, guid, x, y, callbacks, hp: HP, size: SIZE, consumption: CONSUMPTION, production: PRODUCTION, capacity: CAPACITY });
+    constructor({ guid, x, y, callbacks = {}, options, myceliumMaxLevel }) {
+
+        this.options = options.options;
+
+        this.hp = this.options.hp;
+        this.size = this.options.size;
+        this.consumption = this.options.consumption;
+        this.production = this.options.production;
+        this.capacity = this.options.capacity;
+        this.type = this.options.type;
+
+        this.myceliumMaxLevel = myceliumMaxLevel;
+
+        super({ type:this.type, guid, x, y, callbacks, hp: this.hp, size: this.size, consumption: this.consumption, production: this.production, capacity: this.capacity });
 
         this.energy = 0;
         this.consumed = false;
@@ -28,7 +37,7 @@ class SmallReactor extends Building {
                 if (dx >= 0 && dx < this.size && dy >= 0 && dy < this.size) continue;
                 const nx = this.x + dx;
                 const ny = this.y + dy;
-                const mc = mycelium.find(m => m.x === nx && m.y === ny && m.level >= CONFIG.ECONOMY.MYCELIUM.MAX_LEVEL);
+                const mc = mycelium.find(m => m.x === nx && m.y === ny && m.level >= this.myceliumMaxLevel);
                 if (mc) result.push(mc);
             }
         }
@@ -37,7 +46,7 @@ class SmallReactor extends Building {
 
     consumeMycelium(mycelium) {
         const consumableList = this.getConsumable(mycelium);
-        
+
         if (consumableList.length > 0) {
             this.consumed = true;
         } else {
@@ -49,7 +58,7 @@ class SmallReactor extends Building {
             this.energy = Math.min(this.energy + energyGain, this.capacity);
             mc.consume();
         }
-        
+
         return consumableList.length;
     }
 

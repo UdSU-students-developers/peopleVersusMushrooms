@@ -3,7 +3,6 @@ const GLOBAL_CONFIG = require('../../../../global/globalConfig');
 
 //LOCAL
 const EasyStar = require('easystarjs');
-const CONFIG = require('../../config');
 
 const Mycelium = require('./entities/Buildings/Mycelium');
 const SmallReactor = require('./entities/Buildings/SmallReactor');
@@ -32,6 +31,7 @@ class Economy {
         this.resourceMap; // массив известных ресурсов [{x, y, value}]
 
         //Здания
+        this.buildingsTypes = db.getAllBuildings();
         this.buildings = {
             smallReactors: [],// малые реакторы 
             incubators: [], //инкубаторы
@@ -39,6 +39,7 @@ class Economy {
         };
 
         //Юниты всякие
+        this.unitsTypes = db.getAllUnits();
         this.units = {
             workers: [], //рабочие
             larvae: [], //личинки
@@ -112,6 +113,7 @@ class Economy {
     addLarva(x, y, homeX, homeY) {
         const larvaGuid = this.common.guid();
         this.units.larvae.push(new Larva({
+            options: this.unitsTypes(unit => unit.type === 'larva'),
             x: x,
             y: y,
             homeX: homeX,
@@ -127,15 +129,17 @@ class Economy {
     addSmallReactor(x, y) {
         const reactorGuid = this.common.guid();
         this.buildings.smallReactors.push(new SmallReactor({
-            type: CONFIG.ECONOMY.BIO_REACTOR_SMALL.TYPE,
+            options: this.buildingsTypes(building => building.type === 'small_reactor'),
             guid: reactorGuid,
             x,
             y,
+            myceliumMaxLevel: this.buildingsTypes(building => building.type === 'mycelium').max_level,
         }));
     }
 
     addMycelium(x, y) {
         this.buildings.mycelium.push(new Mycelium({
+            options: this.buildingsTypes(building => building.type === 'mycelium'),
             x,
             y,
             guid: this.common.guid(),

@@ -51,6 +51,31 @@ class GameManager extends BaseManager {
 		this.io.to(user.socketId).emit(GLOBAL_CONFIG.SOCKET.UPDATE_SCENE, this.answer.bad(1002));
 	}
 
+	async getResources(guid, mapGuid) {
+		const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
+
+		if (!user) {
+			return this.answer.bad(1002);
+		}
+
+		const resources = await this.sendToMap(
+			GLOBAL_CONFIG.URLS.GET_RESOURSE_VISIBILITY,
+			{ mapGuid, userGuid: guid }
+		);
+		console.log("RESOURCES FROM MAP:", resources);
+
+		if (this.economies[guid]) {
+			this.economies[guid].setResources(resources);
+		}
+
+		this.io.to(user.socketId).emit(
+			GLOBAL_CONFIG.SOCKET.UPDATE_SCENE,
+			this.answer.good({ resources })
+		);
+
+		return this.answer.good(resources);
+	}
+
 	/* TRIGGERS */
 
 
@@ -79,6 +104,7 @@ class GameManager extends BaseManager {
 					GLOBAL_CONFIG.SOCKET.START_GAME,
 					this.answer.good(this.economies[guid].get())
 				);
+				this.getResources(guid, mapGuid);
 				console.log("Экономика создана");
 				return this.answer.good(true);
 			}

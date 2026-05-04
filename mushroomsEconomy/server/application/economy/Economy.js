@@ -294,14 +294,6 @@ class Economy {
         this.buildings.mycelium.forEach(mycelium => this.myceliumExtend(mycelium));
     }
 
-    updateDeltaTime() {
-        const now = Date.now();
-        const deltaTime = (now - this.lastUpdateTime) / 1000;
-        this.lastUpdateTime = now;
-
-        return deltaTime;
-    }
-
     update() {
         this.updateMyceliumGrid();
         // 1. Мутировать юнита из личинки (потратить железо)

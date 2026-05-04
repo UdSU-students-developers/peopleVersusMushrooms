@@ -29,11 +29,31 @@ class DB {
     }
 
     async getUnitByType(type) {
-        return await this.orm.get('units', { type });
+        const unit = await this.orm.get('units', { type });
+
+        if (!unit) return null;
+
+        const property = await this.orm.all('units_property', { unit_id: unit.id });
+        const result = { ...unit };
+        for (const attr of property) {
+            result[attr.name] = attr.value; // result["hp"] = 100
+        }
+
+        return result;
     }
 
     async getBuildingByType(type) {
-        return await this.orm.get('builings', { type });
+        const building = await this.orm.get('builings', { type });
+
+        if (!building) return null;
+
+        const property = await this.orm.all('building_property', { building_id: building.id });
+        const result = { ...building };
+        for (const attr of property) {
+            result[attr.name] = attr.value; // result["hp"] = 100
+        }
+
+        return result;
     }
 
     async getUserByToken(token) {

@@ -1,5 +1,5 @@
 import { TMap } from "../../Army";
-import Unit, { TProjectile } from "../Units";
+import Unit, { TProjectile, ProjectileType } from "../Units";
 import { IBuilding } from "../Vzryvomor/Vzryvomor";
 
 type TSporovayaBashnyaOptions = {
@@ -91,7 +91,7 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
             this.attackingTimer = this.attackAnimDuration;
             this.projectiles.push({
                 guid: `${this.guid}-${Date.now()}-${Math.random()}`,
-                type: 'sporovaya_bashnya',
+                type: ProjectileType.SPOROVAYA_BASHNYA,
                 fromX: this.x + 1,
                 fromY: this.y + 1,
                 toX: nearestEnemy.x,

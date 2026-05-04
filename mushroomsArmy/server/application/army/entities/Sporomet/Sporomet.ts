@@ -1,5 +1,5 @@
 import { TMap } from "../../Army";
-import Unit, { TPoisonEffect, TUnitOptions } from "../Units";
+import Unit, { TPoisonEffect, TUnitOptions, ProjectileType } from "../Units";
 
 class Sporomet extends Unit {
     public retreatRange: number = 8;
@@ -28,7 +28,7 @@ class Sporomet extends Unit {
 
         this.projectiles.push({
             guid: `${this.guid}-${Date.now()}-${Math.random()}`,
-            type: 'sporomet',
+            type: ProjectileType.SPOROMET,
             fromX: this.x,
             fromY: this.y,
             toX: enemy.x,

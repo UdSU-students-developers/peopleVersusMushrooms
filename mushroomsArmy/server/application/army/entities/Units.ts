@@ -35,9 +35,15 @@ export type TPoisonEffect = {
     sourceGuid: string;
 };
 
+export enum ProjectileType {
+    SPOROMET = 'sporomet',
+    SPOROVAYA_BASHNYA = 'sporovaya_bashnya',
+    EBLEKAR = 'eblekar',
+}
+
 export type TProjectile = {
     guid: string;
-    type: 'sporomet' | 'sporovaya_bashnya' | 'eblekar';
+    type: ProjectileType;
     fromX: number;
     fromY: number;
     toX: number;

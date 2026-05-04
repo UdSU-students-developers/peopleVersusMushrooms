@@ -76,6 +76,10 @@ export class Army {
         this.intervalId = setInterval(() => this.update(), 200);
     }
 
+    public destructor(): void {
+        clearInterval(this.intervalId);
+    }
+
     private create(common: Common, initialBuildings: TBuildingInput[] = []) {
         this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 0, y: 0, projectiles: this.projectiles }));
         this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 10, y: 10, projectiles: this.projectiles }));
@@ -389,9 +393,5 @@ export class Army {
         else {
             return null;
         }
-    }
-
-    public destructor(): void {
-        clearInterval(this.intervalId);
     }
 }

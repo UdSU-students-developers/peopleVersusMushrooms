@@ -294,16 +294,22 @@ class Economy {
         this.buildings.mycelium.forEach(mycelium => this.myceliumExtend(mycelium));
     }
 
+    updateDeltaTime() {
+        const now = Date.now();
+        const deltaTime = (now - this.lastUpdateTime) / 1000;
+        this.lastUpdateTime = now;
+
+        return deltaTime;
+    }
+
     update() {
         this.updateMyceliumGrid();
         // 1. Мутировать юнита из личинки (потратить железо)
         // 2. Мутировать здание из рабочего (потратить железо)
         // 3. передать боевых юнитов в армию (callback)
         // 3.5. для рабочих определить цели и задачи
-
-        const now = Date.now();
-        const deltaTime = (now - this.lastUpdateTime) / 1000;
-        this.lastUpdateTime = now;
+        
+        const deltaTime = this.updateDeltaTime();
         this.updateUnits(deltaTime);
         // 5. передвинуть личинки
         // 6. добыть энергию (сожрать грибочки)

@@ -184,11 +184,6 @@ class Economy {
             });
     }
 
-    setPathsUnits({ x, y }) {
-        //пометка что надо будет сделать массив с юнитами общий
-        [...this.units.workers].forEach(unit => unit.calcPath({ x, y }));
-    }
-
     getAvailableEnergy() {
        let totalEnergy = 0;
         for (const reactor of this.buildings.smallReactors) {
@@ -234,33 +229,11 @@ class Economy {
 
     // 4. передвинуть рабочих
     moveWorkers() {
-        this.units.workers.forEach(unit => unit.moveOneStep());
+        // Вызов передвижения
     }
 
     // 8. породить личинок (потратить немного железа и немного энергии)
-    produceLarvae() {
-        const availableEnergy = this.getAvailableEnergy();
-
-        for (const incubator of this.buildings.incubators) {
-            if (!incubator.isCreating()) {
-                const started = incubator.startCreating();
-                if (started) {
-                    this.updated = true;
-                }
-            }
-
-            if (incubator.isCreating && incubator.updateLarvaProgress(availableEnergy)) {
-                this.updated = true;
-                // Логика потребления энергии
-            }
-
-            const larva = incubator.createLarva();
-            if (larva) {
-                this.units.larvae.push(larva);
-                this.updated = true;
-            }
-        }
-    }
+    
 
     // 10. вырастить грибочки на грибнице
     myceliumGrowAll() {

@@ -22,12 +22,6 @@ class Incubator extends Building {
         }
     }
 
-    addIron(amount) {
-        if (this.currentIron < CAPACITY) {
-            this.currentIron += amount;
-        }
-    }
-
     canCreateLarva() {
         if (this.currentIron < 60 || this.isCreating) return false;
         const freeCells = this.checkAround();
@@ -59,50 +53,6 @@ class Incubator extends Building {
             );
     }
 
-    startCreating() {
-        if (!this.canCreateLarva()) return false;
-
-        this.currentIron -= 60;
-        this.larvaProgress = 0;
-        this.isCreating = true;
-
-        return true;
-    }
-
-    createLarva() {
-        if (!this.isCreating || this.larvaProgress < 100) return null;
-
-        const freeCells = this.checkAround();
-
-        if (freeCells.length === 0) {
-            console.log("Incubator: нет свободных клеток для создания личинки");
-            this.isCreating = false;
-            this.larvaProgress = 0;
-            return null;
-        }
-
-        const spawnPoint = freeCells[0];
-
-        console.log(`Incubator: личинка создана на координатах x: ${this.x} y: ${this.y}`);
-
-        this.isCreating = false;
-        this.larvaProgress = 0;
-
-        return new Larva({
-            x: spawnPoint.x,
-            y: spawnPoint.y,
-            homeX: this.x,
-            homeY: this.y
-        });
-    }
-
-    updateLarvaProgress(availableEnergy) {
-        if (availableEnergy && availableEnergy >= this.consumption) {
-            this.larvaProgress += this.production;
-            return true;
-        }
-        return false;
-    }
 }
 
 module.exports = Incubator;

@@ -68,6 +68,17 @@ import waterInnerCornerBottomRight from '../../assets/map/water-edges/innerCorne
 
 import bushImgSrc from '../../assets/map/decoration/bushbush.webp';
 
+/** Максимальное HP по типу — совпадает с хардкодом сервера */
+const MAX_HP: Record<string, number> = {
+  sporomet: 8,
+  champigneb: 35,
+  eblekar: 40,
+  vzryvomor: 70,
+  sporovaya_bashnya: 160,
+};
+
+const getMaxHp = (type: string): number => MAX_HP[type] ?? 100;
+
 const bushImg = new Image();
 bushImg.src = bushImgSrc;
 
@@ -680,10 +691,7 @@ export function drawGame(ctx: CanvasRenderingContext2D,
 
     const bx = building.x * cellW;
     const by = building.y * cellH;
-    const hpPercent =
-      building.maxHp > 0
-        ? Math.max(0, Math.min(1, building.hp / building.maxHp))
-        : 0;
+    const hpPercent = Math.max(0, Math.min(1, building.hp / getMaxHp(building.type)));
 
     if (building.type === 'vzryvomor') {
       const frameIndex = updateVzryvomorAnimation(building.guid, building.isExploding === true);
@@ -899,7 +907,7 @@ export function drawGame(ctx: CanvasRenderingContext2D,
     ctx.fillStyle = '#d32f2f';
     ctx.fillRect(barX, barY, barWidth, barHeight);
 
-    const hpPercent = Math.max(0, Math.min(1, unit.hp / unit.maxHp));
+    const hpPercent = Math.max(0, Math.min(1, unit.hp / getMaxHp(unit.type)));
     ctx.fillStyle = '#4caf50';
     ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight);
   });

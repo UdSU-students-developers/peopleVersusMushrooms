@@ -171,8 +171,8 @@ class Economy {
     }
 
     setPathsUnits({ x, y }) {
-        //пометка что надо будет сделать массив с юнитами общий
-        [...this.units.workers].forEach(unit => unit.calcPath({ x, y }));
+        this.units.workers.forEach(unit => unit.calcPath({ x, y }));
+        this.larvae.workers.forEach(unit => unit.calcPath({ x, y }));
     }
 
     startIncubatorCreating() {
@@ -221,8 +221,9 @@ class Economy {
 
 
     // 4. передвинуть рабочих
-    moveWorkers() {
+    moveUnits() {
         this.units.workers.forEach(unit => unit.moveOneStep());
+        this.units.larvae.forEach(unit => unit.moveOneStep());
     }
 
 
@@ -242,8 +243,8 @@ class Economy {
         // 3. передать боевых юнитов в армию (callback)
         // 3.5. для рабочих определить цели и задачи
         // 4. передвинуть рабочих
-        this.moveWorkers();
         // 5. передвинуть личинки
+        this.moveUnits();
         // 6. добыть энергию (сожрать грибочки)
         // 7. добыть железо (потратить энергию) и распределить их в инкубаторы, шахты или бочки для железа
         // 8. породить личинок (потратить немного железа и немного энергии)

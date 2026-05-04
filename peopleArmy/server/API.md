@@ -1,6 +1,6 @@
 # Описание API
 
-Здесь описаны ручки юнитов микросервиса `peopleArmy`.
+Здесь описаны HTTP-ручки микросервиса `peopleArmy`: **юниты**, а также **лобби и старт игры**.
 
 **Содержание**
 
@@ -10,11 +10,14 @@
 2. Структуры данных
    * 2.1. Общий формат ответа
    * 2.2. Unit
-3. Список запросов
+3. Список запросов (юниты)
    * 3.1 CREATE_UNIT
    * 3.2 MOVE_UNIT
    * 3.3 UNIT_TAKE_DAMAGE
    * 3.4 Общие ошибки
+4. Лобби и старт игры
+   * 4.1 LOBBY_UPDATED
+   * 4.2 START_GAME
 
 ## 1. Общее
 
@@ -26,7 +29,7 @@
 
 Ручки юнитов работают по HTTP(S) и возвращают `JSON`.
 
-Для юнитов используются `GET`-маршруты с параметрами в URL.
+Для ручек из разделов **3** и **4** используются **`POST`-маршруты**; параметры передаются в **`JSON`-теле** запроса (`Content-Type: application/json`). При необходимости токен авторизации можно передавать в **query** (`?token=...`), если так настроен клиент вашей игры.
 
 ## 2. Структуры данных
 
@@ -62,22 +65,28 @@ Answer<T>: {
 
 ### 3.1 CREATE_UNIT
 
-`GET /unit/create/:guid/:x/:y?type=:type`
+`POST /unit/create`
 
 Создать юнита в армии пользователя.
 
-**URL-параметры**
+**Тело запроса (`application/json`)**
 
 ```
 guid: string - guid пользователя (владельца армии)
 x:    number - координата X
 y:    number - координата Y
+type?: string - тип юнита, по умолчанию 'soldier' (поддерживается 'bmp' и др. из БД)
 ```
 
-**Query-параметры**
+**Пример**
 
-```
-type?: string - тип юнита, по умолчанию 'soldier' (поддерживается 'bmp')
+```json
+{
+  "guid": "1057329a-5fac-438c-8654-82a8d2de7a3d",
+  "x": 0,
+  "y": 0,
+  "type": "soldier"
+}
 ```
 
 **Успешный ответ**
@@ -94,17 +103,28 @@ Answer<Unit>
 
 ### 3.2 MOVE_UNIT
 
-`GET /unit/move/:userGuid/:unitGuid/:x/:y`
+`POST /unit/move`
 
 Назначить целевую точку движения юниту пользователя.
 
-**URL-параметры**
+**Тело запроса (`application/json`)**
 
 ```
 userGuid: string - guid пользователя (владельца армии)
 unitGuid: string - guid юнита
 x:        number - целевая координата X
 y:        number - целевая координата Y
+```
+
+**Пример**
+
+```json
+{
+  "userGuid": "1057329a-5fac-438c-8654-82a8d2de7a3d",
+  "unitGuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "x": 10,
+  "y": 20
+}
 ```
 
 **Успешный ответ**
@@ -121,16 +141,26 @@ Answer<true>
 
 ### 3.3 UNIT_TAKE_DAMAGE
 
-`GET /unit/takeDamage/:userGuid/:unitGuid/:damage`
+`POST /unit/takeDamage`
 
 Нанести урон юниту в армии конкретного пользователя.
 
-**URL-параметры**
+**Тело запроса (`application/json`)**
 
 ```
 userGuid: string - guid пользователя (владельца армии)
 unitGuid: string - guid юнита
 damage:   number - величина урона
+```
+
+**Пример**
+
+```json
+{
+  "userGuid": "1057329a-5fac-438c-8654-82a8d2de7a3d",
+  "unitGuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "damage": 15
+}
 ```
 
 **Успешный ответ**
@@ -156,3 +186,71 @@ Answer<{ guid: string; hp: number }>
 * `409` - Пользователь с таким именем уже существует
 * `422` - Юнит с таким идентификатором уже существует
 * `9000` - Ошибка сервера
+
+## 4. Лобби и старт игры
+
+Те же правила: `POST`, тело — `JSON` (`Content-Type: application/json`).
+
+### 4.1 LOBBY_UPDATED
+
+`POST /lobbyUpdated`
+
+Передать актуальный список лобби в медиатор.
+
+**Тело запроса**
+
+```
+lobbies: object | array - данные лобби (формат задаётся клиентом карты/лобби)
+```
+
+**Пример**
+
+```json
+{
+  "lobbies": []
+}
+```
+
+**Ответ**
+
+```
+Answer<true>
+```
+
+### 4.2 START_GAME
+
+`POST /startGame`
+
+Сообщить сервису, что игра началась: передать `mapGuid` и идентификаторы игроков по ролям.
+
+**Тело запроса**
+
+```
+mapGuid: string - guid карты
+...guids - остальные поля тела: роли лобби (peopleArmy, peopleEconomy, spectator и т.д.)
+```
+
+Обязательно должно быть задано `mapGuid` и `peopleArmy` (guid игрока за армию людей).
+
+**Пример**
+
+```json
+{
+  "mapGuid": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+  "spectator": "11111111-1111-1111-1111-111111111111",
+  "peopleArmy": "1057329a-5fac-438c-8654-82a8d2de7a3d",
+  "peopleEconomy": null,
+  "mushroomsArmy": null,
+  "mushroomsEconomy": null
+}
+```
+
+**Ответ**
+
+```
+Answer<true>
+```
+
+**Ошибки**
+
+* `400` - нет `mapGuid` или нет `peopleArmy` в теле

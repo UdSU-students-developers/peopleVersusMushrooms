@@ -1,7 +1,7 @@
 import { GameState, TCamera, MapTile, Projectile, TerrainType, Unit } from './types';
-import sporometSrc from '../../assets/units/Sporomet.png';
-import champignebSrc from '../../assets/units/Champigneb.png';
-import eblekarSrc from '../../assets/units/Eblekar.png';
+import sporometSrc from '../../assets/units/sporomet.png';
+import champignebSrc from '../../assets/units/champigneb.png';
+import eblekarSrc from '../../assets/units/eblekar.png';
 import vzryvomorFrame0 from '../../assets/buildings/vzryvomor/frame_0.png';
 import vzryvomorFrame1 from '../../assets/buildings/vzryvomor/frame_1.png';
 import vzryvomorFrame2 from '../../assets/buildings/vzryvomor/frame_2.png';

@@ -1,5 +1,6 @@
 const GLOBAL_CONFIG = {
     INTERVAL: 200, //мс
+    MAP_SIZE: 100, //100 x 100
 
     MAP: {
         PORT: 3001,

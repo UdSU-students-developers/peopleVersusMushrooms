@@ -10,7 +10,7 @@ const SmallReactor = require('./entities/Buildings/SmallReactor');
 const Incubator = require('./entities/Buildings/Incubator');
 const Larva = require('./entities/Unit/Larva')
 
-const { INTERVAL } = GLOBAL_CONFIG;
+const { INTERVAL, MAP_SIZE } = GLOBAL_CONFIG;
 
 class Economy {
     constructor({
@@ -124,9 +124,9 @@ class Economy {
 
     _initEmptyMap() {
         const map = [];
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < MAP_SIZE; i++) {
             map.push([]);
-            for (let j = 0; j < 100; j++) {
+            for (let j = 0; j < MAP_SIZE; j++) {
                 map[i].push(null);
             }
         }

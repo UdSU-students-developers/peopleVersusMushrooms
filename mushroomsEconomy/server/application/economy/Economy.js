@@ -27,7 +27,6 @@ class Economy {
         // данные экономики
         this.resourceMap; // массив известных ресурсов [{x, y, value}]
         this.relief = null;
-        this.lastUpdateTime = Date.now();
 
         //Здания
         this.buildings = {
@@ -250,13 +249,9 @@ class Economy {
     }
 
 
-    updateUnits(deltaTime) {
-        const allUnits = [
-            ...this.units.workers,
-            ...this.units.larvae
-        ];
-
-        allUnits.forEach(unit => unit.update(deltaTime));
+    updateUnits() {
+        this.units.workers.forEach(unit => unit.update());
+        this.units.larvae.forEach(unit => unit.update());
     }
 
     // 8. породить личинок (потратить немного железа и немного энергии)

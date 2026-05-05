@@ -171,6 +171,8 @@ class LobbyManager extends BaseManager {
         //удаляем лобби
         const lobbyGuid = lobby.lobbyGuid;
         this._destroyLobby(lobbyGuid);
+
+        return this.answer.good(true);
     }
 
     _getLobbies() {

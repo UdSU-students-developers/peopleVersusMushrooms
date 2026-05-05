@@ -127,10 +127,10 @@ class GameManager extends BaseManager {
 		return economy.applyDamage(guid, damage);
 	}
 
-	getRelief(guid, mapGuid) {
-		const relief = this.sendToMap(GLOBAL_CONFIG.URLS.GET_RELIEF, { mapGuid, userGuid: guid });
+	async getRelief(guid, mapGuid) {
+		const relief = await this.sendToMap(GLOBAL_CONFIG.URLS.GET_RELIEF, { mapGuid, userGuid: guid });
 
-		if (relief && Array.isArray(relief)) {
+		if (relief) {
 			if (this.economies[guid]) {
 				this.economies[guid].setRelief(relief);
 			}

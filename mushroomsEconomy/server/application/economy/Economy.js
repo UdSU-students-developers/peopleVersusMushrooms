@@ -10,6 +10,8 @@ const SmallReactor = require('./entities/Buildings/SmallReactor');
 const Incubator = require('./entities/Buildings/Incubator');
 const Larva = require('./entities/Unit/Larva')
 
+const Map = require('./entities/Map/Map');
+
 const { INTERVAL, MAP_SIZE } = GLOBAL_CONFIG;
 
 class Economy {
@@ -56,10 +58,7 @@ class Economy {
         }
         Object.keys(guids).forEach(key => this.guids[key] = guids[key]);
 
-        this.map = {
-            resources: null, // массив известных ресурсов [{x, y, value}]
-            relief: this._initEmptyMap(),
-        };
+        this.map = new Map();
         this._initBuildings(startPoint);
 
         // start game proccess
@@ -86,31 +85,12 @@ class Economy {
             units: {
                 larvae: this.units.larvae.map(l => l.get()),
             },
-            map: this.map,
+            map: this.map.get(),
         }
     }
 
     setRelief(relief) {
-        this.map.relief = relief;
-        this.buildGridFromRelief();
-    }
-
-    buildGridFromRelief() {
-        if (!this.relief) return;
-
-        this.map = this.relief.map(row =>
-            row.map(tile => {
-                if (tile === null) return 3;
-                return tile;
-            })
-        );
-
-        const allUnits = [
-            ...this.units.workers,
-            ...this.units.larvae
-        ];
-
-        allUnits.forEach(u => u.setMap(this.map));
+        this.map.setRelief(relief);
     }
 
 

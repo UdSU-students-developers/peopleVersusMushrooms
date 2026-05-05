@@ -113,6 +113,7 @@ class Economy {
         allUnits.forEach(u => u.setMap(this.map));
     }
 
+
     _initBuildings(startPoint) {
         if (!startPoint) {startPoint = {x: 3, y: 3}};
         // создать инкубатор
@@ -248,13 +249,9 @@ class Economy {
     }
 
 
-    updateUnits(deltaTime) {
-        const allUnits = [
-            ...this.units.workers,
-            ...this.units.larvae
-        ];
-
-        allUnits.forEach(unit => unit.update(deltaTime));
+    updateUnits() {
+        this.units.workers.forEach(unit => unit.update());
+        this.units.larvae.forEach(unit => unit.update());
     }
 
     // 8. породить личинок (потратить немного железа и немного энергии)

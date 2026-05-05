@@ -84,6 +84,8 @@ const CONFIG = {
             WATER: 1,
             STONE: 2,
         },
+
+        MAP_SIZE: 100,
     },
 
 };

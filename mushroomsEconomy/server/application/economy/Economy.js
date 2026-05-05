@@ -267,13 +267,9 @@ class Economy {
     }
 
 
-    updateUnits(deltaTime) {
-        const allUnits = [
-            ...this.units.workers,
-            ...this.units.larvae
-        ];
-
-        allUnits.forEach(unit => unit.update(deltaTime));
+    updateUnits() {
+        this.units.workers.forEach(unit => unit.update());
+        this.units.larvae.forEach(unit => unit.update());
     }
 
     // 8. породить личинок (потратить немного железа и немного энергии)
@@ -303,6 +299,36 @@ class Economy {
         this.buildings.mycelium.forEach(mycelium => this.myceliumExtend(mycelium));
     }
 
+    update() {
+        this.updateMyceliumGrid();
+        // 1. Мутировать юнита из личинки (потратить железо)
+        // 2. Мутировать здание из рабочего (потратить железо)
+        // 3. передать боевых юнитов в армию (callback)
+        // 3.5. для рабочих определить цели и задачи
+        
+        this.updateUnits();
+        // 5. передвинуть личинки
+        // 6. добыть энергию (сожрать грибочки)
+        // 7. добыть железо (потратить энергию) и распределить их в инкубаторы, шахты или бочки для железа
+        // 8. породить личинок (потратить немного железа и немного энергии)
+        this.produceLarvae();
+        // 9. остаток непотраченной энергии (жир) распределить по бочкам для жира
+        // 10. вырастить грибочки на грибнице
+        this.myceliumGrowAll();
+        // 11. расширить грибницу
+        this.myceliumExtendAll();
+
+        /*
+        // 3. реакторы потребляют мицелий
+        this.reactorsConsume();
+        */
+
+        // отбросить апдейт, если он случился
+        if (this.updated) {
+            this.updated = false;
+            this.callbacks.updated(this.get());
+        }
+    }
 
     findEntityByGuid(guid) {
         for (const type of Object.values(this.units)) {

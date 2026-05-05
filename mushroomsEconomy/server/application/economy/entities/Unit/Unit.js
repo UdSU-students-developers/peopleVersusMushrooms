@@ -122,7 +122,7 @@ class Unit {
         this.easyStar.calculate();
     }
 
-    move(deltaTime) {
+    move() {
         if (this.pathRequested) return;
 
         if (!this.path.length) return;
@@ -139,16 +139,16 @@ class Unit {
             return;
         }
 
-        const step = this.speed * deltaTime;
+        const step = this.speed * 0.1;
         const move = Math.min(step, dist);
 
         this.x += (dx / dist) * move;
         this.y += (dy / dist) * move;
     }
 
-    update(deltaTime) {
+    update() {
         this.calculatePath();
-        this.move(deltaTime);
+        this.move();
     }
 
     takeDamage(amount) {

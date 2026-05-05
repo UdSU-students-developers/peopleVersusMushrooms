@@ -82,6 +82,31 @@ class GameManager extends BaseManager {
 		return this.answer.good(resources);
 	}
 
+	async getResources(guid, mapGuid) {
+		const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
+
+		if (!user) {
+			return this.answer.bad(1002);
+		}
+
+		const resources = await this.sendToMap(
+			GLOBAL_CONFIG.URLS.GET_RESOURSE_VISIBILITY,
+			{ mapGuid, userGuid: guid }
+		);
+		console.log("RESOURCES FROM MAP:", resources);
+
+		if (this.economies[guid]) {
+			this.economies[guid].setResources(resources);
+		}
+
+		this.io.to(user.socketId).emit(
+			GLOBAL_CONFIG.SOCKET.UPDATE_SCENE,
+			this.answer.good({ resources })
+		);
+
+		return this.answer.good(resources);
+	}
+
 	/* TRIGGERS */
 	
 	

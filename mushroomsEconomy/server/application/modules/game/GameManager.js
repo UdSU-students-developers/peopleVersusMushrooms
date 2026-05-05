@@ -75,7 +75,7 @@ class GameManager extends BaseManager {
 		}
 
 		this.io.to(user.socketId).emit(
-			GLOBAL_CONFIG.SOCKET.UPDATE_SCENE,
+			CONFIG.SOCKET.UPDATE_SCENE,
 			this.answer.good({ resources })
 		);
 

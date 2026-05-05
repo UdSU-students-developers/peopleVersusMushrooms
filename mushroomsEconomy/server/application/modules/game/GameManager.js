@@ -26,10 +26,11 @@ class GameManager extends BaseManager {
 	}
 
 	/* PRIVATE */
-	callbackUpdate(guids, data) {
+	callbackUpdate(data) {
 
-		const guid = guids.mushroomsEconomy;
+		const guid = data.guids.mushroomsEconomy;
 		const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
+		console.log(user);
 
 		// выплюнуть сообщение в карту
 		// получить ответ
@@ -86,10 +87,11 @@ class GameManager extends BaseManager {
 	eventStartGame(data = {}) {
 		
 		const { guids, startPoint } = data;
+		console.log('EVENT START GAME');
 		//console.log(guids);
 		//console.log(SET_SERVICES_GUIDS);
 		
-		if (guids?.mushroomsEconomy) {
+		if (guids.mushroomsEconomy) {
 			const guid = guids.mushroomsEconomy;
 			const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
 			if (user && user.socketId) {
@@ -97,7 +99,7 @@ class GameManager extends BaseManager {
 					db: this.db,
 					common: this.common,
 					callbacks: {
-						updated: (data) => this.callbackUpdate(data.guids, data),
+						updated: (data) => this.callbackUpdate(data),
 						spawnArmyUnit: (data) => this.spawnArmyUnit(data),
 					},
 					guids, 

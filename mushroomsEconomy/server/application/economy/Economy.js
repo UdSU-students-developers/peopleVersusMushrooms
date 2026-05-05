@@ -78,14 +78,14 @@ class Economy {
 
     get() {
         return {
-            guids: this.guid,
+            guids: this.guids,
             buildings: {
-                ...this.buildings.smallReactors.map(r => r.get()),
-                ...this.buildings.incubators.map(i => i.get()),
-                ...this.buildings.mycelium.map(m => m.get()),
+                smallReactors: this.buildings.smallReactors.map(r => r.get()),
+                incubators: this.buildings.incubators.map(i => i.get()),
+                mycelium: this.buildings.mycelium.map(m => m.get()),
             },
             units: {
-                ...this.units.larvae.map(l => l.get()),
+                larvae: this.units.larvae.map(l => l.get()),
             },
             map: this.map,
         }
@@ -348,7 +348,7 @@ class Economy {
         // 6. добыть энергию (сожрать грибочки)
         // 7. добыть железо (потратить энергию) и распределить их в инкубаторы, шахты или бочки для железа
         // 8. породить личинок (потратить немного железа и немного энергии)
-        this.produceLarvae();
+        this.incubatorProduce();
         // 9. остаток непотраченной энергии (жир) распределить по бочкам для жира
         // 10. вырастить грибочки на грибнице
         this.myceliumGrowAll();

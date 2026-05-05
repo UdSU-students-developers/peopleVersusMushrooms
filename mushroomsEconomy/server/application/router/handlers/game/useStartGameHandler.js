@@ -14,7 +14,7 @@ module.exports = (mediator, answer) => {
 
         //console.log(guids);
         
-        const response = mediator.call(START_GAME, guids); //Тут startPoint дополнительно к guid
+        const response = mediator.call(START_GAME, {guids}); //Тут startPoint дополнительно к guid
 
         if (response && response.error) {
             return res.send(answer.bad(response.error));

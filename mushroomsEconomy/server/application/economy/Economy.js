@@ -97,7 +97,14 @@ class Economy {
     }
 
     setVisibility({ units = [], buildings = [] } = {}) {
-        this.enemyBuildings = buildings;
+        for (const building of buildings) {
+            const existingIndex = this.enemyBuildings.findIndex(b => b.guid === building.guid);
+            if (existingIndex !== -1) {
+                this.enemyBuildings[existingIndex] = building;
+            } else {
+                this.enemyBuildings.push(building);
+            }
+        }
         this.updated = true;
     }
 

@@ -37,18 +37,18 @@ class GameManager extends BaseManager {
 		// ответить на СВОЙ клиент
 		if (user) {
 			const relief = await this.sendToMap(GLOBAL_CONFIG.URLS.GET_RELIEF, { mapGuid, userGuid: guid });
-			if (relief && Array.isArray(relief)) {
+			if (relief && relief.length > 0) {
 				this.setRelief(guid, relief);
 			}
 
 			const visibility = await this.sendToMap(GLOBAL_CONFIG.URLS.GET_VISIBILITY, { mapGuid, userGuid: guid });
-			if (visibility) {
+			if (visibility && visibility.length > 0) {
 				this.economies[guid].setVisibility(visibility);
 			}
 
 			this.io.to(user.socketId).emit(
 				GLOBAL_CONFIG.SOCKET.UPDATE_SCENE,
-				this.answer.good({...data, relief})
+				this.answer.good({...data, relief, visibility})
 			);
 			return;
 		}

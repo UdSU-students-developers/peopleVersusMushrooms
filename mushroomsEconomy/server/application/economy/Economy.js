@@ -44,7 +44,6 @@ class Economy {
         this.myceliumGrid = null;
         // данные про врагов
         this.enemyBuildings = [];
-        this.enemyUnits = [];
 
         // данные про игроков
         this.guids = {
@@ -98,8 +97,7 @@ class Economy {
     }
 
     setVisibility({ units = [], buildings = [] } = {}) {
-        this.enemyUnits = Array.isArray(units) ? units : [];
-        this.enemyBuildings = Array.isArray(buildings) ? buildings : [];
+        this.enemyBuildings = buildings;
         this.updated = true;
     }
 

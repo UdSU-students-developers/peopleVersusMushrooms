@@ -10,7 +10,7 @@ const SmallReactor = require('./entities/Buildings/SmallReactor');
 const Incubator = require('./entities/Buildings/Incubator');
 const Larva = require('./entities/Unit/Larva')
 
-const { INTERVAL } = GLOBAL_CONFIG;
+const { INTERVAL, MAP_SIZE } = GLOBAL_CONFIG;
 
 class Economy {
     constructor({
@@ -25,8 +25,8 @@ class Economy {
         this.common = common;
         this.callbacks = { updated, spawnArmyUnit };
         // данные экономики
-        this.resourceMap; // массив известных ресурсов [{x, y, value}]
         this.relief = null;
+        this.lastUpdateTime = Date.now();
 
         //Здания
         this.buildings = {
@@ -52,10 +52,14 @@ class Economy {
             peopleEconomy: null,
             mushroomsArmy: null,
             mushroomsEconomy: null,
+            mapGuid: null,
         }
         Object.keys(guids).forEach(key => this.guids[key] = guids[key]);
 
-        this.map = this._initEmptyMap();
+        this.map = {
+            resources: null, // массив известных ресурсов [{x, y, value}]
+            relief: this._initEmptyMap(),
+        };
         this._initBuildings(startPoint);
 
         // start game proccess
@@ -73,14 +77,13 @@ class Economy {
 
     get() {
         return {
-            guid: this.guid,
+            guids: this.guids,
             buildings: {
                 smallReactors: this.buildings.smallReactors.map(r => r.get()),
                 incubators: this.buildings.incubators.map(i => i.get()),
                 mycelium: this.buildings.mycelium.map(m => m.get()),
             },
             units: {
-                workers: this.units.workers.map(w => w.get()),
                 larvae: this.units.larvae.map(l => l.get()),
             },
             map: this.map,
@@ -88,7 +91,7 @@ class Economy {
     }
 
     setRelief(relief) {
-        this.relief = relief;
+        this.map.relief = relief;
         this.buildGridFromRelief();
     }
 
@@ -111,14 +114,18 @@ class Economy {
     }
 
     setResources(resources) {
-        this.resourceMap = resources;
+        this.map.resources = resources;
+    }
+
+    setResources(resources) {
+        this.map.resources = resources;
     }
 
     _initEmptyMap() {
         const map = [];
-        for (let i = 0; i < 50; i++) {
+        for (let i = 0; i < MAP_SIZE; i++) {
             map.push([]);
-            for (let j = 0; j < 50; j++) {
+            for (let j = 0; j < MAP_SIZE; j++) {
                 map[i].push(null);
             }
         }
@@ -128,9 +135,11 @@ class Economy {
     _initBuildings(startPoint) {
         if (!startPoint) {startPoint = {x: 3, y: 3}};
         // создать инкубатор
+        this.addIncubator(startPoint.x, startPoint.y);
         // создать маленький реактор
         this.addSmallReactor(startPoint.x + 1, startPoint.y + 1);
         // создать грибничку
+        this.addMycelium(startPoint.x - 1, startPoint.y - 1)
 
         this.callbacks.updated(this.get());
     }
@@ -156,6 +165,20 @@ class Economy {
             guid: reactorGuid,
             x,
             y,
+        }));
+    }
+
+    addIncubator(x, y) {
+        const incubatorGuid = this.common.guid();
+        this.buildings.incubators.push(new Incubator({
+            type: CONFIG.ECONOMY.INCUBATOR.TYPE,
+            guid: incubatorGuid,
+            x,
+            y,
+            callbacks: {
+                getMap: () => this.map,
+                addLarva: (lx, ly, homeX, homeY) => this.addLarva(lx, ly, homeX, homeY),
+            },
         }));
     }
 
@@ -201,11 +224,6 @@ class Economy {
             });
     }
 
-    setPathsUnits({ x, y }) {
-        //пометка что надо будет сделать массив с юнитами общий
-        [...this.units.workers].forEach(unit => unit.calcPath({ x, y }));
-    }
-
     getAvailableEnergy() {
        let totalEnergy = 0;
         for (const reactor of this.buildings.smallReactors) {
@@ -234,18 +252,18 @@ class Economy {
     }
 
     updateMyceliumGrid() {
-        this.myceliumGrid = Array(50).fill().map(() => Array(50).fill(0));
+        this.myceliumGrid = Array(100).fill().map(() => Array(100).fill(0));
 
         for (const mc of this.buildings.mycelium) {
-            if (mc.x >= 0 && mc.x < 50 && mc.y >= 0 && mc.y < 50) {
+            if (mc.x >= 0 && mc.x < 100 && mc.y >= 0 && mc.y < 100) {
                 this.myceliumGrid[mc.y][mc.x] = 1;
             }
         }
     }
 
-    async checkConnection(building1, building2) {
+    checkConnection(building1, building2) {
         if (!this.myceliumGrid || !building1 || !building2) return false;
-        return await building1.hasPathTo(this.myceliumGrid, {x:building2.x, y:building2.y});
+        return building1.hasPathTo(this.myceliumGrid, {x:building2.x, y:building2.y});
     }
 
 
@@ -255,27 +273,19 @@ class Economy {
     }
 
     // 8. породить личинок (потратить немного железа и немного энергии)
-    produceLarvae() {
-        const availableEnergy = this.getAvailableEnergy();
+    incubatorProduce() {
+        if (!this.buildings.incubators.length) return;
+
+        const now = Date.now();
 
         for (const incubator of this.buildings.incubators) {
-            if (!incubator.isCreating()) {
-                const started = incubator.startCreating();
-                if (started) {
-                    this.updated = true;
-                }
-            }
+            const availableEnergy = this.getAvailableEnergy();
+            const createResult = incubator.createLarvae({ availableEnergy, now });
 
-            if (incubator.isCreating && incubator.updateLarvaProgress(availableEnergy)) {
-                this.updated = true;
-                // Логика потребления энергии
-            }
+            if (!createResult) continue;
 
-            const larva = incubator.createLarva();
-            if (larva) {
-                this.units.larvae.push(larva);
-                this.updated = true;
-            }
+            this.consumeEnergyFromReactors(createResult.energySpent);
+            this.updated = true;
         }
     }
 
@@ -345,6 +355,43 @@ class Economy {
 
         return true;
     }
+
+    // 11. расширить грибницу
+    myceliumExtendAll() {
+        this.buildings.mycelium.forEach(mycelium => this.myceliumExtend(mycelium));
+    }
+
+    update() {
+        this.updateMyceliumGrid();
+        // 1. Мутировать юнита из личинки (потратить железо)
+        // 2. Мутировать здание из рабочего (потратить железо)
+        // 3. передать боевых юнитов в армию (callback)
+        // 3.5. для рабочих определить цели и задачи
+        
+        this.updateUnits();
+        // 5. передвинуть личинки
+        // 6. добыть энергию (сожрать грибочки)
+        // 7. добыть железо (потратить энергию) и распределить их в инкубаторы, шахты или бочки для железа
+        // 8. породить личинок (потратить немного железа и немного энергии)
+        this.incubatorProduce();
+        // 9. остаток непотраченной энергии (жир) распределить по бочкам для жира
+        // 10. вырастить грибочки на грибнице
+        this.myceliumGrowAll();
+        // 11. расширить грибницу
+        this.myceliumExtendAll();
+
+        /*
+        // 3. реакторы потребляют мицелий
+        this.reactorsConsume();
+        */
+
+        // отбросить апдейт, если он случился
+        if (this.updated) {
+            this.updated = false;
+            this.callbacks.updated(this.get());
+        }
+    }
+
 }
 
 module.exports = Economy;

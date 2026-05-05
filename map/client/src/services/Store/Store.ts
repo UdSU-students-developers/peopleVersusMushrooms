@@ -106,9 +106,7 @@ class Store {
 
     handleStartGame(data: ILobby): void {
         console.log('Game started:', data);
-        if (this.currentLobby && this.currentLobby.lobbyGuid === data.lobbyGuid) {
-            this.currentLobby = data;
-        }
+        this.currentLobby = null;
         this.mediator.call(EMESSAGES.GAME_STARTED, data);
     }
 

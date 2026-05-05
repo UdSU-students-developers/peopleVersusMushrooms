@@ -19,7 +19,8 @@ class Champigneb extends Unit {
         super(options);
         this.hp = 35;
         this.maxHp = 35;
-        this.speed = 3;
+        this.speed = options.speed ?? 3;
+        this.attackRange = options.attackRange ?? 6;
     }
 
     protected explode(): void {
@@ -32,7 +33,7 @@ class Champigneb extends Unit {
             const dy = enemy.y - this.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
             if (distance < this.explosionRadius){
-                enemy.takeDamage(this.explosionDamage, 'explosion');
+                enemy.takeDamage(this.explosionDamage);
             }
         }
 
@@ -56,9 +57,9 @@ class Champigneb extends Unit {
         }
     }
 
-    public takeDamage(amount: number, type: string): void {
+    public takeDamage(amount: number): void {
         if (!this.isAlive) return;
-        super.takeDamage(amount, type);
+        super.takeDamage(amount);
     }
 
     protected onDeath(): void {

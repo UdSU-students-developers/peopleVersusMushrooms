@@ -1,5 +1,6 @@
 const GLOBAL_CONFIG = {
     INTERVAL: 200, //мс
+    MAP_SIZE: 100, //100 x 100
 
     MAP: {
         PORT: 3001,
@@ -59,7 +60,6 @@ const GLOBAL_CONFIG = {
         GENERATE_MAP: 'GENERATE_MAP',
         UPDATE_MAP: 'UPDATE_MAP',
         GET_MAP_PARAMS: 'GET_MAP_PARAMS',
-        RELIEF_LOADED: 'RELIEF_LOADED',
 
         //user
         REGISTRATION: 'REGISTRATION',

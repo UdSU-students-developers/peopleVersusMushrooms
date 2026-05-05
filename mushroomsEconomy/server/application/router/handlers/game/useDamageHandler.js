@@ -2,6 +2,8 @@ const CONFIG = require('../../../../config');
 const economy = require('../../../economy/Economy');
 
 module.exports = (mediator, answer) => (req, res) => {
+    const { APPLY_DAMAGE } = mediator.getEventTypes();
+
     try {
         const { guid, damage, economyGuid } = req.body;
 
@@ -9,11 +11,7 @@ module.exports = (mediator, answer) => (req, res) => {
             return res.json(answer.error('Invalid params'));
         }
 
-        if (!economy) {
-            return res.json(answer.error('Economy not found'));
-        }
-
-        const success = economy.applyDamage(guid, damage);
+        const success = mediator.call(APPLY_DAMAGE, { guid, damage, economyGuid });
 
         if (!success) {
             return res.json(answer.error('Target not found'));

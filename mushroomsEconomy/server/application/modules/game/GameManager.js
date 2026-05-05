@@ -31,6 +31,8 @@ class GameManager extends BaseManager {
 		const guid = data.guids.mushroomsEconomy;
 		const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
 		console.log(user);
+		console.log(data);
+		console.log(guid);
 
 		// выплюнуть сообщение в карту
 		// получить ответ

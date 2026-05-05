@@ -29,7 +29,6 @@ class UserManager extends BaseManager {
         const guid = user?.guid ?? null;
         if (guid && this.users[guid]) {;
             await user.logout();
-            //delete this.users[guid];
         }
     }
 

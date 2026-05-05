@@ -10,6 +10,8 @@ const SmallReactor = require('./entities/Buildings/SmallReactor');
 const Incubator = require('./entities/Buildings/Incubator');
 const Larva = require('./entities/Unit/Larva')
 
+const Map = require('./entities/Map/Map');
+
 const { INTERVAL, MAP_SIZE } = GLOBAL_CONFIG;
 
 class Economy {
@@ -56,10 +58,7 @@ class Economy {
         }
         Object.keys(guids).forEach(key => this.guids[key] = guids[key]);
 
-        this.map = {
-            resources: null, // массив известных ресурсов [{x, y, value}]
-            relief: this._initEmptyMap(),
-        };
+        this.map = new Map();
         this._initBuildings(startPoint);
 
         // start game proccess
@@ -86,51 +85,14 @@ class Economy {
             units: {
                 larvae: this.units.larvae.map(l => l.get()),
             },
-            map: this.map,
+            map: this.map.get(),
         }
     }
 
     setRelief(relief) {
-        this.map.relief = relief;
-        this.buildGridFromRelief();
+        this.map.setRelief(relief);
     }
 
-    buildGridFromRelief() {
-        if (!this.relief) return;
-
-        this.map = this.relief.map(row =>
-            row.map(tile => {
-                if (tile === null) return 3;
-                return tile;
-            })
-        );
-
-        const allUnits = [
-            ...this.units.workers,
-            ...this.units.larvae
-        ];
-
-        allUnits.forEach(u => u.setMap(this.map));
-    }
-
-    setResources(resources) {
-        this.map.resources = resources;
-    }
-
-    setResources(resources) {
-        this.map.resources = resources;
-    }
-
-    _initEmptyMap() {
-        const map = [];
-        for (let i = 0; i < MAP_SIZE; i++) {
-            map.push([]);
-            for (let j = 0; j < MAP_SIZE; j++) {
-                map[i].push(null);
-            }
-        }
-        return map;
-    }
 
     _initBuildings(startPoint) {
         if (!startPoint) {startPoint = {x: 3, y: 3}};
@@ -299,36 +261,6 @@ class Economy {
         this.buildings.mycelium.forEach(mycelium => this.myceliumExtend(mycelium));
     }
 
-    update() {
-        this.updateMyceliumGrid();
-        // 1. Мутировать юнита из личинки (потратить железо)
-        // 2. Мутировать здание из рабочего (потратить железо)
-        // 3. передать боевых юнитов в армию (callback)
-        // 3.5. для рабочих определить цели и задачи
-        
-        this.updateUnits();
-        // 5. передвинуть личинки
-        // 6. добыть энергию (сожрать грибочки)
-        // 7. добыть железо (потратить энергию) и распределить их в инкубаторы, шахты или бочки для железа
-        // 8. породить личинок (потратить немного железа и немного энергии)
-        this.produceLarvae();
-        // 9. остаток непотраченной энергии (жир) распределить по бочкам для жира
-        // 10. вырастить грибочки на грибнице
-        this.myceliumGrowAll();
-        // 11. расширить грибницу
-        this.myceliumExtendAll();
-
-        /*
-        // 3. реакторы потребляют мицелий
-        this.reactorsConsume();
-        */
-
-        // отбросить апдейт, если он случился
-        if (this.updated) {
-            this.updated = false;
-            this.callbacks.updated(this.get());
-        }
-    }
 
     findEntityByGuid(guid) {
         for (const type of Object.values(this.units)) {
@@ -384,7 +316,7 @@ class Economy {
         // 3. реакторы потребляют мицелий
         this.reactorsConsume();
         */
-
+        this.updated = !this.updated;
         // отбросить апдейт, если он случился
         if (this.updated) {
             this.updated = false;

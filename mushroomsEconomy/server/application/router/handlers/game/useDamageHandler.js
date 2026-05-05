@@ -1,6 +1,3 @@
-const CONFIG = require('../../../../config');
-const economy = require('../../../economy/Economy');
-
 module.exports = (mediator, answer) => (req, res) => {
     const { APPLY_DAMAGE } = mediator.getEventTypes();
 

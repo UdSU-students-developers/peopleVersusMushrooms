@@ -28,33 +28,27 @@ class GameManager extends BaseManager {
 	/* PRIVATE */
 	callbackUpdate(data) {
 
+		const { mapGuid } = data.guids;
 		const guid = data.guids.mushroomsEconomy;
 		const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
-		console.log(user);
-		console.log(data);
-		console.log(guid);
+		if (!user) {
+			console.log('User отсутствует!, callbackUpdate не работает! \n map guid: ', mapGuid);
+			return;
+		}
 
 		// выплюнуть сообщение в карту
 		// получить ответ
 		// запросить рельеф
+		this.getRelief(guid, mapGuid);
 		// запросить видимость
 		// запросить ресурсы под жопками рабочих
 		// обновить рельеф и видимость у себя в Экномике
 		// ответить на СВОЙ клиент
-		if (user) {
-			const relief = this.sendToMap(GLOBAL_CONFIG.URLS.GET_RELIEF, { mapGuid, userGuid: guid });
-
-			if (relief && Array.isArray(relief)) {
-				this.setRelief(guid, relief);
-			}
-			
-			this.io.to(user.socketId).emit(
-				CONFIG.SOCKET.UPDATE_SCENE,
-				this.answer.good(data)
-			);
-			return;
-		}
-		this.io.to(user.socketId).emit(CONFIG.SOCKET.UPDATE_SCENE, this.answer.bad(1002));
+		this.io.to(user.socketId).emit(
+			CONFIG.SOCKET.UPDATE_SCENE,
+			this.answer.good(data)
+		);
+		//this.io.to(user.socketId).emit(CONFIG.SOCKET.UPDATE_SCENE, this.answer.bad(1002));
 	}
 
 	async getResources(guid, mapGuid) {
@@ -113,7 +107,7 @@ class GameManager extends BaseManager {
 					GLOBAL_CONFIG.SOCKET.START_GAME,
 					sceneData
 				);
-				this.getResources(guid, mapGuid);
+				//this.getResources(guid, mapGuid);
 				console.log("Экономика создана");
 				return sceneData;
 			}
@@ -132,11 +126,16 @@ class GameManager extends BaseManager {
 
 		return economy.applyDamage(guid, damage);
 	}
-	
-	setRelief(guid, relief) {
-		if (this.economies[guid]) {
-			this.economies[guid].setRelief(relief);
+
+	getRelief(guid, mapGuid) {
+		const relief = this.sendToMap(GLOBAL_CONFIG.URLS.GET_RELIEF, { mapGuid, userGuid: guid });
+
+		if (relief && Array.isArray(relief)) {
+			if (this.economies[guid]) {
+				this.economies[guid].setRelief(relief);
+			}
 		}
+
 	}
 
 	spawnArmyUnit(data) { //data = {unitType, x, y, armyGuid}

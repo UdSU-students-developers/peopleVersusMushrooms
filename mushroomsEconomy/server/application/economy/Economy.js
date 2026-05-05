@@ -113,25 +113,6 @@ class Economy {
         allUnits.forEach(u => u.setMap(this.map));
     }
 
-    setResources(resources) {
-        this.map.resources = resources;
-    }
-
-    setResources(resources) {
-        this.map.resources = resources;
-    }
-
-    _initEmptyMap() {
-        const map = [];
-        for (let i = 0; i < MAP_SIZE; i++) {
-            map.push([]);
-            for (let j = 0; j < MAP_SIZE; j++) {
-                map[i].push(null);
-            }
-        }
-        return map;
-    }
-
     _initBuildings(startPoint) {
         if (!startPoint) {startPoint = {x: 3, y: 3}};
         // создать инкубатор
@@ -358,7 +339,7 @@ class Economy {
         // 3. реакторы потребляют мицелий
         this.reactorsConsume();
         */
-
+        this.updated = !this.updated;
         // отбросить апдейт, если он случился
         if (this.updated) {
             this.updated = false;

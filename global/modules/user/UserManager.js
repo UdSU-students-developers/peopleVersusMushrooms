@@ -29,7 +29,6 @@ class UserManager extends BaseManager {
         const guid = user?.guid ?? null;
         if (guid && this.users[guid]) {;
             await user.logout();
-            //delete this.users[guid];
         }
     }
 
@@ -89,7 +88,7 @@ class UserManager extends BaseManager {
         if (user) {
             this.mediator.call(this.EVENTS.DELETE_USER, guid);
             await user.logout();
-            //delete this.users[guid];
+            delete this.users[guid];
             socket.emit(LOGOUT, this.answer.good(true));
             return;
         }

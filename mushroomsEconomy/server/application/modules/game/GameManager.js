@@ -49,12 +49,12 @@ class GameManager extends BaseManager {
 			}
 			
 			this.io.to(user.socketId).emit(
-				GLOBAL_CONFIG.SOCKET.UPDATE_SCENE,
-				this.answer.good({...data, relief})
+				CONFIG.SOCKET.UPDATE_SCENE,
+				this.answer.good(data)
 			);
 			return;
 		}
-		this.io.to(user.socketId).emit(GLOBAL_CONFIG.SOCKET.UPDATE_SCENE, this.answer.bad(1002));
+		this.io.to(user.socketId).emit(CONFIG.SOCKET.UPDATE_SCENE, this.answer.bad(1002));
 	}
 
 	async getResources(guid, mapGuid) {

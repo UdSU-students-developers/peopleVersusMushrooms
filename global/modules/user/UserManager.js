@@ -24,11 +24,10 @@ class UserManager extends BaseManager {
     }
     
     async handleDisconnect(socket) {
-        console.log('Отключение клиента c guid', this.mediator.get(this.TRIGGERS.GET_USER_BY_SOCKET_ID, socket.id).get().guid);
+        console.log('Отключение клиента c guid', this.triggerGetUserBySocketId(socket.id).get().guid);
         const user = this.triggerGetUserBySocketId(socket.id);
         const guid = user?.guid ?? null;
         if (guid && this.users[guid]) {;
-            this.mediator.call(this.EVENTS.DELETE_USER, guid);
             await user.logout();
             //delete this.users[guid];
         }

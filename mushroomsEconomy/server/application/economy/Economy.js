@@ -25,7 +25,6 @@ class Economy {
         this.common = common;
         this.callbacks = { updated, spawnArmyUnit };
         // данные экономики
-        this.resourceMap; // массив известных ресурсов [{x, y, value}]
         this.relief = null;
         this.lastUpdateTime = Date.now();
 
@@ -58,7 +57,7 @@ class Economy {
         Object.keys(guids).forEach(key => this.guids[key] = guids[key]);
 
         this.map = {
-            resourceMap: null, // массив известных ресурсов [{x, y, value}]
+            resources: null, // массив известных ресурсов [{x, y, value}]
             relief: this._initEmptyMap(),
         };
         this._initBuildings(startPoint);
@@ -115,11 +114,11 @@ class Economy {
     }
 
     setResources(resources) {
-        this.resourceMap = resources;
+        this.map.resources = resources;
     }
 
     setResources(resources) {
-        this.resourceMap = resources;
+        this.map.resources = resources;
     }
 
     _initEmptyMap() {

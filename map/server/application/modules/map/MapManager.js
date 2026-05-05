@@ -60,8 +60,11 @@ class MapManager extends BaseManager {
         if (!role) return this.answer.bad(3003);
 
         entities.forEach(entity => map[method]({ ...entity, role }));
-
-        socket.emit(MESSAGES.UPDATE_MAP, this.answer.good(map.get()));
+        if (map.playerGuids.spectator) {
+            const spectatorGuid = map.playerGuids.spectator;
+            const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
+            this.io.to(user.socketId).emit(MESSAGES.UPDATE_MAP, map.get())
+        }
         return this.answer.good(true);
     }
 
@@ -92,7 +95,6 @@ class MapManager extends BaseManager {
         map.playerGuids = { ...playerGuids };
         //сообщить всем сервисам, что игра началась и сообщить guid карты
         this.sendToAll(URLS.START_GAME, { mapGuid: lobbyGuid, ...playerGuids });
-        socket.emit(MESSAGES.START_GAME, this.answer.good({ mapGuid: lobbyGuid, ...playerGuids }))
     }
 
     //TRIGGERS

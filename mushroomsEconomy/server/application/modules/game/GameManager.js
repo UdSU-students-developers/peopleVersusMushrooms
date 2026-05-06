@@ -141,12 +141,12 @@ class GameManager extends BaseManager {
 
 	}
 
-	updateBuildings(guids, buidings = []) {
-		if (buidings.length === 0) return;
+	updateBuildings(guids, buildings = []) {
+		if (buildings.length === 0) return;
 		this.sendToMap(GLOBAL_CONFIG.URLS.UPDATE_BUILDINGS, {
 			mapGuid: guids.spectator,
 			userGuid: guids.mushroomsEconomy,
-			buidings: buidings,
+			buildings: buildings,
 		})
 	}
 

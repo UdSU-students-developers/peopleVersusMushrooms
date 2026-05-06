@@ -167,7 +167,6 @@ class ArmyManager extends BaseManager {
         if (!armyGuid || !unitGuid || !Number.isFinite(Number(amount))) {
             return null;
         }
-        console.log("выслали грибам урон", amount);
         return this.sendToMushroomsArmy('/takeDamage', {
             armyGuid,
             unitGuid,

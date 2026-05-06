@@ -57,41 +57,18 @@ class Army {
     _initUnits(startPoint) {
         // создать пехотинца
         // создать бэху
-        this.enemyUnits.push({
+        const diagonalPositions = [1, 4, 10, 20, 30, 40, 50, 60, 70, 80, 90];
+        this.enemyUnits = diagonalPositions.map((position) => ({
             guid: this.common.guid(),
             type: 'sporomet',
-            x: 1,
-            y: 1,
+            x: position,
+            y: position,
             hp: 100,
             maxHp: 100,
             isAlive: true,
             speed: 0,
             attackRange: 0,
-        });
-
-        this.enemyUnits.push({
-            guid: this.common.guid(),
-            type: 'sporomet',
-            x: 49,
-            y: 49,
-            hp: 100,
-            maxHp: 100,
-            isAlive: true,
-            speed: 0,
-            attackRange: 0,
-        });
-
-        this.enemyUnits.push({
-            guid: this.common.guid(),
-            type: 'sporomet',
-            x: 99,
-            y: 99,
-            hp: 100,
-            maxHp: 100,
-            isAlive: true,
-            speed: 0,
-            attackRange: 0,
-        });
+        }));
         this.callbacks.update(this.guid, this.get());
     }
 
@@ -317,7 +294,7 @@ class Army {
             }
 
             const amount = Number(unit.damage) || 1;
-            console.log("пидорим грибочков", amount);
+            console.log("бьем грибочков", amount);
             await this.callbacks.takeDamage({
                 armyGuid: enemyArmyGuid, // undefined → дефолт "123efthgfrds" в damageMushroomsUnit
                 unitGuid: targetGuid,

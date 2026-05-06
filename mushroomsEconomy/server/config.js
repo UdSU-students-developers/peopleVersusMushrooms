@@ -6,6 +6,7 @@ const CONFIG = {
         EVENTS: {
             LOBBY_UPDATED: 'LOBBY_UPDATED',
             START_GAME: 'START_GAME',
+            APPLY_DAMAGE: 'APPLY_DAMAGE',
         },
         TRIGGERS: {
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',
@@ -48,11 +49,14 @@ const CONFIG = {
         // сколько потребит инкубатор энергии за 12 секунд?
         // 12 * 5 = 60 единиц энергии потребит инкубатор за 12 секунд
         INCUBATOR: {
+            TYPE: 'incubator',
             HP: 100,
             SIZE: 2,
             CONSUMPTION: 1, // энергопотребление за единицу времени
             PRODUCTION: 1,  // сколько производит за единицу времени
             CAPACITY: 60, // сколько железа доступно для производства личинок
+            LARVA_ENERGY_COST: 60,
+            LARVA_COOLDOWN_MS: 3000,
         },
         BIO_REACTOR: {
 

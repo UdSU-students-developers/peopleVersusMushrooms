@@ -20,35 +20,37 @@ class GameManager extends BaseManager {
 		// mediator events subscribers
 		this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
 		this.mediator.subscribe(this.EVENTS.LOAD_GAME, (data) => this.eventLoadGame(data));
+		this.mediator.subscribe(this.EVENTS.APPLY_DAMAGE, (data) => this.eventApplyDamage(data));
 		// mediator triggers setters
 		//...
 	}
 
 	/* PRIVATE */
-	async callbackUpdate(guid, mapGuid, data) {
+	callbackUpdate(data) {
+
+		const { mapGuid } = data.guids;
+		const guid = data.guids.mushroomsEconomy;
 		const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
+		if (!user) {
+			console.log('User отсутствует!, callbackUpdate не работает! \n map guid: ', mapGuid);
+			return;
+		}
 
 		// выплюнуть сообщение в карту
+		//this.updateBuildings(data.guids, data.buidings); Необходимо переписать на фронте типы для приёма и get для зданий так, чтобы их можно было в нужном
+		// формате отдавать в сервис карты
 		// получить ответ
 		// запросить рельеф
+		this.getRelief(guid, mapGuid);
 		// запросить видимость
 		// запросить ресурсы под жопками рабочих
 		// обновить рельеф и видимость у себя в Экномике
 		// ответить на СВОЙ клиент
-		if (user) {
-			const relief = await this.sendToMap(GLOBAL_CONFIG.URLS.GET_RELIEF, { mapGuid, userGuid: guid });
-
-			if (relief && Array.isArray(relief)) {
-				this.setRelief(guid, relief);
-			}
-
-			this.io.to(user.socketId).emit(
-				GLOBAL_CONFIG.SOCKET.UPDATE_SCENE,
-				this.answer.good({...data, relief})
-			);
-			return;
-		}
-		this.io.to(user.socketId).emit(GLOBAL_CONFIG.SOCKET.UPDATE_SCENE, this.answer.bad(1002));
+		this.io.to(user.socketId).emit(
+			CONFIG.SOCKET.UPDATE_SCENE,
+			this.answer.good(data)
+		);
+		//this.io.to(user.socketId).emit(CONFIG.SOCKET.UPDATE_SCENE, this.answer.bad(1002));
 	}
 
 	async getResources(guid, mapGuid) {
@@ -69,7 +71,7 @@ class GameManager extends BaseManager {
 		}
 
 		this.io.to(user.socketId).emit(
-			GLOBAL_CONFIG.SOCKET.UPDATE_SCENE,
+			CONFIG.SOCKET.UPDATE_SCENE,
 			this.answer.good({ resources })
 		);
 
@@ -77,16 +79,17 @@ class GameManager extends BaseManager {
 	}
 
 	/* TRIGGERS */
-
-
+	
+	
 	/* EVENTS */
 	eventStartGame(data = {}) {
-
-		const { guids, startPoint, mapGuid } = data;
+		
+		const { guids, startPoint } = data;
+		console.log('EVENT START GAME');
 		//console.log(guids);
 		//console.log(SET_SERVICES_GUIDS);
-
-		if (guids?.mushroomsEconomy) {
+		
+		if (guids.mushroomsEconomy) {
 			const guid = guids.mushroomsEconomy;
 			const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
 			if (user && user.socketId) {
@@ -94,34 +97,61 @@ class GameManager extends BaseManager {
 					db: this.db,
 					common: this.common,
 					callbacks: {
-						updated: (data) => this.callbackUpdate(guid, mapGuid, data),
+						updated: (data) => this.callbackUpdate(data),
 						spawnArmyUnit: (data) => this.spawnArmyUnit(data),
 					},
 					guids, 
 					startPoint
 				});
+				const sceneData = this.economies[guid].get();
+
 				this.io.to(user.socketId).emit(
 					GLOBAL_CONFIG.SOCKET.START_GAME,
-					this.answer.good(this.economies[guid].get())
+					sceneData
 				);
-				this.getResources(guid, mapGuid);
+				//this.getResources(guid, mapGuid);
 				console.log("Экономика создана");
-				return this.answer.good(true);
+				return sceneData;
 			}
 			return this.answer.bad(1001)
 		}
 		return this.answer.bad(4001);
 	}
+	
+	eventApplyDamage(data = {}) {
+		const { guid, damage, economyGuid } = data;
+		const economy = this.economies[economyGuid];
 
-	setRelief(guid, relief) {
-		if (this.economies[guid]) {
-			this.economies[guid].setRelief(relief);
+		if (!economy) {
+			return false;
 		}
+
+		return economy.applyDamage(guid, damage);
+	}
+
+	async getRelief(guid, mapGuid) {
+		const relief = await this.sendToMap(GLOBAL_CONFIG.URLS.GET_RELIEF, { mapGuid, userGuid: guid });
+
+		if (relief) {
+			if (this.economies[guid]) {
+				this.economies[guid].setRelief(relief);
+			}
+		}
+
+	}
+
+	updateBuildings(guids, buidings) {
+		this.sendToMap(GLOBAL_CONFIG.URLS.UPDATE_BUILDINGS, {
+			mapGuid: guids.spectator,
+			userGuid: guids.mushroomsEconomy,
+			buidings: buidings,
+		})
 	}
 
 	spawnArmyUnit(data) { //data = {unitType, x, y, armyGuid}
 		this.sendToMushroomsArmy(GLOBAL_CONFIG.URLS.SPAWN_UNIT, data);
 	}
+
 
 	/* SOCKETS */
 }

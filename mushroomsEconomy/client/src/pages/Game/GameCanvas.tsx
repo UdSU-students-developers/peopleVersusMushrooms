@@ -15,7 +15,7 @@ import "./Game.css";
 
 const GAME_FIELD = 'game-field';
 
-const { BORDER_PADDING, MIN_ZOOM, MAX_ZOOM, ZOOM_FACTOR } = CONFIG.GRAPHICS;
+const { BORDER_PADDING, MIN_ZOOM, MAX_ZOOM, ZOOM_FACTOR, MAP_SIZE } = CONFIG.GRAPHICS;
 
 const INITIAL_WINDOW_WIDTH = CONFIG.GRAPHICS.WINDOW.WIDTH;
 const INITIAL_WINDOW_HEIGHT = CONFIG.GRAPHICS.WINDOW.HEIGHT;
@@ -53,8 +53,8 @@ const GameCanvas: React.FC = () => {
     };
 
     const drawMap = (scene: TScene, tileWorldSize: number, tileSizePx: number) => {
-        for (let rowIndex = 0; rowIndex < scene.map.length; rowIndex++) {
-            const row = scene.map[rowIndex];
+        for (let rowIndex = 0; rowIndex < MAP_SIZE; rowIndex++) {
+            const row = scene.map.relief[rowIndex];
             for (let colIndex = 0; colIndex < row.length; colIndex++) {
                 const block = new TerrainBlock({ x: colIndex, y: rowIndex }, row[colIndex]);
                 drawTile(block.sprite, colIndex * tileWorldSize, rowIndex * tileWorldSize, tileSizePx);
@@ -63,8 +63,8 @@ const GameCanvas: React.FC = () => {
     };
 
     const drawMushrooms = (scene: TScene, tileWorldSize: number, tileSizePx: number) => {
-        for (let i = 0; i < scene.mushrooms.length; i++) {
-            const m = scene.mushrooms[i];
+        for (let i = 0; i < scene.buildings.mycelium.length; i++) {
+            const m = scene.buildings.mycelium[i];
             const mushroom = new Mushroom(m.guid, m.coords, m.level);
             drawTile(mushroom.sprite, m.coords.x * tileWorldSize, m.coords.y * tileWorldSize, tileSizePx);
         }
@@ -72,8 +72,8 @@ const GameCanvas: React.FC = () => {
 
     const drawSmallReactors = (scene: TScene, tileWorldSize: number, tileSizePx: number) => {
         if (!canvas) return;
-        for (let i = 0; i < scene.buildings.length; i++) {
-            const b = scene.buildings[i];
+        for (let i = 0; i < scene.buildings.smallReactors.length; i++) {
+            const b = scene.buildings.smallReactors[i];
             if ((b as TSmallReactor).type !== 'small_reactor') continue;
             const sr = b as TSmallReactor;
             const reactor = new SmallReactor(sr.guid, sr.coords);
@@ -101,8 +101,8 @@ const GameCanvas: React.FC = () => {
     const drawLarvae = (scene: TScene, tileWorldSize: number, tileSizePx: number) => {
         if (!canvas) return;
         
-        for (let i = 0; i < scene.larvae.length; i++) {
-            const l = scene.larvae[i];
+        for (let i = 0; i < scene.units.larvae.length; i++) {
+            const l = scene.units.larvae[i];
             const larva = new Larva(l.guid, l.coords);
             
             const [sx, sy, sSize] = getSprite(larva.sprite[0]);
@@ -122,9 +122,9 @@ const GameCanvas: React.FC = () => {
         if (!canvas) return;
 
         const { scene } = game.get();
-        if (!scene) return;
+        if (!scene || !scene.map) return;
 
-        const tileWorldSize = INITIAL_WINDOW_WIDTH / scene.map.length;
+        const tileWorldSize = INITIAL_WINDOW_WIDTH / MAP_SIZE;
         const tileSizePx = canvas.dec(tileWorldSize);
 
         drawMap(scene, tileWorldSize, tileSizePx);

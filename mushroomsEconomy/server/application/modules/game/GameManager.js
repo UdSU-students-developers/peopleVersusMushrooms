@@ -37,6 +37,8 @@ class GameManager extends BaseManager {
 		}
 
 		// выплюнуть сообщение в карту
+		//this.updateBuildings(data.guids, data.buidings); Необходимо переписать на фронте типы для приёма и get для зданий так, чтобы их можно было в нужном
+		// формате отдавать в сервис карты
 		// получить ответ
 		// запросить рельеф
 		this.getRelief(guid, mapGuid);
@@ -136,6 +138,14 @@ class GameManager extends BaseManager {
 			}
 		}
 
+	}
+
+	updateBuildings(guids, buidings) {
+		this.sendToMap(GLOBAL_CONFIG.URLS.UPDATE_BUILDINGS, {
+			mapGuid: guids.spectator,
+			userGuid: guids.mushroomsEconomy,
+			buidings: buidings,
+		})
 	}
 
 	spawnArmyUnit(data) { //data = {unitType, x, y, armyGuid}

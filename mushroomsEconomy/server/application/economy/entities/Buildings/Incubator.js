@@ -10,11 +10,24 @@ const {
     CAPACITY,
     LARVA_ENERGY_COST,
     LARVA_COOLDOWN_MS,
+    VISIBILITY,
 } = CONFIG.ECONOMY.INCUBATOR;
 
 class Incubator extends Building {
-    constructor({ type = TYPE, guid, x, y, callbacks = {} }) {
-        super({ type, guid, x, y, callbacks, hp: HP, size: SIZE, consumption: CONSUMPTION, production: PRODUCTION, capacity: CAPACITY });
+    constructor({ guid, x, y, callbacks = {} }) {
+        super({ 
+            type: TYPE, 
+            guid: guid, 
+            x: x, 
+            y: y, 
+            callbacks: callbacks, 
+            hp: HP, 
+            size: SIZE, 
+            consumption: CONSUMPTION, 
+            production: PRODUCTION, 
+            capacity: CAPACITY,
+            visibility: VISIBILITY,
+        });
 
         this.larvaEnergyCost = LARVA_ENERGY_COST;
         this.larvaCooldownMs = LARVA_COOLDOWN_MS;

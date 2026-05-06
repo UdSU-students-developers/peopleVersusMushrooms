@@ -27,7 +27,6 @@ class Economy {
         this.common = common;
         this.callbacks = { updated, spawnArmyUnit };
         // данные экономики
-        this.relief = null;
         this.lastUpdateTime = Date.now();
 
         //Здания
@@ -36,6 +35,8 @@ class Economy {
             incubators: [], //инкубаторы
             mycelium: [], // грибница
         };
+
+        this.updatedBuildings = []; //ПРИ добавлении или удалении здания добавить в этот массив его гуид
 
         //Юниты всякие
         this.units = {
@@ -86,6 +87,7 @@ class Economy {
                 larvae: this.units.larvae.map(l => l.get()),
             },
             map: this.map.get(),
+            //updatedBuildings: this.getUpdatedBuildings(),
         }
     }
 
@@ -103,7 +105,7 @@ class Economy {
         // создать грибничку
         this.addMycelium(startPoint.x - 1, startPoint.y - 1)
 
-        this.callbacks.updated(this.get());
+        this.updated = true;
     }
 
     addLarva(x, y, homeX, homeY) {
@@ -128,12 +130,13 @@ class Economy {
             x,
             y,
         }));
+
+        this.updatedBuildings.push(this.findEntityByGuid(reactorGuid).get());
     }
 
     addIncubator(x, y) {
         const incubatorGuid = this.common.guid();
         this.buildings.incubators.push(new Incubator({
-            type: CONFIG.ECONOMY.INCUBATOR.TYPE,
             guid: incubatorGuid,
             x,
             y,
@@ -142,15 +145,24 @@ class Economy {
                 addLarva: (lx, ly, homeX, homeY) => this.addLarva(lx, ly, homeX, homeY),
             },
         }));
+        this.updatedBuildings.push(this.findEntityByGuid(incubatorGuid).get());
     }
 
     addMycelium(x, y) {
+        const myceliumGuid = this.common.guid();
         this.buildings.mycelium.push(new Mycelium({
             x,
             y,
-            guid: this.common.guid(),
+            guid: myceliumGuid,
             callbacks: {},
         }));
+        this.updatedBuildings.push(this.findEntityByGuid(myceliumGuid).get());
+    }
+
+    getUpdatedBuildings() {
+        const updateBuildings = this.updatedBuildings;
+        this.updatedBuildings = [];
+        return updateBuildings;
     }
 
 
@@ -316,7 +328,7 @@ class Economy {
         // 3. реакторы потребляют мицелий
         this.reactorsConsume();
         */
-        this.updated = !this.updated;
+       
         // отбросить апдейт, если он случился
         if (this.updated) {
             this.updated = false;

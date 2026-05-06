@@ -1,13 +1,35 @@
 const CONFIG = require("../../../../config");
+const Building = require("./Building");
 
-const { HP, GROW_SPEED, GROW_LEVEL_UP, MAX_LEVEL, POWER } = CONFIG.ECONOMY.MYCELIUM;
+const { 
+    HP, 
+    GROW_SPEED, 
+    GROW_LEVEL_UP, 
+    MAX_LEVEL, 
+    POWER, 
+    TYPE, 
+    SIZE,
+    CONSUMPTION,
+    PRODUCTION,
+    CAPACITY,
+    VISIBILITY,
+} = CONFIG.ECONOMY.MYCELIUM;
 
-class Mycelium {
+class Mycelium extends Building {
     constructor({ x, y, guid, callbacks = {} }) {
-        this.x = x;
-        this.y = y;
-        this.guid = guid;
-        this.callbacks = callbacks;
+        super({ 
+            type: TYPE, 
+            guid: guid, 
+            x: x, 
+            y: y, 
+            callbacks: callbacks, 
+            hp: HP, 
+            size: SIZE, 
+            consumption: CONSUMPTION, 
+            production: PRODUCTION, 
+            capacity: CAPACITY,
+            visibility: VISIBILITY,
+        });
 
         this.hp = HP;
         this.level = 1; // уровень выросших грибочков
@@ -17,9 +39,8 @@ class Mycelium {
 
     get() {
         return {
-            guid: this.guid,
+            ...super.get(),
             level: this.level,
-            coords: { x: this.x, y: this.y },
         }
     }
 

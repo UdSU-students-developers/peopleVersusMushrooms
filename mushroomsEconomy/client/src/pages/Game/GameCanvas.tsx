@@ -65,8 +65,8 @@ const GameCanvas: React.FC = () => {
     const drawMushrooms = (scene: TScene, tileWorldSize: number, tileSizePx: number) => {
         for (let i = 0; i < scene.buildings.mycelium.length; i++) {
             const m = scene.buildings.mycelium[i];
-            const mushroom = new Mushroom(m.guid, m.coords, m.level);
-            drawTile(mushroom.sprite, m.coords.x * tileWorldSize, m.coords.y * tileWorldSize, tileSizePx);
+            const mushroom = new Mushroom(m.guid, {x: m.x, y: m.y}, m.level);
+            drawTile(mushroom.sprite, m.x * tileWorldSize, m.y * tileWorldSize, tileSizePx);
         }
     };
 
@@ -76,12 +76,12 @@ const GameCanvas: React.FC = () => {
             const b = scene.buildings.smallReactors[i];
             if ((b as TSmallReactor).type !== 'small_reactor') continue;
             const sr = b as TSmallReactor;
-            const reactor = new SmallReactor(sr.guid, sr.coords);
+            const reactor = new SmallReactor(sr.guid, {x: sr.x, y: sr.y });
             const [sx, sy, sSize] = getSprite(reactor.sprite[0]);
             canvas.contextV.drawImage(
                 spritesImage,
                 sx, sy, sSize, sSize,
-                canvas.xs(sr.coords.x * tileWorldSize), canvas.ys(sr.coords.y * tileWorldSize), tileSizePx, tileSizePx
+                canvas.xs(sr.x * tileWorldSize), canvas.ys(sr.y * tileWorldSize), tileSizePx, tileSizePx
             );
 
             if (sr.consumed) {
@@ -89,8 +89,8 @@ const GameCanvas: React.FC = () => {
                 canvas.contextV.drawImage(
                     spritesImage,
                     animX, animY, animSize, animSize,
-                    canvas.xs(sr.coords.x * tileWorldSize), 
-                    canvas.ys(sr.coords.y * tileWorldSize - 15), 
+                    canvas.xs(sr.x * tileWorldSize), 
+                    canvas.ys(sr.y * tileWorldSize - 15), 
                     tileSizePx, 
                     tileSizePx
                 );

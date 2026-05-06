@@ -37,11 +37,11 @@ class GameManager extends BaseManager {
 		}
 
 		// выплюнуть сообщение в карту
-		//this.updateBuildings(data.guids, data.buidings); Необходимо переписать на фронте типы для приёма и get для зданий так, чтобы их можно было в нужном
+		this.updateBuildings(data.guids, this.economies[guid].getUpdatedBuildings());
 		// формате отдавать в сервис карты
 		// получить ответ
 		// запросить рельеф
-		this.getRelief(guid, mapGuid);
+		this.getRelief(data.map, guid, mapGuid);
 		// запросить видимость
 		// запросить ресурсы под жопками рабочих
 		// обновить рельеф и видимость у себя в Экномике
@@ -129,7 +129,8 @@ class GameManager extends BaseManager {
 		return economy.applyDamage(guid, damage);
 	}
 
-	async getRelief(guid, mapGuid) {
+	async getRelief(map, guid, mapGuid) {
+		if (typeof(map.relief[0][0]) !== "object") return;
 		const relief = await this.sendToMap(GLOBAL_CONFIG.URLS.GET_RELIEF, { mapGuid, userGuid: guid });
 
 		if (relief) {
@@ -140,7 +141,8 @@ class GameManager extends BaseManager {
 
 	}
 
-	updateBuildings(guids, buidings) {
+	updateBuildings(guids, buidings = []) {
+		if (buidings.length === 0) return;
 		this.sendToMap(GLOBAL_CONFIG.URLS.UPDATE_BUILDINGS, {
 			mapGuid: guids.spectator,
 			userGuid: guids.mushroomsEconomy,

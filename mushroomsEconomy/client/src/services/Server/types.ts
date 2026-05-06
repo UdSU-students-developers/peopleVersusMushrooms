@@ -42,9 +42,12 @@ export type TResourcePoint = {
     value: number;
 }
 
+// ========= ЗДАНИЯ ======
+
 export type TSmallReactor = {
     guid: string;
-    coords: TPoint;
+    x: number;
+    y: number;
     type: "small_reactor";
     consumed: boolean;
     energy?: number;
@@ -52,7 +55,8 @@ export type TSmallReactor = {
 
 export type TIncubator = {
     guid: string;
-    coords: TPoint;
+    x: number;
+    y: number;
     type: "incubator";
 }
 
@@ -60,7 +64,8 @@ export type TMushroom = {
     type: 'mycelium';
     guid: string;
     level: number;
-    coords: TPoint;
+    x: number;
+    y: number;
 }
 
 export type TEconomyBuildings = {
@@ -68,6 +73,8 @@ export type TEconomyBuildings = {
     incubators: TIncubator[];
     mycelium: TMushroom[];
 }
+
+// ============= ЮНИТЫ ============
 
 export type TLarva = {
     guid: string;
@@ -81,6 +88,8 @@ export type TLarva = {
 export type TEconomyUnits = {
     larvae: TLarva[];
 }
+
+//=======================
 
 export type TEconomy = {
     guids: TGuids;

@@ -37,6 +37,9 @@ const COLOR = {
     bmpBorder: '#7ee787',
     target: 'rgba(255, 200, 50, 0.25)',
     targetBorder: 'rgba(255, 200, 50, 0.7)',
+    /** юнит грибов (enemyUnits), см. mushroomsArmy API unit */
+    enemyMushroom: '#bc8cff',
+    enemyMushroomBorder: '#e9ddff',
 };
 
 interface UnitData {
@@ -50,8 +53,22 @@ interface UnitData {
     type?: string;
 }
 
+/** Формат unit армии грибов (mushroomsArmy) для enemyUnits */
+interface EnemyUnitData {
+    guid: string;
+    type: string;
+    x: number;
+    y: number;
+    hp: number;
+    maxHp: number;
+    isAlive: boolean;
+    speed: number;
+    attackRange: number;
+}
+
 interface ArmyData {
     units: UnitData[];
+    enemyUnits?: EnemyUnitData[];
 }
 
 function drawWaterCell(ctx: CanvasRenderingContext2D, px: number, py: number, cell: number) {
@@ -181,6 +198,29 @@ function drawUnit(ctx: CanvasRenderingContext2D, unit: UnitData, cell: number) {
     }
 }
 
+function drawEnemyUnit(ctx: CanvasRenderingContext2D, unit: EnemyUnitData, cell: number) {
+    if (!unit.isAlive || unit.hp <= 0) {
+        return;
+    }
+    const cx = unit.x * cell + cell / 2;
+    const cy = unit.y * cell + cell / 2;
+    const r = cell * 0.38;
+
+    ctx.fillStyle = COLOR.enemyMushroom;
+    ctx.strokeStyle = COLOR.enemyMushroomBorder;
+    ctx.lineWidth = Math.max(1, cell * 0.1);
+    ctx.beginPath();
+    ctx.roundRect(cx - r, cy - r, r * 2, r * 2, Math.max(2, cell * 0.2));
+    ctx.fill();
+    ctx.stroke();
+
+    // простая «головка» гриба
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.beginPath();
+    ctx.arc(cx, cy - r * 0.35, r * 0.35, 0, Math.PI * 2);
+    ctx.fill();
+}
+
 function isValidMap(map: unknown): map is number[][] {
     return Array.isArray(map) &&
         map.length > 0 &&
@@ -212,6 +252,7 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
     const zoomRef = useRef(ZOOM_DEFAULT);
     const mapRef = useRef<number[][]>([]);
     const unitsRef = useRef<UnitData[]>([]);
+    const enemyUnitsRef = useRef<EnemyUnitData[]>([]);
     const animFrameRef = useRef<number>(0);
     const [unitCount, setUnitCount] = useState(0);
     const [hasMap, setHasMap] = useState(false);
@@ -351,6 +392,7 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
                 canvas.height = h;
             }
             drawMap(ctx, map, cell);
+            enemyUnitsRef.current.forEach((eu) => drawEnemyUnit(ctx, eu, cell));
             unitsRef.current.forEach((unit) => drawUnit(ctx, unit, cell));
 
             const wrap = canvasWrapRef.current;
@@ -379,9 +421,14 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
         const handler = (response: any) => {
             if (response?.result !== 'ok') return;
             const data: ArmyData = response.data;
-            if (!data?.units) return;
-            unitsRef.current = data.units;
-            setUnitCount(data.units.length);
+            if (!data) return;
+            if (Array.isArray(data.units)) {
+                unitsRef.current = data.units;
+                setUnitCount(data.units.length);
+            }
+            if (Array.isArray(data.enemyUnits)) {
+                enemyUnitsRef.current = data.enemyUnits;
+            }
         };
 
         socket.on(CONFIG.SOCKETS.UPDATE_ARMY, handler);
@@ -428,6 +475,10 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
                     <div className="game-legend-row">
                         <span className="game-legend-dot" style={{ background: '#39d353', borderRadius: '2px' }} />
                         БМП
+                    </div>
+                    <div className="game-legend-row">
+                        <span className="game-legend-dot" style={{ background: '#bc8cff', borderRadius: '4px' }} />
+                        Враг (грибы)
                     </div>
                     <div className="game-legend-row">
                         <span className="game-legend-dot" style={{ background: '#1a4f6e', borderRadius: '2px' }} />

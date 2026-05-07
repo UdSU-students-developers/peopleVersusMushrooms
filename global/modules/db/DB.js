@@ -24,6 +24,53 @@ class DB {
         });
     }
 
+    async getAllUnits() {
+        const units = await this.orm.all('units');
+        if (!units || units.length === 0) return [];
+
+        const allProperties = await this.orm.all('units_property');
+
+        const propsByUnitId = {};
+        for (const prop of allProperties) {
+            if (!propsByUnitId[prop.unit_id]) {
+                propsByUnitId[prop.unit_id] = [];
+            }
+            propsByUnitId[prop.unit_id].push(prop);
+        }
+        return units.map(unit => {
+            const props = propsByUnitId[unit.id] || [];
+            const unitWithProps = { ...unit };
+            for (const attr of props) {
+                unitWithProps[attr.name] = attr.value;
+            }
+            return unitWithProps;
+        });
+    }
+
+    async getAllBuildings() {
+        const buildings = await this.orm.all('builings');
+        if (!buildings || buildings.length === 0) return [];
+
+        const allProperties = await this.orm.all('building_property');
+
+        const propsByBuildingId = {};
+        for (const prop of allProperties) {
+            if (!propsByBuildingId[prop.building_id]) {
+                propsByBuildingId[prop.building_id] = [];
+            }
+            propsByBuildingId[prop.building_id].push(prop);
+        }
+
+        return buildings.map(building => {
+            const props = propsByBuildingId[building.id] || [];
+            const buildingWithProps = { ...building };
+            for (const attr of props) {
+                buildingWithProps[attr.name] = attr.value;
+            }
+            return buildingWithProps;
+        });
+    }
+
     async getUserByName(name) {
         return await this.orm.get('users', { name });
     }

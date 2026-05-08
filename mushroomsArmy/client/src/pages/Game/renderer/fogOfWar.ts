@@ -1,6 +1,4 @@
-// fogOfWar.ts — состояние и рендер тумана войны
-
-import { GameState, MapTile, TerrainType, Unit } from './types';
+﻿import { GameState, MapTile, TerrainType, Unit } from '../types';
 import { fogWarImages, FOG_WAR_TEXTURE_SRCS } from './assets';
 import { tryDrawImageScaled } from './buildingRenderer';
 
@@ -245,3 +243,4 @@ export function preloadFogWarTextures(): Promise<void> {
     )
   ).then(() => undefined);
 }
+

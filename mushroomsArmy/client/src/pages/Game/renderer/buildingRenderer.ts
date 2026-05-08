@@ -1,14 +1,8 @@
-// buildingRenderer.ts — общие утилиты и рендер зданий
-
-/** Картинка реально готова к отрисовке (не битая, загрузка завершена). */
 export function isImageDrawable(img: HTMLImageElement | undefined): img is HTMLImageElement {
   return img !== undefined && img.complete && img.naturalWidth > 0;
 }
 
-/**
- * Безопасный drawImage: при сбое canvas возвращает false —
- * тогда вызывающий код рисует fallback.
- */
+// Рисует изображение на canvas. Возвращает false при ошибке — вызывающий код показывает fallback.
 export function tryDrawImageScaled(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
@@ -27,7 +21,7 @@ export function tryDrawImageScaled(
 
 const buildingImages: Record<string, HTMLImageElement> = {};
 
-/** Возвращает (и кэширует) картинку здания по ключу и URL. */
+// Возвращает картинку здания, загружает и кэширует при первом вызове.
 export function getBuildingImage(key: string, src: string | undefined): HTMLImageElement | undefined {
   if (src === undefined) return undefined;
   if (!buildingImages[key]) {

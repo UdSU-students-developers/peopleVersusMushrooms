@@ -1,6 +1,4 @@
-// terrainRenderer.ts — рендер рельефа (трава, вода, горы)
-
-import { MapTile, TerrainType } from './types';
+﻿import { MapTile, TerrainType } from '../types';
 import {
   weightedGrassPool, bushImg,
   waterBaseImg, waterFlowersImg, waterLilies, edgeImages,
@@ -167,8 +165,6 @@ export function drawTerrainCell(
     }
   }
 }
-
-/** Сетка без отрезков между двумя соседними клетками тумана. */
 export function drawGridFogAware(
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -211,3 +207,4 @@ export function drawGridFogAware(
   ctx.moveTo(width, 0); ctx.lineTo(width, height);
   ctx.stroke();
 }
+

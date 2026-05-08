@@ -1,6 +1,4 @@
-// unitRenderer.ts — рендер юнитов, снарядов, взрывов шампиньебов
-
-import { Unit, Projectile } from './types';
+﻿import { Unit, Projectile } from '../types';
 import { UNIT_SRCS, champignebExplImages, VZRYVOMOR_FRAME_SRCS, SPOROVAYA_BASHNYA_SRCS } from './assets';
 import { isImageDrawable, tryDrawImageScaled, getBuildingImage } from './buildingRenderer';
 import {
@@ -8,9 +6,8 @@ import {
   stepVzryvomorAnimation,
   VZRYVOMOR_FRAME_MS,
 } from './vzryvomorAnimation';
-import { GameState } from './types';
+import { GameState } from '../types';
 
-/** Максимальное HP по типу — совпадает с хардкодом сервера */
 const MAX_HP: Record<string, number> = {
   sporomet: 8,
   champigneb: 35,
@@ -33,8 +30,6 @@ function getUnitImage(unit: Unit): HTMLImageElement | undefined {
   }
   return unitImages[unit.type];
 }
-
-// ── Взрывы шампиньебов ───────────────────────────────────────────────────────
 
 const CHAMPIGNEB_EXPL_DURATION = 1000;
 const CHAMPIGNEB_EXPLOSION_FRAME_COUNT = 5;
@@ -88,8 +83,6 @@ function drawChampignebExplosions(
     }
   }
 }
-
-// ── Снаряды ───────────────────────────────────────────────────────────────────
 
 const activeProjectiles = new Map<string, Projectile & { duration: number }>();
 
@@ -149,8 +142,6 @@ function drawProjectiles(
     ctx.fill();
   }
 }
-
-// ── Здания ─────────────────────────────────────────────────────────────────────
 
 const VZRYVOMOR_FRAME_COUNT = VZRYVOMOR_FRAME_SRCS.length;
 const buildingAnimState: Record<string, { frame: number; lastFrameTime: number }> = {};
@@ -241,7 +232,7 @@ export function drawBuildings(
         ctx.font = `bold ${Math.max(10, side * 0.42)}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('В', cx, cy);
+        ctx.fillText('Р’', cx, cy);
         barWidth = side;
         barX = cx - barWidth / 2;
         barY = cy - half - 6;
@@ -277,7 +268,7 @@ export function drawBuildings(
         ctx.font = `bold ${Math.max(9, Math.min(cellW, cellH) * 0.32)}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('СБ', px + pw / 2, py + ph / 2);
+        ctx.fillText('РЎР‘', px + pw / 2, py + ph / 2);
       }
 
       ctx.fillStyle = '#d32f2f';
@@ -287,7 +278,6 @@ export function drawBuildings(
       return;
     }
 
-    // Вражеские здания
     const bw = cellW * 1.4;
     const bh = cellH * 1.4;
     const bOffX = bx - bw / 2 + cellW / 2;
@@ -301,7 +291,7 @@ export function drawBuildings(
     ctx.font = `bold ${Math.max(8, cellW * 0.4)}px Arial`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const label = building.type === 'house' ? 'Д' : building.type === 'barracks' ? 'Б' : 'Т';
+    const label = building.type === 'house' ? 'Р”' : building.type === 'barracks' ? 'Р‘' : 'Рў';
     ctx.fillText(label, bx + cellW / 2, by + cellH / 2);
     ctx.fillStyle = '#d32f2f';
     ctx.fillRect(bOffX, bOffY - 6, bw, 4);
@@ -373,3 +363,4 @@ export function drawProjectileLayer(
 ): void {
   drawProjectiles(ctx, state.projectiles ?? [], cellW, cellH, circularVisibilityMask, Date.now());
 }
+

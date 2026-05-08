@@ -1,5 +1,5 @@
-﻿import { GameState, TCamera } from './types';
-import { camera, MIN_SCALE, MAX_SCALE } from '../../utils/camera';
+﻿import { GameState, TCamera } from '../types';
+import { camera, MIN_SCALE, MAX_SCALE } from '../../../utils/camera';
 import {
   syncFogRevealTracking,
   syncExplorationMemory,
@@ -136,3 +136,4 @@ function initCameraListeners(canvas: HTMLCanvasElement) {
 
   window.addEventListener('mouseup', () => camera.isDragging = false);
 }
+

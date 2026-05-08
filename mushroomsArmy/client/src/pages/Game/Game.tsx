@@ -1,17 +1,16 @@
-// pages/Game/Game.tsx
 import React, { useEffect, useRef, useState, useContext } from 'react';
 import { MediatorContext, ServerContext } from '../../App';
 import CONFIG from '../../config';
-import { drawGame, preloadFogWarTextures } from './renderer';
+import { drawGame, preloadFogWarTextures } from './renderer/renderer';
 import { GameState } from './types';
 import { PAGES } from '../PageManager';
 import { TUser } from '../../services/server/types';
 import './Game.css';
 import { camera } from '../../utils/camera';
-import Header from '../../widgets/GameInterface/Header/Header';
-import Footer from '../../widgets/GameInterface/Footer/Footer';
-import Menu from '../../widgets/GameInterface/Menu/Menu';
-import GameOver from '../../widgets/GameInterface/GameOver/GameOver';
+import Header from '../../widgets/Header/Header';
+import Footer from '../../widgets/Footer/Footer';
+import Menu from '../../widgets/Menu/Menu';
+import GameOver from '../../widgets/GameOver/GameOver';
 
 const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -42,7 +41,7 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     const heightCSS = canvas.clientHeight;
     if (widthCSS === 0 || heightCSS === 0) return;
 
-    // Рисуем текущее состояние с учетом обновленной камеры
+    // Рисуем текущее состояние с учётом позиции камеры
     drawGame(ctx, gameStateRef.current, widthCSS, heightCSS, camera);
   };
 
@@ -73,8 +72,8 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     let rafId: number;
 
     const renderLoop = () => {
-  // Скорость движения, которая не зависит от зума
-      const moveSpeed = 20 / camera.scale; 
+      // Скорость перемещения не зависит от зума
+      const moveSpeed = 20 / camera.scale;
 
       if (keysPressed.current['KeyW'] || keysPressed.current['ArrowUp']) {
         camera.offsetY += moveSpeed;
@@ -96,9 +95,9 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     rafId = requestAnimationFrame(renderLoop);
 
     return () => {
-      cancelAnimationFrame(rafId); // Остановка при выходе из игры
+      cancelAnimationFrame(rafId);
     };
-  }, []); // Запускается один раз при старте
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -145,12 +144,9 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   const handler = (newState: GameState) => {
     gameStateRef.current = newState;
     
-    // Считаем юнитов только здесь (когда пришли данные), а не в цикле отрисовки
+    // Считаем живых юнитов при получении нового состояния, а не в цикле отрисовки
     const aliveCount = newState.units.filter((unit) => unit.hp > 0).length ?? 0;
     setAliveUnitsCount(aliveCount);
-
-    // gameStateRef.current = newState;
-    // redrawCanvas();
   };
 
   mediator.subscribe(EVENT_NAME, handler);
@@ -220,10 +216,8 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
         username={username}
         isMenuOpen={isMenuOpen}
         onMenuToggle={() => setIsMenuOpen(!isMenuOpen)}
-        //onExit={handleExitToLobby}
       />
 
-      {/* Меню теперь живет здесь, на уровне страницы, что архитектурно правильнее */}
       <Menu 
         isOpen={isMenuOpen} 
         onExit={handleExitToLobby} 

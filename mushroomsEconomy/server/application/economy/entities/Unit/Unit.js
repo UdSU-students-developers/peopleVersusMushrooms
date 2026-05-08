@@ -2,7 +2,7 @@ const EasyStar = require('easystarjs');
 const CONFIG = require("../../../../config");
 
 class Unit {
-    constructor({ x, y, guid, map }) {
+    constructor({ x, y, guid, map, type, visibility }) {
         this.x = x;
         this.y = y;
 
@@ -16,6 +16,8 @@ class Unit {
         this.guid = guid;
         this.hp = 1;
         this.speed = 3;
+        this.type = type; 
+        this.visibility = visibility;
 
         this.map = map;
 
@@ -44,10 +46,9 @@ class Unit {
         return {
             x: Math.floor(this.x),
             y: Math.floor(this.y),
-            coords: { x: this.x, y: this.y },
-            hp: this.hp,
-            speed: this.speed,
-            guid: this.guid
+            type: this.type,
+            guid: this.guid,
+            visibility: this.visibility
         };
     }
 

@@ -87,11 +87,15 @@ const CONFIG = {
         WORKER: {
             HP: 100,
             SPEED: 1,
+            TYPE: "worker",
+            VISIBILITY: 3,
         },
         LARVA: {
             HP: 40,
             SPEED: 1,
             WANDER_RADIUS: 4, //радиус блуждания личинки
+            TYPE: "larva",
+            VISIBILITY: 2,
         }
     }
 };

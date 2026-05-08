@@ -38,6 +38,8 @@ class GameManager extends BaseManager {
 
 		// выплюнуть сообщение в карту
 		this.updateBuildings(data.guids, this.economies[guid].getUpdatedBuildings());
+		// выплюнуть сообщение в карту
+		this.updateUnits(data.guids, this.economies[guid].getUpdatedUnits());
 		// формате отдавать в сервис карты
 		// получить ответ
 		// запросить рельеф
@@ -147,6 +149,15 @@ class GameManager extends BaseManager {
 			mapGuid: guids.spectator,
 			userGuid: guids.mushroomsEconomy,
 			buildings: buildings,
+		})
+	}
+
+	updateUnits(guids, units = []) {
+		if (units.length === 0) return;
+		this.sendToMap(GLOBAL_CONFIG.URLS.UPDATE_UNITS, {
+			mapGuid: guids.spectator,
+			userGuid: guids.mushroomsEconomy,
+			units: units,
 		})
 	}
 

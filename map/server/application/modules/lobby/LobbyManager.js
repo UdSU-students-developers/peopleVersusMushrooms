@@ -84,6 +84,8 @@ class LobbyManager extends BaseManager {
         });
 
         this.lobbies[guid] = lobby;
+        //сообщаем карте о том, что создано новое лобби -> создается для него карта
+        this.mediator.call(this.EVENTS.CREATE_LOBBY_MAP, lobby.getGuids());
 
         return this.answer.good(lobby.get());
     }
@@ -169,6 +171,7 @@ class LobbyManager extends BaseManager {
         //удаляем лобби
         const lobbyGuid = lobby.lobbyGuid;
         this._destroyLobby(lobbyGuid);
+
         return this.answer.good(true);
     }
 

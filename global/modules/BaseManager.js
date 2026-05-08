@@ -15,6 +15,12 @@ class BaseManager {
 		this.SOCKET = GLOBAL_CONFIG.SOCKET;
     }
 
+    _log(data) {
+        let str = JSON.stringify(data, null, 2);
+        if (str.length > 200) str = str.substring(0, 200) + '...';
+        return str;
+    }
+
     async send(url, data=null, method='POST') {
 		
         console.log('========================================');
@@ -36,7 +42,7 @@ class BaseManager {
 			
             const answer = await res.json();
 			
-			console.log('\nanswer', answer);
+			console.log('\nanswer', this._log(answer));
             console.log('========================================');
 			
             if (answer && answer.result === 'ok') {

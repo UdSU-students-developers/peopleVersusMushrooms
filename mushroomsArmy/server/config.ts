@@ -16,12 +16,15 @@ interface Config {
             MOVE_UNIT: string;
             GET_ARMY: string;
             SPAWN_UNIT: string;
+            SPAWN_BUILDING: string;
         };
     };
     SOCKET: {
         LOBBY_START: string;
+        GAME_STARTED: string;
         GAME_STATE: string;
         GAME_OVER: string;
+        SPAWN_UNIT: string;
     };
 }
 
@@ -44,13 +47,16 @@ const CONFIG: Config = {
             MOVE_UNIT: 'MOVE_UNIT',
             GET_ARMY: 'GET_ARMY',
             SPAWN_UNIT: 'SPAWN_UNIT',
+            SPAWN_BUILDING: 'SPAWN_BUILDING'
         },
     },
 
     SOCKET: {
         LOBBY_START: 'lobby:start',
+        GAME_STARTED: 'game:started',
         GAME_STATE: 'game:state',
         GAME_OVER: 'game:over',
+        SPAWN_UNIT: 'game:spawn_unit',
     },
 };
 

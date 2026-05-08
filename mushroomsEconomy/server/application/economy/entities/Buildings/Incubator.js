@@ -1,40 +1,53 @@
 const CONFIG = require('../../../../config')
-const Larva = require('../Unit/Larva');
 const Building = require('../Buildings/Building');
 
-const { HP, SIZE, CONSUMPTION, PRODUCTION, CAPACITY } = CONFIG.ECONOMY.INCUBATOR;
+const {
+    TYPE,
+    HP,
+    SIZE,
+    CONSUMPTION,
+    PRODUCTION,
+    CAPACITY,
+    LARVA_ENERGY_COST,
+    LARVA_COOLDOWN_MS,
+    VISIBILITY,
+} = CONFIG.ECONOMY.INCUBATOR;
 
 class Incubator extends Building {
-    constructor({ type, guid, x, y, callbacks = {} }) {
-        super({ type, guid, x, y, callbacks, hp: HP, size: SIZE, consumption: CONSUMPTION, production: PRODUCTION, capacity: CAPACITY });
+    constructor({ guid, x, y, callbacks = {} }) {
+        super({ 
+            type: TYPE, 
+            guid: guid, 
+            x: x, 
+            y: y, 
+            callbacks: callbacks, 
+            hp: HP, 
+            size: SIZE, 
+            consumption: CONSUMPTION, 
+            production: PRODUCTION, 
+            capacity: CAPACITY,
+            visibility: VISIBILITY,
+        });
 
-        this.currentIron = 0;
-        this.larvaProgress = 0;
-        this.isCreating = false;
+        this.larvaEnergyCost = LARVA_ENERGY_COST;
+        this.larvaCooldownMs = LARVA_COOLDOWN_MS;
+        this.lastLarvaeCreateAt = 0;
     }
 
     getSelf() {
         return {
             ...super.getSelf(),
-            currentIron: this.currentIron,
-            larvaProgress: this.larvaProgress,
-            isCreating: this.isCreating
+            larvaEnergyCost: this.larvaEnergyCost,
+            larvaCooldownMs: this.larvaCooldownMs,
+            lastLarvaeCreateAt: this.lastLarvaeCreateAt,
         }
     }
 
-    addIron(amount) {
-        if (this.currentIron < CAPACITY) {
-            this.currentIron += amount;
-        }
+    isCooldownReady(now = Date.now()) {
+        return now - this.lastLarvaeCreateAt >= this.larvaCooldownMs;
     }
 
-    canCreateLarva() {
-        if (this.currentIron < 60 || this.isCreating) return false;
-        const freeCells = this.checkAround();
-        return freeCells.length > 0;
-    }
-
-    checkAround() {
+    getFreeCellsAround() {
         const directions = [
             { dx: 0, dy: -1 },
             { dx: 0, dy: 1 },
@@ -55,53 +68,26 @@ class Incubator extends Building {
             .filter(({ x: nx, y: ny }) =>
                 nx >= 0 && nx < m &&
                 ny >= 0 && ny < n &&
-                map[ny][nx] === 0
+                (map[ny][nx] === 0 || map[ny][nx] === null)
             );
     }
 
-    startCreating() {
-        if (!this.canCreateLarva()) return false;
+    createLarvae({ availableEnergy, now = Date.now() }) {
+        if (!this.isCooldownReady(now)) return null;
+        if (availableEnergy < this.larvaEnergyCost) return null;
 
-        this.currentIron -= 60;
-        this.larvaProgress = 0;
-        this.isCreating = true;
+        const freeCells = this.getFreeCellsAround();
+        if (!freeCells.length) return null;
 
-        return true;
-    }
+        const spawnCell = freeCells[Math.floor(Math.random() * freeCells.length)];
+        this.callbacks.addLarva?.(spawnCell.x, spawnCell.y, this.x, this.y);
+        this.lastLarvaeCreateAt = now;
 
-    createLarva() {
-        if (!this.isCreating || this.larvaProgress < 100) return null;
-
-        const freeCells = this.checkAround();
-
-        if (freeCells.length === 0) {
-            console.log("Incubator: нет свободных клеток для создания личинки");
-            this.isCreating = false;
-            this.larvaProgress = 0;
-            return null;
-        }
-
-        const spawnPoint = freeCells[0];
-
-        console.log(`Incubator: личинка создана на координатах x: ${this.x} y: ${this.y}`);
-
-        this.isCreating = false;
-        this.larvaProgress = 0;
-
-        return new Larva({
-            x: spawnPoint.x,
-            y: spawnPoint.y,
-            homeX: this.x,
-            homeY: this.y
-        });
-    }
-
-    updateLarvaProgress(availableEnergy) {
-        if (availableEnergy && availableEnergy >= this.consumption) {
-            this.larvaProgress += this.production;
-            return true;
-        }
-        return false;
+        return {
+            x: spawnCell.x,
+            y: spawnCell.y,
+            energySpent: this.larvaEnergyCost,
+        };
     }
 }
 

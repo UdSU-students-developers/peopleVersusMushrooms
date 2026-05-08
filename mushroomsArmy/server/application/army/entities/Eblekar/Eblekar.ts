@@ -1,5 +1,5 @@
 import { TMap } from "../../Army";
-import Unit, { TUnitOptions, TUnitState } from "../Units";
+import Unit, { TUnitOptions, TUnitState, ProjectileType } from "../Units";
 
 class Eblekar extends Unit {
     public healRange: number = 10;
@@ -21,7 +21,9 @@ class Eblekar extends Unit {
         super(options);
         this.hp = 40;
         this.maxHp = 40;
-        this.speed = 1;
+        this.speed = options.speed ?? 1;
+        this.attackRange = options.attackRange ?? 0;
+        this.lastHealTime = -this.healCooldown;
     }
 
     public update(enemies: Unit[], map: TMap, deltaTime: number, allies: Unit[] = []): void {
@@ -62,7 +64,7 @@ class Eblekar extends Unit {
         if (currentTime - this.aimStartTime >= this.aimTime) {
              this.projectiles.push({
                 guid: `${this.guid}-${Date.now()}-${Math.random()}`,
-                type: 'eblekar',
+                type: ProjectileType.EBLEKAR,
                 fromX: this.x,
                 fromY: this.y,
                 toX: ally.x,

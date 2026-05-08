@@ -44,6 +44,8 @@ class Economy {
             larvae: [], //личинки
         };
 
+        this.updatedUnits = [];
+
         this.myceliumGrid = null;
         // данные про врагов
         this.enemyBuildings = [];
@@ -110,14 +112,17 @@ class Economy {
 
     addLarva(x, y, homeX, homeY) {
         const larvaGuid = this.common.guid();
-        this.units.larvae.push(new Larva({
+        const larva = new Larva({
             x: x,
             y: y,
             homeX: homeX,
             homeY: homeY,
             guid: larvaGuid,
             map: this.map,
-        }));
+        });
+        this.units.larvae.push(larva);
+        
+        this.updatedUnits.push(larva.get());
     }
 
     // Методы добавления объектов
@@ -163,6 +168,12 @@ class Economy {
         const updateBuildings = this.updatedBuildings;
         this.updatedBuildings = [];
         return updateBuildings;
+    }
+
+    getUpdatedUnits() {
+        const updateUnits = this.updatedUnits;
+        this.updatedUnits = [];
+        return updateUnits;
     }
 
 

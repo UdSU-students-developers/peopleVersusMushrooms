@@ -1,7 +1,7 @@
 import { GameState, TCamera, MapTile, Projectile, TerrainType, Unit } from './types';
-import sporometSrc from '../../assets/units/sporomet.png';
-import champignebSrc from '../../assets/units/champigneb.png';
-import eblekarSrc from '../../assets/units/eblekar.png';
+import sporometSrc from '../../assets/units/Sporomet.png';
+import champignebSrc from '../../assets/units/Champigneb.png';
+import eblekarSrc from '../../assets/units/Eblekar.png';
 import vzryvomorFrame0 from '../../assets/buildings/vzryvomor/frame_0.png';
 import vzryvomorFrame1 from '../../assets/buildings/vzryvomor/frame_1.png';
 import vzryvomorFrame2 from '../../assets/buildings/vzryvomor/frame_2.png';
@@ -65,8 +65,12 @@ import waterInnerCornerTopLeft from '../../assets/map/water-edges/innerCorner-tl
 import waterInnerCornerTopRight from '../../assets/map/water-edges/innerCorner-tr.webp';
 import waterInnerCornerBottomLeft from '../../assets/map/water-edges/innerCorner-bl.webp';
 import waterInnerCornerBottomRight from '../../assets/map/water-edges/innerCorner-br.webp';
-
+//декорации ляляля
 import bushImgSrc from '../../assets/map/decoration/bushbush.webp';
+import funnyTruovFlower from '../../assets/map/decoration/TrusovFlower2.webp';
+
+const funnyFlower = new Image();
+funnyFlower.src = funnyTruovFlower;
 
 const bushImg = new Image();
 bushImg.src = bushImgSrc;
@@ -510,20 +514,20 @@ export function drawGame(ctx: CanvasRenderingContext2D,
     for (let x = 0; x < cols; x++) {
       const terrain = coerceTerrainCell(state.map[y]?.[x]);
 
-    // Отрисовка ландшафта: Равнина (terrain === 0)
-    // Внутри цикла отрисовки по x и y
-    if (terrain === 0) {
-    const hash = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
-    const seed = Math.abs(hash - Math.floor(hash));       
-    const assetIndex = Math.floor(seed * weightedPool.length);
-    const activeImg = weightedPool[assetIndex];
+      // Отрисовка ландшафта: Равнина (terrain === 0)
+      // Внутри цикла отрисовки по x и y
+      if (terrain === 0) {
+        const hash = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+        const seed = Math.abs(hash - Math.floor(hash));       
+        const assetIndex = Math.floor(seed * weightedPool.length);
+        const activeImg = weightedPool[assetIndex];
 
-    if (isImageDrawable(activeImg)) {
-        ctx.drawImage(activeImg, x * cellW, y * cellH, cellW, cellH);
-    }
+        if (isImageDrawable(activeImg)) {
+            ctx.drawImage(activeImg, x * cellW, y * cellH, cellW, cellH);
+        }
 
-    //логика кустов (поверх травы)
-    if (isImageDrawable(bushImg)) {
+        //куст (поверх травы)
+        if (isImageDrawable(bushImg)) {
         const bushSeed = Math.abs((x * 73856093) ^ (y * 19349663));
         
         // Шанс 5%
@@ -541,129 +545,142 @@ export function drawGame(ctx: CanvasRenderingContext2D,
             );
             ctx.restore();
         }
-    }
-  }
+        }
+
+          // --- ВОТ СЮДА ВСТАВЛЯЕМ ПАСХАЛКУ ---
+        if (y === 94 && x === 99) {
+          if (isImageDrawable(funnyFlower)) {
+            // Пока просто рисуем его в размер ячейки, чтобы убедиться, что он там есть
+            ctx.drawImage(funnyFlower, x * cellW, y * cellH, cellW, cellH);
+          }
+        }
+      
+      }
+
       //вода
       else if (terrain === 1 && isImageDrawable(waterBaseImg)) {
-      // 1. Детерминированный выбор базового слоя воды
-      const seed = (x * 15485863 + y * 2038074743);
-      const probability = Math.abs(seed % 100);
-      const neighbors = getNeighbors(state.map, x, y);      
-      let currentImg: HTMLImageElement;
+        // 1. Детерминированный выбор базового слоя воды
+        const seed = (x * 15485863 + y * 2038074743);
+        const probability = Math.abs(seed % 100);
+        const neighbors = getNeighbors(state.map, x, y);      
+        let currentImg: HTMLImageElement;
 
-      if (probability < 70) {
-          currentImg = waterBaseImg; 
-      } else if (probability < 90) {
-          currentImg = waterFlowersImg; 
-      } else {
-          currentImg = waterLilies[Math.abs(seed % waterLilies.length)];
-      }
-
-      ctx.save();
-      // Переходим в центр ячейки для удобства наложения слоев
-      ctx.translate(x * cellW + cellW / 2, y * cellH + cellH / 2);            
-      
-      // Рисуем базу
-      ctx.drawImage(currentImg, -cellW / 2, -cellH / 2, cellW, cellH);
-
-      // 2. Отрисовка прямых берегов (если сосед — трава/0)
-      if (neighbors.top === 0 && isImageDrawable(edgeImages.top)) {
-          ctx.drawImage(edgeImages.top, -cellW / 2, -cellH / 2, cellW, cellH);
-      }
-      if (neighbors.bottom === 0 && isImageDrawable(edgeImages.bottom)) {
-          ctx.drawImage(edgeImages.bottom, -cellW / 2, -cellH / 2, cellW, cellH);
-      }
-      if (neighbors.left === 0 && isImageDrawable(edgeImages.left)) {
-          ctx.drawImage(edgeImages.left, -cellW / 2, -cellH / 2, cellW, cellH);
-      }
-      if (neighbors.right === 0 && isImageDrawable(edgeImages.right)) {
-          ctx.drawImage(edgeImages.right, -cellW / 2, -cellH / 2, cellW, cellH);
-      }
-
-      // 3. Внешние уголки (выступы земли в воду)
-      // Рисуются, когда две смежные стороны — земля
-      if (neighbors.top === 0 && neighbors.left === 0 && isImageDrawable(edgeImages.topLeft)) {
-          ctx.drawImage(edgeImages.topLeft, -cellW / 2, -cellH / 2, cellW, cellH);
-      }
-      if (neighbors.top === 0 && neighbors.right === 0 && isImageDrawable(edgeImages.topRight)) {
-          ctx.drawImage(edgeImages.topRight, -cellW / 2, -cellH / 2, cellW, cellH);
-      }
-      if (neighbors.bottom === 0 && neighbors.left === 0 && isImageDrawable(edgeImages.bottomLeft)) {
-          ctx.drawImage(edgeImages.bottomLeft, -cellW / 2, -cellH / 2, cellW, cellH);
-      }
-      if (neighbors.bottom === 0 && neighbors.right === 0 && isImageDrawable(edgeImages.bottomRight)) {
-          ctx.drawImage(edgeImages.bottomRight, -cellW / 2, -cellH / 2, cellW, cellH);
-      }
-
-      // 4. Внутренние уголки (скругление вогнутых углов воды)
-      // Рисуются, когда основные соседи — вода, а диагональный — земля
-      const tTopLeft = coerceTerrainCell(state.map[y - 1]?.[x - 1]);
-      const tTopRight = coerceTerrainCell(state.map[y - 1]?.[x + 1]);
-      const tBottomLeft = coerceTerrainCell(state.map[y + 1]?.[x - 1]);
-      const tBottomRight = coerceTerrainCell(state.map[y + 1]?.[x + 1]);
-
-      if (neighbors.top !== 0 && neighbors.left !== 0 && tTopLeft === 0) {
-          if (isImageDrawable(edgeImages.innerTopLeft)) 
-              ctx.drawImage(edgeImages.innerTopLeft, -cellW / 2, -cellH / 2, cellW, cellH);
-      }
-      if (neighbors.top !== 0 && neighbors.right !== 0 && tTopRight === 0) {
-          if (isImageDrawable(edgeImages.innerTopRight)) 
-              ctx.drawImage(edgeImages.innerTopRight, -cellW / 2, -cellH / 2, cellW, cellH);
-      }
-      if (neighbors.bottom !== 0 && neighbors.left !== 0 && tBottomLeft === 0) {
-          if (isImageDrawable(edgeImages.innerBottomLeft)) 
-              ctx.drawImage(edgeImages.innerBottomLeft, -cellW / 2, -cellH / 2, cellW, cellH);
-      }
-      if (neighbors.bottom !== 0 && neighbors.right !== 0 && tBottomRight === 0) {
-          if (isImageDrawable(edgeImages.innerBottomRight)) 
-              ctx.drawImage(edgeImages.innerBottomRight, -cellW / 2, -cellH / 2, cellW, cellH);
-      }
-
-      ctx.restore();
-      }
-      //горы
-       else if (terrain === 2 && isImageDrawable(mountainImg)) {
-        // Используем уникальные множители для гор, чтобы разнообразить паттерн
-        const seed = (x * 73856093 ^ y * 19349663 + x * y);
-        
-        ctx.save();
-        ctx.translate(x * cellW + cellW / 2, y * cellH + cellH / 2);
-        
-        // Вращение на 0, 90, 180 или 270 градусов
-        const rotation = (Math.abs(seed % 4) * Math.PI) / 2;
-        ctx.rotate(rotation);
-        
-        // Добавляем случайное отражение по горизонтали
-        if ((seed >> 2) % 2 === 0) {
-            ctx.scale(-1, 1);
+        if (probability < 70) {
+            currentImg = waterBaseImg; 
+        } else if (probability < 90) {
+            currentImg = waterFlowersImg; 
+        } else {
+            currentImg = waterLilies[Math.abs(seed % waterLilies.length)];
         }
+
+        ctx.save();
+        // Переходим в центр ячейки для удобства наложения слоев
+        ctx.translate(x * cellW + cellW / 2, y * cellH + cellH / 2);            
         
-        // Рисуем гору
-        ctx.drawImage(mountainImg, -cellW / 2, -cellH / 2, cellW, cellH);
+        // Рисуем базу
+        ctx.drawImage(currentImg, -cellW / 2, -cellH / 2, cellW, cellH);
+
+        // 2. Отрисовка прямых берегов (если сосед — трава/0)
+        if (neighbors.top === 0 && isImageDrawable(edgeImages.top)) {
+            ctx.drawImage(edgeImages.top, -cellW / 2, -cellH / 2, cellW, cellH);
+        }
+        if (neighbors.bottom === 0 && isImageDrawable(edgeImages.bottom)) {
+            ctx.drawImage(edgeImages.bottom, -cellW / 2, -cellH / 2, cellW, cellH);
+        }
+        if (neighbors.left === 0 && isImageDrawable(edgeImages.left)) {
+            ctx.drawImage(edgeImages.left, -cellW / 2, -cellH / 2, cellW, cellH);
+        }
+        if (neighbors.right === 0 && isImageDrawable(edgeImages.right)) {
+            ctx.drawImage(edgeImages.right, -cellW / 2, -cellH / 2, cellW, cellH);
+        }
+
+        // 3. Внешние уголки (выступы земли в воду)
+        // Рисуются, когда две смежные стороны — земля
+        if (neighbors.top === 0 && neighbors.left === 0 && isImageDrawable(edgeImages.topLeft)) {
+            ctx.drawImage(edgeImages.topLeft, -cellW / 2, -cellH / 2, cellW, cellH);
+        }
+        if (neighbors.top === 0 && neighbors.right === 0 && isImageDrawable(edgeImages.topRight)) {
+            ctx.drawImage(edgeImages.topRight, -cellW / 2, -cellH / 2, cellW, cellH);
+        }
+        if (neighbors.bottom === 0 && neighbors.left === 0 && isImageDrawable(edgeImages.bottomLeft)) {
+            ctx.drawImage(edgeImages.bottomLeft, -cellW / 2, -cellH / 2, cellW, cellH);
+        }
+        if (neighbors.bottom === 0 && neighbors.right === 0 && isImageDrawable(edgeImages.bottomRight)) {
+            ctx.drawImage(edgeImages.bottomRight, -cellW / 2, -cellH / 2, cellW, cellH);
+        }
+
+        // 4. Внутренние уголки (скругление вогнутых углов воды)
+        // Рисуются, когда основные соседи — вода, а диагональный — земля
+        const tTopLeft = coerceTerrainCell(state.map[y - 1]?.[x - 1]);
+        const tTopRight = coerceTerrainCell(state.map[y - 1]?.[x + 1]);
+        const tBottomLeft = coerceTerrainCell(state.map[y + 1]?.[x - 1]);
+        const tBottomRight = coerceTerrainCell(state.map[y + 1]?.[x + 1]);
+
+        if (neighbors.top !== 0 && neighbors.left !== 0 && tTopLeft === 0) {
+            if (isImageDrawable(edgeImages.innerTopLeft)) 
+                ctx.drawImage(edgeImages.innerTopLeft, -cellW / 2, -cellH / 2, cellW, cellH);
+        }
+        if (neighbors.top !== 0 && neighbors.right !== 0 && tTopRight === 0) {
+            if (isImageDrawable(edgeImages.innerTopRight)) 
+                ctx.drawImage(edgeImages.innerTopRight, -cellW / 2, -cellH / 2, cellW, cellH);
+        }
+        if (neighbors.bottom !== 0 && neighbors.left !== 0 && tBottomLeft === 0) {
+            if (isImageDrawable(edgeImages.innerBottomLeft)) 
+                ctx.drawImage(edgeImages.innerBottomLeft, -cellW / 2, -cellH / 2, cellW, cellH);
+        }
+        if (neighbors.bottom !== 0 && neighbors.right !== 0 && tBottomRight === 0) {
+            if (isImageDrawable(edgeImages.innerBottomRight)) 
+                ctx.drawImage(edgeImages.innerBottomRight, -cellW / 2, -cellH / 2, cellW, cellH);
+        }
+
         ctx.restore();
       }
+
+      //горы
+      else if (terrain === 2 && isImageDrawable(mountainImg)) {
+          // Используем уникальные множители для гор, чтобы разнообразить паттерн
+          const seed = (x * 73856093 ^ y * 19349663 + x * y);
+          
+          ctx.save();
+          ctx.translate(x * cellW + cellW / 2, y * cellH + cellH / 2);
+          
+          // Вращение на 0, 90, 180 или 270 градусов
+          const rotation = (Math.abs(seed % 4) * Math.PI) / 2;
+          ctx.rotate(rotation);
+          
+          // Добавляем случайное отражение по горизонтали
+          if ((seed >> 2) % 2 === 0) {
+              ctx.scale(-1, 1);
+          }
+          
+          // Рисуем гору
+          ctx.drawImage(mountainImg, -cellW / 2, -cellH / 2, cellW, cellH);
+          ctx.restore();
+      }
       else if (terrain === null) {
-        drawFogOfWarCell(ctx, x, y, cellW, cellH, fogNow, 1);
+          drawFogOfWarCell(ctx, x, y, cellW, cellH, fogNow, 1);
       } else {
-        ctx.fillStyle = getTerrainColor(terrain);
-        ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
+          ctx.fillStyle = getTerrainColor(terrain);
+          ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
       }
 
       if (terrain !== null) {
-        const key = `${x},${y}`;
-        const started = fogRevealAt.get(key);
-        if (started !== undefined) {
-          const elapsed = fogNow - started;
-          if (elapsed >= FOG_REVEAL_MS) {
-            fogRevealAt.delete(key);
-          } else {
-            const fadeAlpha = 1 - easeOutCubic(elapsed / FOG_REVEAL_MS);
-            drawFogOfWarCell(ctx, x, y, cellW, cellH, fogNow, fadeAlpha);
+          const key = `${x},${y}`;
+          const started = fogRevealAt.get(key);
+          if (started !== undefined) {
+            const elapsed = fogNow - started;
+            if (elapsed >= FOG_REVEAL_MS) {
+              fogRevealAt.delete(key);
+            } else {
+              const fadeAlpha = 1 - easeOutCubic(elapsed / FOG_REVEAL_MS);
+              drawFogOfWarCell(ctx, x, y, cellW, cellH, fogNow, fadeAlpha);
+            }
           }
-        }
       }
+
+
+    }
   }
-}
 
   // 1.5. Сетка (без линий между двумя клетками тумана — иначе «просветы» по шву)
   drawGridFogAware(ctx, cols * cellW, rows * cellH, cellW, cellH, rows, cols, state.map);

@@ -148,7 +148,7 @@ class GameManager extends BaseManager {
 		this.sendToMap(GLOBAL_CONFIG.URLS.UPDATE_BUILDINGS, {
 			mapGuid: guids.mapGuid,
 			userGuid: guids.mushroomsEconomy,
-			buildings: buildings,
+			entities: buildings,
 		})
 	}
 
@@ -157,7 +157,7 @@ class GameManager extends BaseManager {
 		this.sendToMap(GLOBAL_CONFIG.URLS.UPDATE_UNITS, {
 			mapGuid: guids.mapGuid,
 			userGuid: guids.mushroomsEconomy,
-			units: units,
+			entities: units,
 		})
 	}
 

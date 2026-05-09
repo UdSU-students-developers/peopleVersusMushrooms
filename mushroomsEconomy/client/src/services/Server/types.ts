@@ -76,18 +76,31 @@ export type TEconomyBuildings = {
 
 // ============= ЮНИТЫ ============
 
-export type TLarva = {
+export type TUnit = {
     guid: string;
     x: number;
     y: number;
-    coords: { x: number; y: number };
+    coords: {x: number, y:number},
+    type: string;
+    visibility: number;
+}
+
+export type TWorker = TUnit & {
     hp: number;
     speed: number;
 }
 
+export type TLarva = TUnit & {
+    hp: number;
+    speed: number;
+    growthScale: number;
+}
+
 export type TEconomyUnits = {
+    workers: TWorker[];
     larvae: TLarva[];
 }
+
 
 //=======================
 

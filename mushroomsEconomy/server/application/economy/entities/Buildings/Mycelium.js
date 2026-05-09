@@ -1,6 +1,8 @@
 const CONFIG = require("../../../../config");
 const Building = require("./Building");
 
+const { DIRECTIONS } = CONFIG.ECONOMY;
+
 const { 
     HP, 
     GROW_SPEED, 
@@ -33,7 +35,7 @@ class Mycelium extends Building {
 
         this.hp = HP;
         this.level = 1; // уровень выросших грибочков
-        this.grow = 0; // скорость роста
+        this.grow = 0;  // накопленный прогресс роста
         this.canGrow = true; // может ли расти грибница (не стоит ли на ней здание)
     }
 
@@ -72,59 +74,37 @@ class Mycelium extends Building {
         return POWER;
     }
 
-    checkAroundMycelium(map, mycelium, buildings, enemyBuildings) {
-        const n = map.length;
-        if (!n) return [];
-        const m = map[0].length;
-        if (!m) return [];
+    _getFreeCells(relief, mycelium, buildings, enemyBuildings) {
+        if (!relief[0].length) return [];
 
-        const x = this.x;
-        const y = this.y;
-        const directions = [
-            { dx: 0, dy: -1 },
-            { dx: 0, dy: 1 },
-            { dx: -1, dy: 0 },
-            { dx: 1, dy: 0 },
-            { dx: -1, dy: -1 },
-            { dx: 1, dy: -1 },
-            { dx: -1, dy: 1 },
-            { dx: 1, dy: 1 },
-        ];
+        const rows = relief.length;
+        const cols = relief[0].length;
+        const { x, y } = this;
 
         const allBuildings = Object.values(buildings).flat();
 
-        return directions
+        return DIRECTIONS
             .map(({ dx, dy }) => ({ x: x + dx, y: y + dy }))
             .filter(({ x: nx, y: ny }) =>
-                nx >= 0 && nx < m &&
-                ny >= 0 && ny < n &&
-                [0, 1, 2].includes(map[ny][nx]) && // 0 - земля, 1 - вода, 2 - камень
+                nx >= 0 && nx < cols &&
+                ny >= 0 && ny < rows &&
+                relief[ny][nx] === 0 && // 0 - земля, 1 - вода, 2 - камень, null - нет видимости
                 !mycelium.some(mc => mc.x === nx && mc.y === ny) &&
                 !allBuildings.some(b => b.x === nx && b.y === ny) &&
                 !enemyBuildings.some(b => b.x === nx && b.y === ny)
             );
     }
 
-    // породить новую грибницу
-    canExtend(map, mycelium, buildings, enemyBuildings) {
-        if (this.level >= MAX_LEVEL) {
-            // могу вырасти или нет
-            const freeCells = this.checkAroundMycelium(map, mycelium, buildings, enemyBuildings);
-            return freeCells.length > 0;
-        }
-        return false;
+    canExtend(relief, mycelium, buildings, enemyBuildings) {
+        if (this.level < MAX_LEVEL) return [];
+        return this._getFreeCells(relief, mycelium, buildings, enemyBuildings);
     }
 
-    extend(map, mycelium, buildings, enemyBuildings) {
+    extend(freeCells) {
         this.grow = 0;
         this.level = 1;
         this.canGrow = true;
-        const freeCells = this.checkAroundMycelium(map, mycelium, buildings, enemyBuildings);
-        if (!freeCells.length) {
-            return null;
-        }
-        const { x, y } = freeCells[Math.floor(Math.random() * freeCells.length)];
-        return { x, y };
+        return freeCells[Math.floor(Math.random() * freeCells.length)];
     }
 }
 

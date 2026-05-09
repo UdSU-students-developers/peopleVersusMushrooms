@@ -68,49 +68,30 @@ class Economy {
     }
 
     /***** ПОСТРОЙКА ЗДАНИЙ *****/
-    //PS: если все же эти методы не будут отличаться, засунуть в один createBuilding 
-    //создание трубы
-    createPipe({x, y}) {
-        const pipeGuid = this.common.guid();
-        this.buildings.push(new Pipe({
-            guid: pipeGuid,
-            x,
-            y,
-        }));
+    createBuilding({ x, y, buildingType }) {
+        const guid = this.common.guid();
+        let building = null;
+        
+        switch (buildingType) {
+            case CONFIG.ECONOMY.BUILDINGS.PIPE:
+                building = new Pipe({ guid, x, y });
+                break;
+            case CONFIG.ECONOMY.BUILDINGS.BARRACKS:
+                building = new Barracks({ guid, x, y });
+                break;
+            case CONFIG.ECONOMY.BUILDINGS.SMALL_GENERATOR:
+                building = new SmallGenerator({ guid, x, y });
+                break;
+            case CONFIG.ECONOMY.BUILDINGS.DRILLER:
+                building = new Driller({ guid, x, y });
+                break;
+            default:
+                return false;
+        }
+        
+        this.buildings.push(building);
         this.updated = true;
-    }
-
-    //создание казармы
-    createBarracks({x, y}) {
-        const barracksGuid = this.common.guid();
-        this.buildings.push(new Barracks({
-            guid: barracksGuid,
-            x,
-            y,
-        }));
-        this.updated = true;
-    }
-
-    //создание малого генератора
-    createSmallGenerator({x, y}) {
-        const generatorGuid = this.common.guid();
-        this.buildings.push(new SmallGenerator({
-            guid: generatorGuid,
-            x,
-            y,
-        }));
-        this.updated = true;
-    }
-
-    //создание буровой установки
-    createDriller({x, y}) {
-        const drillerGuid = this.common.guid();
-        this.buildings.push(new Driller({
-            guid: drillerGuid,
-            x,
-            y,
-        }));
-        this.updated = true;
+        return building;
     }
 
     // 1. выработать энергию (потратить нефть)

@@ -44,10 +44,10 @@ class Unit {
 
     get() {
         return {
+            guid: this.guid,
             x: Math.floor(this.x),
             y: Math.floor(this.y),
             type: this.type,
-            guid: this.guid,
             visibility: this.visibility
         };
     }

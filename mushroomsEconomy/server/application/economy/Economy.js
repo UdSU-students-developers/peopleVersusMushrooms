@@ -186,14 +186,15 @@ class Economy {
 
     // 2. расширить грибницу при возможности
     myceliumExtend(mycelium) {
-        if (mycelium.canExtend(this.map, this.buildings.mycelium, this.buildings, this.enemyBuildings)) {
-            const result = mycelium.extend(this.map, this.buildings.mycelium, this.buildings, this.enemyBuildings);
-            if (!result) {
-                return;
-            }
-            this.addMycelium(result.x, result.y);
-            this.updated = true;
-        }
+        const relief = this.map.relief;
+        const freeCells = mycelium.canExtend(relief, this.buildings.mycelium, this.buildings, this.enemyBuildings);
+        if (!freeCells.length) return;
+
+        const result = mycelium.extend(freeCells);
+        if (!result) return;
+
+        this.addMycelium(result.x, result.y);
+        this.updated = true;
     }
 
     // 3. передать боевых юнитов в армию (callback)
@@ -309,11 +310,6 @@ class Economy {
         this.updated = true;
 
         return true;
-    }
-
-    // 11. расширить грибницу
-    myceliumExtendAll() {
-        this.buildings.mycelium.forEach(mycelium => this.myceliumExtend(mycelium));
     }
 
     update() {

@@ -413,7 +413,7 @@ Answer<
 { 
     mapGuid: string, - гуид карты
     userGuid: string - гуид пользователя
-    units: [
+    entities: [
         {
             x: number,
             y: number,
@@ -449,7 +449,7 @@ Answer<true>
 { 
     mapGuid: string, - гуид карты
     userGuid: string - гуид пользователя
-    buildings: [
+    entities: [
         {
             x: number,
             y: number,

@@ -123,6 +123,27 @@ class Unit {
         this.easyStar.calculate();
     }
 
+    findNearestCell() {
+        const cells = [];
+        const currentX = Math.floor(this.x);
+        const currentY = Math.floor(this.y);
+
+        const directions = [
+            [0, 1], [0, -1], [1, 0], [-1, 0]
+        ];
+
+        for (const [dx, dy] of directions) {
+            const newX = currentX + dx;
+            const newY = currentY + dy;
+
+            if (this.map[newY] && this.map[newY][newX] !== undefined) {
+                cells.push({ x: newX, y: newY });
+            }
+        }
+
+        return cells;
+    }
+
     move() {
         if (this.pathRequested) return;
 

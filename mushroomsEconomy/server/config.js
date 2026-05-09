@@ -7,6 +7,7 @@ const CONFIG = {
             LOBBY_UPDATED: 'LOBBY_UPDATED',
             START_GAME: 'START_GAME',
             APPLY_DAMAGE: 'APPLY_DAMAGE',
+            MOVE_UNIT: 'MOVE_UNIT',
         },
         TRIGGERS: {
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',

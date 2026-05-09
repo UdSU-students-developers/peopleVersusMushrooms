@@ -21,6 +21,7 @@ class GameManager extends BaseManager {
 		this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
 		this.mediator.subscribe(this.EVENTS.LOAD_GAME, (data) => this.eventLoadGame(data));
 		this.mediator.subscribe(this.EVENTS.APPLY_DAMAGE, (data) => this.eventApplyDamage(data));
+		this.mediator.subscribe(this.EVENTS.MOVE_UNIT, (data) => this.eventMoveUnit(data));
 		// mediator triggers setters
 		//...
 	}
@@ -129,6 +130,17 @@ class GameManager extends BaseManager {
 		}
 
 		return economy.applyDamage(guid, damage);
+	}
+
+	eventMoveUnit(data = {}) {
+		const { guid, economyGuid } = data;
+		const economy = this.economies[economyGuid];
+
+		if (!economy) {
+			return false;
+		}
+
+		return economy.moveUnit(guid);
 	}
 
 	async getRelief(map, guid, mapGuid) {

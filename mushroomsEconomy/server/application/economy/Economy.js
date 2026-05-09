@@ -94,7 +94,6 @@ class Economy {
     }
 
     setRelief(relief) {
-<<<<<<< 59-get-visibility
         this.relief = relief;
     }
 
@@ -112,9 +111,7 @@ class Economy {
 
     setResources(resources) {
         this.resourceMap = resources;
-=======
         this.map.setRelief(relief);
->>>>>>> dev
     }
 
 

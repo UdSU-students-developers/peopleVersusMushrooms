@@ -31,7 +31,7 @@ class Larva extends Unit {
 
     update() {
         if (this.pathRequested) return;
-        
+
         if (this.path.length > 0) {
             this.move();
         } else {
@@ -40,11 +40,32 @@ class Larva extends Unit {
     }
 
     goingAroundIncubator() {
-        const angle = Math.random() * Math.PI * 2;
-        const radius = Math.sqrt(Math.random()) * this.wanderRadius;
-        
-        const targetX = Math.round(this.homeX + Math.cos(angle) * radius);
-        const targetY = Math.round(this.homeY + Math.sin(angle) * radius);
+        const map = this.map;
+        if (!map) return;
+
+        const rows = map.length;
+        const cols = map[0]?.length ?? 0;
+
+        if (map[0]?.[0] === null) return;
+
+        let targetX, targetY;
+        let attempts = 0;
+
+        do {
+            const angle = Math.random() * Math.PI * 2;
+            const radius = Math.sqrt(Math.random()) * this.wanderRadius;
+            targetX = Math.round(this.homeX + Math.cos(angle) * radius);
+            targetY = Math.round(this.homeY + Math.sin(angle) * radius);
+            attempts++;
+        } while (
+            attempts < 10 && (
+                targetX < 0 || targetX >= cols ||
+                targetY < 0 || targetY >= rows ||
+                map[targetY][targetX] !== 0
+            )
+        );
+
+        if (attempts >= 10) return;
 
         this.setTarget(targetX, targetY);
         this.calculatePath();

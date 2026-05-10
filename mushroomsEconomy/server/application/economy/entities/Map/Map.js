@@ -4,6 +4,9 @@ class Map {
     constructor() {
         this.resources = null, // массив известных ресурсов [{x, y, value}]
         this.relief = this._initEmptyMap()
+
+        this.myceliumGrid = null; // сетка мицелия для проверки связей
+        this.larvaGrid = null;    // сетка для передвижения личинок
     }
 
     get() {
@@ -34,24 +37,33 @@ class Map {
         //this.buildGridFromRelief();
     }
 
-    /*
-    buildGridFromRelief() {
-        if (!this.relief) return;
+    updateMyceliumGrid(mycelium) {
+        const { MAP_SIZE } = GLOBAL_CONFIG;
+        this.myceliumGrid = Array(MAP_SIZE).fill(null).map(() => Array(MAP_SIZE).fill(0));
 
-        this.map = this.relief.map(row =>
-            row.map(tile => {
-                if (tile === null) return 3;
-                return tile;
-            })
+        for (const mc of mycelium) {
+            if (mc.x >= 0 && mc.x < MAP_SIZE && mc.y >= 0 && mc.y < MAP_SIZE) {
+                this.myceliumGrid[mc.y][mc.x] = 1;
+            }
+        }
+    }
+
+    updateLarvaGrid(mycelium) {
+        if (!this.relief || !this.relief.length) return;
+
+        const rows = this.relief.length;
+        const cols = this.relief[0].length;
+
+        this.larvaGrid = this.relief.map(row =>
+            row.map(cell => (cell === 0 ? 0 : 1))
         );
 
-        const allUnits = [
-            ...this.units.workers,
-            ...this.units.larvae
-        ];
-
-        allUnits.forEach(u => u.setMap(this.map));
-    } */
+        for (const mc of mycelium) {
+            if (mc.y >= 0 && mc.y < rows && mc.x >= 0 && mc.x < cols) {
+                this.larvaGrid[mc.y][mc.x] = 0;
+            }
+        }
+    }
 }
 
 module.exports = Map;

@@ -46,7 +46,6 @@ class Economy {
 
         this.updatedUnits = [];
 
-        this.myceliumGrid = null;
         // данные про врагов
         this.enemyBuildings = [];
 
@@ -97,7 +96,6 @@ class Economy {
         this.map.setRelief(relief);
     }
 
-
     _initBuildings(startPoint) {
         if (!startPoint) {startPoint = {x: 3, y: 3}};
         // создать инкубатор
@@ -106,7 +104,6 @@ class Economy {
         this.addSmallReactor(startPoint.x + 1, startPoint.y + 1);
         // создать грибничку
         this.addMycelium(startPoint.x - 1, startPoint.y - 1)
-
         this.updated = true;
     }
 
@@ -118,10 +115,9 @@ class Economy {
             homeX: homeX,
             homeY: homeY,
             guid: larvaGuid,
-            map: this.map.relief,
+            map: this.map.larvaGrid || this.map.relief,
         });
         this.units.larvae.push(larva);
-        
         this.updatedUnits.push(larva.get());
     }
 
@@ -135,7 +131,6 @@ class Economy {
             x,
             y,
         }));
-
         this.updatedBuildings.push(this.findEntityByGuid(reactorGuid).get());
     }
 
@@ -176,7 +171,6 @@ class Economy {
         return updateUnits;
     }
 
-
     // 1. вырасти грибочки
     myceliumGrow(mycelium) {
         if (mycelium.update()) {
@@ -210,7 +204,7 @@ class Economy {
     }
 
     getAvailableEnergy() {
-       let totalEnergy = 0;
+        let totalEnergy = 0;
         for (const reactor of this.buildings.smallReactors) {
             for (const incubator of this.buildings.incubators) {
                 if (this.checkConnection(reactor, incubator)) {
@@ -232,27 +226,15 @@ class Economy {
         }
     }
 
-    updateLarvae() {
-        this.units.larvae.forEach(larva => larva.update());
-    }
-
-    updateMyceliumGrid() {
-        this.myceliumGrid = Array(100).fill().map(() => Array(100).fill(0));
-
-        for (const mc of this.buildings.mycelium) {
-            if (mc.x >= 0 && mc.x < 100 && mc.y >= 0 && mc.y < 100) {
-                this.myceliumGrid[mc.y][mc.x] = 1;
-            }
-        }
-    }
-
     checkConnection(building1, building2) {
-        if (!this.myceliumGrid || !building1 || !building2) return false;
-        return building1.hasPathTo(this.myceliumGrid, {x:building2.x, y:building2.y});
+        if (!this.map.myceliumGrid || !building1 || !building2) return false;
+        return building1.hasPathTo(this.map.myceliumGrid, { x: building2.x, y: building2.y });
     }
-
 
     updateUnits() {
+        if (this.map.larvaGrid) {
+            this.units.larvae.forEach(larva => larva.setMap(this.map.larvaGrid));
+        }
         this.units.workers.forEach(unit => unit.update());
         this.units.larvae.forEach(unit => unit.update());
     }
@@ -284,7 +266,6 @@ class Economy {
         this.buildings.mycelium.forEach(mycelium => this.myceliumExtend(mycelium));
     }
 
-
     findEntityByGuid(guid) {
         for (const type of Object.values(this.units)) {
             const found = type.find(u => u.guid === guid);
@@ -301,18 +282,15 @@ class Economy {
 
     applyDamage(guid, damage) {
         const entity = this.findEntityByGuid(guid);
-
         if (!entity) return false;
-
         entity.takeDamage(damage);
-
         this.updated = true;
-
         return true;
     }
 
     update() {
-        this.updateMyceliumGrid();
+        this.map.updateMyceliumGrid(this.buildings.mycelium);
+        this.map.updateLarvaGrid(this.buildings.mycelium);
         // 1. Мутировать юнита из личинки (потратить железо)
         // 2. Мутировать здание из рабочего (потратить железо)
         // 3. передать боевых юнитов в армию (callback)
@@ -341,7 +319,6 @@ class Economy {
             this.callbacks.updated(this.get());
         }
     }
-
 }
 
 module.exports = Economy;

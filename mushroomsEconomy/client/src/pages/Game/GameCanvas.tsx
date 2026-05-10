@@ -2,7 +2,7 @@ import React, { useEffect, useContext } from 'react';
 import CONFIG from '../../config';
 import { GameContext } from '../../App';
 import { TPoint } from '../../config';
-import { TScene, TSmallReactor } from '../../services/Server/types';
+import { TIncubator, TScene, TSmallReactor } from '../../services/Server/types';
 import Canvas from '../../services/Canvas/Canvas';
 import useCanvas from '../../services/Canvas/useCanvas';
 import useSprites from '../Hooks/useSprite';
@@ -34,14 +34,15 @@ const GameCanvas: React.FC = () => {
     let windowStartPosition: { LEFT: number; TOP: number } | null = null;
     let animationTime = 0;
 
-    const drawTile = (spriteId: number, wx: number, wy: number, sizePx: number) => {
+    const tw = INITIAL_WINDOW_WIDTH / MAP_SIZE;
+
+    const drawTile = (spriteId: number, col: number, row: number) => {
         if (!canvas) return;
         const [sx, sy, sSize] = getSprite(spriteId);
-        canvas.contextV.drawImage(
-            spritesImage,
-            sx, sy, sSize, sSize,
-            canvas.xs(wx), canvas.ys(wy), sizePx, sizePx
-        );
+        const px = canvas.xs(col * tw);
+        const py = canvas.ys(row * tw);
+        const size = canvas.dec(tw);
+        canvas.contextV.drawImage(spritesImage, sx, sy, sSize, sSize, px, py, size, size);
     };
 
     const drawScene = () => {
@@ -49,32 +50,29 @@ const GameCanvas: React.FC = () => {
         const { scene } = game.get();
         if (!scene?.map) return;
 
-        const tw  = INITIAL_WINDOW_WIDTH / MAP_SIZE; 
-        const tpx = canvas.dec(tw);               
-
         // terrain
-        for (let r = 0; r < MAP_SIZE; r++) {
-            const row = scene.map.relief[r];
-            for (let c = 0; c < row.length; c++)
-                drawTile(getTerrainSprite(row[c]), c * tw, r * tw, tpx);
-        }
+        for (let r = 0; r < MAP_SIZE; r++)
+            for (let c = 0; c < MAP_SIZE; c++)
+                drawTile(getTerrainSprite(scene.map.relief[r][c]), c, r);
 
         // mushrooms
         for (const m of scene.buildings.mycelium)
-            drawTile(getMushroomSprite(m.level), m.x * tw, m.y * tw, tpx);
+            drawTile(getMushroomSprite(m.level), m.x, m.y);
 
         // small reactors
-        for (const b of scene.buildings.smallReactors) {
-            const sr = b as TSmallReactor;
-            if (sr.type !== 'small_reactor') continue;
-            drawTile(SPRITE.SMALL_REACTOR, sr.x * tw, sr.y * tw, tpx);
+        for (const sr of scene.buildings.smallReactors as TSmallReactor[]) {
+            drawTile(SPRITE.SMALL_REACTOR, sr.x, sr.y);
             if (sr.consumed)
-                drawTile(SPRITE.REACTOR_CONSUMED_ANIM, sr.x * tw, sr.y * tw - 15, tpx);
+                drawTile(SPRITE.REACTOR_CONSUMED_ANIM, sr.x, sr.y - 7 / tw);
         }
+
+        // incubators
+        for (const i of scene.buildings.incubators as TIncubator[])
+            drawTile(SPRITE.INCUBATOR, i.x, i.y);
 
         // larvae
         for (const l of scene.units.larvae)
-            drawTile(SPRITE.LARVA, l.coords.x * tw, l.coords.y * tw, tpx);
+            drawTile(SPRITE.LARVA, l.x, l.y);
     };
 
     function render(FPS: number) {

@@ -67,7 +67,7 @@ const CONFIG = {
             CONSUMPTION: 1, // энергопотребление за единицу времени
             PRODUCTION: 1,  // сколько производит за единицу времени
             CAPACITY: 60, // сколько железа доступно для производства личинок
-            LARVA_ENERGY_COST: 60,
+            LARVA_ENERGY_COST: 20,
             LARVA_COOLDOWN_MS: 3000,
             VISIBILITY: 5,
         },

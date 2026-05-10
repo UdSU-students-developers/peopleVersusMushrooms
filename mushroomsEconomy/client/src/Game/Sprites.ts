@@ -12,8 +12,8 @@ export const MUSHROOM_SPRITES: Record<number, number> = {
 };
 
 export const SPRITE = {
-    LARVA: 7,
-    INCUBATOR: 8,
+    LARVA: 10,
+    INCUBATOR: 11,
     SMALL_REACTOR: 8,
     REACTOR_CONSUMED_ANIM: 9,
     FALLBACK: 7,

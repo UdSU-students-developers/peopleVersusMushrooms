@@ -31,9 +31,9 @@ class Larva extends Unit {
 
     update() {
         if (this.pathRequested) return;
-
-        if (this.isMoving) {
-            this.moveOneStep();
+        
+        if (this.path.length > 0) {
+            this.move();
         } else {
             this.goingAroundIncubator();
         }
@@ -46,7 +46,8 @@ class Larva extends Unit {
         const targetX = Math.round(this.homeX + Math.cos(angle) * radius);
         const targetY = Math.round(this.homeY + Math.sin(angle) * radius);
 
-        this.calcPath({ x: targetX, y: targetY });
+        this.setTarget(targetX, targetY);
+        this.calculatePath();
     }
 }
 

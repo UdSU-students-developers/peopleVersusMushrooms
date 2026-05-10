@@ -118,7 +118,7 @@ class Economy {
             homeX: homeX,
             homeY: homeY,
             guid: larvaGuid,
-            map: this.map,
+            map: this.map.relief,
         });
         this.units.larvae.push(larva);
         
@@ -146,7 +146,7 @@ class Economy {
             x,
             y,
             callbacks: {
-                getMap: () => this.map,
+                getMap: () => this.map.relief,
                 addLarva: (lx, ly, homeX, homeY) => this.addLarva(lx, ly, homeX, homeY),
             },
         }));
@@ -203,11 +203,10 @@ class Economy {
     }
 
     reactorsConsume() {
-        this.buildings.smallReactors
-            .forEach(reactor => {
-                const reachableMycelium = this.buildings.mycelium.filter(mc => this.checkConnection(reactor, mc));
-                reactor.getConsumable(reachableMycelium).forEach(mc => mc.consume());
-            });
+        this.buildings.smallReactors.forEach(reactor => {
+            const consumed = reactor.consumeMycelium(this.buildings.mycelium);
+            if (consumed > 0) this.updated = true;
+        });
     }
 
     getAvailableEnergy() {
@@ -331,10 +330,10 @@ class Economy {
         // 11. расширить грибницу
         this.myceliumExtendAll();
 
-        /*
+        
         // 3. реакторы потребляют мицелий
         this.reactorsConsume();
-        */
+        
        
         // отбросить апдейт, если он случился
         if (this.updated) {

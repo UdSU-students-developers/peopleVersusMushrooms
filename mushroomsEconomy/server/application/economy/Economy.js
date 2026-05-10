@@ -143,6 +143,10 @@ class Economy {
             callbacks: {
                 getMap: () => this.map.relief,
                 addLarva: (lx, ly, homeX, homeY) => this.addLarva(lx, ly, homeX, homeY),
+                getBuildings: () => [
+                    ...this.buildings.smallReactors,
+                    ...this.buildings.incubators,
+                ],
             },
         }));
         this.updatedBuildings.push(this.findEntityByGuid(incubatorGuid).get());

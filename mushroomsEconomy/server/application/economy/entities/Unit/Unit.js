@@ -35,6 +35,8 @@ class Unit {
         this.map = map;
         this._applyGrid();
         this.path = [];
+        this.pathRequested = false;
+        this.currentPathVersion++;
     }
 
     _applyGrid() {

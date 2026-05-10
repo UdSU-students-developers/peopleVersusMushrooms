@@ -48,28 +48,6 @@ class Incubator extends Building {
     }
 
     getFreeCellsAround() {
-        const directions = [
-            { dx: 0, dy: -1 },
-            { dx: 0, dy: 1 },
-            { dx: -1, dy: 0 },
-            { dx: 1, dy: 0 },
-            { dx: -1, dy: -1 },
-            { dx: 1, dy: -1 },
-            { dx: -1, dy: 1 },
-            { dx: 1, dy: 1 },
-        ];
-
-        const map = this.callbacks.getMap();
-        const n = map.length;
-        const m = map[0]?.length ?? 0;
-
-        return directions
-            .map(({ dx, dy }) => ({ x: this.x + dx, y: this.y + dy }))
-            .filter(({ x: nx, y: ny }) =>
-                nx >= 0 && nx < m &&
-                ny >= 0 && ny < n &&
-                (map[ny][nx] === 0 || map[ny][nx] === null)
-            );
     }
 
     createLarvae({ availableEnergy, now = Date.now() }) {

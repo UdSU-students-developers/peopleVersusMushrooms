@@ -19,8 +19,9 @@ class Eblekar extends Unit {
 
     constructor(options: TUnitOptions) {
         super(options);
+        this.visibility = options.visibility ?? 12;
         this.hp = 40;
-        this.maxHp = 40;
+        this.baseHp = 40;
         this.speed = options.speed ?? 1;
         this.attackRange = options.attackRange ?? 0;
         this.lastHealTime = -this.healCooldown;
@@ -50,7 +51,7 @@ class Eblekar extends Unit {
         if (
             !ally.isAlive ||
             !this.canHealAlly(ally) ||
-            ally.hp >= ally.maxHp ||
+            ally.hp >= ally.baseHp ||
             distance >= this.healRange ||
             !this.hasLineOfSight(this.x, this.y, ally.x, ally.y, map)
         ) {
@@ -71,7 +72,7 @@ class Eblekar extends Unit {
                 toY: ally.y,
                 createdAt: Date.now(),
             });
-            ally.hp = Math.min(ally.maxHp, ally.hp + this.healAmount);
+            ally.hp = Math.min(ally.baseHp, ally.hp + this.healAmount);
             this.lastHealTime = currentTime;
             this.isAiming = false;
         }
@@ -84,7 +85,7 @@ class Eblekar extends Unit {
         for (const ally of allies) {
             if (!ally.isAlive || ally.guid === this.guid) continue;
             if (!this.canHealAlly(ally)) continue;
-            if (ally.hp >= ally.maxHp) continue;
+            if (ally.hp >= ally.baseHp) continue;
 
             const dx = ally.x - this.x;
             const dy = ally.y - this.y;

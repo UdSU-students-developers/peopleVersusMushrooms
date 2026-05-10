@@ -19,7 +19,6 @@ const Menu: React.FC<MenuProps> = ({ isOpen, onExit }) => {
 
   return (
     <div className="menu-dropdown">
-      {/* Заголовок теперь часть общего потока flex */}
       <p className="menu-title">ИНТЕРФЕЙС</p>
       
       <div className="size-toggle-buttons">

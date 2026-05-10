@@ -3,7 +3,7 @@ import CONFIG from '../../../config';
 
 export const useStartGameHandler = (mediator: any, answer: any) =>
     (req: Request, res: Response): void => {
-        const { armyGuid, mushroomsArmy, mapGuid, map, buildings } = req.body;
+        const { armyGuid, mushroomsArmy, mapGuid, map, buildings, peopleArmy } = req.body;
 
         // Поддерживаем оба варианта: armyGuid напрямую или mushroomsArmy (от map-сервера)
         const guid = armyGuid ?? mushroomsArmy;
@@ -18,6 +18,7 @@ export const useStartGameHandler = (mediator: any, answer: any) =>
             mapGuid,
             map: map ?? null,
             buildings: buildings ?? [],
+            peopleArmyGuid: peopleArmy ?? null,
         });
 
         res.json(answer.good(true));

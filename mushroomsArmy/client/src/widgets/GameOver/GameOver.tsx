@@ -1,4 +1,3 @@
-// widgets/GameInterface/GameOver/GameOver.tsx
 import React from 'react';
 import './GameOver.css';
 
@@ -13,7 +12,6 @@ const GameOver: React.FC<GameOverProps> = ({ onRestart, onExit }) => {
       <div className="game-overlay-content">
         <h2>ИГРА ОКОНЧЕНА</h2>
         <div className="game-overlay-actions">
-          {/* Добавляем класс game-btn для стилизации по ГОСТу */}
           <button 
             type="button" 
             className="game-btn" 

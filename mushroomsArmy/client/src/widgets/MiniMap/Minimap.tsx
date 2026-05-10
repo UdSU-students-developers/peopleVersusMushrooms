@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useMemo } from 'react';
-import { GameState, TCamera, MapTile } from '../../../../src/pages/Game/types';
+﻿import React, { useEffect, useRef, useMemo } from 'react';
+import { GameState, TCamera, MapTile } from '../../pages/Game/types';
 import './Minimap.css';
 
 interface MinimapProps {
@@ -16,15 +16,25 @@ const getTerrainColor = (tile: MapTile): string => {
   }
 };
 
+const ownBuildingTypes = ['vzryvomor', 'sporovaya_bashnya'];
+const economyBuildingTypes = [
+  'mycelium',
+  'incubator',
+  'small_bioreactor',
+  'big_bioreactor',
+  'fat_barrel',
+  'iron_barrel',
+  'mine',
+];
+
 const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // 1. Твой расчет точек юнитов (оставляем без изменений)
+  // Точки юнитов и зданий для отображения поверх ландшафта
   const dots = useMemo(() => {
     if (!gameState) return [];
     const rows = gameState.map?.length || 100;
     const cols = gameState.map?.[0]?.length || 100;
-    const ownBuildingTypes = ['vzryvomor', 'sporovaya_bashnya'];
     const clamp = (v: number) => Math.max(0, Math.min(100, v));
 
     const unitDots = gameState.units
@@ -40,7 +50,11 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
       .filter((b) => b.hp > 0 && b.isAlive !== false)
       .map((b) => ({
         guid: b.guid,
-        color: ownBuildingTypes.includes(b.type) ? '#ffd966' : '#f05252',
+        color: ownBuildingTypes.includes(b.type)
+          ? '#ffd966'
+          : economyBuildingTypes.includes(b.type)
+            ? '#a855f7'
+            : '#f05252',
         x: clamp(((b.x + (b.sizeX ?? 1) / 2) / cols) * 100),
         y: clamp(((b.y + (b.sizeY ?? 1) / 2) / rows) * 100),
       }));
@@ -48,29 +62,29 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
     return [...unitDots, ...buildingDots];
   }, [gameState]);
 
-  // 2. НОВАЯ ЛОГИКА: Рамка камеры вместо стрелочки
+  // Позиция и размер рамки камеры на миникарте (в процентах от размера карты)
   const cameraRectStyle = useMemo(() => {
     if (!gameState?.map?.[0]) return { display: 'none' };
 
     const rows = gameState.map.length;
     const cols = gameState.map[0].length;
 
-    // 1. Размер одного тайла на экране прямо сейчас
+    // Размер одного тайла на экране с учётом зума
     const currentTileSize = (window.innerWidth / cols) * camera.scale;
 
-    // 2. Сколько тайлов сейчас помещается в ширину и высоту экрана
+    // Сколько тайлов помещается в окне по ширине и высоте
     const visibleCols = window.innerWidth / currentTileSize;
     const visibleRows = window.innerHeight / currentTileSize;
 
-    // 3. На какой тайл (индекс) смотрит верхний левый угол камеры
+    // Тайл в верхнем левом углу видимой области камеры
     const startTileX = -camera.offsetX / currentTileSize;
     const startTileY = -camera.offsetY / currentTileSize;
 
-    // 4. Переводим положение этого тайла в проценты от общего количества тайлов на карте
+    // Позиция камеры в процентах от всей карты
     const xPct = (startTileX / cols) * 100;
     const yPct = (startTileY / rows) * 100;
 
-    // 5. Размер рамки тоже в процентах от общего кол-ва тайлов
+    // Размер рамки в процентах от всей карты
     const wPct = (visibleCols / cols) * 100;
     const hPct = (visibleRows / rows) * 100;
 
@@ -88,7 +102,7 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
     };
   }, [gameState, camera.offsetX, camera.offsetY, camera.scale]);
 
-  // 3. Твоя отрисовка ландшафта (оставляем как есть)
+  // Рисуем ландшафт на canvas при изменении карты
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !gameState || !gameState.map) return;
@@ -136,7 +150,7 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
           />
         ))}
 
-        {/* НОВАЯ РАМКА */}
+        {/* Рамка видимой области камеры */}
         <div className="minimap-camera-rect" style={{
           ...cameraRectStyle,
           position: 'absolute',

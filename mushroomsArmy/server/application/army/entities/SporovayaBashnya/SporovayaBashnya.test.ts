@@ -7,7 +7,6 @@ const defaultOptions = {
     x: 10,
     y: 15,
     hp: 100,
-    maxHp: 100,
 };
 
 describe('SporovayaBashnya', () => {
@@ -20,7 +19,6 @@ describe('SporovayaBashnya', () => {
     it('параметры при создании соответствуют переданным в конструктор', () => {
         expect(bashnya.guid).toBe('test-sporovaya-bashnya-1');
         expect(bashnya.hp).toBe(100);
-        expect(bashnya.maxHp).toBe(100);
         expect(bashnya.x).toBe(10);
         expect(bashnya.y).toBe(15);
         expect(typeof bashnya.hp).toBe('number');

@@ -88,6 +88,9 @@ const GLOBAL_CONFIG = {
 
         //mushrooms army
         SPAWN_UNIT: '/spawnUnit',
+        
+        //people army
+        TAKE_DAMAGE_PEOPLE_ARMY: '/unit/takeDamage',
     },
 
     ROLES: {

@@ -1,8 +1,11 @@
 const EasyStar = require('easystarjs');
-const CONFIG = require("../../../../config");
 
 class Unit {
-    constructor({ x, y, guid, map, type, visibility }) {
+    constructor({ x, y, guid, map, type, visibility, speed = 0.3 }) {
+        this.guid = guid;
+        this.type = type;
+        this.visibility = visibility;
+
         this.x = x;
         this.y = y;
 
@@ -10,154 +13,102 @@ class Unit {
         this.targetY = y;
 
         this.path = [];
-        this.lastTargetX = x;
-        this.lastTargetY = y;
 
-        this.guid = guid;
         this.hp = 1;
-        this.speed = 3;
-        this.type = type; 
-        this.visibility = visibility;
 
-        this.map = map;
+        this.speed = speed;
+        this.momentum = 0;
+
+        this.grid = map || null;
 
         this.easyStar = new EasyStar.js();
         this.easyStar.setAcceptableTiles([0]);
         this.easyStar.enableSync();
 
-        this._applyGrid();
-        this.pathRequested = false;
-        this.pathVersion = 0;
-        this.currentPathVersion = 0;
+        if (this.grid) {
+            this.easyStar.setGrid(this.grid);
+        }
     }
 
-    setMap(map) {
-        this.map = map;
-        this._applyGrid();
-        this.path = [];
-        this.pathRequested = false;
-        this.currentPathVersion++;
-    }
-
-    _applyGrid() {
-        if (!this.map) return;
-        this.easyStar.setGrid(this.map);
-    }
 
     get() {
         return {
             guid: this.guid,
-            x: Math.floor(this.x),
-            y: Math.floor(this.y),
+            x: this.x,
+            y: this.y,
             type: this.type,
-            visibility: this.visibility
+            visibility: this.visibility,
         };
     }
 
     setTarget(x, y) {
         this.targetX = x;
         this.targetY = y;
+        this._recalculatePath();
     }
 
-    _isWalkable(x, y) {
-        return this.map[y] && this.map[y][x] === 0;
-    }
+    setGrid(grid) {
+        this.grid = grid;
+        this.easyStar.setGrid(grid);
 
-    _findNearestWalkable(targetX, targetY, maxRadius = CONFIG.ECONOMY.UNIT.RADIUS) {
-        if (this._isWalkable(targetX, targetY)) {
-            return { x: targetX, y: targetY };
-        }
-
-        const queue = [{ x: targetX, y: targetY, d: 0 }];
-        const visited = new Set([`${targetX},${targetY}`]);
-
-        while (queue.length) {
-            const { x, y, d } = queue.shift();
-            if (d > maxRadius) break;
-
-            if (this._isWalkable(x, y)) return { x, y };
-
-            const neighbors = [
-                [x+1,y],[x-1,y],[x,y+1],[x,y-1]
-            ];
-
-            for (const [nx, ny] of neighbors) {
-                const key = `${nx},${ny}`;
-                if (!visited.has(key) && this.map[ny] && this.map[ny][nx] !== undefined) {
-                    visited.add(key);
-                    queue.push({ x: nx, y: ny, d: d + 1 });
-                }
-            }
-        }
-
-        return null;
-    }
-
-    calculatePath() {
-        const endX = Math.round(this.targetX);
-        const endY = Math.round(this.targetY);
-
-        const changed =
-            endX !== this.lastTargetX ||
-            endY !== this.lastTargetY;
-
-        if (!changed && this.path.length > 0) return;
-
-        this.lastTargetX = endX;
-        this.lastTargetY = endY;
-
-        this.pathRequested = true;
-        const version = ++this.currentPathVersion;
-
-        this.easyStar.findPath(
-            Math.floor(this.x),
-            Math.floor(this.y),
-            endX,
-            endY,
-            (path) => {
-                if (version !== this.currentPathVersion) return;
-
-                this.path = path ? path.slice(1) : [];
-                this.pathRequested = false;
-            }
-        );
-
-        this.easyStar.calculate();
-    }
-
-    move() {
-        if (this.pathRequested) return;
-
-        if (!this.path.length) return;
-
-        const next = this.path[0];
-
-        const dx = (next.x + 0.5) - this.x;
-        const dy = (next.y + 0.5) - this.y;
-
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist < 0.1) {
-            this.path.shift();
-            return;
-        }
-
-        const step = this.speed * 0.1;
-        const move = Math.min(step, dist);
-
-        this.x += (dx / dist) * move;
-        this.y += (dy / dist) * move;
-    }
-
-    update() {
-        this.calculatePath();
-        this.move();
     }
 
     takeDamage(amount) {
         if (amount <= 0) return false;
         this.hp = Math.max(0, this.hp - amount);
         return this.hp === 0;
+    }
+
+
+    update() {
+        if (this._hasReachedTarget()) return;
+
+        this.momentum += this.speed;
+
+        if (this.momentum >= 1.0) {
+            this.momentum -= 1.0;
+            this._tryStep();
+        }
+    }
+
+
+    _hasReachedTarget() {
+        return this.x === this.targetX && this.y === this.targetY;
+    }
+
+    _tryStep() {
+        if (this.path.length === 0) return;
+
+        const next = this.path[0];
+
+        if (this._isCellWalkable(next.x, next.y)) {
+            this.x = next.x;
+            this.y = next.y;
+            this.path.shift();
+        } else {
+            this._recalculatePath();
+        }
+    }
+
+    _recalculatePath() {
+        if (!this.grid) return;
+        if (this._hasReachedTarget()) return;
+
+        this.path = [];
+
+        this.easyStar.findPath(
+            this.x, this.y,
+            this.targetX, this.targetY,
+            (foundPath) => {
+                this.path = foundPath ? foundPath.slice(1) : [];
+            }
+        );
+
+        this.easyStar.calculate();
+    }
+
+    _isCellWalkable(x, y) {
+        return this.grid?.[y]?.[x] === 0;
     }
 }
 

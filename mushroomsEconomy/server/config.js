@@ -103,7 +103,7 @@ const CONFIG = {
         },
         LARVA: {
             HP: 40,
-            SPEED: 1,
+            SPEED: 0.05,
             WANDER_RADIUS: 4, //радиус блуждания личинки
             TYPE: "larva",
             VISIBILITY: 2,

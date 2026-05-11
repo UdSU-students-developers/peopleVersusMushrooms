@@ -162,10 +162,11 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   }, [mediator]);
 
   useEffect(() => {
-    const UNIT_TYPES: Record<string, 'sporomet' | 'champigneb' | 'eblekar'> = {
+    const UNIT_TYPES: Record<string, 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad'> = {
       Digit1: 'sporomet',
       Digit2: 'champigneb',
       Digit3: 'eblekar',
+      Digit4: 'pizdoglyad',
     };
 
     const handleSpawnKey = (e: KeyboardEvent) => {

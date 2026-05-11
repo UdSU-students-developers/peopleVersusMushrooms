@@ -2,6 +2,7 @@ import Common from "../modules/common/Common";
 import Champigneb, { TSlimePuddle } from "./entities/Champigneb/Champigneb";
 import Eblekar from "./entities/Eblekar/Eblekar";
 import Sporomet from "./entities/Sporomet/Sporomet";
+import Pizdoglyad from "./entities/Pizdoglyad/Pizdoglyad";
 import SporovayaBashnya from "./entities/SporovayaBashnya/SporovayaBashnya";
 import Unit, { TProjectile, TUnitState } from "./entities/Units";
 import { IBuilding, Vzryvomor } from "./entities/Vzryvomor/Vzryvomor";
@@ -264,6 +265,8 @@ export class Army {
             if (unit.isAlive) {
                 if (unit.type === 'eblekar') {
                     (unit as Eblekar).update(this.enemyUnits, this.map, deltaTime, aliveAllies);
+                } else if (unit.type === 'pizdoglyad') {
+                    (unit as Pizdoglyad).update(this.enemyUnits, this.map, deltaTime, aliveAllies);
                 } else {
                     unit.update(this.enemyUnits, this.map, deltaTime);
                 }
@@ -327,7 +330,7 @@ export class Army {
         return !this.isOutsideMap(y, x);
     }
 
-    public spawnUnit(type: 'sporomet' | 'champigneb' | 'eblekar', x: number, y: number, common: Common): { guid: string } | null {
+    public spawnUnit(type: 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad', x: number, y: number, common: Common): { guid: string } | null {
         // Проверяем границы карты
         if (y < 0 || y >= this.map.length || x < 0 || x >= (this.map[0]?.length ?? 0)) {
             return null;
@@ -347,8 +350,10 @@ export class Army {
             this.units.push(new Champigneb({ guid, type, x, y, speed: 3, attackRange: 6 }));
         } else if (type === 'eblekar') {
             this.units.push(new Eblekar({ guid, type, x, y, speed: 1, attackRange: 1, projectiles: this.projectiles }));
+        } else if (type === 'pizdoglyad') {
+            this.units.push(new Pizdoglyad({ guid, type, x, y, speed: 7 }));
         }
-
+        
         return { guid };
     }
 

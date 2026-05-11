@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import CONFIG from '../../../config';
 
-const VALID_UNIT_TYPES = ['sporomet', 'champigneb', 'eblekar'];
+const VALID_UNIT_TYPES = ['sporomet', 'champigneb', 'eblekar', 'pizdoglyad'];
 
 export const useSpawnUnitHandler = (mediator: any, answer: any) =>
     (req: Request, res: Response): void => {

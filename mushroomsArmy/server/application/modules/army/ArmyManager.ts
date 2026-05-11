@@ -11,7 +11,7 @@ type TStartGame = { guid: string; map?: TMap; buildings: TBuildingInput[]; mapGu
 type TTakeDamage = { armyGuid: string; unitGuid: string; amount: number };
 type TMoveUnit = { armyGuid: string; unitGuid: string; x: number; y: number };
 type TGetArmy = string;
-type TSpawnUnit = { armyGuid: string; type: 'sporomet' | 'champigneb' | 'eblekar'; x: number; y: number };
+type TSpawnUnit = { armyGuid: string; type: 'sporomet' | 'champigneb' | 'eblekar'| 'pizdoglyad'; x: number; y: number };
 type TSpawnBuildingUnit = { armyGuid: string; type: 'vzryvomor' | 'sporovaya_bashnya'; x: number; y: number };
 type TUpdateEconomyBuildings = { armyGuid: string; buildings: TBuildingInput[] };
 type TUser = { guid: string; token: string; socketId: string; name: string };
@@ -324,10 +324,10 @@ class ArmyManager extends BaseManager {
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid) as TUser | null;
         if (!user || user.token !== token) return;
 
-        const validTypes: Array<'sporomet' | 'champigneb' | 'eblekar'> = ['sporomet', 'champigneb', 'eblekar'];
+        const validTypes: Array<'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad'> = ['sporomet', 'champigneb', 'eblekar', 'pizdoglyad'];
         if (!validTypes.includes(type as 'sporomet' | 'champigneb' | 'eblekar')) return;
 
-        this.triggerSpawnUnit({ armyGuid: guid, type: type as 'sporomet' | 'champigneb' | 'eblekar', x, y });
+        this.triggerSpawnUnit({ armyGuid: guid, type: type as 'sporomet' | 'champigneb' | 'eblekar'| 'pizdoglyad', x, y });
     }
 }
 

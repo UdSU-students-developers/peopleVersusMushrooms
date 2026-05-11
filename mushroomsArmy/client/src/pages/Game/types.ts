@@ -18,7 +18,7 @@ export type Unit = {
   guid: string;               
   x: number;                
   y: number;                
-  type: 'sporomet' | 'champigneb' | 'eblekar';
+  type: 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad';
   hp: number;               
   visibility?: number;
   isHealing?: boolean;          

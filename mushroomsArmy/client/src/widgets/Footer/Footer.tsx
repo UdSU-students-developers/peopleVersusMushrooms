@@ -37,6 +37,10 @@ const getFooterResources = (state: GameState | null): FooterResource[] => {
       value: aliveUnits.filter((unit) => unit.type === 'eblekar').length,
     },
     {
+      label: 'Пиздогляд',
+      value: aliveUnits.filter((unit) => unit.type === 'pizdoglyad').length,
+    },
+    {
       label: 'Взрывоморов',
       value: aliveBuildings.filter((building) => building.type === 'vzryvomor').length,
     },

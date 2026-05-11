@@ -164,9 +164,9 @@ class GameManager extends BaseManager {
 	updateUnits(guids, units = []) {
 		if (units.length === 0) return;
 		this.sendToMap(GLOBAL_CONFIG.URLS.UPDATE_UNITS, {
-			mapGuid: guids.spectator,
+			mapGuid: guids.mapGuid,
 			userGuid: guids.mushroomsEconomy,
-			units: units,
+			entities: units,
 		})
 	}
 

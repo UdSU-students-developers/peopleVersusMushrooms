@@ -7,7 +7,6 @@ const defaultOptions = {
     x: 50,
     y: 50,
     hp: 8,
-    maxHp: 8,
     speed: 1,
     attackRange: 12,
     type: 'sporomet',
@@ -26,7 +25,6 @@ describe('Sporomet', () => {
     it('параметры при создании соответствуют переданным в конструктор', () => {
         expect(sporomet.guid).toBe('test-sporomet-1');
         expect(sporomet.hp).toBe(8);
-        expect(sporomet.maxHp).toBe(8);
         expect(sporomet.x).toBe(50);
         expect(sporomet.y).toBe(50);
         expect(sporomet.speed).toBe(1);
@@ -48,25 +46,24 @@ describe('Sporomet', () => {
         expect(state.type).toBe('sporomet');
         expect(state.guid).toBe('test-sporomet-1');
         expect(state.hp).toBe(8);
-        expect(state.maxHp).toBe(8);
         expect(state.x).toBe(50);
         expect(state.y).toBe(50);
     });
 
     it('takeDamage(5) снижает hp на 5', () => {
-        sporomet.takeDamage(5, 'physical');
+        sporomet.takeDamage(5);
         expect(sporomet.hp).toBe(3);
         expect(sporomet.isAlive).toBe(true);
     });
 
     it('takeDamage(8) убивает споромета', () => {
-        sporomet.takeDamage(8, 'physical');
+        sporomet.takeDamage(8);
         expect(sporomet.hp).toBe(0);
         expect(sporomet.isAlive).toBe(false);
     });
 
     it('takeDamage с отрицательным уроном не изменяет hp', () => {
-        sporomet.takeDamage(-10, 'physical');
+        sporomet.takeDamage(-10);
         expect(sporomet.hp).toBe(8);
     });
 
@@ -79,7 +76,7 @@ describe('Sporomet', () => {
             poisonEffects: [],
         } as unknown as Unit;
         
-        sporomet.takeDamage(8, 'physical');
+        sporomet.takeDamage(8);
         sporomet.update([enemy], [] as any, 5);
         expect(enemy.takeDamage).not.toHaveBeenCalled();
     });
@@ -145,7 +142,7 @@ describe('Sporomet', () => {
         
         sporomet.update([enemy], [] as any, 0.5);
         
-        expect(enemy.takeDamage).toHaveBeenCalledWith(5, 'poison');
+        expect(enemy.takeDamage).toHaveBeenCalledWith(5);
     });
 
     it('sporomet отступает, если враг слишком близко (дистанция < retreatRange)', () => {
@@ -273,10 +270,10 @@ describe('Sporomet', () => {
         expect(sporomet.isAlive).toBe(true);
     });
 
-    it('споромет получает повышенный урон от огня', () => {
+    it('споромет получает урон', () => {
         const initialHp = sporomet.hp;
-        sporomet.takeDamage(4, 'fire');
-        expect(sporomet.hp).toBe(initialHp - 8);
+        sporomet.takeDamage(4);
+        expect(sporomet.hp).toBe(initialHp - 4);
     });
 
     it('споромет умирает и перестает реагировать на обновления', () => {
@@ -287,10 +284,9 @@ describe('Sporomet', () => {
             takeDamage: jest.fn(),
         } as unknown as Unit;
         
-        sporomet.takeDamage(8, 'physical');
+        sporomet.takeDamage(8);
         expect(sporomet.isAlive).toBe(false);
         
-        // Пытаемся обновить мертвого споромета
         const originalX = sporomet.x;
         sporomet.update([enemy], [] as any, 1);
         

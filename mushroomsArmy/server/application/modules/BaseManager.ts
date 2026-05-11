@@ -97,13 +97,6 @@ class BaseManager {
         );
     }
 
-    sendToMushroomsEconomy<T, K = undefined>(
-        urlPath: string,
-        data: T | null = null
-    ): Promise<K | null> {
-        return this.send(`${GLOBAL_CONFIG.MUSHROOMS_ECONOMY.URL}${urlPath}`, data);
-    }
-
 }
 
 export default BaseManager;

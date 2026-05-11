@@ -6,6 +6,7 @@ type TSporovayaBashnyaOptions = {
     guid: string;
     x: number;
     y: number;
+    hp?: number;
     projectiles?: TProjectile[];
 };
 
@@ -44,7 +45,7 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
         this.guid = options.guid;
         this.x = options.x;
         this.y = options.y;
-        this.hp = 160;
+        this.hp = options.hp ?? 160;
         this.projectiles = options.projectiles ?? [];
     }
 

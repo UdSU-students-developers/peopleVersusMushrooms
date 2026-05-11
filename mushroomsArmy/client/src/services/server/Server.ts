@@ -144,11 +144,6 @@ class Server {
         });
     }
 
-    //оставлено, чтобы не сломать текущие вызовы
-    joinLobby(payload: Record<string, unknown> = {}): void {
-        this.joinToLobby(payload);
-    }
-
     leaveLobby(payload: Record<string, unknown> = {}): void {
         const user = this.getAuthorizedUser();
         if (!user) return;

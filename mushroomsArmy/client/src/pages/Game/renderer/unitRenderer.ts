@@ -1,5 +1,5 @@
-﻿import { Unit, Projectile } from '../types';
-import { UNIT_SRCS, champignebExplImages, VZRYVOMOR_FRAME_SRCS, SPOROVAYA_BASHNYA_SRCS } from './assets';
+import { Unit, Projectile } from '../types';
+import { UNIT_SRCS, PIZDOGLYAD_SRCS, champignebExplImages, VZRYVOMOR_FRAME_SRCS, SPOROVAYA_BASHNYA_SRCS } from './assets';
 import { isImageDrawable, tryDrawImageScaled, getBuildingImage } from './buildingRenderer';
 import {
   getVzryvomorFrameKey,
@@ -14,6 +14,7 @@ const MAX_HP: Record<string, number> = {
   eblekar: 40,
   vzryvomor: 70,
   sporovaya_bashnya: 160,
+  pizdoglyad: 2,
 };
 
 const ECONOMY_BUILDING_CONFIG: Record<string, { label: string; color: string }> = {
@@ -28,9 +29,23 @@ const ECONOMY_BUILDING_CONFIG: Record<string, { label: string; color: string }> 
 
 export const getMaxHp = (type: string): number => MAX_HP[type] ?? 100;
 
+const pizdoglyadImages: { idle: HTMLImageElement; walk: HTMLImageElement } = {
+  idle: Object.assign(new Image(), { src: PIZDOGLYAD_SRCS.idle }),
+  walk: Object.assign(new Image(), { src: PIZDOGLYAD_SRCS.walk }),
+};
+
+const prevUnitPositions = new Map<string, { x: number; y: number }>();
+
 const unitImages: Record<string, HTMLImageElement> = {};
 
 function getUnitImage(unit: Unit): HTMLImageElement | undefined {
+  if (unit.type === 'pizdoglyad') {
+    const prev = prevUnitPositions.get(unit.guid);
+    const isMoving = prev !== undefined && (prev.x !== unit.x || prev.y !== unit.y);
+    prevUnitPositions.set(unit.guid, { x: unit.x, y: unit.y });
+    return isMoving ? pizdoglyadImages.walk : pizdoglyadImages.idle;
+  }
+
   if (!unitImages[unit.type]) {
     const src = UNIT_SRCS[unit.type];
     if (src === undefined) return undefined;
@@ -358,7 +373,7 @@ export function drawUnits(
     if (unit.hp <= 0) return;
     const ux = Math.floor(unit.x);
     const uy = Math.floor(unit.y);
-    const isFriendly = unit.type === 'sporomet' || unit.type === 'champigneb' || unit.type === 'eblekar';
+    const isFriendly = unit.type === 'sporomet' || unit.type === 'champigneb' || unit.type === 'eblekar' || unit.type === 'pizdoglyad';
     const unitVisibleNow = circularVisibilityMask[uy]?.[ux] === true;
     if (!unitVisibleNow && !isFriendly) return;
 

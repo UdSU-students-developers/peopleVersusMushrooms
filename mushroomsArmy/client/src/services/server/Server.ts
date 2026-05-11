@@ -188,7 +188,7 @@ class Server {
         });
     }
 
-    spawnUnit(type: 'sporomet' | 'champigneb' | 'eblekar', x: number, y: number): void {
+    spawnUnit(type: 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad', x: number, y: number): void {
         const user = this.getAuthorizedUser();
         if (!user) return;
 

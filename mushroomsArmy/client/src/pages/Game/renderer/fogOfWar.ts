@@ -48,7 +48,7 @@ export function syncExplorationMemory(map: MapTile[][]): void {
 }
 
 function isFriendlyUnit(unit: Unit): boolean {
-  return unit.type === 'sporomet' || unit.type === 'champigneb' || unit.type === 'eblekar';
+  return unit.type === 'sporomet' || unit.type === 'champigneb' || unit.type === 'eblekar' || unit.type === 'pizdoglyad';
 }
 
 function isFriendlyBuildingType(type: string): boolean {

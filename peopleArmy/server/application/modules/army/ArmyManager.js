@@ -174,6 +174,24 @@ class ArmyManager extends BaseManager {
         });
     }
 
+    /**
+     * Отправить урон по зданию в экономику грибов.
+     * Вызывается из Army.shotUnits() когда юнит атакует здание-мишень.
+     * @param {{ guid: string, damage: number, economyGuid: string }} param
+     */
+    async damageMushroomsEconomy({ guid, damage, economyGuid }) {
+        if (!guid || !economyGuid || !Number.isFinite(Number(damage))) {
+            console.log('[damageMushroomsEconomy] некорректные параметры', { guid, damage, economyGuid });
+            return null;
+        }
+        console.log(`[damageMushroomsEconomy] атака здания ${guid}, урон: ${damage}, economyGuid: ${economyGuid}`);
+        return this.sendToMushroomsEconomy('/damage', {
+            guid,
+            damage: Number(damage),
+            economyGuid,
+        });
+    }
+
     /* EVENTS */
     async eventStartGame({ mapGuid, guids }) {
         if (!mapGuid || !guids || !guids.peopleArmy) {
@@ -195,12 +213,38 @@ class ArmyManager extends BaseManager {
                 this.army[guid].destructor();
                 delete this.army[guid];
             }
-            this.army[guid] = new Army({ guids, mapGuid, map, buildings: [], unitTypes: this.unitTypes, common: this.common, guid,
+
+            const army = new Army({
+                guids,
+                mapGuid,
+                map,
+                buildings: [],
+                unitTypes: this.unitTypes,
+                common: this.common,
+                guid,
                 callbacks: {
                     update: (guid, data) => this.updateArmyCallback(guid, data),
                     takeDamage: (payload) => this.damageMushroomsUnit(payload),
+                    // новый callback — атака по зданиям грибной экономики
+                    damageMushroomsEconomy: (payload) => this.damageMushroomsEconomy(payload),
                 }
             });
+
+            // Добавляем фейковые здания-мишени (здания из экономики грибов)
+            // guid зданий и economyGuid грибов берём из guids лобби
+            if (guids.mushroomsEconomy) {
+                army.setFakeBuildingTargets([
+                    {
+                        guid: 'mushrooms_main_building',
+                        x: 90,  // координаты стороны противника (подправь под реальные)
+                        y: 90,
+                        economyGuid: guids.mushroomsEconomy,
+                    },
+                ]);
+            }
+
+            this.army[guid] = army;
+
             this.io.to(user.socketId).emit(
                 this.SOCKET.START_GAME,
                 this.answer.good({ map })

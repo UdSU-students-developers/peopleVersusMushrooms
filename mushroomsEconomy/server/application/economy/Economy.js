@@ -44,6 +44,8 @@ class Economy {
             larvae: [], //личинки
         };
 
+        this.updatedUnits = [];
+
         this.myceliumGrid = null;
         // данные про врагов
         this.enemyBuildings = [];
@@ -110,14 +112,17 @@ class Economy {
 
     addLarva(x, y, homeX, homeY) {
         const larvaGuid = this.common.guid();
-        this.units.larvae.push(new Larva({
+        const larva = new Larva({
             x: x,
             y: y,
             homeX: homeX,
             homeY: homeY,
             guid: larvaGuid,
             map: this.map,
-        }));
+        });
+        this.units.larvae.push(larva);
+        
+        this.updatedUnits.push(larva.get());
     }
 
     // Методы добавления объектов
@@ -165,6 +170,12 @@ class Economy {
         return updateBuildings;
     }
 
+    getUpdatedUnits() {
+        const updateUnits = this.updatedUnits;
+        this.updatedUnits = [];
+        return updateUnits;
+    }
+
 
     // 1. вырасти грибочки
     myceliumGrow(mycelium) {
@@ -175,14 +186,15 @@ class Economy {
 
     // 2. расширить грибницу при возможности
     myceliumExtend(mycelium) {
-        if (mycelium.canExtend(this.map, this.buildings.mycelium, this.buildings, this.enemyBuildings)) {
-            const result = mycelium.extend(this.map, this.buildings.mycelium, this.buildings, this.enemyBuildings);
-            if (!result) {
-                return;
-            }
-            this.addMycelium(result.x, result.y);
-            this.updated = true;
-        }
+        const relief = this.map.relief;
+        const freeCells = mycelium.canExtend(relief, this.buildings.mycelium, this.buildings, this.enemyBuildings);
+        if (!freeCells.length) return;
+
+        const result = mycelium.extend(freeCells);
+        if (!result) return;
+
+        this.addMycelium(result.x, result.y);
+        this.updated = true;
     }
 
     // 3. передать боевых юнитов в армию (callback)
@@ -298,11 +310,6 @@ class Economy {
         this.updated = true;
 
         return true;
-    }
-
-    // 11. расширить грибницу
-    myceliumExtendAll() {
-        this.buildings.mycelium.forEach(mycelium => this.myceliumExtend(mycelium));
     }
 
     update() {

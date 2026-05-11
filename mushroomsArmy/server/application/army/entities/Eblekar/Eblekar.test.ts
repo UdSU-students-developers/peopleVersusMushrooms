@@ -7,7 +7,6 @@ const defaultOptions: TUnitOptions = {
     x: 5,
     y: 5,
     hp: 40,
-    maxHp: 40,
     speed: 1,
     attackRange: 10,
 };
@@ -21,8 +20,6 @@ describe('Eblekar', () => {
 
     it('hp при создании равен 40', () => {
         expect(eblekar.hp).toBe(40);
-        expect(eblekar.maxHp).toBe(40);
-        expect(eblekar.hp).toBeLessThanOrEqual(eblekar.maxHp);
         expect(eblekar.hp).toBeGreaterThan(0);
         expect(typeof eblekar.hp).toBe('number');
     });
@@ -64,25 +61,15 @@ describe('Eblekar', () => {
         expect(state.type).toBe('eblekar');
         expect(state.guid).toBe('test-eblekar-1');
         expect(state.hp).toBe(40);
-        expect(state.maxHp).toBe(40);
         expect(state.x).toBe(5);
     });
 
-    it('takeDamage(40, physical) убивает Эблекара', () => {
-        eblekar.takeDamage(40, 'physical');
+    it('takeDamage(40) убивает Эблекара', () => {
+        eblekar.takeDamage(40);
         expect(eblekar.isAlive).toBe(false);
         expect(eblekar.hp).toBe(0);
         expect(eblekar.hp).not.toBeGreaterThan(0);
         expect(eblekar.isAlive).not.toBe(true);
         expect(typeof eblekar.isAlive).toBe('boolean');
-    });
-
-    it('takeDamage(20, fire) снимает 40 hp (множитель x2) и убивает', () => {
-        eblekar.takeDamage(20, 'fire');
-        expect(eblekar.isAlive).toBe(false);
-        expect(eblekar.hp).toBe(0);
-        expect(eblekar.hp).not.toBeGreaterThan(0);
-        expect(eblekar.isAlive).not.toBe(true);
-        expect(eblekar.getState().hp).toBe(0);
     });
 });

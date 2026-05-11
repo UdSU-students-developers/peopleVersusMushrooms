@@ -32,6 +32,17 @@ const CONFIG = {
     ECONOMY: {
         INTERVAL: 200, //ms (единица времени)
 
+        DIRECTIONS: [
+            { dx:  0, dy: -1 },
+            { dx:  0, dy:  1 },
+            { dx: -1, dy:  0 },
+            { dx:  1, dy:  0 },
+            { dx: -1, dy: -1 },
+            { dx:  1, dy: -1 },
+            { dx: -1, dy:  1 },
+            { dx:  1, dy:  1 },
+        ],
+
         MYCELIUM: {
             TYPE: 'mycelium',
             HP: 1,
@@ -87,11 +98,15 @@ const CONFIG = {
         WORKER: {
             HP: 100,
             SPEED: 1,
+            TYPE: "worker",
+            VISIBILITY: 3,
         },
         LARVA: {
             HP: 40,
             SPEED: 1,
             WANDER_RADIUS: 4, //радиус блуждания личинки
+            TYPE: "larva",
+            VISIBILITY: 2,
         }
     }
 };

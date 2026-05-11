@@ -62,7 +62,7 @@ class MapManager extends BaseManager {
         entities.forEach(entity => map[method]({ ...entity, role }));
         if (map.playerGuids.spectator) {
             const spectatorGuid = map.playerGuids.spectator;
-            const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
+            const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, spectatorGuid);
             this.io.to(user.socketId).emit(MESSAGES.UPDATE_MAP, map.get())
         }
         return this.answer.good(true);

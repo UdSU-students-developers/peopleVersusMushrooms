@@ -1,11 +1,15 @@
 const Unit = require("./Unit")
 const CONFIG = require("../../../../config");
 
-const { HP, SPEED, WANDER_RADIUS } = CONFIG.ECONOMY.LARVA
+const { HP, SPEED, WANDER_RADIUS, TYPE, VISIBILITY } = CONFIG.ECONOMY.LARVA
 
 class Larva extends Unit {
     constructor(options) {
-        super(options);
+        super({
+            ...options,
+            type: TYPE,
+            visibility: VISIBILITY
+        });
 
         this.homeX = options.homeX || options.x;
         this.homeY = options.homeY || options.y;
@@ -14,6 +18,15 @@ class Larva extends Unit {
         this.speed = SPEED;
         this.growthScale = 0;
         this.wanderRadius = WANDER_RADIUS;
+    }
+
+    get() {
+        return {
+            ...super.get(),
+            hp: this.hp,
+            speed: this.speed,
+            growthScale: this.growthScale
+        };
     }
 
     update() {

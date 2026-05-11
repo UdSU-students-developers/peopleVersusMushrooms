@@ -30,9 +30,8 @@ class Larva extends Unit {
     }
 
     update() {
-        if (this.pathRequested) return;
-
         if (this.path.length > 0) {
+            this.calculatePath();
             this.move();
         } else {
             this.goingAroundIncubator();

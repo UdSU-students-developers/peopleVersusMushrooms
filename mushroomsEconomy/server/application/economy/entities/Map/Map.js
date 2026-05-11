@@ -48,19 +48,22 @@ class Map {
         }
     }
 
-    updateLarvaGrid(mycelium) {
+    updateLarvaGrid(buildings) {
         if (!this.relief || !this.relief.length) return;
 
         const rows = this.relief.length;
         const cols = this.relief[0].length;
 
-        this.larvaGrid = this.relief.map(row =>
-            row.map(cell => (cell === 0 ? 0 : 1))
-        );
+        this.larvaGrid = Array(rows).fill().map(() => Array(cols).fill(0));
 
-        for (const mc of mycelium) {
-            if (mc.y >= 0 && mc.y < rows && mc.x >= 0 && mc.x < cols) {
-                this.larvaGrid[mc.y][mc.x] = 0;
+        const allBuildings = [
+            ...(buildings.smallReactors || []),
+            ...(buildings.incubators || []),
+        ];
+
+        for (const building of allBuildings) {
+            if (building.x >= 0 && building.x < cols && building.y >= 0 && building.y < rows) {
+                this.larvaGrid[building.y][building.x] = 1;
             }
         }
     }

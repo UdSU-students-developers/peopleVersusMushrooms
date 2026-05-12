@@ -2,14 +2,72 @@ const GLOBAL_CONFIG = require('../../../../../../global/globalConfig');
 
 class Map {
     constructor() {
-        this.resources = null, // массив известных ресурсов [{x, y, value}]
-        this.relief = this._initEmptyMap()
+        this.resources = null;
+        this.relief = this._initEmptyMap();
+
+        this.myceliumGrid = null;
+        this.larvaGrid = null; 
     }
 
     get() {
         return {
             resources: this.resources,
             relief: this.relief,
+        };
+    }
+
+    setResources(resources) {
+        this.resources = resources;
+    }
+
+    setRelief(relief) {
+        this.relief = relief;
+    }
+
+
+    updateLarvaGrid(buildings) {
+        if (!this.relief?.length) return;
+
+        const rows = this.relief.length;
+        const cols = this.relief[0].length;
+
+        if (!this.larvaGrid) {
+            this.larvaGrid = Array.from({ length: rows }, () => Array(cols).fill(0));
+        } else {
+            for (let y = 0; y < rows; y++) {
+                this.larvaGrid[y].fill(0);
+            }
+        }
+
+        const blockingBuildings = [
+            ...(buildings.smallReactors || []),
+            ...(buildings.incubators || []),
+        ];
+
+        for (const building of blockingBuildings) {
+            const { x, y } = building;
+            if (x >= 0 && x < cols && y >= 0 && y < rows) {
+                this.larvaGrid[y][x] = 1;
+            }
+        }
+    }
+
+    updateMyceliumGrid(myceliumList) {
+        const { MAP_SIZE } = GLOBAL_CONFIG;
+
+        if (!this.myceliumGrid) {
+            this.myceliumGrid = Array.from({ length: MAP_SIZE }, () => Array(MAP_SIZE).fill(0));
+        } else {
+            for (let y = 0; y < MAP_SIZE; y++) {
+                this.myceliumGrid[y].fill(0);
+            }
+        }
+
+        for (const mc of myceliumList) {
+            const { x, y } = mc;
+            if (x >= 0 && x < MAP_SIZE && y >= 0 && y < MAP_SIZE) {
+                this.myceliumGrid[y][x] = 1;
+            }
         }
     }
 
@@ -24,34 +82,6 @@ class Map {
         }
         return map;
     }
-
-    setResources(resources) {
-        this.resources = resources;
-    }
-
-    setRelief(relief) {
-        this.relief = relief;
-        //this.buildGridFromRelief();
-    }
-
-    /*
-    buildGridFromRelief() {
-        if (!this.relief) return;
-
-        this.map = this.relief.map(row =>
-            row.map(tile => {
-                if (tile === null) return 3;
-                return tile;
-            })
-        );
-
-        const allUnits = [
-            ...this.units.workers,
-            ...this.units.larvae
-        ];
-
-        allUnits.forEach(u => u.setMap(this.map));
-    } */
 }
 
 module.exports = Map;

@@ -13,6 +13,7 @@ import {
     useStartGameHandler,
     useGetLobbiesHandler,
     useSpawnBuildingHandler,
+    useUpdateEconomyBuildingsHandler,
 } from './handlers';
 
 type TRouterOptions = {
@@ -24,13 +25,14 @@ function Router({ answer, mediator }: TRouterOptions): ExpressRouter {
     const router = express.Router();
 
     router.post(GLOBAL_CONFIG.URLS.LOBBY_UPDATED, useLobbyUpdatedHandler(mediator, answer));
-    router.post('/moveUnit',      useMoveUnitHandler(mediator, answer));
-    router.post('/spawnUnit',     useSpawnUnitHandler(mediator, answer));
-    router.post('/getArmy',       useGetArmyHandler(mediator, answer));
-    router.post('/takeDamage',    useTakeDamageHandler(mediator, answer));
-    router.post('/startGame',     useStartGameHandler(mediator, answer));
-    router.post('/getLobbies',    useGetLobbiesHandler(answer));
-    router.post('/spawnBuilding', useSpawnBuildingHandler(mediator, answer));
+    router.post('/moveUnit',               useMoveUnitHandler(mediator, answer));
+    router.post('/spawnUnit',              useSpawnUnitHandler(mediator, answer));
+    router.post('/getArmy',                useGetArmyHandler(mediator, answer));
+    router.post('/takeDamage',             useTakeDamageHandler(mediator, answer));
+    router.post('/startGame',              useStartGameHandler(mediator, answer));
+    router.post('/getLobbies',             useGetLobbiesHandler(answer));
+    router.post('/spawnBuilding',          useSpawnBuildingHandler(mediator, answer));
+    router.post('/updateEconomyBuildings', useUpdateEconomyBuildingsHandler(mediator, answer));
 
     router.all('/*path', notFoundHandler);
     return router;

@@ -33,6 +33,17 @@ const CONFIG = {
     ECONOMY: {
         INTERVAL: 200, //ms (единица времени)
 
+        DIRECTIONS: [
+            { dx:  0, dy: -1 },
+            { dx:  0, dy:  1 },
+            { dx: -1, dy:  0 },
+            { dx:  1, dy:  0 },
+            { dx: -1, dy: -1 },
+            { dx:  1, dy: -1 },
+            { dx: -1, dy:  1 },
+            { dx:  1, dy:  1 },
+        ],
+
         MYCELIUM: {
             TYPE: 'mycelium',
             HP: 1,
@@ -57,7 +68,7 @@ const CONFIG = {
             CONSUMPTION: 1, // энергопотребление за единицу времени
             PRODUCTION: 1,  // сколько производит за единицу времени
             CAPACITY: 60, // сколько железа доступно для производства личинок
-            LARVA_ENERGY_COST: 60,
+            LARVA_ENERGY_COST: 20,
             LARVA_COOLDOWN_MS: 3000,
             VISIBILITY: 5,
         },
@@ -93,7 +104,7 @@ const CONFIG = {
         },
         LARVA: {
             HP: 40,
-            SPEED: 1,
+            SPEED: 0.05,
             WANDER_RADIUS: 4, //радиус блуждания личинки
             TYPE: "larva",
             VISIBILITY: 2,

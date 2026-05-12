@@ -1,21 +1,21 @@
-const Unit = require("./Unit")
-const CONFIG = require("../../../../config");
+const Unit = require('./Unit');
+const CONFIG = require('../../../../config');
 
-const { HP, SPEED, WANDER_RADIUS, TYPE, VISIBILITY } = CONFIG.ECONOMY.LARVA
+const { HP, SPEED, WANDER_RADIUS, TYPE, VISIBILITY } = CONFIG.ECONOMY.LARVA;
 
 class Larva extends Unit {
     constructor(options) {
         super({
             ...options,
             type: TYPE,
-            visibility: VISIBILITY
+            visibility: VISIBILITY,
+            speed: SPEED,
         });
 
-        this.homeX = options.homeX || options.x;
-        this.homeY = options.homeY || options.y;
+        this.homeX = options.homeX ?? options.x;
+        this.homeY = options.homeY ?? options.y;
 
         this.hp = HP;
-        this.speed = SPEED;
         this.growthScale = 0;
         this.wanderRadius = WANDER_RADIUS;
     }
@@ -24,29 +24,46 @@ class Larva extends Unit {
         return {
             ...super.get(),
             hp: this.hp,
-            speed: this.speed,
-            growthScale: this.growthScale
+            growthScale: this.growthScale,
         };
     }
 
     update() {
-        if (this.pathRequested) return;
+        if (this._hasReachedTarget()) {
+            this._wanderAroundHome();
+        }
 
-        if (this.isMoving) {
-            this.moveOneStep();
-        } else {
-            this.goingAroundIncubator();
+        super.update();
+    }
+
+
+    _wanderAroundHome() {
+        const target = this._pickRandomWalkableCell();
+        if (target) {
+            this.setTarget(target.x, target.y);
         }
     }
 
-    goingAroundIncubator() {
-        const angle = Math.random() * Math.PI * 2;
-        const radius = Math.sqrt(Math.random()) * this.wanderRadius;
-        
-        const targetX = Math.round(this.homeX + Math.cos(angle) * radius);
-        const targetY = Math.round(this.homeY + Math.sin(angle) * radius);
+    _pickRandomWalkableCell() {
+        if (!this.grid) return null;
 
-        this.calcPath({ x: targetX, y: targetY });
+        const rows = this.grid.length;
+        const cols = this.grid[0]?.length ?? 0;
+
+        for (let attempt = 0; attempt < 10; attempt++) {
+            const angle = Math.random() * Math.PI * 2;
+            const radius = Math.sqrt(Math.random()) * this.wanderRadius;
+
+            const x = Math.round(this.homeX + Math.cos(angle) * radius);
+            const y = Math.round(this.homeY + Math.sin(angle) * radius);
+
+            const inBounds = x >= 0 && x < cols && y >= 0 && y < rows;
+            const walkable = inBounds && this.grid[y][x] === 0;
+
+            if (walkable) return { x, y };
+        }
+
+        return null;
     }
 }
 

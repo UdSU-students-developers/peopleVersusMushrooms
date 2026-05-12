@@ -24,8 +24,11 @@ class ChatManager extends BaseManager {
     /* SOCKETS */
 
     handleDisconnect(socket) {
-        this._eventDeleteMessage(this._triggerGetMessageBySocketId(socket.id));
-    };
+        const msg = this._triggerGetMessageBySocketId(socket.id);
+        if (msg) {
+            this._eventDeleteMessage(msg.guid);
+        }
+    }
 
     getMessages(socket) {
         return socket.emit(MESSAGES, this.answer.good(this.messages));
@@ -55,7 +58,7 @@ class ChatManager extends BaseManager {
     _eventDeleteMessage(guid) {
         if (guid && this.messages[guid]) {
             delete this.messages[guid];
-            console.log(`сообщение с guid: ${this.message.guid} удалёно`);
+            console.log(`сообщение с guid: ${guid} удалёно`);
         }
     }
 
@@ -64,7 +67,7 @@ class ChatManager extends BaseManager {
     }
 
     /* TRIGGGERS */
-    
+
     triggerGetUserBySocketId(socketId) {
         return Object.values(this.messages).find(mes => mes.socketId === socketId) || null;
     }

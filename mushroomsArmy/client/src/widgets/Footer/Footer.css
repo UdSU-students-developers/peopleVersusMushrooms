@@ -1,4 +1,4 @@
-/* --- FOOTER LAYOUT --- */
+﻿/* --- FOOTER LAYOUT --- */
 :root {
   --minimap-size: var(--footer-height); 
 }
@@ -16,12 +16,12 @@
   
   background-image:
     linear-gradient(rgba(25, 13, 1, 0.5), rgba(25, 13, 1, 0.5)),
-    url('../../../assets/ui/tree.webp');
+    url('../../assets/ui/tree.webp');
   
   background-size: calc(150px * var(--scale)) calc(150px * var(--scale));
   background-repeat: repeat;
   
-  /* 5. Визуальные эффекты */
+  /* 5. Р’РёР·СѓР°Р»СЊРЅС‹Рµ СЌС„С„РµРєС‚С‹ */
   box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5), 0 -4px 14px rgba(0, 0, 0, 0.35);
   box-sizing: border-box;
 }
@@ -40,7 +40,7 @@
   flex: 1;
 }
 
-/* --- ОБЩИЕ СТИЛИ ДЛЯ РАМОК --- */
+/* --- РћР‘Р©РР• РЎРўРР›Р Р”Р›РЇ Р РђРњРћРљ --- */
 
 .game-economy-resources,
 .game-footer-stats-container {
@@ -57,14 +57,14 @@
   align-items: center;
 }
 
-/* Специфика для ресурсов (левая рамка) */
+/* РЎРїРµС†РёС„РёРєР° РґР»СЏ СЂРµСЃСѓСЂСЃРѕРІ (Р»РµРІР°СЏ СЂР°РјРєР°) */
 .game-economy-resources {
   flex: 0 1 calc(260px * var(--scale));
   min-width: 0;
   overflow: hidden;
 }
 
-/* Специфика для статистики (правая рамка) */
+/* РЎРїРµС†РёС„РёРєР° РґР»СЏ СЃС‚Р°С‚РёСЃС‚РёРєРё (РїСЂР°РІР°СЏ СЂР°РјРєР°) */
 .game-footer-stats-container {
   width: 100%;
   justify-content: space-around;

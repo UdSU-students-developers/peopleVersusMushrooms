@@ -1,22 +1,25 @@
 class Unit {
-    constructor({ guid, x, y, map, easystar }) {
+    constructor({ guid, x, y, map, easystar, type, visibility }) {
         this.guid = guid;
         this.x = x;
         this.y = y;
         this.hp = 1;
         this.speed = 1;
+        this.type = type; 
+        this.visibility = visibility;
 
         this.easystar = easystar;
         this.map = map;    
         
         this.isMoving = false; //Можно ли переместить
         this.path = []; //Маршрут
-        this.inertia = 0; // Накпление инерции
         this.target = null; //клетка цели
         this.pathRequested = false; // флаг, что путь запрошен
-
-        this.pockets = [] //карманы, внутрий склад юнита
+        this.inertia = 0; // Накопление инерции
         
+        this.currentPathVersion = 0; // версия пути для отмены устаревших запросов
+
+        this.pockets = [] //карманы, внутренний склад юнита
     }
 
     get() {
@@ -25,22 +28,90 @@ class Unit {
             x: this.x,
             y: this.y,
             hp: this.hp,
-            speed: this.speed, 
+            speed: this.speed,
+            type: this.type, 
+            visibility: this.visibility,
         };
     }
 
-    calcPath({ x, y }) { //строит путь
+    //проверка, проходима ли клетка
+    _isWalkable(x, y) {
+        return this.map[y] && this.map[y][x] === 0;
+    }
+
+    //поиск ближайшей проходимой клетки к заданным координатам
+    _findNearestWalkable(targetX, targetY, maxRadius = 10) {
+        //если целевая клетка проходима - возвращаем её
+        if (this._isWalkable(targetX, targetY)) {
+            return { x: targetX, y: targetY };
+        }
+        
+        const queue = [{ x: targetX, y: targetY, dist: 0 }];
+        const visited = new Set();
+        visited.add(`${targetX},${targetY}`);
+        
+        while (queue.length > 0) {
+            const current = queue.shift();
+            
+            //если превысили радиус поиска - пропускаем
+            if (current.dist > maxRadius) continue;
+            
+            //проверяем соседние клетки в 4 направления
+            const neighbors = [
+                { x: current.x + 1, y: current.y, dist: current.dist + 1 },
+                { x: current.x - 1, y: current.y, dist: current.dist + 1 },
+                { x: current.x, y: current.y + 1, dist: current.dist + 1 },
+                { x: current.x, y: current.y - 1, dist: current.dist + 1 }
+            ];
+            
+            for (const neighbor of neighbors) {
+                const key = `${neighbor.x},${neighbor.y}`;
+                
+                //проверяем границы карты
+                if (neighbor.x < 0 || neighbor.x >= this.map[0].length) continue;
+                if (neighbor.y < 0 || neighbor.y >= this.map.length) continue;
+                
+                //если уже посещали - пропускаем
+                if (visited.has(key)) continue;
+                visited.add(key);
+                
+                //если клетка проходима - возвращаем её
+                if (this._isWalkable(neighbor.x, neighbor.y)) {
+                    return { x: neighbor.x, y: neighbor.y };
+                }
+                
+                //иначе добавляем в очередь для дальнейшего поиска
+                if (neighbor.dist <= maxRadius) {
+                    queue.push(neighbor);
+                }
+            }
+        }
+        
+        //ниче не нашли
+        return null;
+    }
+
+    //строит путь
+    calcPath({ x, y }) {
         this.target = { x, y };
         this.pathRequested = true;
+        
+        //увеличиваем версию пути для отмены устаревших запросов
+        this.currentPathVersion++;
+        const version = this.currentPathVersion;
 
         if (this.easystar.setGrid) this.easystar.setGrid(this.map);
 
         this.easystar.findPath(this.x, this.y, this.target.x, this.target.y, (path) => {
-            if (path) {
+            //если версия не совпадает - игнорируем
+            if (version !== this.currentPathVersion) return;
+            
+            if (path && path.length > 0) {
                 this.path = path;
+                this.path.shift(); // удаляем текущую позицию
                 this.isMoving = true;
             } else {
-                this.path = null;
+                this.path = [];
                 this.isMoving = false;
             }
             this.pathRequested = false;
@@ -49,60 +120,16 @@ class Unit {
         this.easystar.calculate();
     }
 
-    _recalculatePath() { // Перестраивает путь к текущей цели
-        if (!this.target) return;
-        this.calcPath({ x: this.target.x, y: this.target.y });
-    }
-
-    moveOneStep() { // Продвигает юнита на один шаг
-        if (!this.isMoving) return false;
-
-        if (this.pathRequested) return false;
-
-        if (!this.path || this.path.length === 0) {
-            this.isMoving = false;
-            return false;
-        }
-
-        this.inertia += this.speed;
-        if (this.inertia < 1) return false;
-
-        let nextStep = this.path[0];
-        if (nextStep.x === this.x && nextStep.y === this.y) {
-            this.path.shift();
-            nextStep = this.path[0];
-        }
-
-        if (!nextStep) {
-            this.isMoving = false;
-            this.inertia = 0;
-            return false;
-        }
-
-        const isWalkable = this.map[nextStep.y] && this.map[nextStep.y][nextStep.x] === 0;
-        if (!isWalkable) {
-            this._recalculatePath();
-            this.isMoving = false;  
-            this.inertia = 0;
-            return false;
-        }
-
-        this.inertia -= 1;
-
-        this.x = nextStep.x;
-        this.y = nextStep.y;
-        this.path.shift();
-
-        if (this.path.length === 0) {
-            this.isMoving = false;
-        }
-
-        return true;
-    }
-
     //установка цели
     setTarget({x, y}) {
-  
+        //находим ближайшую проходимую клетку к цели
+        const walkableTarget = this._findNearestWalkable(x, y);
+        
+        if (!walkableTarget) {
+            //цель недостижима - ниче не делаем
+            return;
+        }
+        
         //сбрасываем старую цель и путь
         this.target = null;
         this.path = [];
@@ -110,31 +137,56 @@ class Unit {
         this.pathRequested = false;
         
         //устанавливаем цель и строим путь
-        this.calcPath({ x, y });
+        this.calcPath({ x: walkableTarget.x, y: walkableTarget.y });
     }
 
+    
     move() {
-        //если нет цели -> определить её
-        //если цель отличается от текущей цели -> сбросить цель
-        //если нет пути -> найти путь до цели
-        //если есть найденный путь -> идти к цели
-        //если накопилась инерция, сделать шаг
-        //если клетка, на которую хочет наступить ненаступаема -> сбросить путь
-        
         //если нет цели - выходим
         if (!this.target) return;
         
         //если путь пустой - пробуем построить
-        if (this.path.length === 0) {
-            if (!this.pathRequested) {
-                this.calcPath({ x: this.target.x, y: this.target.y });
-            }
+        if (this.path.length === 0 && !this.pathRequested) {
+            this.calcPath({ x: this.target.x, y: this.target.y });
             return;
         }
         
-        //есть найденный путь -> идти к цели
-        //если накопилась инерция, сделать шаг
-        this.moveOneStep();
+        //если идет запрос пути - ждем
+        if (this.pathRequested) return;
+        
+        //если путь пустой - выходим
+        if (this.path.length === 0) return;
+        
+        //берем следующий шаг
+        const step = this.path[0];
+        
+        //если клетка, на которую хочет наступить, непроходима - сбросить путь
+        if (!this._isWalkable(step.x, step.y)) {
+            this.calcPath({ x: this.target.x, y: this.target.y });
+            return;
+        }
+        
+        //копим инерцию
+        this.inertia += this.speed;
+        if (this.inertia < 1) return;
+        
+        //делаем шаг
+        this.inertia -= 1;
+        this.x = step.x;
+        this.y = step.y;
+        this.path.shift(); // удаляем пройденную клетку из пути
+        
+        //проверяем, достигли ли цели
+        if (this.x === this.target.x && this.y === this.target.y) {
+            this.target = null;
+            this.isMoving = false;
+        }
+    }
+
+    takeDamage(amount) {
+        if (amount <= 0) return false;
+        this.hp = Math.max(0, this.hp - amount);
+        return this.hp === 0;
     }
 }
 

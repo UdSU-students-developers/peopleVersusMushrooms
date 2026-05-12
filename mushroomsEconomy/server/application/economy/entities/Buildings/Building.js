@@ -33,6 +33,7 @@ class Building {
 
     get() {
         return {
+            guid: this.guid,
             x: this.x,
             y: this.y,
             type: this.type,

@@ -1,10 +1,10 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { MediatorContext } from '../../../App';
-import CONFIG from '../../../config';
+﻿import React, { useContext, useEffect, useState } from 'react';
+import { MediatorContext } from '../../App';
+import CONFIG from '../../config';
 import Minimap from '../MiniMap/Minimap';
 import './Footer.css';
-import { GameState, TCamera } from '../../../pages/Game/types';
-import { camera as globalCamera } from '../../../utils/camera';
+import { GameState, TCamera } from '../../pages/Game/types';
+import { camera as globalCamera } from '../../utils/camera';
 
 type FooterResource = {
   label: string;
@@ -37,6 +37,10 @@ const getFooterResources = (state: GameState | null): FooterResource[] => {
       value: aliveUnits.filter((unit) => unit.type === 'eblekar').length,
     },
     {
+      label: 'Пиздогляд',
+      value: aliveUnits.filter((unit) => unit.type === 'pizdoglyad').length,
+    },
+    {
       label: 'Взрывоморов',
       value: aliveBuildings.filter((building) => building.type === 'vzryvomor').length,
     },
@@ -52,21 +56,18 @@ const Footer: React.FC = () => {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [resources, setResources] = useState<FooterResource[]>(getFooterResources(null));
 
-  // Состояние для отрисовки камеры (синхронизация с глобальным объектом)
   const [cameraState, setCameraState] = useState<TCamera>({ ...globalCamera });
 
   useEffect(() => {
     if (!mediator) return;
 
-    // Подписка на обновление состояния игры для ресурсов
-    const handler = (newState: GameState) => {
+   const handler = (newState: GameState) => {
       setGameState(newState);
       setResources(getFooterResources(newState));
     };
     mediator.subscribe(CONFIG.MEDIATOR.EVENTS.GAME_STATE_UPDATED, handler);
 
-    // Цикл обновления для плавного масштабирования миникарты
-    const interval = setInterval(() => {
+      const interval = setInterval(() => {
       setCameraState({
         offsetX: globalCamera.offsetX,
         offsetY: globalCamera.offsetY,

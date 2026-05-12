@@ -144,11 +144,6 @@ class Server {
         });
     }
 
-    //оставлено, чтобы не сломать текущие вызовы
-    joinLobby(payload: Record<string, unknown> = {}): void {
-        this.joinToLobby(payload);
-    }
-
     leaveLobby(payload: Record<string, unknown> = {}): void {
         const user = this.getAuthorizedUser();
         if (!user) return;
@@ -193,7 +188,7 @@ class Server {
         });
     }
 
-    spawnUnit(type: 'sporomet' | 'champigneb' | 'eblekar', x: number, y: number): void {
+    spawnUnit(type: 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad', x: number, y: number): void {
         const user = this.getAuthorizedUser();
         if (!user) return;
 

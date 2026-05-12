@@ -84,10 +84,13 @@ const GLOBAL_CONFIG = {
         GET_VISIBILITY: '/getVisibility',
         GET_RESOURSE_VISIBILITY: '/getResourseVisibility',
         UPDATE_UNITS: '/updateUnits',
-        UPDATE_BUILDINGS: '/updateBuldings',
+        UPDATE_BUILDINGS: '/updateBuildings',
 
         //mushrooms army
         SPAWN_UNIT: '/spawnUnit',
+        
+        //people army
+        TAKE_DAMAGE_PEOPLE_ARMY: '/unit/takeDamage',
     },
 
     ROLES: {

@@ -158,18 +158,27 @@ class GameManager extends BaseManager {
 	updateBuildings(guids, buildings = []) {
 		if (buildings.length === 0) return;
 		this.sendToMap(GLOBAL_CONFIG.URLS.UPDATE_BUILDINGS, {
-			mapGuid: guids.spectator,
+			mapGuid: guids.mapGuid,
 			userGuid: guids.mushroomsEconomy,
-			buildings: buildings,
+			entities: buildings,
 		})
 	}
 
 	updateUnits(guids, units = []) {
 		if (units.length === 0) return;
 		this.sendToMap(GLOBAL_CONFIG.URLS.UPDATE_UNITS, {
-			mapGuid: guids.spectator,
+			mapGuid: guids.mapGuid,
 			userGuid: guids.mushroomsEconomy,
-			units: units,
+			entities: units,
+		})
+	}
+
+	updateUnits(guids, units = []) {
+		if (units.length === 0) return;
+		this.sendToMap(GLOBAL_CONFIG.URLS.UPDATE_UNITS, {
+			mapGuid: guids.mapGuid,
+			userGuid: guids.mushroomsEconomy,
+			entities: units,
 		})
 	}
 

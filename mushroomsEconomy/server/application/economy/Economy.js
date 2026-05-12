@@ -310,38 +310,6 @@ class Economy {
 
         return true;
     }
-    
-    moveUnit(guid) {
-        const entity = this.findEntityByGuid(guid);
-        if (!entity) return false;
-        const cells = entity.findNearestCell();
-        if (cells.length === 0) return false;
-        const allUnits = [...this.units.workers, ...this.units.larvae];
-
-        let freeCell = null;
-        for (let i = 0; i < cells.length; i++) {
-            const cell = cells[i];
-            let isOccupied = false;
-            for (let j = 0; j < allUnits.length; j++) {
-                const unit = allUnits[j];
-                if (unit.guid !== guid && Math.floor(unit.x) === cell.x && Math.floor(unit.y) === cell.y) {
-                    isOccupied = true;
-                    break;
-                }
-            }
-
-            if (!isOccupied) {
-                freeCell = cell;
-                break;
-            }
-        }
-
-        if (!freeCell) return false;
-
-        entity.setTarget(freeCell.x, freeCell.y);
-        this.updated = true;
-        return true;
-    }
 
     // 11. расширить грибницу
     myceliumExtendAll() {

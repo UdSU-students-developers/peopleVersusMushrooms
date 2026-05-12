@@ -136,6 +136,9 @@ class Unit {
             const newX = currentX + dx;
             const newY = currentY + dy;
 
+            let freeCell = null;
+            for (let i = 0; i < this.visibility.)
+
             if (this.map[newY] && this.map[newY][newX] !== undefined) {
                 cells.push({ x: newX, y: newY });
             }

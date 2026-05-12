@@ -91,6 +91,9 @@ const GLOBAL_CONFIG = {
         
         //people army
         TAKE_DAMAGE_PEOPLE_ARMY: '/unit/takeDamage',
+
+        APPLY_DAMAGE: '/applyDamage',
+        MOVE: '/move',
     },
 
     ROLES: {

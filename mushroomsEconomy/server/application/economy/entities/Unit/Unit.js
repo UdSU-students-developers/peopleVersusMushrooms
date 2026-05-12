@@ -59,6 +59,45 @@ class Unit {
         return this.hp === 0;
     }
 
+    findNearestCell() {
+        const cells = [];
+        const currentX = Math.floor(this.x);
+        const currentY = Math.floor(this.y);
+
+        const directions = [
+            [0, 1], [0, -1], [1, 0], [-1, 0]
+        ];
+
+        const occupiedCells = [];
+
+        if (this.visibility.buildings) {
+            for (let i = 0; i < this.visibility.length; i++) {
+                const building = this.visibility.building[i];
+                const x = Math.floor(building.x);
+                const y = Math.floor(building.y);
+                occupiedCells.push({ x: x, y: y});
+            }
+        }
+
+        for (const [dx, dy] of directions) {
+            const newX = currentX + dx;
+            const newY = currentY + dy;
+
+            if (this.grid[newY] && this.grid[newY][newX] !== undefined) {
+                let isOccupied = false;
+                for (let i = 0; i < occupiedCells.length; i++) {
+                    if (occupiedCells[i].x === newX && occupiedCells[i].y) {
+                       isOccupied = true;
+                       break; 
+                    }
+                }
+
+                if (!isOccupied) cells.push({ x: newX, y: newY });
+            }
+        }
+
+        return cells;
+    }
 
     update() {
         if (this._hasReachedTarget()) return;

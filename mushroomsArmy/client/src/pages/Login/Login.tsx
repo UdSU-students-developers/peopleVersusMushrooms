@@ -15,7 +15,7 @@ const mapLoginError = (error?: TError | null): string => {
     if (!error || typeof error.code !== 'number') {
         return 'Не удалось выполнить вход. Попробуйте снова.';
     }
-    return LOGIN_SERVER_ERRORS[error.code] ?? error.message ?? 'Не удалось выполнить вход.';
+    return LOGIN_SERVER_ERRORS[error.code] ?? error.message ?? 'е удалось выполнить вход.';
 };
 
 const Login: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
@@ -116,19 +116,14 @@ const Login: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
                 </button>
             </div>
             <p className="register-link">
-                Нет аккаунта?{' '}
-                <a
-                    href="#"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        setPage(PAGES.REGISTRATION);
-                    }}
-                >
-                    Зарегистрироваться
-                </a>
+                Нет, аккаунта?{' '}
+                <button type="button" className="text-link-button" onClick={() => setPage(PAGES.REGISTRATION)}>
+                    Зарегестрироваться
+                </button>
             </p>
         </div>
     );
 };
 
 export default Login;
+

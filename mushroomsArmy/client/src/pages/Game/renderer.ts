@@ -51,6 +51,17 @@ import tuman2Src from '../../assets/map/fog/tuman2.png';
 import tuman3Src from '../../assets/map/fog/tuman3.png';
 
 //ассеты перехода воды
+import mountainEdgeTopSrc from '../../assets/map/mountains/mountain-edge-top.png';
+import mountainEdgeRightSrc from '../../assets/map/mountains/mountain-edge-right.png';
+import mountainEdgeBottomSrc from '../../assets/map/mountains/mountain-edge-bottom.png';
+import mountainEdgeLeftSrc from '../../assets/map/mountains/mountain-edge-left.png';
+//ассеты уголков гор
+import mountainCornerTopLeftSrc from '../../assets/map/mountains/mountain-edge-corner-tl.webp';
+import mountainCornerTopRightSrc from '../../assets/map/mountains/mountain-edge-corner-tr.webp';
+import mountainCornerBottomLeftSrc from '../../assets/map/mountains/mountain-edge-corner-bl.webp';
+import mountainCornerBottomRightSrc from '../../assets/map/mountains/mountain-edge-corner-br.webp';
+
+
 import waterEdgeTop from '../../assets/map/water-edges/edge-t.webp';
 import waterEdgeBottom from '../../assets/map/water-edges/edge-b.webp';
 import waterEdgeLeft from '../../assets/map/water-edges/edge-l.webp';
@@ -60,7 +71,7 @@ import waterCornerTopRight from '../../assets/map/water-edges/corner-tr.webp';
 import waterCornerBottomLeft from '../../assets/map/water-edges/corner-bl.webp';
 import waterCornerBottomRight from '../../assets/map/water-edges/corner-br.webp';
 import landCornerSrc from '../../assets/map/water-edges/corner-earth-tr.webp';
-//внутренние уголки (скругление заливов)
+//внутренние уголки (скругление для воды и земли)
 import waterInnerCornerTopLeft from '../../assets/map/water-edges/innerCorner-tl.webp';
 import waterInnerCornerTopRight from '../../assets/map/water-edges/innerCorner-tr.webp';
 import waterInnerCornerBottomLeft from '../../assets/map/water-edges/innerCorner-bl.webp';
@@ -68,12 +79,21 @@ import waterInnerCornerBottomRight from '../../assets/map/water-edges/innerCorne
 //декорации ляляля
 import bushImgSrc from '../../assets/map/decoration/bushbush.webp';
 import funnyTruovFlower from '../../assets/map/decoration/TrusovFlower2.webp';
+import cleanScullSrc from '../../assets/map/decoration/clean-scull.webp';
+import scullWithSwordSrc from '../../assets/map/decoration/scull-with-sword.webp';
+import scullSrc from '../../assets/map/decoration/scull.webp';
 
 const funnyFlower = new Image();
 funnyFlower.src = funnyTruovFlower;
 
 const bushImg = new Image();
 bushImg.src = bushImgSrc;
+const plainDecorSrcs = [cleanScullSrc, scullWithSwordSrc, scullSrc];
+const plainDecorImages: HTMLImageElement[] = plainDecorSrcs.map(src => {
+  const img = new Image();
+  img.src = src;
+  return img;
+});
 
 const edgeImages = {
   top: new Image(),
@@ -144,6 +164,23 @@ const waterLilies = [lilyWhiteImg, lilyYellowImg, lilyBaseImg];
 
 const mountainImg = new Image();
 mountainImg.src = mountainsTextureSrc;
+const mountainEdgeTopImg = new Image();
+mountainEdgeTopImg.src = mountainEdgeTopSrc;
+const mountainEdgeRightImg = new Image();
+mountainEdgeRightImg.src = mountainEdgeRightSrc;
+const mountainEdgeBottomImg = new Image();
+mountainEdgeBottomImg.src = mountainEdgeBottomSrc;
+const mountainEdgeLeftImg = new Image();
+mountainEdgeLeftImg.src = mountainEdgeLeftSrc;
+//уголки гор для переходов на равнину
+const mountainCornerTopLeftImg = new Image();
+mountainCornerTopLeftImg.src = mountainCornerTopLeftSrc;
+const mountainCornerTopRightImg = new Image();
+mountainCornerTopRightImg.src = mountainCornerTopRightSrc;
+const mountainCornerBottomLeftImg = new Image();
+mountainCornerBottomLeftImg.src = mountainCornerBottomLeftSrc;
+const mountainCornerBottomRightImg = new Image();
+mountainCornerBottomRightImg.src = mountainCornerBottomRightSrc;
 
 /** Туман войны: несколько текстур, детерминированный выбор по координатам ячейки */
 const FOG_WAR_TEXTURE_SRCS = [tumanSrc, tuman2Src, tuman3Src] as const;
@@ -398,6 +435,7 @@ const buildingAnimState: Record<string, { frame: number; lastFrameTime: number }
  * Обновляет состояние анимации взрывомора и возвращает индекс кадра 0 … frameCount-1.
  * При isExploding=false кадр сбрасывается (запись удаляется), при отрисовке считается 0.
  */
+
 function updateVzryvomorAnimation(guid: string, isExploding: boolean): number {
   const now = Date.now();
   const { next, frameIndex } = stepVzryvomorAnimation(
@@ -501,7 +539,7 @@ export function drawGame(ctx: CanvasRenderingContext2D,
   }
 
   // 3. ПЕРЕД ВСЕМ рисуем бесконечный фон (траву)
-  ctx.fillStyle = '#45a049'; // Тот же зеленый, что на карте
+  ctx.fillStyle = '#45a049'; 
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.save();
@@ -521,9 +559,107 @@ export function drawGame(ctx: CanvasRenderingContext2D,
         const seed = Math.abs(hash - Math.floor(hash));       
         const assetIndex = Math.floor(seed * weightedPool.length);
         const activeImg = weightedPool[assetIndex];
+        const neighbors = getNeighbors(state.map, x, y);
 
         if (isImageDrawable(activeImg)) {
             ctx.drawImage(activeImg, x * cellW, y * cellH, cellW, cellH);
+        }
+        if (
+          isImageDrawable(mountainEdgeTopImg) ||
+          isImageDrawable(mountainEdgeRightImg) ||
+          isImageDrawable(mountainEdgeBottomImg) ||
+          isImageDrawable(mountainEdgeLeftImg)
+        ) {
+          const cellX = x * cellW;
+          const cellY = y * cellH;
+          const edgeW = cellW / 2;
+          const edgeH = cellH / 2;
+          const drawMountainEdgeTriplet = (img: HTMLImageElement, side: 'top' | 'right' | 'bottom' | 'left') => {
+            if (!isImageDrawable(img)) return;
+            if (side === 'top') {
+              for (let i = 0; i < 3; i++) {
+                ctx.drawImage(img, cellX + i * edgeW, cellY, edgeW, edgeH);
+              }
+              return;
+            }
+            if (side === 'bottom') {
+              for (let i = 0; i < 3; i++) {
+                ctx.drawImage(img, cellX + i * edgeW, cellY + cellH - edgeH, edgeW, edgeH);
+              }
+              return;
+            }
+            if (side === 'left') {
+              for (let i = 0; i < 3; i++) {
+                ctx.drawImage(img, cellX, cellY + i * edgeH, edgeW, edgeH);
+              }
+              return;
+            }
+            for (let i = 0; i < 3; i++) {
+              ctx.drawImage(img, cellX + cellW - edgeW, cellY + i * edgeH, edgeW, edgeH);
+            }
+          };
+
+          if (neighbors.top === 2) {
+            drawMountainEdgeTriplet(mountainEdgeBottomImg, 'top');
+          }
+          if (neighbors.right === 2) {
+            drawMountainEdgeTriplet(mountainEdgeLeftImg, 'right');
+          }
+          if (neighbors.bottom === 2) {
+            drawMountainEdgeTriplet(mountainEdgeTopImg, 'bottom');
+          }
+          if (neighbors.left === 2) {
+            drawMountainEdgeTriplet(mountainEdgeRightImg, 'left');
+          }
+        }
+
+        //уголки гор (когда две смежные стороны - равнина, а диагональный сосед - гора)
+        if (
+          isImageDrawable(mountainCornerTopLeftImg) ||
+          isImageDrawable(mountainCornerTopRightImg) ||
+          isImageDrawable(mountainCornerBottomLeftImg) ||
+          isImageDrawable(mountainCornerBottomRightImg)
+        ) {
+          const cellX = x * cellW;
+          const cellY = y * cellH;
+          
+          // Получаем диагональных соседей
+          const tTopLeft = coerceTerrainCell(state.map[y - 1]?.[x - 1]);
+          const tTopRight = coerceTerrainCell(state.map[y - 1]?.[x + 1]);
+          const tBottomLeft = coerceTerrainCell(state.map[y + 1]?.[x - 1]);
+          const tBottomRight = coerceTerrainCell(state.map[y + 1]?.[x + 1]);
+
+          // Отрисовываем уголки, когда две смежные стороны - равнина/вода, а диагональный угол - гора
+          // bottom-left угол: bottom = 0, left = 0, диагональ bottom-left = 2
+          // Отрисовка внешних уголков гор на равнине
+
+          // 1. Bottom-Left (Гора снизу-слева)
+          if (neighbors.bottom === 0 && neighbors.left === 0 && tBottomLeft === 2) {
+            if (isImageDrawable(mountainCornerTopRightImg)) {
+              ctx.drawImage(mountainCornerTopRightImg, cellX, cellY, cellW, cellH);
+            }
+          }
+
+          // 2. Bottom-Right (Гора снизу-справа)
+          if (neighbors.bottom === 0 && neighbors.right === 0 && tBottomRight === 2) {
+            if (isImageDrawable(mountainCornerTopLeftImg)) {
+              ctx.drawImage(mountainCornerTopLeftImg, cellX, cellY, cellW, cellH);
+            }
+          }
+
+          // 3. Top-Left (Гора сверху-слева)
+          if (neighbors.top === 0 && neighbors.left === 0 && tTopLeft === 2) {
+            if (isImageDrawable(mountainCornerBottomRightImg)) {
+              ctx.drawImage(mountainCornerBottomRightImg, cellX, cellY, cellW, cellH);
+            }
+          }
+
+          // 4. Top-Right (Гора сверху-справа)
+          if (neighbors.top === 0 && neighbors.right === 0 && tTopRight === 2) {
+            if (isImageDrawable(mountainCornerBottomLeftImg)) {
+              ctx.drawImage(mountainCornerBottomLeftImg, cellX, cellY, cellW, cellH);
+            }
+          }
         }
 
         //куст (поверх травы)
@@ -547,7 +683,15 @@ export function drawGame(ctx: CanvasRenderingContext2D,
         }
         }
 
-          // --- ВОТ СЮДА ВСТАВЛЯЕМ ПАСХАЛКУ ---
+        const decorSeed = Math.abs((x * 83492791) ^ (y * 2654435761));
+        if ((decorSeed % 200) < 2 && plainDecorImages.length > 0) {
+          const decorImg = plainDecorImages[decorSeed % plainDecorImages.length];
+          if (isImageDrawable(decorImg)) {
+            ctx.drawImage(decorImg, x * cellW, y * cellH, cellW, cellH);
+          }
+        }
+
+        // --- ВОТ СЮДА ВСТАВЛЯЕМ ПАСХАЛКУ ---
         if (y === 94 && x === 99) {
           if (isImageDrawable(funnyFlower)) {
             // Пока просто рисуем его в размер ячейки, чтобы убедиться, что он там есть
@@ -890,7 +1034,7 @@ export function drawGame(ctx: CanvasRenderingContext2D,
 
   // 4. Отрисовка юнитов (только живых)
   state.units.forEach(unit => {
-    if (unit.hp <= 0) return; // мёртвых не рисуем
+    if (unit.hp <= 0) return; 
 
     const cx = unit.x * cellW + cellW / 2;
     const cy = unit.y * cellH + cellH / 2;
@@ -928,12 +1072,6 @@ export function drawGame(ctx: CanvasRenderingContext2D,
 /**
  * Вспомогательная функция для отрисовки полосок HP
  */
-function drawHealthBar(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, percent: number) {
-  ctx.fillStyle = '#d32f2f';
-  ctx.fillRect(x, y, w, h);
-  ctx.fillStyle = '#4caf50';
-  ctx.fillRect(x, y, w * percent, h);
-}
 
 // 4. ФУНКЦИЯ ИНИЦИАЛИЗАЦИИ СОБЫТИЙ
 
@@ -996,14 +1134,14 @@ function initCameraListeners(canvas: HTMLCanvasElement) {
 function getTerrainColor(type: MapTile | undefined): string {
   switch (type) {
     case 0:
-      return '#2ecc71'; // равнина - зелёный
+      return '#2ecc71'; 
     case 1:
-      return '#7fd3ff'; // вода - голубой
+      return '#7fd3ff'; 
     case 2:
-      return '#8b5a2b'; // горы - коричневый
+      return '#8b5a2b'; 
     case null:
     default:
-      return '#2a3338'; // туман / неизвестно (fallback без текстуры)
+      return '#2a3338'; 
   }
 }
 
@@ -1032,30 +1170,6 @@ function getProjectileColor(type: Projectile['type']): string {
   }
 }
 
-function drawGrid(
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  height: number,
-  cellW: number,
-  cellH: number,
-  rows: number,
-  cols: number
-) {
-  ctx.beginPath();
-  ctx.strokeStyle = '#1518143c';
-  ctx.lineWidth = 0.5;
-  for (let x = 0; x <= cols; x++) {
-    const px = x * cellW;
-    ctx.moveTo(px, 0);
-    ctx.lineTo(px, height);
-  }
-  for (let y = 0; y <= rows; y++) {
-    const py = y * cellH;
-    ctx.moveTo(0, py);
-    ctx.lineTo(width, py);
-  }
-  ctx.stroke();
-}
 
 /** Сетка без отрезков между двумя соседними клетками тумана (туман+туман). */
 function drawGridFogAware(
@@ -1103,18 +1217,4 @@ function drawGridFogAware(
   ctx.moveTo(width, 0);
   ctx.lineTo(width, height);
   ctx.stroke();
-}
-
-function drawPlaceholder(ctx: CanvasRenderingContext2D, width: number, height: number) {
-  const rows = 100;
-  const cols = 100;
-  const cellW = width / cols;
-  const cellH = cellW;
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < cols; x++) {
-      ctx.fillStyle = getTerrainColor(0);
-      ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
-    }
-  }
-  drawGrid(ctx, width, height, cellW, cellH, rows, cols);
 }

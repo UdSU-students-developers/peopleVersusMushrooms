@@ -23,18 +23,16 @@
   box-shadow: 0 0 40px rgba(245, 182, 10, 0.397);
   border: 2px solid #ffcc00;
   
-  /* Масштабируем шрифт заголовка */
   font-size: var(--title-font-size);
 }
 
 
 .game-overlay-content h2 {
-  color: #ffcc00; /* Твой основной желтый */
+  color: #ffcc00;
   font-size: var(--title-font-size);
   text-transform: uppercase;
   margin-bottom: calc(var(--btn-height) * 0.5);
   
-  /* Эффект свечения */
   text-shadow: 
     0 0 10px rgba(255, 204, 0, 0.7),
     0 0 20px rgba(255, 204, 0, 0.5),
@@ -43,19 +41,18 @@
 
 .game-overlay-actions {
   display: flex;
-  flex-direction: column; /* Ставит кнопки друг под другом */
-  align-items: center;    /* Центрирует их по горизонтали */
-  gap: 15px;              /* Расстояние между кнопками */
+  flex-direction: column; 
+  align-items: center; 
+  gap: 15px;    
   width: 100%;
-  max-width: var(--menu-width); /* Чтобы они не были слишком широкими */
+  max-width: var(--menu-width);
   margin: 0 auto;
 }
 
 .game-btn, .game-btn-secondary {
-  /* Твои переменные из ГОСТа обеспечат одинаковую высоту и шрифт */
   height: var(--btn-height);
   font-size: var(--btn-font-size);
-  width: 100%; /* Теперь они будут одинаковой ширины внутри контейнера */
+  width: 100%; 
   
   border-radius: 8px;
   cursor: pointer;
@@ -65,7 +62,7 @@
   justify-content: center;
   align-items: center;
 }
-/* Основная кнопка */
+
 .game-btn {
   background-color: #835134bb;
   color: #ffcc00;
@@ -81,5 +78,5 @@
 
 .game-btn:hover, .game-btn-secondary:hover {
   transform: scale(1.02);
-  box-shadow: 0 0 15px rgba(255, 204, 0, 0.4); /* Свечение при наведении */
+  box-shadow: 0 0 15px rgba(255, 204, 0, 0.4);
 }

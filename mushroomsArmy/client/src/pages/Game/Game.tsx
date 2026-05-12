@@ -1,5 +1,5 @@
 // pages/Game/Game.tsx
-import React, { useEffect, useRef, useState, useContext } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { MediatorContext, ServerContext } from '../../App';
 import CONFIG from '../../config';
 import { drawGame, preloadFogWarTextures } from './renderer';
@@ -10,23 +10,26 @@ import './Game.css';
 import { camera } from '../../utils/camera';
 import Header from '../../widgets/GameInterface/Header/Header';
 import Footer from '../../widgets/GameInterface/Footer/Footer';
-import Menu from '../../widgets/GameInterface/Menu/Menu';
+import OptionsPannel from '../../widgets/GameInterface/OptionsPannel/OptionsPannel';
 import GameOver from '../../widgets/GameInterface/GameOver/GameOver';
+import { HUD_SCALE_STEPS } from '../../widgets/GameInterface/uiConstants';
 
 const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const gameStateRef = useRef<GameState | null>(null);
   const mediator = useContext(MediatorContext);
   const server = useContext(ServerContext);
+
   const [isGameOver, setIsGameOver] = useState(true);
-  const [aliveUnitsCount, setAliveUnitsCount] = useState(0);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [hudScaleStep, setHudScaleStep] = useState(2);
 
   const keysPressed = useRef<{ [key: string]: boolean }>({});
 
   const GET_STORE = mediator.getTriggerTypes().GET_STORE;
   const user = mediator.get(GET_STORE, 'user') as TUser | null;
   const username = user?.name || 'Игрок';
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const hudConfig = HUD_SCALE_STEPS[hudScaleStep] ?? HUD_SCALE_STEPS[2];
 
   useEffect(() => {
     void preloadFogWarTextures();
@@ -42,19 +45,26 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     const heightCSS = canvas.clientHeight;
     if (widthCSS === 0 || heightCSS === 0) return;
 
-    // Рисуем текущее состояние с учетом обновленной камеры
     drawGame(ctx, gameStateRef.current, widthCSS, heightCSS, camera);
   };
 
   useEffect(() => {
     const movementKeys = new Set([
-      'KeyW', 'KeyA', 'KeyS', 'KeyD',
-      'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+      'KeyW',
+      'KeyA',
+      'KeyS',
+      'KeyD',
+      'ArrowUp',
+      'ArrowDown',
+      'ArrowLeft',
+      'ArrowRight',
     ]);
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (movementKeys.has(e.code)) e.preventDefault();
       keysPressed.current[e.code] = true;
     };
+
     const handleKeyUp = (e: KeyboardEvent) => {
       if (movementKeys.has(e.code)) e.preventDefault();
       keysPressed.current[e.code] = false;
@@ -73,8 +83,7 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     let rafId: number;
 
     const renderLoop = () => {
-  // Скорость движения, которая не зависит от зума
-      const moveSpeed = 20 / camera.scale; 
+      const moveSpeed = 20 / camera.scale;
 
       if (keysPressed.current['KeyW'] || keysPressed.current['ArrowUp']) {
         camera.offsetY += moveSpeed;
@@ -96,9 +105,9 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     rafId = requestAnimationFrame(renderLoop);
 
     return () => {
-      cancelAnimationFrame(rafId); // Остановка при выходе из игры
+      cancelAnimationFrame(rafId);
     };
-  }, []); // Запускается один раз при старте
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -139,22 +148,15 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   }, []);
 
   useEffect(() => {
-  if (!mediator) return;
+    if (!mediator) return;
 
-  const EVENT_NAME = CONFIG.MEDIATOR.EVENTS.GAME_STATE_UPDATED;
-  const handler = (newState: GameState) => {
-    gameStateRef.current = newState;
-    
-    // Считаем юнитов только здесь (когда пришли данные), а не в цикле отрисовки
-    const aliveCount = newState.units.filter((unit) => unit.hp > 0).length ?? 0;
-    setAliveUnitsCount(aliveCount);
+    const EVENT_NAME = CONFIG.MEDIATOR.EVENTS.GAME_STATE_UPDATED;
+    const handler = (newState: GameState) => {
+      gameStateRef.current = newState;
+    };
 
-    // gameStateRef.current = newState;
-    // redrawCanvas();
-  };
-
-  mediator.subscribe(EVENT_NAME, handler);
-  return () => mediator.unsubscribe(EVENT_NAME, handler);
+    mediator.subscribe(EVENT_NAME, handler);
+    return () => mediator.unsubscribe(EVENT_NAME, handler);
   }, [mediator]);
 
   useEffect(() => {
@@ -214,19 +216,37 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     setIsGameOver(false);
   };
 
+  const handleSurrender = () => {
+    setIsMenuOpen(false);
+    setIsGameOver(true);
+  };
+
+  const gamePageStyle = {
+    '--scale': (hudConfig.footer / 112).toString(),
+    '--header-height': `${hudConfig.header}px`,
+    '--footer-height': `${hudConfig.footer}px`,
+    '--font-base': `${hudConfig.baseFont}px`,
+    '--title-font-size': `${hudConfig.titleFont}px`,
+    '--minimap-box-size': `${hudConfig.minimapBox}px`,
+    '--minimap-canvas-size': `${hudConfig.minimapCanvas}px`,
+  } as React.CSSProperties;
+
   return (
-    <div className="game-page">
+    <div className="game-page" style={gamePageStyle}>
       <Header
         username={username}
         isMenuOpen={isMenuOpen}
-        onMenuToggle={() => setIsMenuOpen(!isMenuOpen)}
-        //onExit={handleExitToLobby}
+        onMenuToggle={() => setIsMenuOpen((prev) => !prev)}
       />
 
-      {/* Меню теперь живет здесь, на уровне страницы, что архитектурно правильнее */}
-      <Menu 
-        isOpen={isMenuOpen} 
-        onExit={handleExitToLobby} 
+      <OptionsPannel
+        currentStep={hudScaleStep}
+        topOffset={hudConfig.header}
+        panelSize={280}
+        isOpen={isMenuOpen}
+        onStepChange={setHudScaleStep}
+        onClose={() => setIsMenuOpen(false)}
+        onSurrender={handleSurrender}
       />
 
       <div className="game-canvas-wrapper">
@@ -235,12 +255,7 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
 
       <Footer />
 
-      {isGameOver && (
-        <GameOver 
-          onRestart={handleRestartGame} 
-          onExit={handleExitToLobby} 
-        />
-      )}
+      {isGameOver && <GameOver onRestart={handleRestartGame} onExit={handleExitToLobby} />}
     </div>
   );
 };

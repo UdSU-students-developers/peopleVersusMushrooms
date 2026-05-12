@@ -1,91 +1,52 @@
-/* --- СИСТЕМА МАСШТАБИРОВАНИЯ (ГОСТ) --- */
+﻿@import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&display=swap');
 
 :root {
-  /* золотой стандарт (Medium) */
-  --gost-menu-w: 250px;
-  --gost-menu-h: 400px;
-  
-  --gost-header-h: 60px;
-  --gost-footer-h: 145px;
-  --gost-gap: -15px;
-  --gost-btn-h: 42px;
-  --gost-font: 16px;
-  --gost-title-font: 18px;
+  --main-font: 'Pixelify Sans', sans-serif;
+  --scale: 1;
+  --header-height: 34px;
+  --footer-height: 112px;
+  --font-base: 14px;
+  --title-font-size: 24px;
 }
 
-/* МАЛЕНЬКИЙ (Коэффициент 0.8) */
-body[data-game-ui-size="small"] {
-  --scale: 0.8;
+button,
+input,
+select,
+textarea {
+  font-family: var(--main-font);
 }
-
-/* СРЕДНИЙ (Коэффициент 0.9) */
-body[data-game-ui-size="medium"], body:not([data-game-ui-size]) {
-  --scale: 0.9;
-}
-
-/* БОЛЬШОЙ (Коэффициент 1.1) */
-body[data-game-ui-size="large"] {
-  --scale: 1.1;
-}
-
-/* АВТОМАТИЧЕСКИЙ РАСЧЕТ ПЕРЕМЕННЫХ */
-body {
-  --menu-width: calc(var(--gost-menu-w) * var(--scale));
-  --menu-height: calc(var(--gost-menu-h) * var(--scale));
-  --header-height: calc(var(--gost-header-h) * var(--scale));
-  --footer-height: calc(var(--gost-footer-h) * var(--scale));
-  --menu-gap: calc(var(--gost-gap) * var(--scale));
-  --btn-height: calc(var(--gost-btn-h) * var(--scale));
-  --btn-font-size: calc(var(--gost-font) * var(--scale));
-  --title-font-size: calc(var(--gost-title-font) * var(--scale));
-
-  font-family: var(--font-main);
-
-}
-
-button, input, select, textarea {
-  font-family: inherit;
-}
-
-/* --- БАЗОВЫЕ СТИЛИ СТРАНИЦЫ --- */
 
 .game-page {
-  display: flex;
-  flex-direction: column;
+  position: fixed;
+  inset: 0;
+  width: 100%;
   height: 100vh;
-  width: 100vw;
   background-color: #1d1010;
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
   margin: 0;
   overflow: hidden;
-  position: relative;
-  padding-top: var(--header-height);
-  padding-bottom: var(--footer-height);
   box-sizing: border-box;
 }
 
-/* --- КОНТЕЙНЕР ДЛЯ КАРТЫ (Растягивание) --- */
 .game-canvas-wrapper {
-  flex: 1; /* Занимает все место между хедером и футером */
-  position: relative;
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  top: var(--header-height);
+  right: 0;
+  bottom: var(--footer-height);
+  left: 0;
+  width: auto;
+  height: auto;
   overflow: hidden;
-  display: block; /* Убрано центрирование flex, так как карта теперь 100% */
 }
 
 .game-canvas {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
   background-color: #1a1a1a;
 }
 
-
-/* --- OVERLAY (GameOver) --- */
 .game-overlay {
-  position: fixed; 
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -100,7 +61,7 @@ button, input, select, textarea {
 
 .game-overlay-content {
   background: #2c2c2c;
-  padding: calc(var(--font-base) * 2) calc(var(--font-base) * 3); 
+  padding: calc(var(--font-base) * 2) calc(var(--font-base) * 3);
   border-radius: 24px;
   text-align: center;
   color: white;

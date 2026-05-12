@@ -6,34 +6,36 @@ interface HeaderProps {
   gameTitle?: string;
   isMenuOpen: boolean;
   onMenuToggle: () => void;
-  
 }
 
-const Header: React.FC<HeaderProps> = ({ 
-  username, 
-  gameTitle = "Армия грибов", 
+const Header: React.FC<HeaderProps> = ({
+  username,
+  gameTitle = 'MUSHROOMS ARMY',
   isMenuOpen,
-  onMenuToggle 
+  onMenuToggle,
 }) => {
   return (
-    <header className="game-header">
-      <div className="header-left">
-        <span className="user-nickname">{username}</span>
-      </div>
-      
-      <div className="header-center">
-        <h1 className="game-title">{gameTitle}</h1>
-      </div>
+    <header className="header-strip" style={{ height: 'var(--header-height)' }}>
+      <div className="header-safe-area">
+        <div className="header-section left" style={{ fontSize: 'var(--font-base)' }}>
+          <span className="user-nickname">{username}</span>
+        </div>
 
-      <div className="header-right">
-        <button 
-          id="header-menu-btn" 
-          className={`menu-button ${isMenuOpen ? 'active' : ''}`} 
-          onClick={onMenuToggle}
-        >
-          МЕНЮ
-        </button>
-     
+        <div className="header-section center" style={{ fontSize: 'var(--title-font-size)' }}>
+          <h1 className="game-title">{gameTitle}</h1>
+        </div>
+
+        <div className="header-section right">
+          <button
+            type="button"
+            id="header-menu-btn"
+            className={`menu-button ${isMenuOpen ? 'active' : ''}`}
+            style={{ fontSize: 'var(--font-base)' }}
+            onClick={onMenuToggle}
+          >
+            MENU
+          </button>
+        </div>
       </div>
     </header>
   );

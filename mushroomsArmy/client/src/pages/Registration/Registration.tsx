@@ -144,18 +144,13 @@ const Registration: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage })
             </div>
             <p className="login-link">
                 Уже есть аккаунт?{' '}
-                <a
-                    href="#"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        setPage(PAGES.LOGIN);
-                    }}
-                >
+                <button type="button" className="text-link-button" onClick={() => setPage(PAGES.LOGIN)}>
                     Войти
-                </a>
+                </button>
             </p>
         </div>
     );
 };
 
 export default Registration;
+

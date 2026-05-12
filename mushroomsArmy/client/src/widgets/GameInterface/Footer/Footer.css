@@ -1,202 +1,60 @@
-/* --- FOOTER LAYOUT --- */
-:root {
-  --minimap-size: var(--footer-height); 
+.game-footer-wrapper {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  z-index: 100;
 }
 
 .game-footer-main-panel {
-  flex: 1;
-  
-  height: var(--footer-height); 
-  
-  display: flex;
-  align-items: center;
-  
-  padding: 0 calc(40px * var(--scale)); 
-  gap: calc(20px * var(--scale));
-  
+  width: 100%;
+  height: var(--footer-height);
+  background-color: rgb(25, 19, 5);
   background-image:
-    linear-gradient(rgba(25, 13, 1, 0.5), rgba(25, 13, 1, 0.5)),
+    linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
     url('../../../assets/ui/tree.webp');
-  
-  background-size: calc(150px * var(--scale)) calc(150px * var(--scale));
+  background-size: calc(100px * var(--scale)) calc(100px * var(--scale));
+  background-position: center;
   background-repeat: repeat;
-  
-  /* 5. Визуальные эффекты */
-  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5), 0 -4px 14px rgba(0, 0, 0, 0.35);
   box-sizing: border-box;
-}
-
-.game-economy-container, 
-.game-footer-stats-layout {
-  display: flex;
-  flex-direction: column;
-  gap: calc(4px * var(--scale)); 
-  align-self: stretch;
-  justify-content: flex-end; 
-  padding-bottom: calc(15px * var(--scale)); 
-}
-
-.game-footer-stats-layout {
-  flex: 1;
-}
-
-/* --- ОБЩИЕ СТИЛИ ДЛЯ РАМОК --- */
-
-.game-economy-resources,
-.game-footer-stats-container {
-  display: flex;
-  background-color: rgba(37, 24, 1, 0.578);
-  box-shadow:
-    inset 4px 4px 10px rgba(0, 0, 0, 0.8),
-    0 1px 0 rgba(255, 255, 255, 0.15);
-  border: calc(2px * var(--scale)) solid #2a1d15;
-  border-radius: 4px;
-  box-sizing: border-box;
-  height: calc(100px * var(--scale)); 
-  padding: calc(12px * var(--scale));
-  align-items: center;
-}
-
-/* Специфика для ресурсов (левая рамка) */
-.game-economy-resources {
-  flex: 0 1 calc(260px * var(--scale));
   min-width: 0;
   overflow: hidden;
-}
-
-/* Специфика для статистики (правая рамка) */
-.game-footer-stats-container {
-  width: 100%;
-  justify-content: space-around;
-}
-
-.game-economy-resources-title {
-  color: #d8c7a7;
-  font-size: calc(16px * var(--scale));
-  text-transform: uppercase;
-  letter-spacing: 1.2px;
-  font-weight: bold;
-  margin-left: calc(4px * var(--scale));
-  line-height: 1.1;
-}
-
-.game-economy-resources-list {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: calc(4px * var(--scale)) calc(15px * var(--scale));
-  width: 100%;
-}
-
-.game-economy-resource {
-  display: flex;
-  align-items: center;
-  color: #d8c7a7;
-  font-size: calc(15px * var(--scale));
-  white-space: nowrap;
-}
-
-.game-economy-resource-value {
-  color: #ffd966;
-  font-weight: 600;
-  margin-left: calc(8px * var(--scale));
-}
-
-.game-footer-stats {
-  display: flex;
-  width: 100%;
-  justify-content: space-around;
-  gap: 10px;
-}
-
-.game-stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  min-width: 0;
-}
-
-.game-stat-label {
-  color: #d8c7a7;
-  font-size: calc(14px * var(--scale));
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: calc(2px * var(--scale));
-}
-
-.game-stat-value {
-  color: #ffd966;
-  font-size: calc(22px * var(--scale));
-  font-weight: bold;
-}
-
-.game-footer-wrapper {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  display: flex;
-  align-items: flex-end; 
-  box-sizing: border-box;
-  z-index: 100;
-  height: auto; 
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5), 0 -4px 14px rgba(0, 0, 0, 0.35);
 }
 
 .minimap-container {
-  --minimap-size: calc(var(--footer-height) * 1.8); 
-  
-  width: var(--minimap-size);
-  height: var(--minimap-size);
-  flex-shrink: 0;
-  
-  position: relative;
-  background-color: #000;
-  border: 3px solid #7a5237;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  padding: 1px;
   box-sizing: border-box;
-  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: min(var(--minimap-box-size), calc(100vw - 12px));
+  height: min(var(--minimap-box-size), calc(100vw - 12px));
+  max-height: calc(100vh - 12px);
+  background-color: #3d2b1a;
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+    url('../../../assets/ui/tree.webp');
+  background-size: calc(110px * var(--scale)) calc(110px * var(--scale));
+  background-position: center;
+  background-repeat: repeat;
+  border-radius: 10px;
   z-index: 101;
-  overflow: hidden; 
 }
 
 .game-minimap {
-  width: 100% !important;
-  height: 100% !important;
-  flex: none !important;
+  width: min(var(--minimap-canvas-size), calc(100% - 2px)) !important;
+  height: min(var(--minimap-canvas-size), calc(100% - 2px)) !important;
+  border-radius: 7px;
+  overflow: hidden;
 }
 
-@media (max-width: 1100px) {
-  .game-footer-main-panel {
-    padding: 0 calc(20px * var(--scale));
-    gap: calc(10px * var(--scale));
-  }
-}
-
-@media (max-width: 900px) {
-  .game-economy-resources-list {
-    grid-template-columns: 1fr;
-  }
-  
-  .game-economy-resources {
-    flex: 0 1 calc(180px * var(--scale));
-  }
-
-  .game-footer-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 5px;
-  }
-
-  .game-stat-item {
-    flex-direction: row;
-    gap: 5px;
-  }
-
-  .game-stat-label {
-    font-size: calc(10px * var(--scale));
-  }
-
-  .game-stat-value {
-    font-size: calc(16px * var(--scale));
+@media (max-width: 768px) {
+  .minimap-container {
+    width: min(var(--minimap-box-size), calc(100vw - 8px));
+    height: min(var(--minimap-box-size), calc(100vw - 8px));
   }
 }

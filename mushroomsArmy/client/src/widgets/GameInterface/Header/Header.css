@@ -1,86 +1,104 @@
-.game-header {
-
-  position: fixed; 
+.header-strip {
+  position: fixed;
   top: 0;
   left: 0;
-
   width: 100%;
-  height: var(--header-height); 
+  background-color: rgb(48, 66, 35);
+  display: flex;
+  justify-content: center;
   flex-shrink: 0;
-  background: #3b2a20;
-  z-index: 100;
+  z-index: 110;
+  border-bottom: 2px solid #423c08;
+}
+
+.header-safe-area {
+  width: 100%;
+  max-width: 100vw;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 50px;
+  box-sizing: border-box;
+  height: 100%;
+  position: relative;
+}
+
+.header-section {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  box-sizing: border-box;
-  border-bottom: 2px solid #7a5237;
+  color: #f1c40f;
+  font-family: var(--main-font);
 }
 
-.header-center {
-  position: absolute; 
+.header-section.center {
+  position: absolute;
   left: 50%;
-  transform: translateX(-50%);
-  pointer-events: none; 
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: 700;
+  margin: 0;
+  white-space: nowrap;
+  z-index: 2;
 }
 
-/* Название и никнейм */
-.user-nickname, .game-title {
-  color: #d8c7a7; 
-  font-family: Handjet;
-  font-size: var(--font-base);
+.header-section.left {
+  min-width: 150px;
+  justify-content: flex-start;
+  flex: 1;
 }
 
+.header-section.right {
+  justify-content: flex-end;
+  flex: 1;
+}
+
+.user-nickname,
 .game-title {
   margin: 0;
-  color: #d8c7a7;   
-  font-size: calc(var(--font-base) * 1.4);
+  color: #dad8b2;
   text-transform: uppercase;
 }
 
-body {
-  margin: 0;
-  padding: 0;
-}
-
-
-#header-menu-btn {
-  appearance: none;
+.menu-button {
+  background-color: #2d2e0c;
+  color: #dad8b2 ;
+  border: 2px solid #423c08;
+  padding: 4px 16px;
   cursor: pointer;
-
-
-  width: 60px;             
-  min-width: 1px;       
-  height: 40px;           
-  padding: 10px 0;        
-  
-  font-size: calc(var(--font-base) * 0.9);
-
-
-
-  background: #7a5237;
-  border: 2px solid #966642;
-  color: #d8c7a7; ;
-  font-weight: bold;
-
-
-  transition: background 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-transform: uppercase;
+  font-family: var(--main-font);
 }
 
-#header-menu-btn:hover {
-  background: #b5926d;
-  border-color: #481a1a;
-  color: #481a1a;
-  transform: scale(0.99);
+.menu-button:hover,
+.menu-button.active {
+  color: #673f0e;
 }
 
+@media (max-width: 768px) {
+  .header-safe-area {
+    padding: 0 16px;
+  }
 
-.header-right {
-  position: relative;
-  display: flex;
-  align-items: center;
+  .header-section.left {
+    min-width: 0;
+  }
+
+  .header-section.center {
+    position: static;
+    transform: none;
+    white-space: normal;
+    text-align: center;
+    justify-content: center;
+    flex: 1;
+    padding: 0 8px;
+  }
+}
+
+@media (max-width: 520px) {
+  .header-safe-area {
+    padding: 0 10px;
+  }
+
+  .menu-button {
+    padding: 4px 10px;
+  }
 }

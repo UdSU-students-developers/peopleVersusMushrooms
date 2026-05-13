@@ -8,21 +8,15 @@ class ArmyManager extends BaseManager {
     constructor(options) {
         super(options);
 
-        // хранит армии
         this.army = {};
         this.unitTypes = {};
         this.unitTypesLoaded = false;
-
-        // хранит данные о лобби (mapGuid, guids))
         this.lobbyData = {};
 
-        // sockets
         if (!this.io) return;
         this.io.on('connection', (socket) => {});
-        // mediator event subscribers
         this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
         this.mediator.subscribe(this.EVENTS.DELETE_USER, (data) => this.eventUserDisconnect(data));
-        // mediator trigger setters
         this.mediator.set(this.TRIGGERS.CREATE_UNIT, (data) => this.createUnit(data));
         this.mediator.set(this.TRIGGERS.UNIT_TAKE_DAMAGE, (data) => this.unitTakeDamage(data));
         this.mediator.set(this.TRIGGERS.MOVE_UNIT, (data) => this.unitMove(data));
@@ -42,15 +36,11 @@ class ArmyManager extends BaseManager {
         this.army.destructor();
     }
 
-    /* PRIVATE */
     async updateArmyCallback(guid, data) {
         const army = this.army[guid];
         if (!army?.mapGuid) {
             return;
         }
-        // послать в карту И в экономику изменение положения юнитов (просто послать юниты)
-        //...
-        // запросить видимость
         const visibility = await this.sendToMap(`${URLS.GET_VISIBILITY}`, { mapGuid: army.mapGuid, userGuid: guid });
         if (visibility) {
             army.setVisibility(visibility);
@@ -65,14 +55,6 @@ class ArmyManager extends BaseManager {
         }
     }
 
-    /* TRIGGERS */
-
-    /**
-     * mediator.get(CREATE_UNIT, { guid, x, y, type? })
-     * guid — guid пользователя
-     * type: "soldier" | "bmp" (по умолчанию soldier)
-     * @returns {{ result: "ok", data: object } | { result: "error", error: string, code: number }}
-     */
     createUnit(data) {
         const guid = data?.guid;
         const x = Number(data?.x);
@@ -86,18 +68,15 @@ class ArmyManager extends BaseManager {
             return this.answer.bad(400);
         }
 
-        // Проверяем залогиненность юзера (isLogin)
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
         if (!user || !user?.isLogin()) {
             return this.answer.bad(11);
         }
 
-        // Проверяем наличие армии у этого юзера
         if (!this.army[guid]) {
             return this.answer.bad(400);
         }
 
-        // Находим его армию и вызываем createUnit на уровне Army
         const army = this.army[guid];
         const result = army.createUnit({ x, y, type });
         if (!result?.ok) {
@@ -106,12 +85,6 @@ class ArmyManager extends BaseManager {
         return this.answer.good(result.data);
     }
 
-    /**
-     * mediator.get(UNIT_TAKE_DAMAGE, { userGuid, unitGuid, damage })
-     * userGuid — guid пользователя (владельца армии)
-     * unitGuid — guid юнита, которому наносится урон
-     * damage — количество урона
-     */
     unitTakeDamage(data) {
         const userGuid = data?.userGuid;
         const unitGuid = data?.unitGuid;
@@ -174,17 +147,10 @@ class ArmyManager extends BaseManager {
         });
     }
 
-    /**
-     * Отправить урон по зданию в экономику грибов.
-     * Вызывается из Army.shotUnits() когда юнит атакует здание-мишень.
-     * @param {{ guid: string, damage: number, economyGuid: string }} param
-     */
     async damageMushroomsEconomy({ guid, damage, economyGuid }) {
         if (!guid || !economyGuid || !Number.isFinite(Number(damage))) {
-            console.log('[damageMushroomsEconomy] некорректные параметры', { guid, damage, economyGuid });
             return null;
         }
-        console.log(`[damageMushroomsEconomy] атака здания ${guid}, урон: ${damage}, economyGuid: ${economyGuid}`);
         return this.sendToMushroomsEconomy('/damage', {
             guid,
             damage: Number(damage),
@@ -192,7 +158,6 @@ class ArmyManager extends BaseManager {
         });
     }
 
-    /* EVENTS */
     async eventStartGame({ mapGuid, guids }) {
         if (!mapGuid || !guids || !guids.peopleArmy) {
             return;
@@ -213,38 +178,13 @@ class ArmyManager extends BaseManager {
                 this.army[guid].destructor();
                 delete this.army[guid];
             }
-
-            const army = new Army({
-                guids,
-                mapGuid,
-                map,
-                buildings: [],
-                unitTypes: this.unitTypes,
-                common: this.common,
-                guid,
+            this.army[guid] = new Army({ guids, mapGuid, map, buildings: [], unitTypes: this.unitTypes, common: this.common, guid,
                 callbacks: {
                     update: (guid, data) => this.updateArmyCallback(guid, data),
                     takeDamage: (payload) => this.damageMushroomsUnit(payload),
-                    // новый callback — атака по зданиям грибной экономики
                     damageMushroomsEconomy: (payload) => this.damageMushroomsEconomy(payload),
                 }
             });
-
-            // Добавляем фейковые здания-мишени (здания из экономики грибов)
-            // guid зданий и economyGuid грибов берём из guids лобби
-            if (guids.mushroomsEconomy) {
-                army.setFakeBuildingTargets([
-                    {
-                        guid: 'mushrooms_main_building',
-                        x: 90,  // координаты стороны противника (подправь под реальные)
-                        y: 90,
-                        economyGuid: guids.mushroomsEconomy,
-                    },
-                ]);
-            }
-
-            this.army[guid] = army;
-
             this.io.to(user.socketId).emit(
                 this.SOCKET.START_GAME,
                 this.answer.good({ map })
@@ -261,9 +201,6 @@ class ArmyManager extends BaseManager {
         this.updateArmyCallback(guid, { units: [] });
         console.log(`армия с guid: ${guid} уничтожена`);
     }
-
-    /* SOCKETS */
-    //...
 }
 
 module.exports = ArmyManager;

@@ -63,6 +63,7 @@ class Server {
         });
 
         this.socket.on(MEDIATOR.EVENTS.CREATE_LOBBY, (data: TAnswer<any>) => {
+            console.log(data)
             const result = this._validate(data);
             if (result) {
                 const { CREATE_LOBBY } = this.mediator.getEventTypes();
@@ -71,6 +72,7 @@ class Server {
         });
 
         this.socket.on(MEDIATOR.EVENTS.JOIN_TO_LOBBY, (data: TAnswer<any>) => {
+            console.log(data)
             const result = this._validate(data);
             if (result) {
                 const { JOIN_TO_LOBBY } = this.mediator.getEventTypes();
@@ -184,10 +186,12 @@ class Server {
     }
 
     createLobby(guid: string, lobbyName: string, role: string): void {
+        console.log(guid, lobbyName, role)
         this.socket.emit(MEDIATOR.EVENTS.CREATE_LOBBY, { guid, lobbyName, role });
     }
 
     joinToLobby(guid: string, lobbyGuid: string, role: string): void {
+        console.log(guid, lobbyGuid, role)
         this.socket.emit(MEDIATOR.EVENTS.JOIN_TO_LOBBY, { guid, lobbyGuid, role });
     }
 

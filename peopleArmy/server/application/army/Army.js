@@ -27,7 +27,7 @@ class Army {
         this._initMap(map);
         this._initUnits(startPoint);
 
-        this.interval = setInterval(() => this.update(), INTERVAL); // интервал обновления игры
+        this.interval = setInterval(() => this.update(), INTERVAL);
         this.updated = false;
     }
 
@@ -68,12 +68,13 @@ class Army {
             attackRange: 0,
         }));
 
+        // FIX 2: координаты здания отдельные от споромётов (не 90,90)
         if (this.guids?.mushroomsEconomy) {
             this.enemyUnits.push({
                 guid: 'mushrooms_main_building',
                 type: 'building',
-                x: 90,
-                y: 90,
+                x: 49,
+                y: 49,
                 hp: 9999,
                 maxHp: 9999,
                 isAlive: true,
@@ -93,6 +94,12 @@ class Army {
         this.updated = true;
     }
 
+    /**
+     * Создать юнита в этой армии.
+     * guid юнита генерируется внутри через Common.
+     * @param {{ x: number, y: number, type?: string }} data
+     * @returns {{ ok: true, data: object } | { ok: false, error: string }}
+     */
     createUnit({ x, y, type = 'soldier' }) {
         const unitType = String(type).toLowerCase();
         const stats = this.unitTypes[unitType];
@@ -129,6 +136,10 @@ class Army {
         return { ok: true, data: unit.get() };
     }
 
+    /**
+     * Нанести урон юниту по его guid.
+     * Если hp <= 0 — юнит удаляется из армии.
+     */
     unitTakeDamage({ guid, damage }) {
         const unit = this.units.find((u) => u.guid === guid);
 
@@ -149,9 +160,11 @@ class Army {
         return { ok: true, data: { guid: unit.guid, hp: unit.hp } };
     }
 
+    // 1. выстрелить юнитами по врагам
     getTarget(unit) {
         const height = this.map.length;
-        const width = this.map?.length || 0;
+        // FIX 1: this.map[0]?.length — ширина строки, не длина всего массива
+        const width = this.map[0]?.length || 0;
 
         if (!height || !width) {
             return null;
@@ -207,6 +220,7 @@ class Army {
         const diagonalCells = cells.filter((cell) => cell.x !== unit.x && cell.y !== unit.y);
         const targetCells = diagonalCells.length ? diagonalCells : cells;
 
+        // возвращаем объект {x, y}, не массив
         return targetCells.sort(compareByDistance)[0];
     }
 
@@ -226,6 +240,12 @@ class Army {
         });
     }
 
+    /**
+     * Возвращает массив guid юнитов, отсортированный по текущему hp (от меньшего к большему).
+     * По умолчанию сортирует enemyUnits.
+     * @param {Array<{ guid: string, hp: number, isAlive?: boolean }>} units
+     * @returns {string[]}
+     */
     sortUnitsByHP(units = this.enemyUnits) {
         if (!Array.isArray(units) || units.length === 0) {
             return [];
@@ -274,49 +294,57 @@ class Army {
         const enemyArmyGuid = this.guids?.mushroomsArmy;
 
         for (const unit of this.units) {
-            const enemiesInRange = this.getUnitsInRange(unit, this.enemyUnits);
-            console.log(`[shotUnits] юнит (${unit.x},${unit.y}) range=${unit.range} врагов в зоне: ${enemiesInRange.length}`);
-            const sortedEnemyGuids = this.sortUnitsByHP(enemiesInRange);
-            if (!sortedEnemyGuids.length) {
+            const allInRange = this.getUnitsInRange(unit, this.enemyUnits);
+            console.log(`[shotUnits] юнит (${unit.x},${unit.y}) range=${unit.range} врагов в зоне: ${allInRange.length}`);
+
+            // FIX 3: разделяем здания и юнитов, чтобы тяжёлые юниты не тратились на здания
+            const unitsInRange = allInRange.filter(e => !e.isBuilding);
+            const buildingsInRange = allInRange.filter(e => e.isBuilding);
+
+            const sortedEnemyGuids = this.sortUnitsByHP(unitsInRange);
+
+            // если есть обычные юниты в радиусе — бьём их
+            if (sortedEnemyGuids.length) {
+                const isHeavyShooter = unit.type === 'bmp' || unit.type === 'sniper';
+                const targetGuid = isHeavyShooter
+                    ? sortedEnemyGuids[sortedEnemyGuids.length - 1]
+                    : sortedEnemyGuids[0];
+                const target = this.enemyUnits.find((enemy) => enemy.guid === targetGuid);
+
+                if (!target) {
+                    continue;
+                }
+
+                const amount = Number(unit.damage) || 1;
+                console.log("бьем грибочков", amount);
+                await this.callbacks.takeDamage({
+                    armyGuid: enemyArmyGuid,
+                    unitGuid: targetGuid,
+                    amount,
+                });
                 continue;
             }
 
-            const isHeavyShooter = unit.type === 'bmp' || unit.type === 'sniper';
-            const targetGuid = isHeavyShooter
-                ? sortedEnemyGuids[sortedEnemyGuids.length - 1]
-                : sortedEnemyGuids[0];
-            const target = this.enemyUnits.find((enemy) => enemy.guid === targetGuid);
-
-            if (!target) {
-                continue;
-            }
-
-            const amount = Number(unit.damage) || 1;
-
-            if (target.isBuilding) {
+            // если обычных юнитов нет, но есть здание — бьём здание
+            if (buildingsInRange.length) {
                 if (typeof this.callbacks?.damageMushroomsEconomy !== 'function') {
                     console.log('[shotUnits] нет callback damageMushroomsEconomy');
                     continue;
                 }
 
+                const buildingTarget = buildingsInRange[0];
+                const amount = Number(unit.damage) || 1;
                 console.log('бьем здание грибочков', amount);
                 await this.callbacks.damageMushroomsEconomy({
-                    guid: target.guid,
+                    guid: buildingTarget.guid,
                     damage: amount,
-                    economyGuid: target.economyGuid,
+                    economyGuid: buildingTarget.economyGuid,
                 });
-                continue;
             }
-
-            console.log('бьем грибочков', amount);
-            await this.callbacks.takeDamage({
-                armyGuid: enemyArmyGuid,
-                unitGuid: targetGuid,
-                amount,
-            });
         }
     }
 
+    // 2. сходить юнитами
     moveUnits() {
         this.units.forEach((unit) => {
             if (unit.move(this.map, this.buildings, this.units, this.enemyUnits, this.enemyBuildings)) {
@@ -326,8 +354,10 @@ class Army {
     }
 
     async update() {
+        // 1. выстрелить юнитами по врагам
         await this.shotUnits();
         this.setUnitsTarget();
+        // 2. сходить юнитами
         this.moveUnits();
 
         if (this.updated) {

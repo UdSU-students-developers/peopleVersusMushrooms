@@ -17,9 +17,12 @@ const Lobby: React.FC<IBasePage> = (props) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isReady, setIsReady] = useState(false);
 
-    const logoutClickHandler = async () => {
-        server.logout();
-    }
+    const handleBackToLogin = () => {
+        if (currentLobby) {
+            server.logout();
+        }
+        setPage(PAGES.LOGIN);
+    };
 
     const createLobbyClickHandler = () => {
         setShowCreateModal(true);
@@ -40,6 +43,7 @@ const Lobby: React.FC<IBasePage> = (props) => {
     }
 
     const joinLobbyHandler = (lobbyGuid: string) => {
+        console.log(server.user.guid, lobbyGuid)
         server.joinToLobby(server.user.guid, lobbyGuid, 'peopleEconomy');
     }
 
@@ -173,7 +177,7 @@ const Lobby: React.FC<IBasePage> = (props) => {
                         className='button-create'
                     />
                     <Button
-                        onClick={logoutClickHandler}
+                        onClick={handleBackToLogin}
                         text='Выйти'
                         className='button-logout'
                     />

@@ -3,11 +3,9 @@ import { TMap } from "../../Army";
 
 export type TVzryvomorOptions = {
     guid: string;
-    hp: number;
-    maxHp: number;
     x: number;
     y: number;
-    attackRange: number;
+    attackRange?: number;
 };
 
 type Point = {
@@ -30,7 +28,6 @@ type VzryvomorState = {
     guid: string;
     type: string;
     hp: number;
-    maxHp: number;
     x: number;
     y: number;
     attackRange: number;
@@ -46,10 +43,9 @@ export interface IBuilding<T> {
     x: number;
     y: number;
     hp: number;
-    maxHp: number;
     isAlive: boolean;
     update: (enemies: Unit[], map: TMap, deltaTime: number) => void;
-    takeDamage: (amount: number, type: string) => void;
+    takeDamage: (amount: number) => void;
     getState: () => T;
 }
 
@@ -58,7 +54,6 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
     public guid: string;
     public type: string = 'vzryvomor';
     public hp: number;
-    public maxHp: number;
     public x: number ;
     public y: number;
     public attackRange: number;
@@ -68,13 +63,12 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
     private elapsedFromLastDecision: number = 0;
     private DECISION_INTERVAL = 0.5; // seconds
 
-    constructor({guid, x, y, hp, maxHp, attackRange}: TVzryvomorOptions) {
+    constructor({guid, x, y, attackRange}: TVzryvomorOptions) {
         this.guid = guid;
         this.x = x;
         this.y = y;
-        this.hp = hp;
-        this.maxHp = maxHp;
-        this.attackRange = attackRange;
+        this.hp = 70;
+        this.attackRange = attackRange ?? 7;
         this.isAlive = true;
     };
 
@@ -89,7 +83,7 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
                 this.respawn.inProgress = false;
                 this.respawn.respawnIn = 0;
                 this.isAlive = true;
-                this.hp = this.maxHp;
+                this.hp = 70;
             }
             return;
         }
@@ -113,7 +107,7 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
         const isAlive = (e: Unit) => e.isAlive
         const isNotAlive = (e: Unit) => !e.isAlive
         const makeDamage = (e: Unit) => {
-            e.takeDamage(this.attackDamage, 'explosion')
+            e.takeDamage(this.attackDamage)
             return e
         }
 
@@ -142,7 +136,7 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
         this.respawn = { inProgress: true, respawnIn: 5};
     }
 
-    takeDamage(amount: number, type: string): void {
+    takeDamage(amount: number): void {
         if (!this.isAlive || this.respawn.inProgress) return;
 
         const finalAmount = Math.max(0, amount);
@@ -165,7 +159,6 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
         x: this.x,
         y: this.y,
         hp: this.hp,
-        maxHp: this.maxHp,
         elapsedFromLastDecision: this.elapsedFromLastDecision,
         attackRange: this.attackRange,
         isAlive: this.isAlive,

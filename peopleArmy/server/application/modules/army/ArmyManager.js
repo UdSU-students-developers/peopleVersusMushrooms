@@ -8,17 +8,34 @@ class ArmyManager extends BaseManager {
     constructor(options) {
         super(options);
 
+        // хранит армии
         this.army = {};
+        this.unitTypes = {};
+        this.unitTypesLoaded = false;
+
+        // хранит данные о лобби (mapGuid, guids))
+        this.lobbyData = {};
 
         // sockets
         if (!this.io) return;
         this.io.on('connection', (socket) => {});
         // mediator event subscribers
         this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
-        this.mediator.subscribe(this.EVENTS.USER_DISCONNECT, (data) => this.eventUserDisconnect(data));
+        this.mediator.subscribe(this.EVENTS.DELETE_USER, (data) => this.eventUserDisconnect(data));
         // mediator trigger setters
         this.mediator.set(this.TRIGGERS.CREATE_UNIT, (data) => this.createUnit(data));
         this.mediator.set(this.TRIGGERS.UNIT_TAKE_DAMAGE, (data) => this.unitTakeDamage(data));
+        this.mediator.set(this.TRIGGERS.MOVE_UNIT, (data) => this.unitMove(data));
+    }
+
+    async loadUnitTypes() {
+        if (this.unitTypesLoaded) {
+            return this.unitTypes;
+        }
+        const types = await this.db.getUnitTypes();
+        this.unitTypes = types || {};
+        this.unitTypesLoaded = true;
+        return this.unitTypes;
     }
 
     destructor() {
@@ -34,7 +51,7 @@ class ArmyManager extends BaseManager {
         // послать в карту И в экономику изменение положения юнитов (просто послать юниты)
         //...
         // запросить видимость
-        const visibility = await this.sendToMap(`${URLS.GET_VISIBILITY}`, { mapGuid: army.mapGuid, guid });
+        const visibility = await this.sendToMap(`${URLS.GET_VISIBILITY}`, { mapGuid: army.mapGuid, userGuid: guid });
         if (visibility) {
             army.setVisibility(visibility);
         }
@@ -90,45 +107,108 @@ class ArmyManager extends BaseManager {
     }
 
     /**
-     * mediator.get(UNIT_TAKE_DAMAGE, { guid, damage })
-     * guid — guid юнита, которому наносится урон
+     * mediator.get(UNIT_TAKE_DAMAGE, { userGuid, unitGuid, damage })
+     * userGuid — guid пользователя (владельца армии)
+     * unitGuid — guid юнита, которому наносится урон
      * damage — количество урона
      */
     unitTakeDamage(data) {
-        const guid = data?.guid;
+        const userGuid = data?.userGuid;
+        const unitGuid = data?.unitGuid;
         const damage = Number(data?.damage);
 
-        if (!guid || !Number.isFinite(damage)) {
+        if (!userGuid || !unitGuid || !Number.isFinite(damage)) {
             return this.answer.bad(400);
         }
 
-        // Поиск юнита во всех армиях
-        for (const ownerGuid in this.army) {
-            const army = this.army[ownerGuid];
-            const result = army.unitTakeDamage({ guid, damage });
-            if (result?.ok) {
-                return this.answer.good(result.data);
-            }
+        const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, userGuid);
+        if (!user || !user?.isLogin()) {
+            return this.answer.bad(11);
         }
 
-        return this.answer.bad(404);
+        const army = this.army[userGuid];
+        if (!army) {
+            return this.answer.bad(400);
+        }
+
+        const result = army.unitTakeDamage({ guid: unitGuid, damage });
+        if (!result?.ok) {
+            return this.answer.bad(404);
+        }
+
+        return this.answer.good(result.data);
+    }
+
+    unitMove(data) {
+        const userGuid = data?.userGuid;
+        const unitGuid = data?.unitGuid;
+        const x = Number(data?.x);
+        const y = Number(data?.y);
+        if (!userGuid || !unitGuid || !Number.isFinite(x) || !Number.isFinite(y)) {
+            return this.answer.bad(400);
+        }
+        const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, userGuid);
+        if (!user || !user?.isLogin()) {
+            return this.answer.bad(11);
+        }
+        const army = this.army[userGuid];
+        if (!army) {
+            return this.answer.bad(400);
+        }
+        const unit = army.units.find(unit => unit.guid === unitGuid);
+        if (!unit) {
+            return this.answer.bad(400);
+        }
+        unit.setTarget(x, y);
+        return this.answer.good(true);
+    }
+
+    async damageMushroomsUnit({ armyGuid="123efthgfrds", unitGuid, amount }) {
+        if (!armyGuid || !unitGuid || !Number.isFinite(Number(amount))) {
+            return null;
+        }
+        return this.sendToMushroomsArmy('/takeDamage', {
+            armyGuid,
+            unitGuid,
+            amount: Number(amount),
+        });
     }
 
     /* EVENTS */
-    //eventStartGame({ guid, map, buildings, mapGuid = null }) {
-    eventStartGame({ guids, startPoint }) {
+    async eventStartGame({ mapGuid, guids }) {
+        if (!mapGuid || !guids || !guids.peopleArmy) {
+            return;
+        }
+
         const guid = guids.peopleArmy;
+        this.lobbyData[guid] = { mapGuid, guids };
+
+        const map = await this.sendToMap(`${URLS.GET_RELIEF}`, { mapGuid, userGuid: guid });
+        if (!map || !Array.isArray(map)) {
+            return;
+        }
+        await this.loadUnitTypes();
+
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
         if (user) {
-            this.army[guid] = new Army({guids, startPoint, mapGuid, common: this.common, guid, db: this.db,
-            callbacks: {
-                    update: (guid, data) => this.updateArmyCallback(guid, data)
+            if (this.army[guid]) {
+                this.army[guid].destructor();
+                delete this.army[guid];
             }
+            this.army[guid] = new Army({ guids, mapGuid, map, buildings: [], unitTypes: this.unitTypes, common: this.common, guid,
+                callbacks: {
+                    update: (guid, data) => this.updateArmyCallback(guid, data),
+                    takeDamage: (payload) => this.damageMushroomsUnit(payload),
+                }
             });
+            this.io.to(user.socketId).emit(
+                this.SOCKET.START_GAME,
+                this.answer.good({ map })
+            );
         }
     }
 
-    eventUserDisconnect({ guid }) {
+    eventUserDisconnect(guid) {
         if (!guid || !this.army[guid]) {
             return;
         }

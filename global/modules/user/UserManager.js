@@ -24,14 +24,12 @@ class UserManager extends BaseManager {
     }
     
     async handleDisconnect(socket) {
-        const guid = this.triggerGetUserBySocketId(socket.id);
-        if (guid && this.users[guid]) {
-            const user = this.users[guid];
-            if (user) {
-                this.mediator.call(this.EVENTS.DELETE_USER, guid);
-                await user.logout();
-                delete this.users[guid];
-            }    
+        const user = this.triggerGetUserBySocketId(socket.id);
+        if (user) {
+            console.log('Отключение клиента c guid', user.get().guid);
+            const guid = user.guid;
+            await user.logout();
+            delete this.users[guid];
         }
     }
 
@@ -87,7 +85,7 @@ class UserManager extends BaseManager {
         if (!token) {
             return socket.emit(LOGOUT, this.answer.bad(13));
         }
-        const user = this.users[guid];
+        const user = this.triggerGetUserByGuid(guid);
         if (user) {
             this.mediator.call(this.EVENTS.DELETE_USER, guid);
             await user.logout();

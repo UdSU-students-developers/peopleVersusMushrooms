@@ -55,6 +55,8 @@ const CONFIG = {
         LOBBIES_LIST_UPDATED: 'LOBBIES_LIST_UPDATED',
         SET_READY: 'SET_READY',
 
+        RELIEF_LOADED: 'RELIEF_LOADED',
+
         UPDATE_SCENE: 'UPDATE_SCENE',
         GET_SCENE: 'GET_SCENE',
     },
@@ -82,6 +84,8 @@ const CONFIG = {
             WATER: 1,
             STONE: 2,
         },
+
+        MAP_SIZE: 100,
     },
 
 };

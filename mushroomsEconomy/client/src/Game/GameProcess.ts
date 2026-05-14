@@ -1,9 +1,9 @@
 import Server from "../services/Server/Server";
 import Mediator from "../services/Mediator/Mediator";
 import CONFIG from "../config";
-import { TScene } from "../services/Server/types";
+import { TRelief, TScene } from "../services/Server/types";
 
-const { START_GAME, UPDATE_SCENE } = CONFIG.SOCKET;
+const { START_GAME, UPDATE_SCENE, RELIEF_LOADED } = CONFIG.SOCKET;
 
 export default class GameProcess {
 
@@ -18,6 +18,7 @@ export default class GameProcess {
 
         this.mediator.subscribe(START_GAME, (data: TScene) => this.startGame(data));
         this.mediator.subscribe(UPDATE_SCENE, (data: TScene) => this.updateScene(data));
+        this.mediator.subscribe(RELIEF_LOADED, (data: TRelief) => this.reliefLoaded(data));
     }
     
     get () {
@@ -27,11 +28,18 @@ export default class GameProcess {
     }
 
     startGame(data: TScene): void {
+        this.scene = data;
         console.log('Iya startanUUUlsOO!!1', data);
     }
 
     updateScene(data: TScene): void {
         this.scene = data;
         //console.log('update!', data);
+    }
+
+    reliefLoaded(data: TRelief): void {
+        console.log("Relief loaded");
+        if (!this.scene) return;
+        this.scene.map.relief = data;
     }
 }

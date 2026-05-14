@@ -14,7 +14,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [lobbyName, setLobbyName] = useState('');
     const [currentLobby, setCurrentLobby] = useState<ILobby | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
     const [isReady, setIsReady] = useState(false);
 
     const logoutClickHandler = async () => {
@@ -29,7 +28,7 @@ const Lobby: React.FC<IBasePage> = (props) => {
     const confirmCreateLobby = () => {
         if (lobbyName.trim()) {
             console.log(server.user.guid)
-            server.createLobby(server.user.guid, lobbyName.trim(), 'spectator');
+            server.createLobby(server.user.guid, lobbyName.trim(), 'peopleEconomy');
             setLobbyName('');
             setShowCreateModal(false);
         }
@@ -41,7 +40,7 @@ const Lobby: React.FC<IBasePage> = (props) => {
     }
 
     const joinLobbyHandler = (lobbyGuid: string) => {
-        server.joinToLobby(server.user.guid, lobbyGuid, 'spectator');
+        server.joinToLobby(server.user.guid, lobbyGuid, 'peopleEconomy');
     }
 
     const leaveLobbyHandler = () => {
@@ -50,7 +49,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
     }
 
     const startGameHandler = () => {
-        server.generateMap();
         server.startGame(server.user.guid);
         setPage(PAGES.MAP);
     }
@@ -87,13 +85,11 @@ const Lobby: React.FC<IBasePage> = (props) => {
 
         const serverErrorHandler = (error: TError) => {
             setError(error);
-            setIsLoading(false);
         };
 
         const createLobbyHandler = (data: any) => {
             setCurrentLobby(data);
             setIsReady(false);
-            setIsLoading(false);
         };
 
         const mapHandler = (data: TMap) => {
@@ -105,21 +101,18 @@ const Lobby: React.FC<IBasePage> = (props) => {
             console.log('Присоединились к комнате:', data);
             setCurrentLobby(data);
             setIsReady(false);
-            setIsLoading(false);
         };
 
         const leaveLobbyHandler = (data: any) => {
             console.log('Покинули комнату:', data);
             setCurrentLobby(null);
             setIsReady(false);
-            setIsLoading(false);
         };
 
         const getLobbiesHandler = () => {
             const data = server.getLobbies();
             console.log('Список комнат:', data);
             setLobbies(data || []);
-            setIsLoading(false);
         };
 
         const lobbyUpdatedHandler = (data: any) => {
@@ -202,7 +195,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
             </div>
 
             {error && <p id='test-errors-lobby' className='errors'>{error.message}</p>}
-
             {currentLobby && (
                 <div className="current-lobby">
                     <h2>Текущая комната: {currentLobby.lobbyName}</h2>
@@ -243,7 +235,7 @@ const Lobby: React.FC<IBasePage> = (props) => {
                             text={'Готов'}
                         />
 
-                        {currentLobby.lobbyGuid === currentLobby.playersGuids.spectator && (
+                        {currentLobby.lobbyGuid === currentLobby.playersGuids.peopleEconomy && (
                             <Button
                                 onClick={startGameHandler}
                                 text='Начать игру'
@@ -262,11 +254,10 @@ const Lobby: React.FC<IBasePage> = (props) => {
 
             <div className="lobbies-list">
                 <h2>Доступные комнаты</h2>
-                {isLoading && <p>Загрузка...</p>}
-                {!isLoading && lobbies.length === 0 && (
+                {lobbies.length === 0 && (
                     <p>Нет доступных комнат. Создайте первую!</p>
                 )}
-                {!isLoading && lobbies.length > 0 && (
+                {lobbies.length > 0 && (
                     <div className="lobbies-grid">
                         {lobbies.map((lobby) => (
                             <div key={lobby.lobbyGuid} className="lobby-card">

@@ -144,11 +144,6 @@ class Server {
         });
     }
 
-    //оставлено, чтобы не сломать текущие вызовы
-    joinLobby(payload: Record<string, unknown> = {}): void {
-        this.joinToLobby(payload);
-    }
-
     leaveLobby(payload: Record<string, unknown> = {}): void {
         const user = this.getAuthorizedUser();
         if (!user) return;
@@ -190,6 +185,19 @@ class Server {
             token: user.token,
             guid: user.guid,
             ...payload
+        });
+    }
+
+    spawnUnit(type: 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad', x: number, y: number): void {
+        const user = this.getAuthorizedUser();
+        if (!user) return;
+
+        this.socket.emit(CONFIG.SOCKET.SPAWN_UNIT, {
+            guid: user.guid,
+            token: user.token,
+            type,
+            x,
+            y,
         });
     }
 
@@ -336,6 +344,7 @@ class Server {
 
             authStorage.setAuth(response.data.token, response.data);
             this.mediator.call(USER_REGISTERED, response.data);
+            this.lobbyStart();
             return;
         }
 
@@ -354,6 +363,7 @@ class Server {
 
             authStorage.setAuth(response.data.token, response.data);
             this.mediator.call(LOGIN_EVENT, response.data);
+            this.lobbyStart();
         } else {
             this.mediator.call(this.mediator.getEventTypes().ERROR, response.error);
         }
@@ -368,12 +378,11 @@ class Server {
     }
 
     private handleLobbyStart(response: TResponse<boolean>) {
-        if (response?.result === 'ok' && response.data) {
-            const GAME_STARTED = this.mediator.getEventTypes().GAME_STARTED;
-            this.mediator.call(GAME_STARTED);
-        } else {
+        if (response?.result !== 'ok') {
             this.mediator.call(this.mediator.getEventTypes().ERROR, response.error);
         }
+        // socketId зарегистрирован на сервере — навигацию не делаем здесь,
+        // она произойдёт при получении 'game:started'
     }
 
     private handleGameStarted(response: TResponse<boolean>) {

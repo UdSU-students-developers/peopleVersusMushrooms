@@ -1,5 +1,19 @@
+const EasyStar = require('easystarjs');
+
 class Building {
-    constructor({type, guid, x, y, callbacks = {}, hp = null, size = null, consumption = null, production = null, capacity = null, easyStar = null}) {
+    constructor({
+        type, 
+        guid, 
+        x, 
+        y, 
+        callbacks = {}, 
+        hp = null, 
+        size = null, 
+        consumption = null, 
+        production = null, 
+        capacity = null, 
+        visibility = null,
+    }) {
         this.x = x;
         this.y = y;
         this.type = type;
@@ -12,17 +26,20 @@ class Building {
         this.consumption = consumption; // энергопотребление за единицу времени
         this.production = production; // сколько производит за единицу времени
         this.capacity = capacity; // емкость внутреннего хранилища
+        this.visibility = visibility;
 
-        this.easyStar = easyStar;
+        this.easyStar = new EasyStar.js();
     }
 
     get() {
         return {
             guid: this.guid,
-            coords: {x: this.x, y: this.y },
+            x: this.x,
+            y: this.y,
             type: this.type,
-            hp: this.hp,
             size: this.size,
+            visibility: this.visibility,
+            hp: this.hp,
         }
     }
 
@@ -61,6 +78,13 @@ class Building {
             this.easyStar.calculate();
         });
 
+    }
+
+     takeDamage(amount) {
+        if (amount <= 0) return false;
+
+        this.hp = Math.max(0, this.hp - amount);
+        return this.hp === 0;
     }
 }
 

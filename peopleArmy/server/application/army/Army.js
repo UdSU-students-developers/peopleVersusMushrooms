@@ -207,7 +207,7 @@ class Army {
         const diagonalCells = cells.filter((cell) => cell.x !== unit.x && cell.y !== unit.y);
         const targetCells = diagonalCells.length ? diagonalCells : cells;
 
-        return targetCells.sort(compareByDistance);
+        return targetCells.sort(compareByDistance)[0];
     }
 
     setUnitsTarget() {
@@ -284,7 +284,7 @@ class Army {
             const isHeavyShooter = unit.type === 'bmp' || unit.type === 'sniper';
             const targetGuid = isHeavyShooter
                 ? sortedEnemyGuids[sortedEnemyGuids.length - 1]
-                : sortedEnemyGuids;
+                : sortedEnemyGuids[0];
             const target = this.enemyUnits.find((enemy) => enemy.guid === targetGuid);
 
             if (!target) {

@@ -8,13 +8,11 @@ const { START_GAME, UPDATE_SCENE, RELIEF_LOADED } = CONFIG.SOCKET;
 export default class GameProcess {
 
     scene: TScene | null;
-    relief: TRelief | null;
     server: Server;
     mediator: Mediator;
 
     constructor(server: Server, mediator: Mediator) {
         this.scene = null;
-        this.relief = null;
         this.server = server;
         this.mediator = mediator;
 
@@ -30,6 +28,7 @@ export default class GameProcess {
     }
 
     startGame(data: TScene): void {
+        this.scene = data;
         console.log('Iya startanUUUlsOO!!1', data);
     }
 
@@ -40,6 +39,7 @@ export default class GameProcess {
 
     reliefLoaded(data: TRelief): void {
         console.log("Relief loaded");
-        this.relief = data;
+        if (!this.scene) return;
+        this.scene.map.relief = data;
     }
 }

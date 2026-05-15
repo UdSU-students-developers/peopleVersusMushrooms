@@ -58,3 +58,4 @@
     height: min(var(--minimap-box-size), calc(100vw - 8px));
   }
 }
+

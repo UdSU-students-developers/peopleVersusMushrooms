@@ -1,8 +1,7 @@
-// pages/Game/Game.tsx
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { MediatorContext, ServerContext } from '../../App';
 import CONFIG from '../../config';
-import { drawGame, preloadFogWarTextures } from './renderer';
+import { drawGame, preloadFogWarTextures } from './renderer/renderer';
 import { GameState } from './types';
 import { PAGES } from '../PageManager';
 import { TUser } from '../../services/server/types';
@@ -10,8 +9,8 @@ import './Game.css';
 import { camera } from '../../utils/camera';
 import Header from '../../widgets/GameInterface/Header/Header';
 import Footer from '../../widgets/GameInterface/Footer/Footer';
-import OptionsPannel from '../../widgets/GameInterface/OptionsPannel/OptionsPannel';
 import GameOver from '../../widgets/GameInterface/GameOver/GameOver';
+import OptionsPannel from '../../widgets/GameInterface/OptionsPannel/OptionsPannel';
 import { HUD_SCALE_STEPS } from '../../widgets/GameInterface/uiConstants';
 
 const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
@@ -45,6 +44,7 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     const heightCSS = canvas.clientHeight;
     if (widthCSS === 0 || heightCSS === 0) return;
 
+    // Рисуем текущее состояние с учетом обновленной камеры
     drawGame(ctx, gameStateRef.current, widthCSS, heightCSS, camera);
   };
 
@@ -83,6 +83,7 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     let rafId: number;
 
     const renderLoop = () => {
+      // Скорость перемещения не зависит от зума
       const moveSpeed = 20 / camera.scale;
 
       if (keysPressed.current['KeyW'] || keysPressed.current['ArrowUp']) {
@@ -150,10 +151,14 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   useEffect(() => {
     if (!mediator) return;
 
-    const EVENT_NAME = CONFIG.MEDIATOR.EVENTS.GAME_STATE_UPDATED;
-    const handler = (newState: GameState) => {
-      gameStateRef.current = newState;
-    };
+  const EVENT_NAME = CONFIG.MEDIATOR.EVENTS.GAME_STATE_UPDATED;
+  const handler = (newState: GameState) => {
+    gameStateRef.current = newState;
+    
+    // Считаем живых юнитов при получении нового состояния, а не в цикле отрисовки
+    const aliveCount = newState.units.filter((unit) => unit.hp > 0).length ?? 0;
+    setAliveUnitsCount(aliveCount);
+  };
 
     mediator.subscribe(EVENT_NAME, handler);
     return () => mediator.unsubscribe(EVENT_NAME, handler);
@@ -168,10 +173,11 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   }, [mediator]);
 
   useEffect(() => {
-    const UNIT_TYPES: Record<string, 'sporomet' | 'champigneb' | 'eblekar'> = {
+    const UNIT_TYPES: Record<string, 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad'> = {
       Digit1: 'sporomet',
       Digit2: 'champigneb',
       Digit3: 'eblekar',
+      Digit4: 'pizdoglyad',
     };
 
     const handleSpawnKey = (e: KeyboardEvent) => {

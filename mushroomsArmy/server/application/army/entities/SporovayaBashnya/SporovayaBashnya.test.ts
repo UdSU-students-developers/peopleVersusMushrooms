@@ -1,13 +1,13 @@
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import SporovayaBashnya from './SporovayaBashnya';
 import Unit from '../Units';
+import { TMap } from '../../Army';
 
 const defaultOptions = {
     guid: 'test-sporovaya-bashnya-1',
     x: 10,
     y: 15,
     hp: 100,
-    maxHp: 100,
 };
 
 describe('SporovayaBashnya', () => {
@@ -20,7 +20,6 @@ describe('SporovayaBashnya', () => {
     it('параметры при создании соответствуют переданным в конструктор', () => {
         expect(bashnya.guid).toBe('test-sporovaya-bashnya-1');
         expect(bashnya.hp).toBe(100);
-        expect(bashnya.maxHp).toBe(100);
         expect(bashnya.x).toBe(10);
         expect(bashnya.y).toBe(15);
         expect(typeof bashnya.hp).toBe('number');
@@ -72,7 +71,7 @@ describe('SporovayaBashnya', () => {
             takeDamage: jest.fn() 
         } as unknown as Unit; 
         bashnya.takeDamage(100);
-        bashnya.update([enemy], [] as any, 5);
+        bashnya.update([enemy], [] as TMap, 5);
         expect(enemy.takeDamage).not.toHaveBeenCalled();
     });
 });

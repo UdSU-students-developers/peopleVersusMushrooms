@@ -20,10 +20,22 @@ const getTerrainColor = (tile: MapTile): string => {
   }
 };
 
+const ownBuildingTypes = ['vzryvomor', 'sporovaya_bashnya'];
+const economyBuildingTypes = [
+  'mycelium',
+  'incubator',
+  'small_bioreactor',
+  'big_bioreactor',
+  'fat_barrel',
+  'iron_barrel',
+  'mine',
+];
+
 const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const map = gameState?.map;
 
+  // 1. Твой расчет точек юнитов (оставляем без изменений)
   const dots = useMemo(() => {
     if (!gameState) return [];
 
@@ -45,7 +57,11 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
       .filter((b) => b.hp > 0 && b.isAlive !== false)
       .map((b) => ({
         guid: b.guid,
-        color: ownBuildingTypes.includes(b.type) ? '#ffd966' : '#f05252',
+        color: ownBuildingTypes.includes(b.type)
+          ? '#ffd966'
+          : economyBuildingTypes.includes(b.type)
+            ? '#a855f7'
+            : '#f05252',
         x: clamp(((b.x + (b.sizeX ?? 1) / 2) / cols) * 100),
         y: clamp(((b.y + (b.sizeY ?? 1) / 2) / rows) * 100),
       }));
@@ -53,21 +69,29 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
     return [...unitDots, ...buildingDots];
   }, [gameState]);
 
+  // Позиция и размер рамки камеры на миникарте (в процентах от размера карты)
   const cameraRectStyle = useMemo(() => {
     if (!map?.[0]) return { display: 'none' };
 
     const rows = map.length;
     const cols = map[0].length;
 
+    // Размер одного тайла на экране с учётом зума
     const currentTileSize = (window.innerWidth / cols) * camera.scale;
+
+    // Сколько тайлов помещается в окне по ширине и высоте
     const visibleCols = window.innerWidth / currentTileSize;
     const visibleRows = window.innerHeight / currentTileSize;
 
+    // Тайл в верхнем левом углу видимой области камеры
     const startTileX = -camera.offsetX / currentTileSize;
     const startTileY = -camera.offsetY / currentTileSize;
 
+    // Позиция камеры в процентах от всей карты
     const xPct = (startTileX / cols) * 100;
     const yPct = (startTileY / rows) * 100;
+
+    // Размер рамки в процентах от всей карты
     const wPct = (visibleCols / cols) * 100;
     const hPct = (visibleRows / rows) * 100;
 
@@ -85,6 +109,7 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
     };
   }, [map, camera.offsetX, camera.offsetY, camera.scale]);
 
+  // Рисуем ландшафт на canvas при изменении карты
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !map) return;
@@ -133,7 +158,14 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
           />
         ))}
 
-        <div className="minimap-camera-rect" style={cameraRectStyle} />
+        {/* Рамка видимой области камеры */}
+        <div className="minimap-camera-rect" style={{
+          ...cameraRectStyle,
+          position: 'absolute',
+          border: '1px solid white',
+          boxSizing: 'border-box',
+          pointerEvents: 'none'
+        }} />
       </div>
     </div>
   );

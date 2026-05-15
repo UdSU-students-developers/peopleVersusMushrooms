@@ -1,5 +1,6 @@
 const GLOBAL_CONFIG = {
     INTERVAL: 200, //мс
+    MAP_SIZE: 100, //100 x 100
 
     MAP: {
         PORT: 3001,
@@ -59,7 +60,6 @@ const GLOBAL_CONFIG = {
         GENERATE_MAP: 'GENERATE_MAP',
         UPDATE_MAP: 'UPDATE_MAP',
         GET_MAP_PARAMS: 'GET_MAP_PARAMS',
-        RELIEF_LOADED: 'RELIEF_LOADED',
 
         //user
         REGISTRATION: 'REGISTRATION',
@@ -84,10 +84,16 @@ const GLOBAL_CONFIG = {
         GET_VISIBILITY: '/getVisibility',
         GET_RESOURSE_VISIBILITY: '/getResourseVisibility',
         UPDATE_UNITS: '/updateUnits',
-        UPDATE_BUILDINGS: '/updateBuldings',
+        UPDATE_BUILDINGS: '/updateBuildings',
 
         //mushrooms army
         SPAWN_UNIT: '/spawnUnit',
+        
+        //people army
+        TAKE_DAMAGE_PEOPLE_ARMY: '/unit/takeDamage',
+
+        APPLY_DAMAGE: '/applyDamage',
+        MOVE: '/move',
     },
 
     ROLES: {

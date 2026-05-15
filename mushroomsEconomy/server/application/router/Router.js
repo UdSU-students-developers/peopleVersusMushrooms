@@ -13,6 +13,7 @@ const {
     useStartGameHandler,
     useDamageHandler,
 } = require('./handlers');
+const useMoveHandler = require('./handlers/game/useMoveHandler');
 
 function Router({ mediator, answer }) {
 	
@@ -22,7 +23,8 @@ function Router({ mediator, answer }) {
     //map
     router.post(GLOBAL_CONFIG.URLS.START_GAME, useStartGameHandler(mediator, answer));
 
-    router.post('/damage', useDamageHandler(mediator, answer));
+    router.post(GLOBAL_CONFIG.URLS.APPLY_DAMAGE, useDamageHandler(mediator, answer));
+    router.post(GLOBAL_CONFIG.URLS.MOVE, useMoveHandler(mediator, answer));
 
     router.all('/*path', notFoundHandler);
     return router;

@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 
 import App from './App';
 
-// 1. Блокировка Ctrl + (+), Ctrl + (-)
+// Блокируем масштабирование страницы браузером через клавиатуру и колёсико
 window.addEventListener('keydown', (e) => {
   if (
     e.ctrlKey && 
@@ -13,7 +13,6 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-// 2. Блокировка Ctrl + колесико мыши
 window.addEventListener('wheel', (e) => {
   if (e.ctrlKey) {
     e.preventDefault();

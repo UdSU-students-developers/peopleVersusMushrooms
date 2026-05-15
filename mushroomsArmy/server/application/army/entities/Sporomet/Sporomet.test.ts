@@ -1,13 +1,43 @@
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import Sporomet from './Sporomet';
 import Unit from '../Units';
+import { TMap } from '../../Army';
+
+/** Вспомогательный тип для доступа к protected/private членам в тестах */
+interface ITSporometTestable {
+    isAiming: boolean;
+    currentTarget: Unit | null;
+    targetX: number;
+    targetY: number;
+    onEnemyFound(enemy: Unit, distance: number): void;
+    shoot(enemy: Unit): void;
+    // публичные члены из Sporomet
+    guid: string;
+    hp: number;
+    x: number;
+    y: number;
+    speed: number;
+    attackRange: number;
+    isAlive: boolean;
+    baseHp: number;
+    retreatRange: number;
+    cooldown: number;
+    aimTime: number;
+    attackDamage: number;
+    poisonDuration: number;
+    poisonDamagePerSecond: number;
+    projectiles: Sporomet['projectiles'];
+    poisonEffects: Sporomet['poisonEffects'];
+    getState(): ReturnType<Sporomet['getState']>;
+    takeDamage(amount: number): void;
+    update(enemies: Unit[], map: TMap, deltaTime: number): void;
+}
 
 const defaultOptions = {
     guid: 'test-sporomet-1',
     x: 50,
     y: 50,
     hp: 8,
-    maxHp: 8,
     speed: 1,
     attackRange: 12,
     type: 'sporomet',
@@ -26,7 +56,6 @@ describe('Sporomet', () => {
     it('параметры при создании соответствуют переданным в конструктор', () => {
         expect(sporomet.guid).toBe('test-sporomet-1');
         expect(sporomet.hp).toBe(8);
-        expect(sporomet.maxHp).toBe(8);
         expect(sporomet.x).toBe(50);
         expect(sporomet.y).toBe(50);
         expect(sporomet.speed).toBe(1);
@@ -48,25 +77,24 @@ describe('Sporomet', () => {
         expect(state.type).toBe('sporomet');
         expect(state.guid).toBe('test-sporomet-1');
         expect(state.hp).toBe(8);
-        expect(state.maxHp).toBe(8);
         expect(state.x).toBe(50);
         expect(state.y).toBe(50);
     });
 
     it('takeDamage(5) снижает hp на 5', () => {
-        sporomet.takeDamage(5, 'physical');
+        sporomet.takeDamage(5);
         expect(sporomet.hp).toBe(3);
         expect(sporomet.isAlive).toBe(true);
     });
 
     it('takeDamage(8) убивает споромета', () => {
-        sporomet.takeDamage(8, 'physical');
+        sporomet.takeDamage(8);
         expect(sporomet.hp).toBe(0);
         expect(sporomet.isAlive).toBe(false);
     });
 
     it('takeDamage с отрицательным уроном не изменяет hp', () => {
-        sporomet.takeDamage(-10, 'physical');
+        sporomet.takeDamage(-10);
         expect(sporomet.hp).toBe(8);
     });
 
@@ -79,8 +107,8 @@ describe('Sporomet', () => {
             poisonEffects: [],
         } as unknown as Unit;
         
-        sporomet.takeDamage(8, 'physical');
-        sporomet.update([enemy], [] as any, 5);
+        sporomet.takeDamage(8);
+        sporomet.update([enemy], [] as TMap, 5);
         expect(enemy.takeDamage).not.toHaveBeenCalled();
     });
 
@@ -95,13 +123,13 @@ describe('Sporomet', () => {
             poisonEffects: [],
         } as unknown as Unit;
         
-        (sporomet as any).isAiming = true;
-        (sporomet as any).currentTarget = enemy;
+        (sporomet as unknown as ITSporometTestable).isAiming = true;
+        (sporomet as unknown as ITSporometTestable).currentTarget = enemy;
         
-        sporomet.update([enemy], [] as any, 0.6);
+        sporomet.update([enemy], [] as TMap, 0.6);
         
-        expect((sporomet as any).isAiming).toBe(false);
-        expect((sporomet as any).currentTarget).toBe(null);
+        expect((sporomet as unknown as ITSporometTestable).isAiming).toBe(false);
+        expect((sporomet as unknown as ITSporometTestable).currentTarget).toBe(null);
 
     });
 
@@ -117,7 +145,7 @@ describe('Sporomet', () => {
             poisonEffects: [],
         } as unknown as Unit;
         
-        (sporomet as any).shoot(enemy);
+        (sporomet as unknown as ITSporometTestable).shoot(enemy);
         
         expect(enemy.poisonEffects).toHaveLength(1);
         expect(enemy.poisonEffects[0]).toMatchObject({
@@ -143,9 +171,9 @@ describe('Sporomet', () => {
             }],
         } as unknown as Unit;
         
-        sporomet.update([enemy], [] as any, 0.5);
+        sporomet.update([enemy], [] as TMap, 0.5);
         
-        expect(enemy.takeDamage).toHaveBeenCalledWith(5, 'poison');
+        expect(enemy.takeDamage).toHaveBeenCalledWith(5);
     });
 
     it('sporomet отступает, если враг слишком близко (дистанция < retreatRange)', () => {
@@ -157,12 +185,12 @@ describe('Sporomet', () => {
         } as Unit;
         
         // Находим врага на дистанции 5
-        (sporomet as any).onEnemyFound(enemy, 5);
+        (sporomet as unknown as ITSporometTestable).onEnemyFound(enemy, 5);
         
         // Должен отступить от врага (targetX смещается в сторону от врага)
-        expect((sporomet as any).targetX).toBeLessThan(50);
-        expect((sporomet as any).isAiming).toBe(false);
-        expect((sporomet as any).currentTarget).toBe(null);
+        expect((sporomet as unknown as ITSporometTestable).targetX).toBeLessThan(50);
+        expect((sporomet as unknown as ITSporometTestable).isAiming).toBe(false);
+        expect((sporomet as unknown as ITSporometTestable).currentTarget).toBe(null);
     });
 
    it('sporomet не стреляет, если цель вне радиуса атаки', () => {
@@ -175,15 +203,15 @@ describe('Sporomet', () => {
             poisonEffects: [],
         } as unknown as Unit;
 
-        (sporomet as any).isAiming = true;
-        (sporomet as any).currentTarget = enemy;
+        (sporomet as unknown as ITSporometTestable).isAiming = true;
+        (sporomet as unknown as ITSporometTestable).currentTarget = enemy;
 
         const initialProjectilesCount = sporomet.projectiles.length;
 
-        sporomet.update([enemy], [] as any, 0.1);
+        sporomet.update([enemy], [] as TMap, 0.1);
 
-        expect((sporomet as any).isAiming).toBe(false);
-        expect((sporomet as any).currentTarget).toBe(null);
+        expect((sporomet as unknown as ITSporometTestable).isAiming).toBe(false);
+        expect((sporomet as unknown as ITSporometTestable).currentTarget).toBe(null);
         expect(sporomet.projectiles.length).toBe(initialProjectilesCount);
     });
 
@@ -196,13 +224,13 @@ describe('Sporomet', () => {
             takeDamage: jest.fn(),
         } as unknown as Unit;
         
-        (sporomet as any).isAiming = true;
-        (sporomet as any).currentTarget = enemy;
+        (sporomet as unknown as ITSporometTestable).isAiming = true;
+        (sporomet as unknown as ITSporometTestable).currentTarget = enemy;
         
-        sporomet.update([enemy], [] as any, 0.1);
+        sporomet.update([enemy], [] as TMap, 0.1);
         
-        expect((sporomet as any).isAiming).toBe(false);
-        expect((sporomet as any).currentTarget).toBe(null);
+        expect((sporomet as unknown as ITSporometTestable).isAiming).toBe(false);
+        expect((sporomet as unknown as ITSporometTestable).currentTarget).toBe(null);
     });
 
     it('споромет создает снаряд при выстреле', () => {
@@ -217,7 +245,7 @@ describe('Sporomet', () => {
         } as unknown as Unit;
         
         const initialProjectilesCount = sporomet.projectiles.length;
-        (sporomet as any).shoot(enemy);
+        (sporomet as unknown as ITSporometTestable).shoot(enemy);
         
         expect(sporomet.projectiles.length).toBe(initialProjectilesCount + 1);
         expect(sporomet.projectiles[initialProjectilesCount]).toMatchObject({
@@ -245,7 +273,7 @@ describe('Sporomet', () => {
             }],
         } as unknown as Unit;
         
-        (sporomet as any).shoot(enemy);
+        (sporomet as unknown as ITSporometTestable).shoot(enemy);
         
         expect(enemy.poisonEffects).toHaveLength(1);
         expect(enemy.poisonEffects[0].duration).toBe(10);
@@ -260,23 +288,23 @@ describe('Sporomet', () => {
         } as Unit;
         
         // Оптимальная дистанция: (retreatRange + attackRange) / 2 = 10
-        (sporomet as any).onEnemyFound(enemy, 10);
+        (sporomet as unknown as ITSporometTestable).onEnemyFound(enemy, 10);
         
-        expect((sporomet as any).targetX).toBe(50);
-        expect((sporomet as any).targetY).toBe(50);
+        expect((sporomet as unknown as ITSporometTestable).targetX).toBe(50);
+        expect((sporomet as unknown as ITSporometTestable).targetY).toBe(50);
     });
 
     it('споромет корректно обрабатывает пустой массив врагов', () => {
         expect(() => {
-            sporomet.update([], [] as any, 0.1);
+            sporomet.update([], [] as TMap, 0.1);
         }).not.toThrow();
         expect(sporomet.isAlive).toBe(true);
     });
 
-    it('споромет получает повышенный урон от огня', () => {
+    it('споромет получает урон', () => {
         const initialHp = sporomet.hp;
-        sporomet.takeDamage(4, 'fire');
-        expect(sporomet.hp).toBe(initialHp - 8);
+        sporomet.takeDamage(4);
+        expect(sporomet.hp).toBe(initialHp - 4);
     });
 
     it('споромет умирает и перестает реагировать на обновления', () => {
@@ -287,12 +315,11 @@ describe('Sporomet', () => {
             takeDamage: jest.fn(),
         } as unknown as Unit;
         
-        sporomet.takeDamage(8, 'physical');
+        sporomet.takeDamage(8);
         expect(sporomet.isAlive).toBe(false);
         
-        // Пытаемся обновить мертвого споромета
         const originalX = sporomet.x;
-        sporomet.update([enemy], [] as any, 1);
+        sporomet.update([enemy], [] as TMap, 1);
         
         expect(sporomet.x).toBe(originalX);
         expect(enemy.takeDamage).not.toHaveBeenCalled();

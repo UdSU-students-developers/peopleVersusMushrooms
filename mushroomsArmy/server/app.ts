@@ -5,7 +5,7 @@ const Mediator = require('../../global/modules/Mediator');
 const Answer = require('../../global/Answer');
 const UserManager = require('../../global/modules/user/UserManager');
 const Common = require('../../global/modules/common/Common');
-const LobbyManager = require('../../global/modules/lobby/LobbyManager');
+const MushroomsArmyLobbyManager = require('./MushroomsArmyLobbyManager');
 
 //LOCAL
 import CONFIG from './config';
@@ -30,7 +30,7 @@ const answer = new Answer();
 
 new UserManager({ mediator, db, io, answer, common });
 new ArmyManager({ mediator, db, common, io, answer });
-new LobbyManager({ mediator, db, io, answer, common }, ROLE);
+new MushroomsArmyLobbyManager({ mediator, db, io, answer, common }, ROLE);
 
 app.use(GLOBAL_CONFIG.CORS.middleware);
 

@@ -24,46 +24,106 @@ export type TMessage = {
     created: string;
 }
 
-export type TMushroom = {
-    guid: string;
-    level: number;
-    coords: TPoint
+export type TMessages = TMessage[];
+
+
+export type TGuids = {
+    spectator: string | null;
+    peopleArmy: string | null;
+    peopleEconomy: string | null;
+    mushroomsArmy: string | null;
+    mushroomsEconomy: string | null;
+    mapGuid: string | null;
 }
+
+export type TResourcePoint = {
+    x: number;
+    y: number;
+    value: number;
+}
+
+// ========= ЗДАНИЯ ======
 
 export type TSmallReactor = {
     guid: string;
-    coords: TPoint;
+    x: number;
+    y: number;
     type: "small_reactor";
     consumed: boolean;
+    energy?: number;
 }
 
-export type TLarva = {
+export type TIncubator = {
     guid: string;
     x: number;
     y: number;
-    coords: { x: number; y: number };
+    type: "incubator";
+}
+
+export type TMushroom = { 
+    type: 'mycelium';
+    guid: string;
+    level: number;
+    x: number;
+    y: number;
+}
+
+export type TEconomyBuildings = {
+    smallReactors: TSmallReactor[];
+    incubators: TIncubator[];
+    mycelium: TMushroom[];
+}
+
+// ============= ЮНИТЫ ============
+
+export type TUnit = {
+    guid: string;
+    x: number;
+    y: number;
+    coords: {x: number, y:number},
+    type: string;
+    visibility: number;
+}
+
+export type TWorker = TUnit & {
     hp: number;
     speed: number;
-};
+}
 
-export type TScene = {
-    guid: string;
-    mushrooms: TMushroom[]; 
-    buildings: (TSmallReactor | number)[];
-    map: number[][];
+export type TLarva = TUnit & {
+    hp: number;
+    speed: number;
+    growthScale: number;
+}
+
+export type TEconomyUnits = {
+    workers: TWorker[];
     larvae: TLarva[];
 }
 
-export type TMessages = TMessage[];
 
-export type TLobbies = TLobby[];
+//=======================
 
-export type TLobbyServer = {
-    lobbyGuid: string;
-    lobbyName: string;
-    playersGuids: Record<string, string | null>; 
-    playersIsReady?: Record<string, boolean>;
+export type TEconomy = {
+    guids: TGuids;
+    buildings: TEconomyBuildings;
+    units: TEconomyUnits;
+    map: TMap;
 }
+
+export type TMap = {
+    relief: TRelief;
+    resurces: (TResourcePoint | null)[];
+
+}
+
+export type TScene = {
+    guid: string;
+    buildings: TEconomyBuildings
+    map: TMap;
+    units: TEconomyUnits;
+}
+
 
 export type TPlayer = {
     guid: string;
@@ -77,7 +137,13 @@ export type TLobby = {
     players: TPlayer[];
 }
 
-export type TRelief = {
-    mapGuid: string;
-    map: number[][];
+export type TLobbies = TLobby[];
+
+export type TLobbyServer = {
+    lobbyGuid: string;
+    lobbyName: string;
+    playersGuids: Record<string, string | null>;
+    playersIsReady?: Record<string, boolean>;
 }
+
+export type TRelief = (number | null)[][];

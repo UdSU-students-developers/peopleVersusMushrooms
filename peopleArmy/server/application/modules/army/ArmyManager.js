@@ -163,6 +163,17 @@ class ArmyManager extends BaseManager {
         return this.answer.good(true);
     }
 
+    async damageMushroomsUnit({ armyGuid="123efthgfrds", unitGuid, amount }) {
+        if (!armyGuid || !unitGuid || !Number.isFinite(Number(amount))) {
+            return null;
+        }
+        return this.sendToMushroomsArmy('/takeDamage', {
+            armyGuid,
+            unitGuid,
+            amount: Number(amount),
+        });
+    }
+
     /* EVENTS */
     async eventStartGame({ mapGuid, guids }) {
         if (!mapGuid || !guids || !guids.peopleArmy) {
@@ -186,7 +197,8 @@ class ArmyManager extends BaseManager {
             }
             this.army[guid] = new Army({ guids, mapGuid, map, buildings: [], unitTypes: this.unitTypes, common: this.common, guid,
                 callbacks: {
-                    update: (guid, data) => this.updateArmyCallback(guid, data)
+                    update: (guid, data) => this.updateArmyCallback(guid, data),
+                    takeDamage: (payload) => this.damageMushroomsUnit(payload),
                 }
             });
             this.io.to(user.socketId).emit(

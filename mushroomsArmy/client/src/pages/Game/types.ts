@@ -18,9 +18,9 @@ export type Unit = {
   guid: string;               
   x: number;                
   y: number;                
-  type: 'sporomet' | 'champigneb' | 'eblekar';
+  type: 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad';
   hp: number;               
-  maxHp: number;  
+  visibility?: number;
   isHealing?: boolean;          
 };
 
@@ -33,7 +33,7 @@ export type Building = {
   x: number;
   y: number;
   hp: number;
-  maxHp: number;
+  visibility?: number;
   sizeX?: number;
   sizeY?: number;
   isAlive?: boolean;
@@ -71,7 +71,7 @@ export type GameState = {
   projectiles: Projectile[];
 };
 
-export type TCamera {
+export type TCamera = {
   scale: number;
   offsetX: number;
   offsetY: number;

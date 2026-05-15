@@ -5,14 +5,15 @@ import { Socket } from 'socket.io';
 
 const GLOBAL_CONFIG = require('../../../../../global/globalConfig');
 
-const { GAME_STATE, GAME_OVER, LOBBY_START, GAME_STARTED } = CONFIG.SOCKET;
+const { GAME_STATE, LOBBY_START, GAME_STARTED } = CONFIG.SOCKET;
 
-type TStartGame = { guid: string; map?: TMap; buildings: TBuildingInput[]; mapGuid: string };
-type TTakeDamage = { armyGuid: string; unitGuid: string; amount: number; type: string };
+type TStartGame = { guid: string; map?: TMap; buildings: TBuildingInput[]; mapGuid: string; peopleArmyGuid?: string | null };
+type TTakeDamage = { armyGuid: string; unitGuid: string; amount: number };
 type TMoveUnit = { armyGuid: string; unitGuid: string; x: number; y: number };
 type TGetArmy = string;
 type TSpawnUnit = { armyGuid: string; type: 'sporomet' | 'champigneb' | 'eblekar'; x: number; y: number };
 type TSpawnBuildingUnit = { armyGuid: string; type: 'vzryvomor' | 'sporovaya_bashnya'; x: number; y: number };
+type TUpdateEconomyBuildings = { armyGuid: string; buildings: TBuildingInput[] };
 type TUser = { guid: string; token: string; socketId: string; name: string };
 
 type TVisibleEntity = {
@@ -21,7 +22,6 @@ type TVisibleEntity = {
     x: number;
     y: number;
     hp: number;
-    maxHp: number;
 };
 
 type TVisibilityResponse = {
@@ -33,11 +33,13 @@ type TReliefResponse = TMap;
 
 class ArmyManager extends BaseManager {
     private army: { [guid: string]: Army };
+    private armyGuids: Record<string, { peopleArmyGuid: string | null }>;
 
     constructor(options: TManagerOptions) {
         super(options);
 
         this.army = {};
+        this.armyGuids = {};
 
         this.mediator.subscribe(this.EVENTS.START_GAME, (data: unknown) => this.eventStartGame(data as TStartGame));
 
@@ -63,6 +65,10 @@ class ArmyManager extends BaseManager {
             this.triggerSpawnBuildingUnit(data as TSpawnBuildingUnit)
         );
 
+        this.mediator.set(CONFIG.MEDIATOR.TRIGGERS.UPDATE_ECONOMY_BUILDINGS, (data: unknown) =>
+            this.triggerUpdateEconomyBuildings(data as TUpdateEconomyBuildings)
+        );
+
         if (!this.io) return;
         this.io.on('connection', (socket: Socket) => {
             socket.on(LOBBY_START, (data: { guid?: string; token?: string }) => this.socketLobbyStart(data, socket));
@@ -70,7 +76,7 @@ class ArmyManager extends BaseManager {
         });
     }
 
-    private triggerTakeDamage({ armyGuid, unitGuid, amount, type }: TTakeDamage): boolean {
+    private triggerTakeDamage({ armyGuid, unitGuid, amount }: TTakeDamage): boolean {
         const army = this.army[armyGuid];
         if (!army) return false;
 
@@ -79,8 +85,7 @@ class ArmyManager extends BaseManager {
         // Ищем цель среди юнитов
         const unit = army.units.find(u => u.guid === unitGuid);
         if (unit) {
-            unit.takeDamage(sanitizedAmount, type);
-            this.sendToMushroomsEconomy('/takeDamage', { armyGuid, unitGuid, amount: sanitizedAmount, type });
+            unit.takeDamage(sanitizedAmount);
             return true;
         }
 
@@ -88,9 +93,8 @@ class ArmyManager extends BaseManager {
         const building = army.buildings.find(b => b.guid === unitGuid);
         if (building) {
             if ('takeDamage' in building && typeof building.takeDamage === 'function') {
-                building.takeDamage(sanitizedAmount, type);
+                building.takeDamage(sanitizedAmount);
             }
-            this.sendToMushroomsEconomy('/takeDamage', { armyGuid, unitGuid, amount: sanitizedAmount, type });
             return true;
         }
 
@@ -104,8 +108,8 @@ class ArmyManager extends BaseManager {
         const unit = army.units.find(u => u.guid === unitGuid);
         if (!unit) return false;
 
-        (unit as any).targetX = x;
-        (unit as any).targetY = y;
+        unit.targetX = x;
+        unit.targetY = y;
 
         return true;
     }
@@ -131,32 +135,45 @@ class ArmyManager extends BaseManager {
         return army.spawnBuilding(type, x, y, this.common);
     }
 
+    private triggerUpdateEconomyBuildings({ armyGuid, buildings }: TUpdateEconomyBuildings): boolean {
+        const army = this.army[armyGuid];
+        if (!army) return false;
+
+        army.setEconomyBuildings(buildings);
+        return true;
+    }
+
     private buildFogMap(armyState: TArmyState, fullMap: TMap, visionRadius: number = 8): TMap {
         const rows = fullMap.length;
         const cols = fullMap[0]?.length ?? 0;
         const visible = new Uint8Array(rows * cols);
 
         const reveal = (cx: number, cy: number, r: number) => {
+            const rr = r * r;
             const x0 = Math.max(0, Math.floor(cx - r));
             const x1 = Math.min(cols - 1, Math.ceil(cx + r));
             const y0 = Math.max(0, Math.floor(cy - r));
             const y1 = Math.min(rows - 1, Math.ceil(cy + r));
             for (let y = y0; y <= y1; y++) {
                 for (let x = x0; x <= x1; x++) {
-                    visible[y * cols + x] = 1;
+                    const dx = x - cx;
+                    const dy = y - cy;
+                    if (dx * dx + dy * dy <= rr) {
+                        visible[y * cols + x] = 1;
+                    }
                 }
             }
         };
 
         for (const unit of armyState.units) {
-            if (unit.hp > 0) reveal(unit.x, unit.y, visionRadius);
+            if (unit.hp > 0) reveal(unit.x, unit.y, unit.visibility ?? visionRadius);
         }
         for (const building of armyState.buildings) {
             const hp = building.hp ?? 0;
             if (hp > 0 && building.type !== 'house' && building.type !== 'barracks' && building.type !== 'tower') {
                 const sizeX = building.sizeX ?? 1;
                 const sizeY = building.sizeY ?? 1;
-                reveal(building.x + sizeX / 2, building.y + sizeY / 2, visionRadius);
+                reveal(building.x + sizeX / 2, building.y + sizeY / 2, building.visibility ?? visionRadius);
             }
         }
 
@@ -173,11 +190,11 @@ class ArmyManager extends BaseManager {
         const fogMap = army ? this.buildFogMap(armyState, army.map) : armyState.map;
         this.io.to(user.socketId).emit(GAME_STATE, this.answer.good({ ...armyState, map: fogMap }));
 
-        if (army && army.getAliveUnits().length === 0) {
-            this.io.to(user.socketId).emit(GAME_OVER, this.answer.good({ message: 'Все юниты погибли' }));
-            this.destroyArmy(guid);
-            return;
-        }
+        // if (army && army.getAliveUnits().length === 0) {
+        //     this.io.to(user.socketId).emit(GAME_OVER, this.answer.good({ message: 'Все юниты погибли' }));
+        //     this.destroyArmy(guid);
+        //     return;
+        // }
         
         // if (army && army.buildings.length === 0) {
         //     this.io.to(user.socketId).emit(GAME_OVER, this.answer.good({ message: 'Все здания разрушены' }));
@@ -216,10 +233,18 @@ class ArmyManager extends BaseManager {
                 x: entity.x,
                 y: entity.y,
                 hp: entity.hp,
-                maxHp: entity.maxHp,
             }));
             army.updateEnemyEntities(enemyEntities);
         }
+    }
+
+    private async damagePeopleUnit(armyGuid: string, unitGuid: string, amount: number): Promise<void> {
+        const guids = this.armyGuids[armyGuid];
+        if (!guids?.peopleArmyGuid) return;
+        await this.send(
+            `${GLOBAL_CONFIG.PEOPLE_ARMY.URL}${GLOBAL_CONFIG.URLS.TAKE_DAMAGE_PEOPLE_ARMY}`,
+            { userGuid: guids.peopleArmyGuid, unitGuid, damage: amount }
+        );
     }
 
     private destroyArmy(guid: string): void {
@@ -228,9 +253,10 @@ class ArmyManager extends BaseManager {
             army.destructor();
         }
         delete this.army[guid];
+        delete this.armyGuids[guid];
     }
 
-     private async eventStartGame({ guid, map, buildings, mapGuid }: TStartGame): Promise<void> {
+     private async eventStartGame({ guid, map, buildings, mapGuid, peopleArmyGuid }: TStartGame): Promise<void> {
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
         if (!user) return;
 
@@ -257,6 +283,7 @@ class ArmyManager extends BaseManager {
             finalBuildings = Army.generateDefensiveLayout(resolvedMap, this.common);
         }
 
+        this.armyGuids[guid] = { peopleArmyGuid: peopleArmyGuid ?? null };
         this.army[guid] = new Army({
             mapGuid,
             map: resolvedMap,
@@ -264,7 +291,8 @@ class ArmyManager extends BaseManager {
             common: this.common,
             guid,
             callbacks: {
-                update: (guid: string, armyState: TArmyState) => this.updateArmyCallback(guid, armyState)
+                update: (guid: string, armyState: TArmyState) => this.updateArmyCallback(guid, armyState),
+                takeDamage: (unitGuid: string, amount: number) => this.damagePeopleUnit(guid, unitGuid, amount),
             }
         });
 

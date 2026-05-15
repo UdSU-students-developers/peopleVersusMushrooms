@@ -6,6 +6,8 @@ const CONFIG = {
         EVENTS: {
             LOBBY_UPDATED: 'LOBBY_UPDATED',
             START_GAME: 'START_GAME',
+            APPLY_DAMAGE: 'APPLY_DAMAGE',
+            MOVE_UNIT: 'MOVE_UNIT',
         },
         TRIGGERS: {
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',
@@ -31,6 +33,17 @@ const CONFIG = {
     ECONOMY: {
         INTERVAL: 200, //ms (единица времени)
 
+        DIRECTIONS: [
+            { dx:  0, dy: -1 },
+            { dx:  0, dy:  1 },
+            { dx: -1, dy:  0 },
+            { dx:  1, dy:  0 },
+            { dx: -1, dy: -1 },
+            { dx:  1, dy: -1 },
+            { dx: -1, dy:  1 },
+            { dx:  1, dy:  1 },
+        ],
+
         MYCELIUM: {
             TYPE: 'mycelium',
             HP: 1,
@@ -42,17 +55,22 @@ const CONFIG = {
             CAPACITY: 0, // ничего в себе хранить не умеет
             POWER: 1,
             SIZE: 1,
+            VISIBILITY: 3, //Сколько клеток вокруг видит
         },
         // грибница вырастает за 12 секунд
         // 2*2*3 = 12 sec
         // сколько потребит инкубатор энергии за 12 секунд?
         // 12 * 5 = 60 единиц энергии потребит инкубатор за 12 секунд
         INCUBATOR: {
+            TYPE: 'incubator',
             HP: 100,
             SIZE: 2,
             CONSUMPTION: 1, // энергопотребление за единицу времени
             PRODUCTION: 1,  // сколько производит за единицу времени
             CAPACITY: 60, // сколько железа доступно для производства личинок
+            LARVA_ENERGY_COST: 20,
+            LARVA_COOLDOWN_MS: 3000,
+            VISIBILITY: 5,
         },
         BIO_REACTOR: {
 
@@ -64,6 +82,7 @@ const CONFIG = {
             CONSUMPTION: 1, // потребление ЭНЕРГИИ ИЛИ ЖИРА
             PRODUCTION: 1,  // сколько производит за единицу времени
             CAPACITY: 60, // емкость. Сколько грибочков может лежать на переработке в реакторе, чтобы он работал непрерывно
+            VISIBILITY: 5,
         },
         MINE: {
 
@@ -80,11 +99,15 @@ const CONFIG = {
         WORKER: {
             HP: 100,
             SPEED: 1,
+            TYPE: "worker",
+            VISIBILITY: 3,
         },
         LARVA: {
             HP: 40,
-            SPEED: 1,
+            SPEED: 0.05,
             WANDER_RADIUS: 4, //радиус блуждания личинки
+            TYPE: "larva",
+            VISIBILITY: 2,
         }
     }
 };

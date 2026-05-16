@@ -227,15 +227,15 @@ class Server {
         });
     }
 
-    private handleLobbyUpdated(response: TResponse<TLobbyServer>): void {
-        this.handle<TLobbyServer>(response, (data) => {
+    private handleLobbyUpdated(response: TResponse<TLobby>): void {
+        this.handle<TLobby>(response, (data) => {
             const { LOBBY_UPDATED } = this.mediator.getEventTypes();
             this.mediator.call(LOBBY_UPDATED, [data]);
         });
     }
 
-    private handleCreateLobby(response: TResponse<TLobbyServer>): void {
-        this.handle<TLobbyServer>(response, (data) => {
+    private handleCreateLobby(response: TResponse<TLobby>): void {
+        this.handle<TLobby>(response, (data) => {
             const { LOBBY_UPDATED } = this.mediator.getEventTypes();
             this.mediator.call(LOBBY_UPDATED, [data]);
         });
@@ -248,8 +248,8 @@ class Server {
         });
     }
 
-    private handleJoinToLobby(response: TResponse<TLobbyServer>): void {
-        this.handle<TLobbyServer>(response, (data) => {
+    private handleJoinToLobby(response: TResponse<TLobby>): void {
+        this.handle<TLobby>(response, (data) => {
             const { LOBBY_UPDATED } = this.mediator.getEventTypes();
             this.mediator.call(LOBBY_UPDATED, [data]);
         });

@@ -136,6 +136,7 @@ class Server {
 
     // ─── Response handlers ───────────────────────────────────────────────────────
 
+// ─── Response handlers ───────────────────────────────────────────────────────
     private handle<T>(
         response: TResponse<T>, 
         cb: (data: T) => void
@@ -147,7 +148,6 @@ class Server {
     }
 
     private handleRegistration(response: TResponse<TUser>): void {
-
         this.handle<TUser>(response, (data) => {
             const { SET_STORE } = this.mediator.getTriggerTypes();
             const { REGISTRATION } = this.mediator.getEventTypes();
@@ -162,33 +162,25 @@ class Server {
             });
 
             this.mediator.call(REGISTRATION);
-        }
-    )}
+        });
+    }
 
     private handleLogin(response: TResponse<TUser>): void {
-        if (this.checkError(response)) return;
-
-        if (response.data) {
-            const { name, token, guid } = response.data;
+        this.handle<TUser>(response, (data) => {
+            const { name, token, guid } = data;
             const { SET_STORE } = this.mediator.getTriggerTypes();
             const { LOGIN } = this.mediator.getEventTypes();
 
             this.mediator.get(SET_STORE, { name: 'user', value: { name, token, guid } });
             this.mediator.call(LOGIN);
-        }
+        });
     }
 
     private handleLogout(response: TResponse<null>): void {
-        this.handle<null>(response, (data) => {
+        this.handle<null>(response, () => {
             const { CLEAR_STORE } = this.mediator.getTriggerTypes();
             this.mediator.get(CLEAR_STORE, 'user');
         });
-        /*if (this.checkError(response)) return;
-
-        if (response.data !== undefined) {
-            const { CLEAR_STORE } = this.mediator.getTriggerTypes();
-            this.mediator.get(CLEAR_STORE, 'user');
-        }*/
     }
 
     private handleSendMessage(response: TResponse<{ message: string }>): void {
@@ -196,119 +188,101 @@ class Server {
             const { MESSAGE_SEND } = this.mediator.getEventTypes();
             this.mediator.call(MESSAGE_SEND, data.message);
         });
-        /*if (this.checkError(response)) return;
-        if (response.data) {
-            const { MESSAGE_SEND } = this.mediator.getEventTypes();
-            this.mediator.call(MESSAGE_SEND, response.data.message);
-        }*/
     }
 
     private handleGetMessage(response: TResponse<{ messages: TMessages }>): void {
-        if (this.checkError(response)) return;
-
-        if (response.data) {
+        this.handle<{ messages: TMessages }>(response, (data) => {
             const { SET_STORE } = this.mediator.getTriggerTypes();
             const { MESSAGE_LOADED } = this.mediator.getEventTypes();
-            const messages = response.data.messages;
+            const messages = data.messages;
 
             this.mediator.get(SET_STORE, { name: 'messages', value: messages });
             this.mediator.call(MESSAGE_LOADED, messages);
-        }
+        });
     }
 
     private handleNewMessage(response: TResponse<TMessage>): void {
-        if (this.checkError(response)) return;
-
-        if (response.data) {
+        this.handle<TMessage>(response, (data) => {
             const { SET_STORE, GET_STORE } = this.mediator.getTriggerTypes();
             const { NEW_MESSAGE } = this.mediator.getEventTypes();
 
             const currentMessages = this.mediator.get<TMessages>(GET_STORE, 'messages');
             const updatedMessages = Array.isArray(currentMessages)
-                ? [...currentMessages, response.data]
-                : [response.data];
+                ? [...currentMessages, data]
+                : [data];
 
             this.mediator.get(SET_STORE, { name: 'messages', value: updatedMessages });
-            this.mediator.call(NEW_MESSAGE, response.data);
-        }
+            this.mediator.call(NEW_MESSAGE, data);
+        });
     }
 
     private handleStartGame(response: TResponse<TScene>): void {
-        if (this.checkError(response)) return;
-        const { START_GAME } = this.mediator.getEventTypes();
-        this.mediator.call(START_GAME, response.data);
+        this.handle<TScene>(response, (data) => {
+            const { START_GAME } = this.mediator.getEventTypes();
+            this.mediator.call(START_GAME, data);
+        });
     }
 
     private handleUpdateScene(response: TResponse<TScene>): void {
-        if (this.checkError(response)) return;
-        const { UPDATE_SCENE } = this.mediator.getEventTypes();
-        this.mediator.call(UPDATE_SCENE, response.data);
+        this.handle<TScene>(response, (data) => {
+            const { UPDATE_SCENE } = this.mediator.getEventTypes();
+            this.mediator.call(UPDATE_SCENE, data);
+        });
     }
 
     private handleLobbyUpdated(response: TResponse<TLobbyServer>): void {
-        if (this.checkError(response)) return;
-
-        if (response.data) {
+        this.handle<TLobbyServer>(response, (data) => {
             const { LOBBY_UPDATED } = this.mediator.getEventTypes();
-
-            const normalized = [response.data];
-
-            this.mediator.call(LOBBY_UPDATED, normalized);
-        }
+            this.mediator.call(LOBBY_UPDATED, [data]);
+        });
     }
 
     private handleCreateLobby(response: TResponse<TLobbyServer>): void {
-        if (this.checkError(response)) return;
-
-        if (response.data) {
+        this.handle<TLobbyServer>(response, (data) => {
             const { LOBBY_UPDATED } = this.mediator.getEventTypes();
-            this.mediator.call(LOBBY_UPDATED, [response.data]);
-        }
+            this.mediator.call(LOBBY_UPDATED, [data]);
+        });
     }
 
     private handleLobbiesListUpdated(response: TResponse<TLobbies>): void {
-        if (this.checkError(response)) return;
-
-        if (response.data) {
+        this.handle<TLobbies>(response, (data) => {
             const { LOBBIES_LIST_UPDATED } = this.mediator.getEventTypes();
-            this.mediator.call(LOBBIES_LIST_UPDATED, response.data);
-        }
+            this.mediator.call(LOBBIES_LIST_UPDATED, data);
+        });
     }
 
     private handleJoinToLobby(response: TResponse<TLobbyServer>): void {
-        if (this.checkError(response)) return;
-
-        if (response.data) {
+        this.handle<TLobbyServer>(response, (data) => {
             const { LOBBY_UPDATED } = this.mediator.getEventTypes();
-            this.mediator.call(LOBBY_UPDATED, [response.data]);
-        }
+            this.mediator.call(LOBBY_UPDATED, [data]);
+        });
     }
 
     private handleLeaveLobby(response: TResponse<TLobbies>): void {
-        if (this.checkError(response)) return;
-
-        const { LOBBY_UPDATED } = this.mediator.getEventTypes();
-        this.mediator.call(LOBBY_UPDATED, null);
+        this.handle<TLobbies>(response, () => {
+            const { LOBBY_UPDATED } = this.mediator.getEventTypes();
+            this.mediator.call(LOBBY_UPDATED, null);
+        });
     }
 
     private handleSetReady(response: TResponse<any>): void {
-        if (this.checkError(response)) return;
+        this.handle<any>(response, () => {
+            console.log("Готов");
+        });
     }
 
     private handleDropFromLobby(response: TResponse<TLobbies>): void {
-        if (this.checkError(response)) return;
-        if (response.data) {
+        this.handle<TLobbies>(response, (data) => {
             const { LOBBY_UPDATED } = this.mediator.getEventTypes();
-            this.mediator.call(LOBBY_UPDATED, response.data);
-        }
+            this.mediator.call(LOBBY_UPDATED, data);
+        });
     }
 
     private handleReliefLoaded(response: TResponse<TRelief>): void {
-        if (this.checkError(response)) return;
-        if (response.data) {
+        this.handle<TRelief>(response, (data) => {
             const { RELIEF_LOADED } = this.mediator.getEventTypes();
-            this.mediator.call(RELIEF_LOADED, response.data);
-        }
+            this.mediator.call(RELIEF_LOADED, data);
+        });
     }
 }
 

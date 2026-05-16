@@ -10,8 +10,7 @@ import {
     TMessage, 
     TLobbies,
     TLobby,
-    TLobbyServer,
-    TRelief
+    TRelief,
 } from "../Server/types";
 import md5 from 'md5';
 
@@ -49,10 +48,10 @@ class Server {
             this.socket.on(SOCKET.NEW_MESSAGE, (data: TResponse<TMessage>) => this.handleNewMessage(data));
             this.socket.on(SOCKET.START_GAME, (data: TResponse<TScene>) => this.handleStartGame(data));
             this.socket.on(SOCKET.UPDATE_SCENE, (data: TResponse<TScene>) => this.handleUpdateScene(data));
-            this.socket.on(SOCKET.CREATE_LOBBY, (data: TResponse<TLobbyServer>) => this.handleCreateLobby(data));
+            this.socket.on(SOCKET.CREATE_LOBBY, (data: TResponse<TLobby>) => this.handleCreateLobby(data));
             this.socket.on(SOCKET.LOBBIES_LIST_UPDATED, (data: TResponse<TLobbies>) => this.handleLobbiesListUpdated(data));
-            this.socket.on(SOCKET.LOBBY_UPDATED, (data: TResponse<TLobbyServer>) => this.handleLobbyUpdated(data));
-            this.socket.on(SOCKET.JOIN_TO_LOBBY, (data: TResponse<TLobbyServer>) => this.handleJoinToLobby(data));
+            this.socket.on(SOCKET.LOBBY_UPDATED, (data: TResponse<TLobby>) => this.handleLobbyUpdated(data));
+            this.socket.on(SOCKET.JOIN_TO_LOBBY, (data: TResponse<TLobby>) => this.handleJoinToLobby(data));
             this.socket.on(SOCKET.LEAVE_LOBBY, (data: TResponse<TLobbies>) => this.handleLeaveLobby(data));
             this.socket.on(SOCKET.SET_READY, (data: TResponse<any>) => this.handleSetReady(data));
             this.socket.on(SOCKET.DROP_FROM_LOBBY, (data: TResponse<TLobbies>) => this.handleDropFromLobby(data));
@@ -236,23 +235,23 @@ class Server {
         this.mediator.call(UPDATE_SCENE, response.data);
     }
 
-    private handleLobbyUpdated(response: TResponse<TLobbyServer>): void {
+    private handleLobbyUpdated(response: TResponse<TLobby>): void {
         if (this.checkError(response)) return;
 
         if (response.data) {
             const { LOBBY_UPDATED } = this.mediator.getEventTypes();
 
-            const normalized = [response.data];
-
-            this.mediator.call(LOBBY_UPDATED, normalized);
+            this.mediator.call(LOBBY_UPDATED, response.data);
         }
     }
-    private handleCreateLobby(response: TResponse<TLobbyServer>): void {
+    
+    private handleCreateLobby(response: TResponse<TLobby>): void {
         if (this.checkError(response)) return;
 
         if (response.data) {
             const { LOBBY_UPDATED } = this.mediator.getEventTypes();
-            this.mediator.call(LOBBY_UPDATED, [response.data]);
+
+            this.mediator.call(LOBBY_UPDATED, response.data);
         }
     }
 
@@ -265,12 +264,12 @@ class Server {
         }
     }
 
-    private handleJoinToLobby(response: TResponse<TLobbyServer>): void {
+    private handleJoinToLobby(response: TResponse<TLobby>): void {
         if (this.checkError(response)) return;
 
         if (response.data) {
             const { LOBBY_UPDATED } = this.mediator.getEventTypes();
-            this.mediator.call(LOBBY_UPDATED, [response.data]);
+            this.mediator.call(LOBBY_UPDATED, response.data);
         }
     }
 
@@ -283,6 +282,12 @@ class Server {
 
     private handleSetReady(response: TResponse<any>): void {
         if (this.checkError(response)) return;
+
+        console.log("SET_READY RESPONSE:", response);
+
+        if (response.data?.data === true) {
+            this.getLobbies();
+        }
     }
 
     private handleDropFromLobby(response: TResponse<TLobbies>): void {

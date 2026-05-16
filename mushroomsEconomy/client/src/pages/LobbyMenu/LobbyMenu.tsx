@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import CONFIG from "../../config";
 import { MediatorContext, ServerContext } from "../../App";
-import { TLobbies, TLobby, TUser, TPlayer, TLobbyServer } from "../../services/Server/types";
+import { TLobbies, TLobby, TUser, TReady } from "../../services/Server/types";
 import { IBasePage, PAGES } from "../PageManager";
 import Button from "../../components/Button/Button";
 
@@ -12,38 +12,61 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
     const mediator = useContext(MediatorContext);
 
     const [lobbies, setLobbies] = useState<TLobbies>([]);
+
     const [currentLobby, setCurrentLobby] = useState<TLobby | null>(null);
     const [error, setError] = useState<string | null>(null);
-    
+
     const [lobbyNameInput, setLobbyNameInput] = useState<string>("");
 
     const { GET_STORE } = CONFIG.MEDIATOR.TRIGGERS;
     const EVENTS = mediator.getEventTypes();
-    const user = mediator.get<TUser | null>(GET_STORE, 'user');
+    const user = mediator.get<TUser | null>(GET_STORE, "user");
+
+    const getUserRole = (lobby: TLobby, userGuid?: string) => {
+        if (!userGuid) return undefined;
+
+        return Object.entries(lobby.playersGuids).find(
+            ([role, guid]) =>
+                role !== "mapGuid" &&
+                guid === userGuid
+        )?.[0] as keyof TReady | undefined;
+    };
 
     useEffect(() => {
         const handleLobbiesList = (list: TLobbies) => {
+            console.log("Пришел список лобби с сервера:", list);
+
             setLobbies(list);
             setError(null);
+
+            const activeLobby = list.find(
+                (lobby) => getUserRole(lobby, user?.guid)
+            );
+
+            if (activeLobby) {
+                setCurrentLobby(activeLobby);
+            }
         };
 
-        const handleLobbyUpdate = (lobbyData: TLobbyServer | TLobbyServer[] | null) => {
+        const handleLobbyUpdate = (lobbyData: TLobby | TLobby[] | null) => {
+            console.log("Обновление лобби (данные от сервера):", lobbyData);
+
             if (!lobbyData) {
                 setCurrentLobby(null);
                 return;
             }
 
-            const candidates: TLobbyServer[] = (Array.isArray(lobbyData) ? lobbyData : [lobbyData]).map((item: any) => item.data ?? item);
-            
+            const candidates: TLobby[] = Array.isArray(lobbyData)
+                ? lobbyData
+                : [lobbyData];
+
             let activeLobby: TLobby | null = null;
-            const currentUserGuid = user?.guid;
 
-            for (const serverLobby of candidates) {
-                const normalizedLobby = normalizeLobbyData(serverLobby);
-                const isUserInLobby = normalizedLobby.players.some(p => p.guid === currentUserGuid);
+            for (const lobby of candidates) {
+                const currentRole = getUserRole(lobby, user?.guid);
 
-                if (isUserInLobby) {
-                    activeLobby = normalizedLobby;
+                if (currentRole) {
+                    activeLobby = lobby;
                     break;
                 }
             }
@@ -76,35 +99,16 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
         };
     }, [mediator, server, setPage, user]);
 
-    const normalizeLobbyData = (serverData: TLobbyServer): TLobby => {
-        const players: TPlayer[] = [];
-
-        if (serverData.playersGuids) {
-            Object.entries(serverData.playersGuids).forEach(([role, guid]) => {
-                if (guid) {
-                    players.push({
-                        guid: guid,
-                        role: role,
-                        ready: serverData.playersIsReady?.[role] ?? false 
-                    });
-                }
-            });
-        }
-
-        return {
-            lobbyGuid: serverData.lobbyGuid,
-            lobbyName: serverData.lobbyName,
-            players: players
-        };
-    };
-
     const handleCreateLobby = () => {
         setError(null);
-        const nameToSend = lobbyNameInput.trim() || `${user?.name || 'Player'}'s Lobby`;
+
+        const nameToSend =
+            lobbyNameInput.trim() || `${user?.name || "Player"}'s Lobby`;
+
         server.createLobby(nameToSend);
         setLobbyNameInput("");
     };
-    
+
     const handleJoinLobby = (lobbyGuid: string) => {
         setError(null);
         server.joinToLobby(lobbyGuid);
@@ -130,15 +134,16 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
         if (currentLobby) {
             server.leaveLobby();
         }
+
         setPage(PAGES.LOGIN);
     };
 
     if (currentLobby) {
-        const players: TPlayer[] = currentLobby?.players || [];
+        const currentRole = getUserRole(currentLobby, user?.guid);
 
-        const currentPlayer = players.find((p) => p.guid === user?.guid);
-        
-        const isCurrentUserReady = currentPlayer?.ready || false;
+        const isCurrentUserReady = currentRole
+            ? currentLobby.playersIsReady[currentRole]
+            : false;
 
         const isOwner = currentLobby.lobbyGuid === user?.guid;
 
@@ -152,46 +157,74 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
                 )}
 
                 <div className="start-game-container">
-                    <h2>Лобби: {currentLobby.lobbyName || 'Безымянное'}</h2>
-                    
+                    <h2>Лобби: {currentLobby.lobbyName || "Безымянное"}</h2>
+
                     {error && <div className="error-message">{error}</div>}
 
                     <div className="player-info-block">
                         <h4>Игроки:</h4>
+
                         <ul className="player-list">
-                            {players.map((p) => (
-                                <li key={p.guid} className="player-list-item">
-                                    {p.guid === user?.guid 
-                                        ? <strong>Вы ({p.role})</strong> 
-                                        : `Игрок (${p.role})`
-                                    }
-                                    
-                                    <span className={`player-status ${p.ready ? 'ready' : 'not-ready'}`}>
-                                        {p.ready ? 'Готов' : 'Не готов'}
-                                    </span>
-                                </li>
-                            ))}
+                            {Object.entries(currentLobby.playersGuids).map(
+                                ([role, guid]) => {
+                                    if (role === "mapGuid") return null;
+
+                                    if (!guid) return null;
+
+                                    const typedRole = role as keyof TReady;
+
+                                    const ready = currentLobby.playersIsReady[typedRole];
+
+                                    return (
+                                        <li
+                                            key={role}
+                                            className="player-list-item"
+                                        >
+                                            {guid === user?.guid ? (
+                                                <strong>Вы ({role})</strong>
+                                            ) : (
+                                                `Игрок (${role})`
+                                            )}
+
+                                            <span
+                                                className={`player-status ${
+                                                    ready? "ready": "not-ready"}`}
+                                            >
+                                                {ready ? "Готов": "Не готов"}
+                                            </span>
+                                        </li>
+                                    );
+                                }
+                            )}
                         </ul>
                     </div>
 
                     <div className="lobby-actions">
-                        <Button 
-                            onClick={handleSetReady} 
-                            text={isCurrentUserReady ? "Не готов" : "Я готов"}
-                            variant={isCurrentUserReady ? "danger" : "accent"} 
+                        <Button
+                            onClick={handleSetReady}
+                            text={
+                                isCurrentUserReady
+                                    ? "Не готов"
+                                    : "Я готов"
+                            }
+                            variant={
+                                isCurrentUserReady
+                                    ? "danger"
+                                    : "accent"
+                            }
                         />
-                        
-                        <Button 
-                            onClick={handleLeaveLobby} 
-                            text="Выйти" 
-                            variant="main" 
+
+                        <Button
+                            onClick={handleLeaveLobby}
+                            text="Выйти"
+                            variant="main"
                         />
-                        
+
                         {isOwner && (
-                            <Button 
+                            <Button
                                 onClick={handleStartGameClick}
-                                text="Начать игру" 
-                                variant="primary" 
+                                text="Начать игру"
+                                variant="primary"
                             />
                         )}
                     </div>
@@ -211,20 +244,30 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
 
             <div className="start-game-container">
                 <h2>Доступные лобби</h2>
-                
+
                 {error && <div className="error-message">{error}</div>}
 
                 <div className="lobby-list-container">
                     {lobbies.length === 0 ? (
-                        <div className="empty-list">Нет доступных лобби</div>
+                        <div className="empty-list">
+                            Нет доступных лобби
+                        </div>
                     ) : (
-                        lobbies.map((lobby: any) => (
-                            <div key={lobby.lobbyGuid} className="lobby-item">
-                                <span>{lobby.lobbyName || 'Lobby'}</span>
-                                <Button 
-                                    onClick={() => handleJoinLobby(lobby.lobbyGuid)} 
-                                    text="Войти" 
-                                    variant="primary" 
+                        lobbies.map((lobby) => (
+                            <div
+                                key={lobby.lobbyGuid}
+                                className="lobby-item"
+                            >
+                                <span>
+                                    {lobby.lobbyName || "Lobby"}
+                                </span>
+
+                                <Button
+                                    onClick={() =>
+                                        handleJoinLobby(lobby.lobbyGuid)
+                                    }
+                                    text="Войти"
+                                    variant="primary"
                                 />
                             </div>
                         ))
@@ -232,31 +275,34 @@ const LobbyMenu: React.FC<IBasePage> = ({ setPage }) => {
                 </div>
 
                 <div className="create-lobby-form">
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         value={lobbyNameInput}
-                        onChange={(e) => setLobbyNameInput(e.target.value)}
+                        onChange={(e) =>
+                            setLobbyNameInput(e.target.value)
+                        }
                         placeholder="Название лобби"
                         className="lobby-input"
                     />
+
                     <Button
-                        onClick={handleCreateLobby} 
-                        text="Создать" 
-                        variant="primary" 
-                        className="create-lobby-btn-custom" 
+                        onClick={handleCreateLobby}
+                        text="Создать"
+                        variant="primary"
+                        className="create-lobby-btn-custom"
                     />
                 </div>
 
                 <div className="bottom-actions">
-                    <Button 
-                        onClick={handleBackToLogin} 
-                        text="Назад" 
-                        variant="main" 
+                    <Button
+                        onClick={handleBackToLogin}
+                        text="Назад"
+                        variant="main"
                     />
                 </div>
             </div>
         </div>
     );
-}
+};
 
 export default LobbyMenu;

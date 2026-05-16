@@ -46,6 +46,7 @@ class GameManager extends BaseManager {
 		this.getRelief(data.map, guid, mapGuid);
 		// запросить видимость
 		// запросить ресурсы под жопками рабочих
+		this.getResources(data.map, guid, mapGuid);
 		// обновить рельеф и видимость у себя в Экномике
 		// ответить на СВОЙ клиент
 		this.io.to(user.socketId).emit(
@@ -55,31 +56,7 @@ class GameManager extends BaseManager {
 		//this.io.to(user.socketId).emit(CONFIG.SOCKET.UPDATE_SCENE, this.answer.bad(1002));
 	}
 
-	async getResources(guid, mapGuid) {
-		const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
-
-		if (!user) {
-			return this.answer.bad(1002);
-		}
-
-		const resources = await this.sendToMap(
-			GLOBAL_CONFIG.URLS.GET_RESOURSE_VISIBILITY,
-			{ mapGuid, userGuid: guid }
-		);
-		console.log("RESOURCES FROM MAP:", resources);
-
-		if (this.economies[guid]) {
-			this.economies[guid].setResources(resources);
-		}
-
-		this.io.to(user.socketId).emit(
-			CONFIG.SOCKET.UPDATE_SCENE,
-			this.answer.good({ resources })
-		);
-
-		return this.answer.good(resources);
-	}
-
+	
 	/* TRIGGERS */
 	
 	
@@ -106,7 +83,7 @@ class GameManager extends BaseManager {
 					startPoint
 				});
 				const sceneData = this.economies[guid].get();
-
+				
 				this.io.to(user.socketId).emit(
 					GLOBAL_CONFIG.SOCKET.START_GAME,
 					sceneData
@@ -123,24 +100,38 @@ class GameManager extends BaseManager {
 	eventApplyDamage(data = {}) {
 		const { guid, damage, economyGuid } = data;
 		const economy = this.economies[economyGuid];
-
+		
 		if (!economy) {
 			return false;
 		}
-
+		
 		return economy.applyDamage(guid, damage);
 	}
-
+	
 	async getRelief(map, guid, mapGuid) {
 		if (typeof(map.relief[0][0]) !== "object") return;
 		const relief = await this.sendToMap(GLOBAL_CONFIG.URLS.GET_RELIEF, { mapGuid, userGuid: guid });
-
+		
 		if (relief) {
 			if (this.economies[guid]) {
 				this.economies[guid].setRelief(relief);
 			}
 		}
+		
+	}
 
+	async getResources(map, guid, mapGuid) {
+		if (typeof(map.resources[0][0]) !== "object") return;
+		const resources = await this.sendToMap(
+			GLOBAL_CONFIG.URLS.GET_RESOURSE_VISIBILITY,
+			{ mapGuid, userGuid: guid }
+		);
+
+		if (resources) {
+			if (this.economies[guid]) {
+				this.economies[guid].setResources(resources);
+			}
+		}
 	}
 
 	updateBuildings(guids, buildings = []) {

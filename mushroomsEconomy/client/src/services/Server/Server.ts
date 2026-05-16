@@ -135,8 +135,6 @@ class Server {
     }
 
     // ─── Response handlers ───────────────────────────────────────────────────────
-
-// ─── Response handlers ───────────────────────────────────────────────────────
     private handle<T>(
         response: TResponse<T>, 
         cb: (data: T) => void

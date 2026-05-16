@@ -93,23 +93,6 @@ class Economy {
     }
 
     setRelief(relief) {
-        this.relief = relief;
-    }
-
-    setVisibility({ units = [], buildings = [] } = {}) {
-        for (const building of buildings) {
-            const existingIndex = this.enemyBuildings.findIndex(b => b.guid === building.guid);
-            if (existingIndex !== -1) {
-                this.enemyBuildings[existingIndex] = building;
-            } else {
-                this.enemyBuildings.push(building);
-            }
-        }
-        this.updated = true;
-    }
-
-    setResources(resources) {
-        this.resourceMap = resources;
         this.map.setRelief(relief);
     }
 

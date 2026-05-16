@@ -12,7 +12,7 @@
   background-color: rgb(25, 19, 5);
   background-image:
     linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
-    url('../../../assets/ui/tree.webp');
+    url('../../assets/ui/tree.webp');
   background-size: calc(100px * var(--scale)) calc(100px * var(--scale));
   background-position: center;
   background-repeat: repeat;
@@ -37,7 +37,7 @@
   background-color: #3d2b1a;
   background-image:
     linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
-    url('../../../assets/ui/tree.webp');
+    url('../../assets/ui/tree.webp');
   background-size: calc(110px * var(--scale)) calc(110px * var(--scale));
   background-position: center;
   background-repeat: repeat;

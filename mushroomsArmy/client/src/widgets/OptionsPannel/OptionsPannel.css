@@ -1,6 +1,6 @@
 .options-pannel-container {
   position: absolute;
-  background-image: url('../../../assets/ui/pixilart-optionsPannel.webp');
+  background-image: url('../../assets/ui/pixilart-optionsPannel.webp');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -70,7 +70,7 @@
 .hud-scale-slider {
   --slider-thumb-size: 25px;
   --slider-thumb-border: 2px;
-  --slider-thumb-image: url('../../../assets/ui/scull-button.webp');
+  --slider-thumb-image: url('../../assets/ui/scull-button.webp');
   width: 88%;
   display: block;
   margin: 0 auto;

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { GameState, MapTile, TCamera } from '../../../pages/Game/types';
+import { GameState, MapTile, TCamera } from '../../pages/Game/types';
 import './Minimap.css';
 
 interface MinimapProps {

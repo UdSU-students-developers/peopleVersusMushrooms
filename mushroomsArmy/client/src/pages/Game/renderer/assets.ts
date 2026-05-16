@@ -47,7 +47,7 @@ import mountainsTextureSrc from '../../../assets/map/mountains/mountains.webp';
 import tumanSrc from '../../../assets/map/fog/tuman.png';
 import tuman2Src from '../../../assets/map/fog/tuman2.png';
 import tuman3Src from '../../../assets/map/fog/tuman3.png';
-
+//ассеты перехода вода-трава
 import waterEdgeTop from '../../../assets/map/water-edges/edge-t.webp';
 import waterEdgeBottom from '../../../assets/map/water-edges/edge-b.webp';
 import waterEdgeLeft from '../../../assets/map/water-edges/edge-l.webp';
@@ -62,7 +62,23 @@ import waterInnerCornerTopRight from '../../../assets/map/water-edges/innerCorne
 import waterInnerCornerBottomLeft from '../../../assets/map/water-edges/innerCorner-bl.webp';
 import waterInnerCornerBottomRight from '../../../assets/map/water-edges/innerCorner-br.webp';
 
+//ассеты перехода горы-трава
+import mountainEdgeTopSrc from '../../../assets/map/mountains/mountain-edge-top.png';
+import mountainEdgeRightSrc from '../../../assets/map/mountains/mountain-edge-right.png';
+import mountainEdgeBottomSrc from '../../../assets/map/mountains/mountain-edge-bottom.png';
+import mountainEdgeLeftSrc from '../../../assets/map/mountains/mountain-edge-left.png';
+import mountainCornerTopLeftSrc from '../../../assets/map/mountains/mountain-edge-corner-tl.webp';
+import mountainCornerTopRightSrc from '../../../assets/map/mountains/mountain-edge-corner-tr.webp';
+import mountainCornerBottomLeftSrc from '../../../assets/map/mountains/mountain-edge-corner-bl.webp';
+import mountainCornerBottomRightSrc from '../../../assets/map/mountains/mountain-edge-corner-br.webp';
+
+
+//декорации
 import bushImgSrc from '../../../assets/map/decoration/bushbush.webp';
+import funnyTrusovFlower from '../../../assets/map/decoration/TrusovFlower2.webp';
+import cleanScullSrc from '../../../assets/map/decoration/clean-scull.webp';
+import scullWithSwordSrc from '../../../assets/map/decoration/scull-with-sword.webp';
+import scullSrc from '../../../assets/map/decoration/scull.webp';
 
 export const UNIT_SRCS: Record<string, string> = {
   sporomet: sporometSrc,
@@ -144,6 +160,16 @@ export const edgeImages = {
   innerBottomRight: Object.assign(new Image(), { src: waterInnerCornerBottomRight }),
 };
 
+export const mountainEdgeImages = {
+  top: Object.assign(new Image(), { src: mountainEdgeTopSrc }),
+  bottom: Object.assign(new Image(), { src: mountainEdgeBottomSrc }),
+  left: Object.assign(new Image(), { src: mountainEdgeLeftSrc }),
+  right: Object.assign(new Image(), { src: mountainEdgeRightSrc }),
+  topLeft: Object.assign(new Image(), { src: mountainCornerTopLeftSrc }),
+  topRight: Object.assign(new Image(), { src: mountainCornerTopRightSrc }),
+  bottomLeft: Object.assign(new Image(), { src: mountainCornerBottomLeftSrc }),
+  bottomRight: Object.assign(new Image(), { src: mountainCornerBottomRightSrc }),
+};
 
 export const mountainImg = Object.assign(new Image(), { src: mountainsTextureSrc });
 
@@ -158,4 +184,8 @@ export const fogWarImages: HTMLImageElement[] = (FOG_WAR_TEXTURE_SRCS as readonl
 
 
 export const bushImg = Object.assign(new Image(), { src: bushImgSrc });
+export const funnyTrusovFlowerImg = Object.assign(new Image(), { src: funnyTrusovFlower });
+export const cleanScullImg = Object.assign(new Image(), { src: cleanScullSrc });
+export const scullWithSwordImg = Object.assign(new Image(), { src: scullWithSwordSrc });
+export const scullImg = Object.assign(new Image(), { src: scullSrc });
 

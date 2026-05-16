@@ -7,11 +7,11 @@ import { PAGES } from '../PageManager';
 import { TUser } from '../../services/server/types';
 import './Game.css';
 import { camera } from '../../utils/camera';
-import Header from '../../widgets/GameInterface/Header/Header';
-import Footer from '../../widgets/GameInterface/Footer/Footer';
-import GameOver from '../../widgets/GameInterface/GameOver/GameOver';
-import OptionsPannel from '../../widgets/GameInterface/OptionsPannel/OptionsPannel';
-import { HUD_SCALE_STEPS } from '../../widgets/GameInterface/uiConstants';
+import Header from '../../widgets/Header/Header';
+import Footer from '../../widgets/Footer/Footer';
+import GameOver from '../../widgets/GameOver/GameOver';
+import OptionsPannel from '../../widgets/OptionsPannel/OptionsPannel';
+import { HUD_SCALE_STEPS } from '../../widgets/uiConstants';
 
 const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -44,7 +44,7 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     const heightCSS = canvas.clientHeight;
     if (widthCSS === 0 || heightCSS === 0) return;
 
-    // Рисуем текущее состояние с учетом обновленной камеры
+    // Рисуем текущее состояние с учётом позиции камеры
     drawGame(ctx, gameStateRef.current, widthCSS, heightCSS, camera);
   };
 
@@ -156,8 +156,8 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     gameStateRef.current = newState;
     
     // Считаем живых юнитов при получении нового состояния, а не в цикле отрисовки
-    const aliveCount = newState.units.filter((unit) => unit.hp > 0).length ?? 0;
-    setAliveUnitsCount(aliveCount);
+    //const aliveCount = newState.units.filter((unit) => unit.hp > 0).length ?? 0;
+    //setAliveUnitsCount(aliveCount);
   };
 
     mediator.subscribe(EVENT_NAME, handler);

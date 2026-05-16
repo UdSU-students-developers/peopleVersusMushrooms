@@ -36,6 +36,14 @@ export type TGuids = {
     mapGuid: string | null;
 }
 
+export type TReady = {
+    spectator: boolean;
+    peopleArmy: boolean;
+    peopleEconomy: boolean;
+    mushroomsArmy: boolean;
+    mushroomsEconomy: boolean;
+}
+
 export type TResourcePoint = {
     x: number;
     y: number;
@@ -124,26 +132,13 @@ export type TScene = {
     units: TEconomyUnits;
 }
 
-
-export type TPlayer = {
-    guid: string;
-    ready: boolean;
-    role: string;
-}
-
 export type TLobby = {
     lobbyGuid: string;
     lobbyName: string;
-    players: TPlayer[];
+    playersGuids: TGuids;
+    playersIsReady: TReady;
 }
 
 export type TLobbies = TLobby[];
-
-export type TLobbyServer = {
-    lobbyGuid: string;
-    lobbyName: string;
-    playersGuids: Record<string, string | null>;
-    playersIsReady?: Record<string, boolean>;
-}
 
 export type TRelief = (number | null)[][];

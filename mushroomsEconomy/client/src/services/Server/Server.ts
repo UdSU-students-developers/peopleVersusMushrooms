@@ -17,17 +17,9 @@ import md5 from 'md5';
 
 const { HOST } = CONFIG;
 
-interface ServerToClientEvents {
-    [key: string]: (response: any) => void;
-}
-
-interface ClientToServerEvents {
-    [key: string]: (payload: any, callback?: (response: any) => void) => void;
-}
-
 class Server {
     private mediator: Mediator;
-    private socket: Socket<ServerToClientEvents, ClientToServerEvents>;
+    private socket: Socket;
 
     constructor(mediator: Mediator) {
         this.mediator = mediator;
@@ -63,9 +55,10 @@ class Server {
     private getCredentials(): { guid: string; token: string } | null {
         const { GET_STORE } = this.mediator.getTriggerTypes();
         const user = this.mediator.get<{ name: string; token: string; guid: string } | null>(GET_STORE, 'user');
-
-        if (!user?.token || !user?.guid) return null;
-
+        if (!user ||
+            user?.token ||
+            user?.guid
+        ) return null;
         return { guid: user.guid, token: user.token };
     }
 
@@ -143,25 +136,34 @@ class Server {
 
     // ─── Response handlers ───────────────────────────────────────────────────────
 
-    private handleRegistration(response: TResponse<TUser>): void {
+    private handle<T>(
+        response: TResponse<T>, 
+        cb: (data: T) => void
+    ): void {
         if (this.checkError(response)) return;
-
         if (response.data) {
+            cb(response.data);
+        }
+    }
+
+    private handleRegistration(response: TResponse<TUser>): void {
+
+        this.handle<TUser>(response, (data) => {
             const { SET_STORE } = this.mediator.getTriggerTypes();
             const { REGISTRATION } = this.mediator.getEventTypes();
 
             this.mediator.get(SET_STORE, {
                 name: 'user',
                 value: {
-                    name:  response.data.name,
-                    token: response.data.token,
-                    guid:  response.data.guid,
+                    name: data.name,
+                    token: data.token,
+                    guid: data.guid,
                 }
             });
 
             this.mediator.call(REGISTRATION);
         }
-    }
+    )}
 
     private handleLogin(response: TResponse<TUser>): void {
         if (this.checkError(response)) return;
@@ -177,21 +179,28 @@ class Server {
     }
 
     private handleLogout(response: TResponse<null>): void {
-        if (this.checkError(response)) return;
+        this.handle<null>(response, (data) => {
+            const { CLEAR_STORE } = this.mediator.getTriggerTypes();
+            this.mediator.get(CLEAR_STORE, 'user');
+        });
+        /*if (this.checkError(response)) return;
 
         if (response.data !== undefined) {
             const { CLEAR_STORE } = this.mediator.getTriggerTypes();
             this.mediator.get(CLEAR_STORE, 'user');
-        }
+        }*/
     }
 
     private handleSendMessage(response: TResponse<{ message: string }>): void {
-        if (this.checkError(response)) return;
-
+        this.handle<{ message: string }>(response, (data) => {
+            const { MESSAGE_SEND } = this.mediator.getEventTypes();
+            this.mediator.call(MESSAGE_SEND, data.message);
+        });
+        /*if (this.checkError(response)) return;
         if (response.data) {
             const { MESSAGE_SEND } = this.mediator.getEventTypes();
             this.mediator.call(MESSAGE_SEND, response.data.message);
-        }
+        }*/
     }
 
     private handleGetMessage(response: TResponse<{ messages: TMessages }>): void {
@@ -247,6 +256,7 @@ class Server {
             this.mediator.call(LOBBY_UPDATED, normalized);
         }
     }
+
     private handleCreateLobby(response: TResponse<TLobbyServer>): void {
         if (this.checkError(response)) return;
 
@@ -258,7 +268,7 @@ class Server {
 
     private handleLobbiesListUpdated(response: TResponse<TLobbies>): void {
         if (this.checkError(response)) return;
-        
+
         if (response.data) {
             const { LOBBIES_LIST_UPDATED } = this.mediator.getEventTypes();
             this.mediator.call(LOBBIES_LIST_UPDATED, response.data);
@@ -276,7 +286,7 @@ class Server {
 
     private handleLeaveLobby(response: TResponse<TLobbies>): void {
         if (this.checkError(response)) return;
-        
+
         const { LOBBY_UPDATED } = this.mediator.getEventTypes();
         this.mediator.call(LOBBY_UPDATED, null);
     }

@@ -288,7 +288,7 @@ class Economy {
         return true;
     }
 
-    _initBuildings(startPoint = { x: 3, y: 3 }) {
+    _initBuildings(startPoint = { x: 95, y: 3 }) {
         // создать инкубатор
         this.addIncubator(startPoint.x, startPoint.y);
         // создать маленький реактор

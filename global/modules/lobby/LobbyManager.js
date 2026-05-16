@@ -30,7 +30,7 @@ class LobbyManager extends BaseManager {
                 ...data, 
                 role: this.role, 
             });
-            socket.emit(SOCKET, this.answer.good(result));
+            socket.emit(SOCKET, result);
             return;
         }
         socket.emit(SOCKET, this.answer.bad(1001));

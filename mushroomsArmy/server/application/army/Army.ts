@@ -2,7 +2,6 @@ import Common from "../modules/common/Common";
 import Champigneb, { TSlimePuddle } from "./entities/Champigneb/Champigneb";
 import Eblekar from "./entities/Eblekar/Eblekar";
 import Sporomet from "./entities/Sporomet/Sporomet";
-import Pizdoglyad from "./entities/Pizdoglyad/Pizdoglyad";
 import SporovayaBashnya from "./entities/SporovayaBashnya/SporovayaBashnya";
 import Unit, { TProjectile, TUnitState } from "./entities/Units";
 import { IBuilding, Vzryvomor } from "./entities/Vzryvomor/Vzryvomor";
@@ -14,7 +13,8 @@ export type TBuildingInput = {
     type: string;
     x: number;
     y: number;
-    hp?: number;
+    hp: number;
+    maxHp: number;
     attackRange?: number;
     sizeX?: number;
     sizeY?: number;
@@ -26,7 +26,7 @@ export type TBuildingState = {
     x: number;
     y: number;
     hp: number;
-    visibility?: number;
+    maxHp: number;
     isAlive?: boolean;
     isExploding?: boolean;
     isAttacking?: boolean;
@@ -44,7 +44,7 @@ export type TArmyOptions = {
     buildings: TBuildingInput[];
     guid: string;
     common: Common;
-    callbacks: { update: (guid: string, data: TArmyState) => void; takeDamage?: (unitGuid: string, amount: number) => void };
+    callbacks: { update: (guid: string, data: TArmyState) => void };
 };
 
 export type TArmyState = {
@@ -63,9 +63,8 @@ export class Army {
     public units: Unit[] = [];
     public enemyUnits: Unit[] = [];
     public enemyBuildings: TBuildingInput[] = [];
-    public economyBuildings: TBuildingInput[] = [];
     public projectiles: TProjectile[] = [];
-    public callbacks: { update: (guid: string, data: TArmyState) => void; takeDamage?: (unitGuid: string, amount: number) => void };
+    public callbacks: { update: (guid: string, data: TArmyState) => void };
     private intervalId: NodeJS.Timeout;
 
     constructor(options: TArmyOptions) {
@@ -77,18 +76,23 @@ export class Army {
         this.intervalId = setInterval(() => this.update(), 200);
     }
 
-    public destructor(): void {
-        clearInterval(this.intervalId);
-    }
-
     private create(common: Common, initialBuildings: TBuildingInput[] = []) {
+        this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 0, y: 0, hp: 8, maxHp: 8, speed: 1, attackRange: 12, projectiles: this.projectiles }));
+        this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 10, y: 10, hp: 8, maxHp: 8, speed: 1, attackRange: 12, projectiles: this.projectiles }));
+        this.units.push(new Sporomet({ guid: common.guid(), type: 'sporomet', x: 20, y: 20, hp: 8, maxHp: 8, speed: 1, attackRange: 12, projectiles: this.projectiles }));
+        this.units.push(new Champigneb({ guid: common.guid(), type: 'champigneb', x: 5, y: 5, hp: 35, maxHp: 35, speed: 3, attackRange: 6 }));
+        this.units.push(new Champigneb({ guid: common.guid(), type: 'champigneb', x: 45, y: 50, hp: 35, maxHp: 35, speed: 3, attackRange: 6 }));
+        this.units.push(new Eblekar({ guid: common.guid(), type: 'eblekar', x: 15, y: 20, hp: 40, maxHp: 40, speed: 1, attackRange: 1, projectiles: this.projectiles }));
         // Создание своих зданий из initialBuildings
         for (const building of initialBuildings) {
             if (building.type === 'sporovaya_bashnya') {
                 this.buildings.push(new SporovayaBashnya({
                     guid: building.guid,
+                    type: building.type,
                     x: building.x,
                     y: building.y,
+                    hp: building.hp,
+                    maxHp: building.maxHp,
                     projectiles: this.projectiles,
                 }));
             } else if (building.type === 'vzryvomor') {
@@ -96,6 +100,8 @@ export class Army {
                     guid: building.guid,
                     x: building.x,
                     y: building.y,
+                    hp: building.hp,
+                    maxHp: building.maxHp,
                     attackRange: building.attackRange || 7
                 }));
             }
@@ -104,10 +110,6 @@ export class Army {
         // Вражеские здания (house, barracks, tower) — в прокси-цели для юнитов
         this.enemyBuildings = initialBuildings.filter(b => b.type !== 'sporovaya_bashnya' && b.type !== 'vzryvomor');
         this.updateEnemyEntities(this.enemyBuildings);
-    }
-
-    public setEconomyBuildings(buildings: TBuildingInput[]): void {
-        this.economyBuildings = [...buildings];
     }
 
     /** Синхронизирует урон по proxy-цели с локальным списком зданий врага */
@@ -131,85 +133,20 @@ export class Army {
             type: entity.type,
             x: entity.x,
             y: entity.y,
-            hp: entity.hp ?? 1,
+            hp: entity.hp,
+            maxHp: entity.maxHp,
             speed: 0,
             attackRange: 0,
         });
 
         const baseTakeDamage = proxy.takeDamage.bind(proxy);
 
-        proxy.takeDamage = (amount: number): void => {
-            baseTakeDamage(amount);
+        proxy.takeDamage = (amount: number, type: string): void => {
+            baseTakeDamage(amount, type);
             this.syncBuildingDamage(proxy.guid, proxy.hp);
-            this.callbacks.takeDamage?.(proxy.guid, amount);
         };
 
         return proxy;
-    }
-
-     static generateDefensiveLayout(map: TMap, common: Common): TBuildingInput[] {
-        const mapRows = map.length;
-        const mapCols = map[0]?.length ?? 0;
-        if (mapRows === 0 || mapCols === 0) return [];
-
-        const result: TBuildingInput[] = [];
-
-        const isFree = (y: number, x: number): boolean =>
-            y >= 0 && y < mapRows &&
-            x >= 0 && x < mapCols &&
-            map[y][x] === 0;
-
-        // Стартовая зона грибов — нижний правый 15×15 угол (гарантированно зелёный)
-        const zoneX0 = mapCols - 15; // левая граница зоны (включительно)
-        const zoneY0 = mapRows - 15; // верхняя граница зоны (включительно)
-        const zoneX1 = mapCols - 1;  // правая граница (включительно)
-        const zoneY1 = mapRows - 1;  // нижняя граница зоны (включительно)
-
-        // Вспомогательная функция: разместить башню 2×2 с левым верхним тайлом (topY, leftX)
-        const tryPlaceTower = (topY: number, leftX: number): void => {
-            for (let dy = 0; dy <= 1; dy++) {
-                for (let dx = 0; dx <= 1; dx++) {
-                    if (!isFree(topY + dy, leftX + dx)) return;
-                }
-            }
-            result.push({
-                guid: common.guid(),
-                type: 'sporovaya_bashnya',
-                x: leftX,
-                y: topY,
-            });
-        };
-
-        // Три башни: угловая (пересечение стен), правая верхняя, левая нижняя
-        tryPlaceTower(zoneY0 + 1, zoneX0 + 1); // угол стен
-        tryPlaceTower(zoneY0 + 1, zoneX1 - 1); // правый верхний
-        tryPlaceTower(zoneY1 - 1, zoneX0 + 1); // левый нижний
-
-        // Левая стена: x=zoneX0, вся высота зоны
-        for (let y = zoneY0; y <= zoneY1; y++) {
-            if (isFree(y, zoneX0)) {
-                result.push({
-                    guid: common.guid(),
-                    type: 'vzryvomor',
-                    x: zoneX0,
-                    y,
-                });
-            }
-        }
-
-        // Верхняя стена: y=zoneY0, вся ширина зоны кроме x=zoneX0 (уже занят левой стеной)
-        for (let x = zoneX0 + 1; x <= zoneX1; x++) {
-            if (isFree(zoneY0, x)) {
-                result.push({
-                    guid: common.guid(),
-                    type: 'vzryvomor',
-                    x,
-                    y: zoneY0,
-                });
-            }
-        }
-
-        return result;
     }
 
     /** Обновляет цели из видимости: существующим proxy меняет координаты, и создаёт новых по guid. */
@@ -236,8 +173,8 @@ export class Army {
     private applySlimePuddleDamage(deltaTime: number): void {
         const SLIME_DAMAGE_PER_SECOND = 5;
         const activePuddles = this.units
-            .filter(u => u.type === 'champigneb' && !u.isAlive && (u as unknown as Champigneb).slimePuddle.ttl > 0)
-            .map(u => (u as unknown as Champigneb).slimePuddle);
+            .filter(u => u.type === 'champigneb' && !u.isAlive && (u as Champigneb).slimePuddle.ttl > 0)
+            .map(u => (u as Champigneb).slimePuddle);
 
         if (activePuddles.length === 0) return;
 
@@ -248,7 +185,7 @@ export class Army {
                 const dy = enemy.y - puddle.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 if (distance <= puddle.radius) {
-                    enemy.takeDamage(SLIME_DAMAGE_PER_SECOND * deltaTime);
+                    enemy.takeDamage(SLIME_DAMAGE_PER_SECOND * deltaTime, 'poison');
                     break; // Не стакаем урон от нескольких луж за один тик
                 }
             }
@@ -265,13 +202,11 @@ export class Army {
             if (unit.isAlive) {
                 if (unit.type === 'eblekar') {
                     (unit as Eblekar).update(this.enemyUnits, this.map, deltaTime, aliveAllies);
-                } else if (unit.type === 'pizdoglyad') {
-                    (unit as Pizdoglyad).update(this.enemyUnits, this.map, deltaTime, aliveAllies);
                 } else {
                     unit.update(this.enemyUnits, this.map, deltaTime);
                 }
             } else if (unit.type === 'champigneb') {
-                (unit as unknown as Champigneb).slimePuddle.ttl -= deltaTime;
+                (unit as Champigneb).slimePuddle.ttl -= deltaTime;
             }
         }
 
@@ -293,7 +228,7 @@ export class Army {
         
         this.units = this.units.filter(unit => {
             if (unit.type === 'champigneb' && !unit.isAlive) {
-                return (unit as unknown as Champigneb).slimePuddle.ttl > 0;
+                return (unit as Champigneb).slimePuddle.ttl > 0;
             }
             return true;
         });
@@ -307,12 +242,11 @@ export class Army {
             units: this.units.map(u => u.getState()),
             buildings: [
                 ...this.buildings.map(b => b.getState()),
-                ...this.enemyBuildings.map(b => ({ ...b, hp: b.hp ?? 0 })),
-                ...this.economyBuildings.map(b => ({ ...b, hp: b.hp ?? 0 })),
+                ...this.enemyBuildings,
             ],
             slimePuddles: this.units
                 .filter(u => u.type === 'champigneb' && !u.isAlive)
-                .map(u => (u as unknown as Champigneb).slimePuddle),
+                .map(u => (u as Champigneb).slimePuddle),
             projectiles: this.projectiles,
         };
     }
@@ -321,16 +255,7 @@ export class Army {
         return this.units.filter(u => u.isAlive);
     }
 
-    private isOutsideMap(y: number, x: number) {
-        // Проверяем границы карты
-        return y < 0 || y >= this.map.length || x < 0 || x >= (this.map[0]?.length ?? 0);
-    }
-
-    private isInsideMap(y: number, x: number){
-        return !this.isOutsideMap(y, x);
-    }
-
-    public spawnUnit(type: 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad', x: number, y: number, common: Common): { guid: string } | null {
+    public spawnUnit(type: 'sporomet' | 'champigneb' | 'eblekar', x: number, y: number, common: Common): { guid: string } | null {
         // Проверяем границы карты
         if (y < 0 || y >= this.map.length || x < 0 || x >= (this.map[0]?.length ?? 0)) {
             return null;
@@ -345,47 +270,17 @@ export class Army {
         const guid = common.guid();
 
         if (type === 'sporomet') {
-            this.units.push(new Sporomet({ guid, type, x, y, speed: 1, attackRange: 12, projectiles: this.projectiles }));
+            this.units.push(new Sporomet({ guid, type, x, y, hp: 8, maxHp: 8, speed: 1, attackRange: 12, projectiles: this.projectiles }));
         } else if (type === 'champigneb') {
-            this.units.push(new Champigneb({ guid, type, x, y, speed: 3, attackRange: 6 }));
+            this.units.push(new Champigneb({ guid, type, x, y, hp: 35, maxHp: 35, speed: 3, attackRange: 6 }));
         } else if (type === 'eblekar') {
-            this.units.push(new Eblekar({ guid, type, x, y, speed: 1, attackRange: 1, projectiles: this.projectiles }));
-        } else if (type === 'pizdoglyad') {
-            this.units.push(new Pizdoglyad({ guid, type, x, y, speed: 7 }));
+            this.units.push(new Eblekar({ guid, type, x, y, hp: 40, maxHp: 40, speed: 1, attackRange: 1, projectiles: this.projectiles }));
         }
-        
+
         return { guid };
     }
 
-    public spawnBuilding(type: 'vzryvomor' | 'sporovaya_bashnya', x: number, y: number, common: Common){
-        const isValid = (y1: number, x1: number) => {
-            // Тайл должен быть 0 (только равнина — не вода, не горы, не туман)
-            return this.map[y1][x1] === 0;
-        }
-
-        let coords = null; 
-        if (type === 'sporovaya_bashnya'){
-            coords = [[y,x], [y + 1, x], [y, x + 1], [y+1, x + 1]];
-        }
-        else if (type === 'vzryvomor'){
-            coords = [[y,x]];
-        }
-        
-        let isOk = 
-            coords?.every(c => {
-                const [y, x] = c;
-                return isValid(y, x) && this.isInsideMap(y, x)
-            })
-        
-        if (isOk) {
-            const guid = common.guid();
-            if (type === 'vzryvomor') {
-                this.buildings.push(new Vzryvomor({ guid, x, y, attackRange: 12 }));
-            } else {
-                this.buildings.push(new SporovayaBashnya({ guid, x, y, projectiles: this.projectiles }));
-            }
-            return { guid };
-        }
-        return null;
+    public destructor(): void {
+        clearInterval(this.intervalId);
     }
 }

@@ -32,6 +32,7 @@ class Server {
             if (result) {
                 const { LOGIN } = this.mediator.getEventTypes();
                 this.mediator.call(LOGIN, result);
+                console.log(result)
                 this.user = result
             }
         });
@@ -65,7 +66,7 @@ class Server {
             const result = this._validate(data);
             if (result) {
                 const { CREATE_LOBBY } = this.mediator.getEventTypes();
-                this.mediator.call(CREATE_LOBBY, result.data);
+                this.mediator.call(CREATE_LOBBY, result);
             }
         });
 
@@ -211,7 +212,7 @@ class Server {
     }
 
     setGeneratedMap(data: TMap): void {
-        this.mediator.get(MEDIATOR.TRIGGERS.SET_GENERATED_MAP, data);
+        this.mediator.set(MEDIATOR.TRIGGERS.SET_GENERATED_MAP, () => data);
     }
 
     getGeneratedMap(): TMap | null {

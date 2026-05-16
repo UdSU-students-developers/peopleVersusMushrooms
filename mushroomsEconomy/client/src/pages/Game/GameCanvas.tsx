@@ -2,20 +2,25 @@ import React, { useEffect, useContext } from 'react';
 import CONFIG from '../../config';
 import { GameContext } from '../../App';
 import { TPoint } from '../../config';
-import { TIncubator, TScene, TSmallReactor } from '../../services/Server/types';
+import { TMushroom, TScene, TSmallReactor } from '../../services/Server/types';
 import Canvas from '../../services/Canvas/Canvas';
 import useCanvas from '../../services/Canvas/useCanvas';
 import useSprites from '../Hooks/useSprite';
-import { getTerrainSprite, getMushroomSprite, SPRITE } from '../../Game/Sprites';
+import TerrainBlock from '../../Game/Entities/TerrainBlock';
+import Mushroom from '../../Game/Entities/Mushroom';
+import SmallReactor from '../../Game/Entities/SmallReactor';
+import Larva from '../../Game/Entities/Larva';
 
 import "./Game.css";
 
 const GAME_FIELD = 'game-field';
-const { BORDER_PADDING, MIN_ZOOM, MAX_ZOOM, ZOOM_FACTOR, MAP_SIZE } = CONFIG.GRAPHICS;
-const INITIAL_WINDOW_WIDTH  = CONFIG.GRAPHICS.WINDOW.WIDTH;
+
+const { BORDER_PADDING, MIN_ZOOM, MAX_ZOOM, ZOOM_FACTOR } = CONFIG.GRAPHICS;
+
+const INITIAL_WINDOW_WIDTH = CONFIG.GRAPHICS.WINDOW.WIDTH;
 const INITIAL_WINDOW_HEIGHT = CONFIG.GRAPHICS.WINDOW.HEIGHT;
-const INITIAL_WINDOW_LEFT   = CONFIG.GRAPHICS.WINDOW.LEFT;
-const INITIAL_WINDOW_TOP    = CONFIG.GRAPHICS.WINDOW.TOP;
+const INITIAL_WINDOW_LEFT = CONFIG.GRAPHICS.WINDOW.LEFT;
+const INITIAL_WINDOW_TOP = CONFIG.GRAPHICS.WINDOW.TOP;
 
 const GameCanvas: React.FC = () => {
 
@@ -24,6 +29,7 @@ const GameCanvas: React.FC = () => {
 
     let canvas: Canvas | null = null;
     const CanvasRef = useCanvas(render);
+
     const [[spritesImage], getSprite] = useSprites();
 
     let mouseDownPosition: TPoint | null = null;
@@ -31,117 +37,209 @@ const GameCanvas: React.FC = () => {
     let wasDragging = false;
     let isMiddleMouseDragging = false;
     let middleMouseStartScreenPosition: TPoint | null = null;
-    let windowStartPosition: { LEFT: number; TOP: number } | null = null;
+    let windowStartPosition: { LEFT: number, TOP: number } | null = null;
     let animationTime = 0;
 
-    const tw = INITIAL_WINDOW_WIDTH / MAP_SIZE;
-
-    const drawTile = (spriteId: number, col: number, row: number) => {
+    const drawTile = (spriteIds: number[], worldX: number, worldY: number, tileSizePx: number) => {
         if (!canvas) return;
-        const [sx, sy, sSize] = getSprite(spriteId);
-        const px = canvas.xs(col * tw);
-        const py = canvas.ys(row * tw);
-        const size = canvas.dec(tw);
-        canvas.contextV.drawImage(spritesImage, sx, sy, sSize, sSize, px, py, size, size);
+        for (let i = 0; i < spriteIds.length; i++) {
+            const [sx, sy, sSize] = getSprite(spriteIds[i]);
+            canvas.contextV.drawImage(
+                spritesImage,
+                sx, sy, sSize, sSize,
+                canvas.xs(worldX), canvas.ys(worldY), tileSizePx, tileSizePx
+            );
+        }
+    };
+
+    const drawMap = (scene: TScene, tileWorldSize: number, tileSizePx: number) => {
+        for (let rowIndex = 0; rowIndex < scene.map.length; rowIndex++) {
+            const row = scene.map[rowIndex];
+            for (let colIndex = 0; colIndex < row.length; colIndex++) {
+                const block = new TerrainBlock({ x: colIndex, y: rowIndex }, row[colIndex]);
+                drawTile(block.sprite, colIndex * tileWorldSize, rowIndex * tileWorldSize, tileSizePx);
+            }
+        }
+    };
+
+    const drawMushrooms = (scene: TScene, tileWorldSize: number, tileSizePx: number) => {
+        for (let i = 0; i < scene.mushrooms.length; i++) {
+            const m = scene.mushrooms[i];
+            const mushroom = new Mushroom(m.guid, m.coords, m.level);
+            drawTile(mushroom.sprite, m.coords.x * tileWorldSize, m.coords.y * tileWorldSize, tileSizePx);
+        }
+    };
+
+    const drawSmallReactors = (scene: TScene, tileWorldSize: number, tileSizePx: number) => {
+        if (!canvas) return;
+        for (let i = 0; i < scene.buildings.length; i++) {
+            const b = scene.buildings[i];
+            if ((b as TSmallReactor).type !== 'small_reactor') continue;
+            const sr = b as TSmallReactor;
+            const reactor = new SmallReactor(sr.guid, sr.coords);
+            const [sx, sy, sSize] = getSprite(reactor.sprite[0]);
+            canvas.contextV.drawImage(
+                spritesImage,
+                sx, sy, sSize, sSize,
+                canvas.xs(sr.coords.x * tileWorldSize), canvas.ys(sr.coords.y * tileWorldSize), tileSizePx, tileSizePx
+            );
+
+            if (sr.consumed) {
+                const [animX, animY, animSize] = getSprite(9); // спрайт анимации
+                canvas.contextV.drawImage(
+                    spritesImage,
+                    animX, animY, animSize, animSize,
+                    canvas.xs(sr.coords.x * tileWorldSize), 
+                    canvas.ys(sr.coords.y * tileWorldSize - 15), 
+                    tileSizePx, 
+                    tileSizePx
+                );
+            }
+        }
+    };
+
+    const drawLarvae = (scene: TScene, tileWorldSize: number, tileSizePx: number) => {
+        if (!canvas) return;
+        
+        for (let i = 0; i < scene.larvae.length; i++) {
+            const l = scene.larvae[i];
+            const larva = new Larva(l.guid, l.coords);
+            
+            const [sx, sy, sSize] = getSprite(larva.sprite[0]);
+            
+            canvas.contextV.drawImage(
+                spritesImage,
+                sx, sy, sSize, sSize,
+                canvas.xs(l.coords.x * tileWorldSize), 
+                canvas.ys(l.coords.y * tileWorldSize), 
+                tileSizePx, 
+                tileSizePx
+            );
+        }
     };
 
     const drawScene = () => {
         if (!canvas) return;
+
         const { scene } = game.get();
-        if (!scene?.map) return;
+        if (!scene) return;
 
-        // terrain
-        for (let r = 0; r < MAP_SIZE; r++)
-            for (let c = 0; c < MAP_SIZE; c++)
-                drawTile(getTerrainSprite(scene.map.relief[r][c]), c, r);
+        const tileWorldSize = INITIAL_WINDOW_WIDTH / scene.map.length;
+        const tileSizePx = canvas.dec(tileWorldSize);
 
-        // mushrooms
-        for (const m of scene.buildings.mycelium)
-            drawTile(getMushroomSprite(m.level), m.x, m.y);
-
-        // small reactors
-        for (const sr of scene.buildings.smallReactors as TSmallReactor[]) {
-            drawTile(SPRITE.SMALL_REACTOR, sr.x, sr.y);
-            if (sr.consumed)
-                drawTile(SPRITE.REACTOR_CONSUMED_ANIM, sr.x, sr.y - 7 / tw);
-        }
-
-        // incubators
-        for (const i of scene.buildings.incubators as TIncubator[])
-            drawTile(SPRITE.INCUBATOR, i.x, i.y);
-
-        // larvae
-        for (const l of scene.units.larvae)
-            drawTile(SPRITE.LARVA, l.x, l.y);
+        drawMap(scene, tileWorldSize, tileSizePx);
+        drawMushrooms(scene, tileWorldSize, tileSizePx);
+        drawSmallReactors(scene, tileWorldSize, tileSizePx);
+        drawLarvae(scene, tileWorldSize, tileSizePx);
     };
 
     function render(FPS: number) {
         if (!canvas) return;
+
         animationTime += FPS > 0 ? 1 / FPS : 1 / 60;
+
         canvas.clear();
         drawScene();
         canvas.render();
     }
 
-    const mouseDown  = (x: number, y: number) => { mouseDownPosition = { x, y }; mouseDownTime = Date.now(); wasDragging = false; };
-    const mouseUp    = (_x: number, _y: number) => { mouseDownPosition = null; mouseDownTime = 0; };
-    const mouseClick = async (_x: number, _y: number) => {};
-    const mouseRightClickDown = (_x: number, _y: number) => {};
-    const mouseLeave = () => { wasDragging = false; isMiddleMouseDragging = false; middleMouseStartScreenPosition = null; windowStartPosition = null; };
+    const mouseDown = (x: number, y: number) => {
+        mouseDownPosition = { x, y };
+        mouseDownTime = Date.now();
+        wasDragging = false;
+    };
 
-    const mouseMove = (_x: number, _y: number, screenX?: number, screenY?: number) => {
+    const mouseMove = (x: number, y: number, screenX?: number, screenY?: number) => {
         if (!isMiddleMouseDragging || !middleMouseStartScreenPosition || !windowStartPosition || !canvas || screenX === undefined || screenY === undefined) return;
-        WINDOW.LEFT = windowStartPosition.LEFT - (screenX - middleMouseStartScreenPosition.x) / canvas.WIDTH  * WINDOW.WIDTH;
-        WINDOW.TOP  = windowStartPosition.TOP  - (screenY - middleMouseStartScreenPosition.y) / canvas.HEIGHT * WINDOW.HEIGHT;
+
+        WINDOW.LEFT = windowStartPosition.LEFT - (screenX - middleMouseStartScreenPosition.x) / canvas.WIDTH * WINDOW.WIDTH;
+        WINDOW.TOP = windowStartPosition.TOP - (screenY - middleMouseStartScreenPosition.y) / canvas.HEIGHT * WINDOW.HEIGHT;
+    };
+
+    const mouseUp = (x: number, y: number) => {
+        mouseDownPosition = null;
+        mouseDownTime = 0;
+    };
+
+    const mouseClick = async (x: number, y: number) => {
+    };
+
+    const mouseRightClickDown = (x: number, y: number) => {
+    };
+
+    const mouseLeave = () => {
+        wasDragging = false;
+        isMiddleMouseDragging = false;
+        middleMouseStartScreenPosition = null;
+        windowStartPosition = null;
     };
 
     const mouseWheel = (delta: number, x: number, y: number) => {
         if (!canvas) return;
-        const zoom = delta > 0 ? 1 + ZOOM_FACTOR : 1 - ZOOM_FACTOR;
-        const newH = WINDOW.HEIGHT * zoom;
-        if (newH < MIN_ZOOM || newH > MAX_ZOOM) return;
-        WINDOW.LEFT   = x - (x - WINDOW.LEFT) * zoom;
-        WINDOW.TOP    = y - (y - WINDOW.TOP)  * zoom;
-        WINDOW.WIDTH  = WINDOW.WIDTH  * zoom;
-        WINDOW.HEIGHT = newH;
+
+        const zoomAmount = delta > 0 ? 1 + ZOOM_FACTOR : 1 - ZOOM_FACTOR;
+        const newHeight = WINDOW.HEIGHT * zoomAmount;
+
+        if (newHeight < MIN_ZOOM || newHeight > MAX_ZOOM) return;
+
+        const newWidth = WINDOW.WIDTH * zoomAmount;
+        WINDOW.LEFT = x - (x - WINDOW.LEFT) * zoomAmount;
+        WINDOW.TOP = y - (y - WINDOW.TOP) * zoomAmount;
+        WINDOW.WIDTH = newWidth;
+        WINDOW.HEIGHT = newHeight;
     };
 
-    const mouseMiddleDown = (_x: number, _y: number, screenX?: number, screenY?: number) => {
+    const mouseMiddleDown = (x: number, y: number, screenX?: number, screenY?: number) => {
         isMiddleMouseDragging = true;
-        if (screenX !== undefined && screenY !== undefined)
+        if (screenX !== undefined && screenY !== undefined) {
             middleMouseStartScreenPosition = { x: screenX, y: screenY };
+        }
         windowStartPosition = { LEFT: WINDOW.LEFT, TOP: WINDOW.TOP };
     };
 
-    const mouseMiddleUp = () => { isMiddleMouseDragging = false; middleMouseStartScreenPosition = null; windowStartPosition = null; };
+    const mouseMiddleUp = () => {
+        isMiddleMouseDragging = false;
+        middleMouseStartScreenPosition = null;
+        windowStartPosition = null;
+    };
 
-    const keyDown = (event: KeyboardEvent) => { if (event.key !== 'Escape') return; };
+    const keyDown = (event: KeyboardEvent) => {
+        if (event.key !== 'Escape') return;
+    };
 
     useEffect(() => {
+
         canvas = CanvasRef({
             parentId: GAME_FIELD,
             WIDTH: WINDOW.WIDTH,
             HEIGHT: WINDOW.HEIGHT,
             WINDOW,
-            callbacks: { mouseMove, mouseDown, mouseUp, mouseRightClickDown, mouseClick, mouseLeave, mouseWheel, mouseMiddleDown, mouseMiddleUp, keyDown },
+            callbacks: {
+                mouseMove, mouseDown, mouseUp, mouseRightClickDown, mouseClick,
+                mouseLeave, mouseWheel, mouseMiddleDown, mouseMiddleUp, keyDown
+            },
         });
 
-        canvas.context.imageSmoothingEnabled  = false;
+        canvas.context.imageSmoothingEnabled = false;
         canvas.contextV.imageSmoothingEnabled = false;
+
         render(0);
 
         return () => {
             if (WINDOW.WIDTH !== INITIAL_WINDOW_WIDTH) {
-                WINDOW.WIDTH  = INITIAL_WINDOW_WIDTH;
+                WINDOW.WIDTH = INITIAL_WINDOW_WIDTH;
                 WINDOW.HEIGHT = INITIAL_WINDOW_HEIGHT;
-                WINDOW.LEFT   = INITIAL_WINDOW_LEFT;
-                WINDOW.TOP    = INITIAL_WINDOW_TOP;
+                WINDOW.LEFT = INITIAL_WINDOW_LEFT;
+                WINDOW.TOP = INITIAL_WINDOW_TOP;
             }
+
             canvas = null;
         };
     }, []);
 
-    return <div id={GAME_FIELD} className={GAME_FIELD} />;
+    return (
+        <div id={GAME_FIELD} className={GAME_FIELD}></div>
+    );
 };
 
 export default GameCanvas;

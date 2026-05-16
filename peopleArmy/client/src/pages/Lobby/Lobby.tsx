@@ -11,13 +11,6 @@ type TLobby = {
     playersIsReady: Record<string, boolean>;
 };
 
-type TStartGameResponse = {
-    result?: string;
-    data?: {
-        map?: number[][];
-    };
-};
-
 const Lobby: React.FC<IBasePage> = ({ mediator, setPage }) => {
     const [lobbyName, setLobbyName] = useState('Моё лобби');
     const [lobbies, setLobbies] = useState<TLobby[]>([]);
@@ -61,13 +54,7 @@ const Lobby: React.FC<IBasePage> = ({ mediator, setPage }) => {
         };
 
         // Карта запустила игру — переходим на игровую страницу
-        const onStartGame = (response: TStartGameResponse) => {
-            const map = response?.data?.map;
-            if (response?.result !== 'ok' || !Array.isArray(map)) {
-                return;
-            }
-            console.log("карта дошла до лобби");
-            mediator.get(CONFIG.MEDIATOR.TRIGGERS.SET_STORE, { name: 'map', value: map });
+        const onStartGame = () => {
             setPage(PAGES.GAME);
         };
 
@@ -83,7 +70,7 @@ const Lobby: React.FC<IBasePage> = ({ mediator, setPage }) => {
             socket.off(CONFIG.SOCKETS.GET_LOBBIES, onGetLobbiesResponse);
             socket.off(CONFIG.SOCKETS.START_GAME, onStartGame);
         };
-    }, [socket, guid, mediator, setPage]);
+    }, [socket, guid]);
 
     const createLobby = () => {
         if (!socket || !guid) return;

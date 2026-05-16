@@ -1,91 +1,89 @@
-/* --- СИСТЕМА МАСШТАБИРОВАНИЯ (ГОСТ) --- */
-
-:root {
-  /* золотой стандарт (Medium) */
-  --gost-menu-w: 250px;
-  --gost-menu-h: 400px;
-  
-  --gost-header-h: 60px;
-  --gost-footer-h: 145px;
-  --gost-gap: -15px;
-  --gost-btn-h: 42px;
-  --gost-font: 16px;
-  --gost-title-font: 18px;
-}
-
-/* МАЛЕНЬКИЙ (Коэффициент 0.8) */
-body[data-game-ui-size="small"] {
-  --scale: 0.8;
-}
-
-/* СРЕДНИЙ (Коэффициент 0.9) */
-body[data-game-ui-size="medium"], body:not([data-game-ui-size]) {
-  --scale: 0.9;
-}
-
-/* БОЛЬШОЙ (Коэффициент 1.1) */
-body[data-game-ui-size="large"] {
-  --scale: 1.1;
-}
-
-/* АВТОМАТИЧЕСКИЙ РАСЧЕТ ПЕРЕМЕННЫХ */
-body {
-  --menu-width: calc(var(--gost-menu-w) * var(--scale));
-  --menu-height: calc(var(--gost-menu-h) * var(--scale));
-  --header-height: calc(var(--gost-header-h) * var(--scale));
-  --footer-height: calc(var(--gost-footer-h) * var(--scale));
-  --menu-gap: calc(var(--gost-gap) * var(--scale));
-  --btn-height: calc(var(--gost-btn-h) * var(--scale));
-  --btn-font-size: calc(var(--gost-font) * var(--scale));
-  --title-font-size: calc(var(--gost-title-font) * var(--scale));
-
-  font-family: var(--font-main);
-
-}
-
-button, input, select, textarea {
-  font-family: inherit;
-}
-
-/* --- БАЗОВЫЕ СТИЛИ СТРАНИЦЫ --- */
-
 .game-page {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  width: 100vw;
-  background-color: #1d1010;
+  background-color: #2c2c2c;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
-  margin: 0;
-  overflow: hidden;
-  position: relative;
-  padding-top: var(--header-height);
-  padding-bottom: var(--footer-height);
+  padding: 16px;
   box-sizing: border-box;
 }
 
-/* --- КОНТЕЙНЕР ДЛЯ КАРТЫ (Растягивание) --- */
-.game-canvas-wrapper {
-  flex: 1; /* Занимает все место между хедером и футером */
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #1e1e2f;
+  padding: 10px 20px;
+  border-radius: 12px;
+  color: #ffffff;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.game-user {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 16px;
+  font-weight: 500;
+  flex-wrap: wrap;
+}
+
+.game-user strong {
+  color: #ffd966;
+}
+
+.game-units-counter {
+  font-size: 16px;
+  font-weight: 500;
+  color: #ffffff;
   position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  display: block; /* Убрано центрирование flex, так как карта теперь 100% */
+  top: 1px;
+}
+
+.game-units-counter strong {
+  color: #8fff8f;
+  margin-left: 3px;
+}
+
+.game-exit {
+  background-color: #dc3545;
+  border: none;
+  color: white;
+  padding: 6px 16px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.game-exit:hover {
+  background-color: #b02a37;
+}
+
+.game-canvas-wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 0;
 }
 
 .game-canvas {
+  border: 2px solid #444;
+  border-radius: 8px;
+  background-color: #1a1a1a;
   display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  background-color: #1a1a1a;
+  max-width: 900px;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
-
-/* --- OVERLAY (GameOver) --- */
 .game-overlay {
-  position: fixed; 
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -94,16 +92,84 @@ button, input, select, textarea {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
+  z-index: 1000;
   backdrop-filter: blur(4px);
 }
 
 .game-overlay-content {
   background: #2c2c2c;
-  padding: calc(var(--font-base) * 2) calc(var(--font-base) * 3); 
+  padding: 32px 48px;
   border-radius: 24px;
   text-align: center;
   color: white;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  border: 2px solid #ffcc00;
+  border: 1px solid #ffcc00;
+}
+
+.game-overlay-content h2 {
+  font-size: 32px;
+  margin-bottom: 24px;
+  color: #ff6666;
+}
+
+.game-overlay-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.game-overlay-content button {
+  background-color: #ffcc00;
+  border: none;
+  color: #1e1e2f;
+  font-weight: bold;
+  font-size: 18px;
+  padding: 10px 24px;
+  border-radius: 40px;
+  cursor: pointer;
+  transition: transform 0.1s ease, background 0.2s;
+}
+
+.game-overlay-content button:hover {
+  background-color: #ffdd44;
+  transform: scale(1.02);
+}
+
+/* Мобильная адаптация */
+@media (max-width: 600px) {
+  .game-page {
+    padding: 8px;
+  }
+
+  .game-header {
+    padding: 8px 12px;
+  }
+
+  .game-user {
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .game-units-counter {
+    font-size: 12px;
+  }
+
+  .game-exit {
+    font-size: 12px;
+    padding: 4px 12px;
+  }
+
+  .game-overlay-content {
+    padding: 20px 32px;
+  }
+
+  .game-overlay-content h2 {
+    font-size: 24px;
+  }
+
+  .game-overlay-content button {
+    font-size: 14px;
+    padding: 8px 20px;
+  }
 }

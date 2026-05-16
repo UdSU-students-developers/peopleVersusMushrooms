@@ -5,7 +5,6 @@
     background: #0d1117;
     overflow: hidden;
     font-family: 'JetBrains Mono', 'Fira Mono', monospace;
-    min-height: 0;
 }
 
 .game-sidebar {
@@ -134,92 +133,26 @@
     flex-shrink: 0;
 }
 
+.game-status {
+    margin: auto 0 0 0;
+    font-size: 11px;
+    color: #6e7681;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
 .game-canvas-wrap {
     flex: 1;
-    min-width: 0;
-    min-height: 0;
     overflow: auto;
-    cursor: grab;
-    /* inline-block внутри центрируется — scrollWidth/Height = реальный размер карты */
-    text-align: center;
-    line-height: 0;
-    user-select: none;
-}
-
-.game-canvas-wrap.game-canvas-wrap--dragging {
-    cursor: grabbing !important;
-}
-
-.game-canvas-inner {
-    display: inline-flex;
-    vertical-align: top;
-    text-align: left;
-    line-height: normal;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
     padding: 16px;
-    box-sizing: border-box;
-}
-
-.game-zoom {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.game-zoom-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    padding: 0;
-    background: transparent;
-    border: 1px solid #1a2332;
-    border-radius: 5px;
-    color: #8b949e;
-    font-size: 18px;
-    line-height: 1;
-    cursor: pointer;
-    font-family: inherit;
-    transition: border-color 0.15s, color 0.15s, background 0.15s;
-}
-
-.game-zoom-btn:hover {
-    border-color: #30363d;
-    color: #c9d1d9;
-    background: #161b22;
-}
-
-.game-zoom-value {
-    flex: 1;
-    padding: 4px 0;
-    background: transparent;
-    border: 1px solid #1a2332;
-    border-radius: 5px;
-    color: #6e7681;
-    font-size: 12px;
-    text-align: center;
-    cursor: pointer;
-    font-family: inherit;
-    transition: border-color 0.15s, color 0.15s;
-}
-
-.game-zoom-value:hover {
-    border-color: #30363d;
-    color: #c9d1d9;
-}
-
-.game-no-map {
-    margin: 0;
-    font-size: 13px;
-    color: #6e7681;
-    padding: 40px 24px;
-    line-height: normal;
 }
 
 .game-canvas {
-    cursor: inherit;
+    cursor: crosshair;
     display: block;
-    flex-shrink: 0;
     image-rendering: pixelated;
     border: 1px solid #1a2332;
     border-radius: 4px;

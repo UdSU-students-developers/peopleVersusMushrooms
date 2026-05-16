@@ -1,12 +1,14 @@
 import { TMap } from "../../Army";
-import Unit, { TProjectile, ProjectileType } from "../Units";
+import Unit, { TProjectile } from "../Units";
 import { IBuilding } from "../Vzryvomor/Vzryvomor";
 
 type TSporovayaBashnyaOptions = {
     guid: string;
+    type: string;
     x: number;
     y: number;
-    hp?: number;
+    hp: number;
+    maxHp: number;
     projectiles?: TProjectile[];
 };
 
@@ -16,6 +18,7 @@ type TSporovayaBashnyaState = {
     x: number;
     y: number;
     hp: number;
+    maxHp: number;
     sizeX: number;
     sizeY: number;
     isAlive: boolean;
@@ -24,10 +27,11 @@ type TSporovayaBashnyaState = {
 
 class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
     public guid: string;
-    public type: string = 'sporovaya_bashnya';
+    public type: string;
     public x: number;
     public y: number;
     public hp: number;
+    public maxHp: number;
     public readonly sizeX: number = 2;
     public readonly sizeY: number = 2;
 
@@ -37,15 +41,17 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
     private readonly attackAnimDuration: number = 0.6; // держим флаг 600ms
     private readonly attackRange: number = 20;
     private readonly attackCooldown: number = 2;
-    private readonly attackDamage: number = 15;
+    private readonly attackDamage: number = 50;
     private attackTimer: number = 0;
     private projectiles: TProjectile[] = [];
 
     constructor(options: TSporovayaBashnyaOptions) {
         this.guid = options.guid;
+        this.type = options.type;
         this.x = options.x;
         this.y = options.y;
-        this.hp = options.hp ?? 160;
+        this.hp = options.hp;
+        this.maxHp = options.maxHp;
         this.projectiles = options.projectiles ?? [];
     }
 
@@ -87,18 +93,18 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
             this.attackingTimer = this.attackAnimDuration;
             this.projectiles.push({
                 guid: `${this.guid}-${Date.now()}-${Math.random()}`,
-                type: ProjectileType.SPOROVAYA_BASHNYA,
+                type: 'sporovaya_bashnya',
                 fromX: this.x + 1,
                 fromY: this.y + 1,
                 toX: nearestEnemy.x,
                 toY: nearestEnemy.y,
                 createdAt: Date.now(),
             });
-            nearestEnemy.takeDamage(this.attackDamage);
+            nearestEnemy.takeDamage(this.attackDamage, 'physical');
         }
     }
 
-    public takeDamage(amount: number): void {
+    public takeDamage(amount: number, type: string = 'physical'): void {
         if (!this.isAlive) return;
         const finalAmount = Math.max(0, amount);
         this.hp -= finalAmount;
@@ -115,6 +121,7 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
         x: this.x,
         y: this.y,
         hp: this.hp,
+        maxHp: this.maxHp,
         sizeX: this.sizeX,
         sizeY: this.sizeY,
         isAlive: this.isAlive,

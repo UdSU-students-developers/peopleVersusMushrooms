@@ -9,12 +9,13 @@ const ACCEPTABLE_TILES = [0, 2];
 export type TUnitOptions = {
     guid: string;
     type: string;
-    hp?: number;
-    speed?: number;
+    hp: number;
+    maxHp: number;
+    speed: number;
     x: number;
     y: number;
-    attackRange?: number;
-    visibility?: number;
+    attackRange: number;
+    fireDamageMultiplier?: number;
     projectiles?: TProjectile[];
 };
 
@@ -24,7 +25,7 @@ export type TUnitState = {
   x: number;
   y: number;
   hp: number;
-  visibility?: number;
+  maxHp: number;
   isHealing?: boolean;
 };
 
@@ -34,15 +35,9 @@ export type TPoisonEffect = {
     sourceGuid: string;
 };
 
-export enum ProjectileType {
-    SPOROMET = 'sporomet',
-    SPOROVAYA_BASHNYA = 'sporovaya_bashnya',
-    EBLEKAR = 'eblekar',
-}
-
 export type TProjectile = {
     guid: string;
-    type: ProjectileType;
+    type: 'sporomet' | 'sporovaya_bashnya' | 'eblekar';
     fromX: number;
     fromY: number;
     toX: number;
@@ -54,15 +49,15 @@ class Unit {
     public guid: string;
     public type: string;
     public hp: number;
-    public baseHp: number;
+    public maxHp: number;
     public speed: number;
     public x: number;
     public y: number;
-    public visibility: number;
     public targetX: number;
     public targetY: number;
     public isAlive: boolean;
     public attackRange: number;
+    public fireDamageMultiplier: number = 2;
     public poisonEffects: TPoisonEffect[] = [];
     public projectiles: TProjectile[] = [];
     protected enemies: Unit [] = [];
@@ -75,16 +70,16 @@ class Unit {
     private decisionAccumulator: number = 0;
     private readonly DECISION_INTERVAL: number = 0.5; 
 
-    constructor({guid, type, x, y, hp, speed, attackRange, visibility, projectiles = []}: TUnitOptions) {
+    constructor({guid, type, x, y, hp, maxHp, speed, attackRange, fireDamageMultiplier = 2, projectiles = []}: TUnitOptions) {
         this.guid = guid;
         this.type = type;
         this.x = x;
         this.y = y;
-        this.hp = hp ?? 0;
-        this.baseHp = hp ?? 0;
-        this.speed = speed ?? 0;
-        this.attackRange = attackRange ?? 0;
-        this.visibility = visibility ?? 1;
+        this.hp = hp;
+        this.maxHp = maxHp;
+        this.speed = speed;
+        this.attackRange = attackRange;
+        this.fireDamageMultiplier = fireDamageMultiplier;
         this.projectiles = projectiles;
         this.targetX = x;
         this.targetY = y;
@@ -281,12 +276,20 @@ class Unit {
         this.path = p.slice(1);
     }
 
-    takeDamage(amount: number): void {
+    takeDamage(amount: number, type: string): void {
         if (!this.isAlive) return;
 
-        const finalAmount = Math.max(0, amount);
-        this.hp -= finalAmount;
+        const sanitizedAmount = Math.max(0, amount);
 
+        // Огонь снимает яд с отравленного юнита
+        if (type === 'fire') {
+            this.poisonEffects = [];
+        }
+
+        const finalAmount = type === 'fire' ? sanitizedAmount * this.fireDamageMultiplier : sanitizedAmount;
+
+        this.hp -= finalAmount;
+        
         if (this.hp <= 0) {
             this.hp = 0;
             this.die();
@@ -305,7 +308,7 @@ class Unit {
             x: Math.floor(this.x),
             y: Math.floor(this.y),
             hp: this.hp,
-            visibility: this.visibility,
+            maxHp: this.maxHp,
         };
     }
 

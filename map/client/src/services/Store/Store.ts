@@ -1,4 +1,4 @@
-import { ILobby, TMap, TUser } from "../server/types";
+import { ILobby, IPlayer, TMap, TUser } from "../server/types";
 import Mediator from '../Mediator/Mediator';
 import { EMESSAGES, MEDIATOR } from "../../config";
 
@@ -10,7 +10,7 @@ class Store {
     currentLobby: ILobby | null = null;
     mediator: Mediator;
 
-    generatedMap: TMap | null = null;
+    private generatedMap: TMap | null = null;
 
     constructor(mediator: Mediator) {
         this.mediator = mediator;
@@ -106,7 +106,9 @@ class Store {
 
     handleStartGame(data: ILobby): void {
         console.log('Game started:', data);
-        this.currentLobby = null;
+        if (this.currentLobby && this.currentLobby.lobbyGuid === data.lobbyGuid) {
+            this.currentLobby = data;
+        }
         this.mediator.call(EMESSAGES.GAME_STARTED, data);
     }
 

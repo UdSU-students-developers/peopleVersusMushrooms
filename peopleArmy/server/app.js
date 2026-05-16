@@ -4,7 +4,6 @@ const { Server } = require('socket.io');
 const app = express();
 const server = http.createServer(app);
 // global imports
-const GLOBAL_CONFIG = require('../../global/globalConfig');
 const LobbyManager = require('../../global/modules/lobby/LobbyManager');
 // config
 // answer
@@ -26,7 +25,9 @@ const { NAME, PORT, DATABASE, ROLE } = CONFIG;
 
 // Создаем сокеты в app.js
 const io = new Server(server, {
-    cors: GLOBAL_CONFIG.CORS
+    cors: {
+        origin: "http://localhost:3006",
+    }
 });
 
 const answer = new Answer();
@@ -46,7 +47,7 @@ new LobbyManager({ mediator, db, io, common, answer }, ROLE);
 //         console.log('SERVER EVENT:', event, args);
 //     });
 // });
-app.use(GLOBAL_CONFIG.CORS.middleware);
+app.use(CONFIG.CORS.middleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(`${__dirname}/public`));

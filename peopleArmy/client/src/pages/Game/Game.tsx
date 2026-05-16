@@ -1,45 +1,25 @@
-import React, { useEffect, useLayoutEffect, useRef, useCallback, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { IBasePage, PAGES } from '../PageManager';
 import CONFIG from '../../config';
 import './Game.css';
 
-/** Максимальный размер клетки при полном зуме */
-const MAX_CELL_PX = 14;
-/** Запас под padding обёртки (см. Game.css .game-canvas-wrap) */
-const CANVAS_WRAP_PAD_PX = 40;
-const ZOOM_DEFAULT = 1;
-const ZOOM_MIN = 0.15;
-const ZOOM_MAX = 4.0;
-const ZOOM_STEP = 0.15;
-
-/** Типы клеток рельефа (как в map/server/.../MapConfig.js TILES) */
-const TILE = {
-    PLANE: 0,
-    WATER: 1,
-    MOUNTAIN: 2,
-} as const;
+// Размер одной клетки в пикселях
+const CELL = 14;
+const COLS = 50;
+const ROWS = 50;
 
 // Цвета
 const COLOR = {
     bg: '#0d1117',
     grid: '#1a2332',
-    water: '#1a4f6e',
-    waterLight: '#2a6a8f',
-    waterDeep: '#123d55',
-    mountain: '#5a5f66',
-    mountainLight: '#7a8088',
-    mountainDark: '#3d4248',
-    /** неизвестный код клетки */
-    terrainUnknown: '#5c3d4a',
+    wall: '#8b1a1a',
     soldier: '#4a9eff',
     soldierBorder: '#7dc4ff',
     bmp: '#39d353',
     bmpBorder: '#7ee787',
     target: 'rgba(255, 200, 50, 0.25)',
     targetBorder: 'rgba(255, 200, 50, 0.7)',
-    /** юнит грибов (enemyUnits), см. mushroomsArmy API unit */
-    enemyMushroom: '#bc8cff',
-    enemyMushroomBorder: '#e9ddff',
+    path: 'rgba(74, 158, 255, 0.15)',
 };
 
 interface UnitData {
@@ -53,115 +33,61 @@ interface UnitData {
     type?: string;
 }
 
-/** Формат unit армии грибов (mushroomsArmy) для enemyUnits */
-interface EnemyUnitData {
-    guid: string;
-    type: string;
-    x: number;
-    y: number;
-    hp: number;
-    maxHp: number;
-    isAlive: boolean;
-    speed: number;
-    attackRange: number;
-}
-
 interface ArmyData {
     units: UnitData[];
-    enemyUnits?: EnemyUnitData[];
 }
 
-function drawWaterCell(ctx: CanvasRenderingContext2D, px: number, py: number, cell: number) {
-    const g = ctx.createLinearGradient(px, py, px + cell, py + cell);
-    g.addColorStop(0, COLOR.waterLight);
-    g.addColorStop(0.45, COLOR.water);
-    g.addColorStop(1, COLOR.waterDeep);
-    ctx.fillStyle = g;
-    ctx.fillRect(px, py, cell, cell);
-    // Лёгкая глубина без горизонтальных штрихов (они на стыках клеток давали полосы)
-    const cx = px + cell * 0.35;
-    const cy = py + cell * 0.4;
-    const r = Math.max(1, cell * 0.55);
-    const h = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-    h.addColorStop(0, 'rgba(140, 210, 255, 0.12)');
-    h.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = h;
-    ctx.fillRect(px, py, cell, cell);
-}
-
-function drawMountainCell(ctx: CanvasRenderingContext2D, px: number, py: number, cell: number) {
-    ctx.fillStyle = COLOR.mountainDark;
-    ctx.fillRect(px, py, cell, cell);
-    ctx.fillStyle = COLOR.mountain;
-    const inset = cell * 0.08;
-    ctx.fillRect(px + inset, py + inset, cell - 2 * inset, cell - 2 * inset);
-    ctx.fillStyle = COLOR.mountainLight;
-    const h = Math.max(1, cell * 0.25);
-    const w = Math.max(1, cell * 0.35);
-    ctx.fillRect(px + inset, py + inset, w, h);
-    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-    ctx.lineWidth = Math.max(0.5, cell * 0.05);
-    ctx.strokeRect(px + inset, py + inset, cell - 2 * inset, cell - 2 * inset);
-}
-
-// Рисуем карту (фон + рельеф)
-function drawMap(ctx: CanvasRenderingContext2D, map: number[][], cell: number) {
+// Рисуем карту (фон + стены)
+function drawMap(ctx: CanvasRenderingContext2D, map: number[][]) {
     const rows = map.length;
-    const cols = map.reduce((max, row) => Math.max(max, row.length), 0);
+    const cols = map[0]?.length ?? 0;
 
     // Фон
     ctx.fillStyle = COLOR.bg;
-    ctx.fillRect(0, 0, cols * cell, rows * cell);
+    ctx.fillRect(0, 0, cols * CELL, rows * CELL);
 
     // Сетка
     ctx.strokeStyle = COLOR.grid;
-    ctx.lineWidth = Math.max(0.25, cell * 0.04);
+    ctx.lineWidth = 0.5;
     for (let y = 0; y <= rows; y++) {
         ctx.beginPath();
-        ctx.moveTo(0, y * cell);
-        ctx.lineTo(cols * cell, y * cell);
+        ctx.moveTo(0, y * CELL);
+        ctx.lineTo(cols * CELL, y * CELL);
         ctx.stroke();
     }
     for (let x = 0; x <= cols; x++) {
         ctx.beginPath();
-        ctx.moveTo(x * cell, 0);
-        ctx.lineTo(x * cell, rows * cell);
+        ctx.moveTo(x * CELL, 0);
+        ctx.lineTo(x * CELL, rows * CELL);
         ctx.stroke();
     }
 
+    // Стены
     for (let y = 0; y < rows; y++) {
-        const row = map[y];
         for (let x = 0; x < cols; x++) {
-            const v = row[x];
-            const px = x * cell;
-            const py = y * cell;
-            if (v === TILE.WATER) {
-                drawWaterCell(ctx, px, py, cell);
-            } else if (v === TILE.MOUNTAIN) {
-                drawMountainCell(ctx, px, py, cell);
-            } else if (v !== undefined && v !== TILE.PLANE) {
-                ctx.fillStyle = COLOR.terrainUnknown;
-                ctx.fillRect(px, py, cell, cell);
+            if (map[y][x] !== 0) {
+                ctx.fillStyle = COLOR.wall;
+                ctx.fillRect(x * CELL + 1, y * CELL + 1, CELL - 2, CELL - 2);
             }
         }
     }
 }
 
 // Рисуем юнита
-function drawUnit(ctx: CanvasRenderingContext2D, unit: UnitData, cell: number) {
-    const cx = unit.x * cell + cell / 2;
-    const cy = unit.y * cell + cell / 2;
+function drawUnit(ctx: CanvasRenderingContext2D, unit: UnitData) {
+    const cx = unit.x * CELL + CELL / 2;
+    const cy = unit.y * CELL + CELL / 2;
     const isBmp = unit.type === 'bmp' || unit.speed >= 3;
-    const r = isBmp ? cell * 0.42 : cell * 0.35;
+    const r = isBmp ? CELL * 0.42 : CELL * 0.35;
 
     // Линия к цели
     if (unit.targetX != null && unit.targetY != null) {
-        const tx = unit.targetX * cell + cell / 2;
-        const ty = unit.targetY * cell + cell / 2;
+        const tx = unit.targetX * CELL + CELL / 2;
+        const ty = unit.targetY * CELL + CELL / 2;
         ctx.strokeStyle = isBmp ? COLOR.bmpBorder : COLOR.soldierBorder;
         ctx.globalAlpha = 0.25;
-        ctx.lineWidth = Math.max(0.5, cell * 0.08);
-        ctx.setLineDash([Math.max(2, cell * 0.2), Math.max(2, cell * 0.28)]);
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 4]);
         ctx.beginPath();
         ctx.moveTo(cx, cy);
         ctx.lineTo(tx, ty);
@@ -170,27 +96,26 @@ function drawUnit(ctx: CanvasRenderingContext2D, unit: UnitData, cell: number) {
         ctx.globalAlpha = 1;
 
         // Маркер цели
-        const m = Math.max(1, cell * 0.15);
         ctx.fillStyle = COLOR.target;
         ctx.strokeStyle = COLOR.targetBorder;
-        ctx.lineWidth = Math.max(0.5, cell * 0.06);
-        ctx.fillRect(unit.targetX * cell + m, unit.targetY * cell + m, cell - 2 * m, cell - 2 * m);
-        ctx.strokeRect(unit.targetX * cell + m, unit.targetY * cell + m, cell - 2 * m, cell - 2 * m);
+        ctx.lineWidth = 1;
+        ctx.fillRect(unit.targetX * CELL + 2, unit.targetY * CELL + 2, CELL - 4, CELL - 4);
+        ctx.strokeRect(unit.targetX * CELL + 2, unit.targetY * CELL + 2, CELL - 4, CELL - 4);
     }
 
     if (isBmp) {
         const s = r * 1.6;
         ctx.fillStyle = COLOR.bmp;
         ctx.strokeStyle = COLOR.bmpBorder;
-        ctx.lineWidth = Math.max(1, cell * 0.1);
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.roundRect(cx - s / 2, cy - s / 2, s, s, Math.max(1, cell * 0.12));
+        ctx.roundRect(cx - s / 2, cy - s / 2, s, s, 2);
         ctx.fill();
         ctx.stroke();
     } else {
         ctx.fillStyle = COLOR.soldier;
         ctx.strokeStyle = COLOR.soldierBorder;
-        ctx.lineWidth = Math.max(1, cell * 0.1);
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.arc(cx, cy, r, 0, Math.PI * 2);
         ctx.fill();
@@ -198,181 +123,26 @@ function drawUnit(ctx: CanvasRenderingContext2D, unit: UnitData, cell: number) {
     }
 }
 
-function drawEnemyUnit(ctx: CanvasRenderingContext2D, unit: EnemyUnitData, cell: number) {
-    if (!unit.isAlive || unit.hp <= 0) {
-        return;
-    }
-    const cx = unit.x * cell + cell / 2;
-    const cy = unit.y * cell + cell / 2;
-    const r = cell * 0.38;
-
-    ctx.fillStyle = COLOR.enemyMushroom;
-    ctx.strokeStyle = COLOR.enemyMushroomBorder;
-    ctx.lineWidth = Math.max(1, cell * 0.1);
-    ctx.beginPath();
-    ctx.roundRect(cx - r, cy - r, r * 2, r * 2, Math.max(2, cell * 0.2));
-    ctx.fill();
-    ctx.stroke();
-
-    // простая «головка» гриба
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.beginPath();
-    ctx.arc(cx, cy - r * 0.35, r * 0.35, 0, Math.PI * 2);
-    ctx.fill();
+// Статическая карта (та же что в UserManager на сервере)
+function buildDefaultMap(): number[][] {
+    const map: number[][] = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    [39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 5].forEach((r) => {
+        if (map[r]) map[r][25] = 1;
+    });
+    return map;
 }
 
-function isValidMap(map: unknown): map is number[][] {
-    return Array.isArray(map) &&
-        map.length > 0 &&
-        map.every((row) => Array.isArray(row) && row.length > 0 && row.every((cell) => Number.isFinite(cell)));
-}
-
-function getMapSize(map: number[][]): { cols: number; rows: number } {
-    if (!isValidMap(map)) return { cols: 0, rows: 0 };
-    const rows = map.length;
-    const cols = map.reduce((max, row) => Math.max(max, row.length), 0);
-    return { cols, rows };
-}
-
-function fitCellToWrap(wrap: HTMLElement, cols: number, rows: number): number {
-    if (cols <= 0 || rows <= 0) return MAX_CELL_PX;
-    const { width, height } = wrap.getBoundingClientRect();
-    const aw = Math.max(1, width - CANVAS_WRAP_PAD_PX);
-    const ah = Math.max(1, height - CANVAS_WRAP_PAD_PX);
-    const fit = Math.min(aw / cols, ah / rows);
-    return Math.min(Math.max(fit, 0.25), MAX_CELL_PX);
-}
-
-const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
+const Game: React.FC<IBasePage> = ({ mediator, server, setPage }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const canvasWrapRef = useRef<HTMLDivElement>(null);
-    const pendingScrollRef = useRef<{ ratio: number; sl: number; st: number } | null>(null);
-    const cellPxRef = useRef(MAX_CELL_PX);
-    const baseCellRef = useRef(MAX_CELL_PX);
-    const zoomRef = useRef(ZOOM_DEFAULT);
-    const mapRef = useRef<number[][]>([]);
+    const mapRef = useRef<number[][]>(buildDefaultMap());
     const unitsRef = useRef<UnitData[]>([]);
-    const enemyUnitsRef = useRef<EnemyUnitData[]>([]);
     const animFrameRef = useRef<number>(0);
+    const [selectedType, setSelectedType] = useState<'soldier' | 'bmp'>('soldier');
+    const [status, setStatus] = useState('Кликните по карте, чтобы создать юнита');
     const [unitCount, setUnitCount] = useState(0);
-    const [hasMap, setHasMap] = useState(false);
-    const [zoom, setZoom] = useState(ZOOM_DEFAULT);
 
+    const guid: string | null = mediator.get(CONFIG.MEDIATOR.TRIGGERS.GET_STORE, 'guid');
     const socket: any = mediator.get(CONFIG.MEDIATOR.TRIGGERS.GET_STORE, 'socket');
-
-    useEffect(() => {
-        const stored = mediator.get(CONFIG.MEDIATOR.TRIGGERS.GET_STORE, 'map');
-        if (isValidMap(stored)) {
-            mapRef.current = stored;
-            setHasMap(true);
-        } else {
-            mapRef.current = [];
-            setHasMap(false);
-        }
-    }, [mediator]);
-
-    useLayoutEffect(() => {
-        if (!hasMap) return;
-        const wrap = canvasWrapRef.current;
-        if (!wrap) return;
-
-        const updateCell = () => {
-            const map = mapRef.current;
-            if (!isValidMap(map)) return;
-            const { cols, rows } = getMapSize(map);
-            baseCellRef.current = fitCellToWrap(wrap, cols, rows);
-            cellPxRef.current = baseCellRef.current * zoomRef.current;
-        };
-
-        updateCell();
-        const ro = new ResizeObserver(() => updateCell());
-        ro.observe(wrap);
-        window.addEventListener('resize', updateCell);
-        return () => {
-            ro.disconnect();
-            window.removeEventListener('resize', updateCell);
-        };
-    }, [hasMap]);
-
-    // Колёсико мыши — зум
-    const applyZoom = useCallback((next: number) => {
-        const wrap = canvasWrapRef.current;
-        const prev = zoomRef.current;
-        if (wrap && prev > 0 && next !== prev) {
-            pendingScrollRef.current = {
-                ratio: next / prev,
-                sl: wrap.scrollLeft,
-                st: wrap.scrollTop,
-            };
-        }
-        zoomRef.current = next;
-        cellPxRef.current = baseCellRef.current * next;
-        setZoom(next);
-    }, []);
-
-    useEffect(() => {
-        const wrap = canvasWrapRef.current;
-        if (!wrap) return;
-        const onWheel = (e: WheelEvent) => {
-            e.preventDefault();
-            const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
-            const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomRef.current + delta));
-            applyZoom(next);
-        };
-        wrap.addEventListener('wheel', onWheel, { passive: false });
-        return () => wrap.removeEventListener('wheel', onWheel);
-    }, [applyZoom]);
-
-    const zoomIn  = useCallback(() => applyZoom(Math.min(ZOOM_MAX, zoomRef.current + ZOOM_STEP)), [applyZoom]);
-    const zoomOut = useCallback(() => applyZoom(Math.max(ZOOM_MIN, zoomRef.current - ZOOM_STEP)), [applyZoom]);
-    const zoomReset = useCallback(() => applyZoom(ZOOM_DEFAULT), [applyZoom]);
-
-    const zoomPercent = useMemo(() => Math.round(zoom / ZOOM_DEFAULT * 100), [zoom]);
-
-    // Перетаскивание карты мышью
-    const isDraggingRef = useRef(false);
-    const dragStartRef = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
-    const [isDragging, setIsDragging] = useState(false);
-
-    useEffect(() => {
-        const wrap = canvasWrapRef.current;
-        if (!wrap) return;
-
-        const onMouseDown = (e: MouseEvent) => {
-            if (e.button !== 0) return;
-            isDraggingRef.current = true;
-            dragStartRef.current = {
-                x: e.clientX,
-                y: e.clientY,
-                scrollLeft: wrap.scrollLeft,
-                scrollTop: wrap.scrollTop,
-            };
-            setIsDragging(true);
-            e.preventDefault();
-        };
-
-        const onMouseMove = (e: MouseEvent) => {
-            if (!isDraggingRef.current) return;
-            const dx = e.clientX - dragStartRef.current.x;
-            const dy = e.clientY - dragStartRef.current.y;
-            wrap.scrollLeft = dragStartRef.current.scrollLeft - dx;
-            wrap.scrollTop  = dragStartRef.current.scrollTop  - dy;
-        };
-
-        const onMouseUp = () => {
-            isDraggingRef.current = false;
-            setIsDragging(false);
-        };
-
-        wrap.addEventListener('mousedown', onMouseDown);
-        window.addEventListener('mousemove', onMouseMove);
-        window.addEventListener('mouseup', onMouseUp);
-        return () => {
-            wrap.removeEventListener('mousedown', onMouseDown);
-            window.removeEventListener('mousemove', onMouseMove);
-            window.removeEventListener('mouseup', onMouseUp);
-        };
-    }, []);
 
     // Игровой цикл — рисуем каждый кадр
     const render = useCallback(() => {
@@ -381,30 +151,8 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        const map = mapRef.current;
-        if (isValidMap(map)) {
-            const { cols, rows } = getMapSize(map);
-            const cell = cellPxRef.current;
-            const w = Math.max(1, Math.ceil(cols * cell));
-            const h = Math.max(1, Math.ceil(rows * cell));
-            if (canvas.width !== w || canvas.height !== h) {
-                canvas.width = w;
-                canvas.height = h;
-            }
-            drawMap(ctx, map, cell);
-            enemyUnitsRef.current.forEach((eu) => drawEnemyUnit(ctx, eu, cell));
-            unitsRef.current.forEach((unit) => drawUnit(ctx, unit, cell));
-
-            const wrap = canvasWrapRef.current;
-            const pend = pendingScrollRef.current;
-            if (wrap && pend) {
-                pendingScrollRef.current = null;
-                const maxL = Math.max(0, wrap.scrollWidth - wrap.clientWidth);
-                const maxT = Math.max(0, wrap.scrollHeight - wrap.clientHeight);
-                wrap.scrollLeft = Math.max(0, Math.min(pend.sl * pend.ratio, maxL));
-                wrap.scrollTop = Math.max(0, Math.min(pend.st * pend.ratio, maxT));
-            }
-        }
+        drawMap(ctx, mapRef.current);
+        unitsRef.current.forEach((unit) => drawUnit(ctx, unit));
 
         animFrameRef.current = requestAnimationFrame(render);
     }, []);
@@ -421,20 +169,59 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
         const handler = (response: any) => {
             if (response?.result !== 'ok') return;
             const data: ArmyData = response.data;
-            if (!data) return;
-            if (Array.isArray(data.units)) {
-                unitsRef.current = data.units;
-                setUnitCount(data.units.length);
-            }
-            if (Array.isArray(data.enemyUnits)) {
-                enemyUnitsRef.current = data.enemyUnits;
-            }
+            if (!data?.units) return;
+            unitsRef.current = data.units;
+            setUnitCount(data.units.length);
         };
 
         socket.on(CONFIG.SOCKETS.UPDATE_ARMY, handler);
         return () => socket.off(CONFIG.SOCKETS.UPDATE_ARMY, handler);
 
     }, [socket]);
+
+    // Клик по канвасу — создать юнита
+    const handleCanvasClick = useCallback(
+        async (e: React.MouseEvent<HTMLCanvasElement>) => {
+            const canvas = canvasRef.current;
+            if (!canvas || !guid) return;
+
+            const rect = canvas.getBoundingClientRect();
+            // Учитываем масштаб если канвас отображается не 1:1
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const px = (e.clientX - rect.left) * scaleX;
+            const py = (e.clientY - rect.top) * scaleY;
+
+            const x = Math.floor(px / CELL);
+            const y = Math.floor(py / CELL);
+
+            // Нельзя ставить на стену
+            if (mapRef.current[y]?.[x] !== 0) {
+                setStatus('Нельзя поставить юнита на стену');
+                return;
+            }
+
+            setStatus(`Создаём ${selectedType} на [${x}, ${y}]…`);
+
+            try {
+                const body = await server.createUnit(guid, x, y, selectedType);
+
+                if (!body) {
+                    setStatus('Ошибка сети');
+                    return;
+                }
+                if (body.result === 'ok') {
+                    setStatus(`${selectedType} создан на [${x}, ${y}]`);
+                } else {
+                    setStatus(`Ошибка: ${body.error ?? 'неизвестная'}`);
+                }
+            } catch (err) {
+                setStatus('Ошибка сети');
+                console.error(err);
+            }
+        },
+        [guid, selectedType, server]
+    );
 
     return (
         <div className="game-page">
@@ -444,6 +231,26 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
                 <div className="game-stat">
                     <span className="game-stat-label">Юнитов</span>
                     <span className="game-stat-value">{unitCount}</span>
+                </div>
+
+                <div className="game-section">
+                    <p className="game-section-label">Тип юнита</p>
+                    <div className="game-type-btns">
+                        <button
+                            className={`game-type-btn ${selectedType === 'soldier' ? 'active' : ''}`}
+                            onClick={() => setSelectedType('soldier')}
+                        >
+                            <span className="game-type-dot soldier" />
+                            Солдат
+                        </button>
+                        <button
+                            className={`game-type-btn ${selectedType === 'bmp' ? 'active' : ''}`}
+                            onClick={() => setSelectedType('bmp')}
+                        >
+                            <span className="game-type-dot bmp" />
+                            БМП
+                        </button>
+                    </div>
                 </div>
 
                 <div className="game-section">
@@ -457,15 +264,6 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
                     </button>
                 </div>
 
-                <div className="game-section">
-                    <p className="game-section-label">Масштаб</p>
-                    <div className="game-zoom">
-                        <button className="game-zoom-btn" onClick={zoomOut} title="Уменьшить (−)">−</button>
-                        <button className="game-zoom-value" onClick={zoomReset} title="Сбросить">{zoomPercent}%</button>
-                        <button className="game-zoom-btn" onClick={zoomIn} title="Увеличить (+)">+</button>
-                    </div>
-                </div>
-
                 <div className="game-legend">
                     <p className="game-section-label">Легенда</p>
                     <div className="game-legend-row">
@@ -477,31 +275,23 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
                         БМП
                     </div>
                     <div className="game-legend-row">
-                        <span className="game-legend-dot" style={{ background: '#bc8cff', borderRadius: '4px' }} />
-                        Враг (грибы)
-                    </div>
-                    <div className="game-legend-row">
-                        <span className="game-legend-dot" style={{ background: '#1a4f6e', borderRadius: '2px' }} />
-                        Вода
-                    </div>
-                    <div className="game-legend-row">
-                        <span className="game-legend-dot" style={{ background: '#5a5f66', borderRadius: '2px' }} />
-                        Горы / камень
+                        <span className="game-legend-dot" style={{ background: '#8b1a1a', borderRadius: '2px' }} />
+                        Стена
                     </div>
                 </div>
+
+                <p className="game-status">{status}</p>
             </div>
 
-            <div
-                className={`game-canvas-wrap${isDragging ? ' game-canvas-wrap--dragging' : ''}`}
-                ref={canvasWrapRef}
-            >
-                <div className="game-canvas-inner">
-                    {!hasMap ? (
-                        <p className="game-no-map">Карта не загружена</p>
-                    ) : (
-                        <canvas ref={canvasRef} className="game-canvas" />
-                    )}
-                </div>
+            <div className="game-canvas-wrap">
+                <canvas
+                    ref={canvasRef}
+                    width={COLS * CELL}
+                    height={ROWS * CELL}
+                    onClick={handleCanvasClick}
+                    className="game-canvas"
+                    title="Кликните чтобы создать юнита"
+                />
             </div>
         </div>
     );

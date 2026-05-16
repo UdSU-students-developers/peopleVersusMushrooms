@@ -1,9 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Handjet:wght,ELSH@100..900,2&family=Press+Start+2P&display=swap');
-
-:root {
-  --font-main: 'Handjet', monospace;
-}
-
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',

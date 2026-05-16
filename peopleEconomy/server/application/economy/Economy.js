@@ -39,8 +39,13 @@ class Economy {
     }
 
 
+    //движение юнитов
+    moveUnits() {
+        [...this.workers].forEach(unit => unit.moveOneStep())
+    }
+
     //создать юнита
-    createUnit({x, y, unitType, barracksGuid}) {
+    createPeopleUnit({x, y, unitType, barracksGuid}) {
 
         //СОЗДАНИЕ ЮНИТА ПОКА БЕЗ ТРАТЫ РЕСУРСА 
 
@@ -67,72 +72,94 @@ class Economy {
         return unit;
     }
 
-    /***** ПОСТРОЙКА ЗДАНИЙ *****/
-    createBuilding({ x, y, buildingType }) {
-        const guid = this.common.guid();
-        let building = null;
+    //создание трубопровода
+    createPipeline({startX, startY, endX, endY}) {
+        const pipelineGuid = this.common.guid();
+        this.buildings.push(new Pipeline({
+            guid: pipelineGuid,
+            startX,
+            startY,
+            endX,
+            endY,
+            map: this.map,
+            economy: this
+        }));
+        this.updated = true;
+    }
+
+    //создание казармы
+    createBarracks({x, y}) {
+        const barracksGuid = this.common.guid();
+        this.buildings.push(new Barracks({
+            guid: barracksGuid,
+            x,
+            y,
+            map: this.map,
+            economy: this
+        }));
+        this.updated = true;
+    }
+
+    //проверка подключения зданий между собой трубой
+    checkPipelineConnection({ giverGuid, receiverGuid, pipelineGuid}) {
+        //находим трубопровод
+        const pipeline = this.buildings.find(b => b.guid === pipelineGuid);
+        if (!pipeline) return false;
         
-        switch (buildingType) {
-            case CONFIG.ECONOMY.BUILDINGS.PIPE:
-                building = new Pipe({ guid, x, y });
-                break;
-            case CONFIG.ECONOMY.BUILDINGS.BARRACKS:
-                building = new Barracks({ guid, x, y });
-                break;
-            case CONFIG.ECONOMY.BUILDINGS.SMALL_GENERATOR:
-                building = new SmallGenerator({ guid, x, y });
-                break;
-            case CONFIG.ECONOMY.BUILDINGS.DRILLER:
-                building = new Driller({ guid, x, y });
-                break;
-            default:
-                return false;
+        //находим здание-отправитель
+        const giver = this.buildings.find(b => b.guid === giverGuid);
+        if (!giver) return false;
+        
+        //находим здание-получатель
+        const receiver = this.buildings.find(b => b.guid === receiverGuid);
+        if (!receiver) return false;
+        
+        //проверяем, что здания подключены к трубе
+        const startCoords = pipeline.getStartCoords();
+        const endCoords = pipeline.getEndCoords();
+        
+        const isGiverValid = (giver.x === startCoords.x && giver.y === startCoords.y) ||
+                             (giver.x === endCoords.x && giver.y === endCoords.y);
+        const isReceiverValid = (receiver.x === startCoords.x && receiver.y === startCoords.y) ||
+                                (receiver.x === endCoords.x && receiver.y === endCoords.y);
+        
+        if (!isGiverValid || !isReceiverValid) return false;
+        
+        return true;
+    }
+
+    
+    //транспортировка ресурса из одного здания в другое
+    transferResource({ giverGuid, receiverGuid, resourceType, amount }) {
+        //находим здание-отправитель
+        const giver = this.buildings.find(b => b.guid === giverGuid);
+        if (!giver) return false;
+        
+        //находим здание-получатель
+        const receiver = this.buildings.find(b => b.guid === receiverGuid);
+        if (!receiver) return false;
+        
+        //забираем ресурс у отправителя
+        const taken = giver.takeResource(resourceType, amount);
+        if (taken === 0) return false;
+        
+        //отдаем ресурс получателю
+        const added = receiver.addResource(resourceType, taken);
+        if (added === 0) {
+            //если не добавилось - возвращаем обратно
+            giver.addResource(resourceType, taken);
+            return false;
         }
         
-        this.buildings.push(building);
         this.updated = true;
-        return building;
+        return true;
     }
 
-    // 1. выработать энергию (потратить нефть)
-    generateEnergy() {
-        //пробежаться по всем реакторам
-        //для каждого реактора взять нефть для производства энергии
-        //если в реакторе этой нефти нет,
-        //то с помощтю матрицы достижимости выяснить ближайшую нефть и сразу потратить её
-        //энергию записать в реакторы
-    }
-
-    // 2.1. потребить энергию шахтами (добыть нефть и железо)
-    miningConsumption() {
-        // пробежаться по всем буровым
-        // для каждой уровой взять (вычесть) необходимую энергию из достижимых реакторов
-        // добыть нефть
-        // распределить нефть куда-нибудь
-        // то же самое сделать для шахт
-    }
-
-    // 3. переместить юнитов
-    moveUnits() {
-        this.workers.forEach(unit => unit.moveOneStep())
-    }
     
 
     update() {
-        /***********************/
-        /* Про заводы */
-        // 1. выработать энергию (потратить нефть)
-        this.generateEnergy();
-        // 2.1. потребить энергию шахтами (добыть нефть и железо)
-        this.miningConsumption();
-        // 2.5. потребить остаток энергиизаводами (потратить железо)
-
-        /************************/
-        /* Про рабочих/крестьян */
-        // 3. переместить юнитов
+        //переместить юнитов
         this.moveUnits();
-        // 4. выдать ресурсы рабочему, если надо
-        // 5. рабочим построить что-нибудь
 
         if (this.updated) {
             this.updated = false;

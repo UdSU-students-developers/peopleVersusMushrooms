@@ -85,6 +85,18 @@ class Server {
         return true;
     }
 
+    async createUnit(guid: string, x: number, y: number, type: string): Promise<
+        | { result: 'ok'; data: unknown }
+        | { result: 'error'; error: string; code?: number }
+        | null
+    > {
+        return this.request(
+            'unit/create',
+            { guid, x: String(x), y: String(y) },
+            { type },
+            { passThroughAnswerErrors: true }
+        );
+    }
 }
 
 export default Server;

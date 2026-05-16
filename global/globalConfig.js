@@ -1,6 +1,5 @@
 const GLOBAL_CONFIG = {
     INTERVAL: 200, //мс
-    MAP_SIZE: 100, //100 x 100
 
     MAP: {
         PORT: 3001,
@@ -84,13 +83,10 @@ const GLOBAL_CONFIG = {
         GET_VISIBILITY: '/getVisibility',
         GET_RESOURSE_VISIBILITY: '/getResourseVisibility',
         UPDATE_UNITS: '/updateUnits',
-        UPDATE_BUILDINGS: '/updateBuildings',
+        UPDATE_BUILDINGS: '/updateBuldings',
 
         //mushrooms army
         SPAWN_UNIT: '/spawnUnit',
-        
-        //people army
-        TAKE_DAMAGE_PEOPLE_ARMY: '/unit/takeDamage',
     },
 
     ROLES: {

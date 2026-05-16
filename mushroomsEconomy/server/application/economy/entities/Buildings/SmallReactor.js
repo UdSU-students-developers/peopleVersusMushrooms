@@ -1,23 +1,11 @@
 const Building = require("./Building");
 const CONFIG = require("../../../../config");
 
-const { HP, SIZE, CONSUMPTION, PRODUCTION, CAPACITY, TYPE, VISIBILITY } = CONFIG.ECONOMY.BIO_REACTOR_SMALL;
+const { HP, SIZE, CONSUMPTION, PRODUCTION, CAPACITY } = CONFIG.ECONOMY.BIO_REACTOR_SMALL;
 
 class SmallReactor extends Building {
-    constructor({ guid, x, y, callbacks = {} }) {
-        super({ 
-            type: TYPE, 
-            guid: guid, 
-            x: x, 
-            y: y, 
-            callbacks: callbacks, 
-            hp: HP, 
-            size: SIZE, 
-            consumption: CONSUMPTION, 
-            production: PRODUCTION, 
-            capacity: CAPACITY,
-            visibility: VISIBILITY,
-        });
+    constructor({ type, guid, x, y, callbacks = {} }) {
+        super({ type, guid, x, y, callbacks, hp: HP, size: SIZE, consumption: CONSUMPTION, production: PRODUCTION, capacity: CAPACITY, easyStar });
 
         this.energy = 0;
         this.consumed = false;
@@ -27,6 +15,7 @@ class SmallReactor extends Building {
         return {
             ...super.get(),
             energy: this.energy,
+            type: this.type,
             consumed: this.consumed,
         };
     }

@@ -32,6 +32,7 @@ class Server {
             if (result) {
                 const { LOGIN } = this.mediator.getEventTypes();
                 this.mediator.call(LOGIN, result);
+                console.log(result)
                 this.user = result
             }
         });
@@ -205,12 +206,12 @@ class Server {
         return this.mediator.get<ILobby[]>(MEDIATOR.TRIGGERS.GET_LOBBIES);
     }
 
-    generateMap(guid: string): void {
-        this.socket.emit(MEDIATOR.EVENTS.GENERATE_MAP, { guid, width: CONFIG.WIDTH, height: CONFIG.HEIGHT });
+    generateMap(): void {
+        this.socket.emit(MEDIATOR.EVENTS.GENERATE_MAP, { width: CONFIG.WIDTH, height: CONFIG.HEIGHT });
     }
 
     setGeneratedMap(data: TMap): void {
-        this.mediator.get(MEDIATOR.TRIGGERS.SET_GENERATED_MAP, data);
+        this.mediator.set(MEDIATOR.TRIGGERS.SET_GENERATED_MAP, () => data);
     }
 
     getGeneratedMap(): TMap | null {

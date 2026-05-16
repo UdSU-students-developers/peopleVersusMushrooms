@@ -75,7 +75,7 @@ class Map {
 
     getVisibleEntities(searchedEntities, searchingEntities) {
         const visibleEntities = [];
-        for (const entity of searchedEntities) {
+        for (const entity in searchedEntities) {
             const pos = entity.getPos();
             for (const searchingEntity in searchingEntities) {
                 const vis = searchingEntity.getVisibleRange();
@@ -109,7 +109,7 @@ class Map {
                 notRoleEntities.push(entity);
             }
         });
-        const visibleEntities = this.getVisibleEntities(notRoleEntities, roleEntities);
+        const visibleEntities = getVisibleEntities(notRoleEntities, roleEntities);
         visibleEntities.forEach(entity => {
             if (entity instanceof Unit) {
                 units.push(entity.get());
@@ -127,7 +127,7 @@ class Map {
                 roleEntities.push(entity);
             }
         });
-        const sources = this.getVisibleEntities(this.sources, roleEntities).map(source => source.get());
+        const sources = getVisibleEntities(this.sources, roleEntities).map(source => source.get());
         return { sources };
     }
 
@@ -169,10 +169,10 @@ class Map {
     // сгенерировать карту
     // water, mountains - [0-100]
     // seed - number
-    generateRelief() {
-        this.water = MAP_CONFIG.DEFAULTS.WATER;
-        this.mountains = MAP_CONFIG.DEFAULTS.MOUNTAIN;
-        this.seed = randomInt(2 ** 48 - 1);
+    generateRelief({ seed, water, mountains }) {
+        this.water = typeof water === "number" ? water : MAP_CONFIG.DEFAULTS.WATER;
+        this.mountains = typeof mountains === "number" ? mountains : MAP_CONFIG.DEFAULTS.MOUNTAIN;
+        this.seed = typeof seed === "number" ? seed : randomInt(2 ** 48 - 1);
 
         //val -> [0,100]
         const clamp = val => val < 0 ? 0 : (val > 100 ? 100 : val);
@@ -206,9 +206,9 @@ class Map {
     }
 
     // iron, oil - [0, 20]
-    generateSources() {
-        this.iron = MAP_CONFIG.DEFAULTS.IRON;
-        this.oil = MAP_CONFIG.DEFAULTS.OIL;
+    generateSources({ iron, oil }) {
+        this.iron = typeof iron === "number" ? iron : MAP_CONFIG.DEFAULTS.IRON;
+        this.oil = typeof oil === "number" ? oil : MAP_CONFIG.DEFAULTS.OIL;
         const clamp = val => val < 0 ? 0 : (val > 20 ? 20 : val);
         this.iron = clamp(this.iron);
         this.oil = clamp(this.oil);

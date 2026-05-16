@@ -35,7 +35,7 @@ class Lobby {
     }
 
     getGuids() {
-        return { lobbyGuid: this.lobbyGuid, ...this.playersGuids };
+        return { ...this.playersGuids }
     }
 
     //добавить игрока

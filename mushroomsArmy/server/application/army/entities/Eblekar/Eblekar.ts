@@ -1,5 +1,5 @@
 import { TMap } from "../../Army";
-import Unit, { TUnitOptions, TUnitState, ProjectileType } from "../Units";
+import Unit, { TUnitOptions, TUnitState } from "../Units";
 
 class Eblekar extends Unit {
     public healRange: number = 10;
@@ -19,12 +19,9 @@ class Eblekar extends Unit {
 
     constructor(options: TUnitOptions) {
         super(options);
-        this.visibility = options.visibility ?? 12;
         this.hp = 40;
-        this.baseHp = 40;
-        this.speed = options.speed ?? 1;
-        this.attackRange = options.attackRange ?? 0;
-        this.lastHealTime = -this.healCooldown;
+        this.maxHp = 40;
+        this.speed = 1;
     }
 
     public update(enemies: Unit[], map: TMap, deltaTime: number, allies: Unit[] = []): void {
@@ -51,7 +48,7 @@ class Eblekar extends Unit {
         if (
             !ally.isAlive ||
             !this.canHealAlly(ally) ||
-            ally.hp >= ally.baseHp ||
+            ally.hp >= ally.maxHp ||
             distance >= this.healRange ||
             !this.hasLineOfSight(this.x, this.y, ally.x, ally.y, map)
         ) {
@@ -65,14 +62,14 @@ class Eblekar extends Unit {
         if (currentTime - this.aimStartTime >= this.aimTime) {
              this.projectiles.push({
                 guid: `${this.guid}-${Date.now()}-${Math.random()}`,
-                type: ProjectileType.EBLEKAR,
+                type: 'eblekar',
                 fromX: this.x,
                 fromY: this.y,
                 toX: ally.x,
                 toY: ally.y,
                 createdAt: Date.now(),
             });
-            ally.hp = Math.min(ally.baseHp, ally.hp + this.healAmount);
+            ally.hp = Math.min(ally.maxHp, ally.hp + this.healAmount);
             this.lastHealTime = currentTime;
             this.isAiming = false;
         }
@@ -85,7 +82,7 @@ class Eblekar extends Unit {
         for (const ally of allies) {
             if (!ally.isAlive || ally.guid === this.guid) continue;
             if (!this.canHealAlly(ally)) continue;
-            if (ally.hp >= ally.baseHp) continue;
+            if (ally.hp >= ally.maxHp) continue;
 
             const dx = ally.x - this.x;
             const dy = ally.y - this.y;

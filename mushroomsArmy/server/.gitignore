@@ -2,11 +2,9 @@
 
 # dependencies
 /node_modules
+/server/application/modules/db/mushroomsArmy.db
 /.pnp
 .pnp.js
-
-# database files
-*.db
 
 # testing
 /coverage

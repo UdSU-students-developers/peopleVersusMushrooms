@@ -43,18 +43,9 @@ const CONFIG = {
             RADIUS: 10, //максимальный радиус расчета ближайшей точки от центра стремления(больше 20 не ставить)
         },
         WORKER: {
-            HP: 150,
-            SPEED: 2,
-            TYPE: "worker",
-            VISIBILITY: 3,
+            HP: 1,
+            SPEED: 1,
         },
-
-        BUILDINGS: {
-            PIPE: 'PIPE',
-            BARRACKS: 'BARRACKS',
-            SMALL_GENERATOR: 'SMALL_GENERATOR',
-            DRILLER: 'DRILLER',
-        }
     }
 };
 

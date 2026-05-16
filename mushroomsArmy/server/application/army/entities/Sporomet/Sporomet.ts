@@ -1,5 +1,5 @@
 import { TMap } from "../../Army";
-import Unit, { TPoisonEffect, TUnitOptions, ProjectileType } from "../Units";
+import Unit, { TPoisonEffect, TUnitOptions } from "../Units";
 
 class Sporomet extends Unit {
     public retreatRange: number = 8;
@@ -16,11 +16,10 @@ class Sporomet extends Unit {
 
     constructor(options: TUnitOptions) {
         super(options);
-        this.visibility = options.visibility ?? 15;
         this.hp = 8;
-        this.baseHp = 8;
-        this.speed = options.speed ?? 1;
-        this.attackRange = options.attackRange ?? 12;
+        this.maxHp = 8;
+        this.speed = 1;
+        this.attackRange = 12;
         this.lastShotTime = -this.cooldown;
     }
 
@@ -29,7 +28,7 @@ class Sporomet extends Unit {
 
         this.projectiles.push({
             guid: `${this.guid}-${Date.now()}-${Math.random()}`,
-            type: ProjectileType.SPOROMET,
+            type: 'sporomet',
             fromX: this.x,
             fromY: this.y,
             toX: enemy.x,
@@ -37,7 +36,7 @@ class Sporomet extends Unit {
             createdAt: Date.now(),
         });
         
-        enemy.takeDamage(this.attackDamage);
+        enemy.takeDamage(this.attackDamage, 'physical');
         
         this.applyPoisonEffect(enemy, {
             duration: this.poisonDuration,
@@ -65,7 +64,7 @@ class Sporomet extends Unit {
                 
                 const damage = effect.damagePerSecond * deltaTime;
                 if (damage > 0) {
-                    enemy.takeDamage(damage);
+                    enemy.takeDamage(damage, 'poison');
                 }
                 
                 if (effect.duration <= 0) {

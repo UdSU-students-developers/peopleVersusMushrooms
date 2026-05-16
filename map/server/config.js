@@ -31,9 +31,6 @@ class CONFIG {
         GET_LOBBIES: 'GET_LOBBIES',
         SET_READY: 'SET_READY',
         LOGOUT: 'LOGOUT',
-
-        START_GAME_MAP: 'START_GAME_MAP',
-        CREATE_LOBBY_MAP: 'CREATE_LOBBY_MAP'
     }
 
     static TRIGGERS = {

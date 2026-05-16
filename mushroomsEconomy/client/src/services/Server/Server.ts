@@ -10,8 +10,7 @@ import {
     TMessage, 
     TLobbies,
     TLobby,
-    TLobbyServer,
-    TRelief
+    TLobbyServer
 } from "../Server/types";
 import md5 from 'md5';
 
@@ -56,7 +55,6 @@ class Server {
             this.socket.on(SOCKET.LEAVE_LOBBY, (data: TResponse<TLobbies>) => this.handleLeaveLobby(data));
             this.socket.on(SOCKET.SET_READY, (data: TResponse<any>) => this.handleSetReady(data));
             this.socket.on(SOCKET.DROP_FROM_LOBBY, (data: TResponse<TLobbies>) => this.handleDropFromLobby(data));
-            this.socket.on(SOCKET.RELIEF_LOADED, (data: TResponse<TRelief>) => this.handleReliefLoaded(data));
         });
     }
 
@@ -290,14 +288,6 @@ class Server {
         if (response.data) {
             const { LOBBY_UPDATED } = this.mediator.getEventTypes();
             this.mediator.call(LOBBY_UPDATED, response.data);
-        }
-    }
-
-    private handleReliefLoaded(response: TResponse<TRelief>): void {
-        if (this.checkError(response)) return;
-        if (response.data) {
-            const { RELIEF_LOADED } = this.mediator.getEventTypes();
-            this.mediator.call(RELIEF_LOADED, response.data);
         }
     }
 }

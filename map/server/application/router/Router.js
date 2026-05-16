@@ -6,6 +6,7 @@ const {
     useGetReliefHandler,
     useGetVisibilityHandler,
     useGetResourseVisibilityHandler,
+    useGetGeneratedMapHandler,
     useUpdateUnitsHandler,
     useUpdateBuildingsHandler,
 
@@ -33,6 +34,7 @@ function Router(mediator, answer, common) {
     router.post(URLS.GET_RELIEF, useGetReliefHandler(mediator, answer, common));
     router.post(URLS.GET_VISIBILITY, useGetVisibilityHandler(mediator, answer, common));
     router.post(URLS.GET_RESOURSE_VISIBILITY, useGetResourseVisibilityHandler(mediator, answer, common));
+    router.post('/getGeneratedMap', useGetGeneratedMapHandler(mediator, answer, common));
 
     router.post(URLS.UPDATE_UNITS, useUpdateUnitsHandler(mediator, answer, common));
     router.post(URLS.UPDATE_BUILDINGS, useUpdateBuildingsHandler(mediator, answer, common));

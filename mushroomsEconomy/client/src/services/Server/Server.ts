@@ -54,10 +54,7 @@ class Server {
     private getCredentials(): { guid: string; token: string } | null {
         const { GET_STORE } = this.mediator.getTriggerTypes();
         const user = this.mediator.get<{ name: string; token: string; guid: string } | null>(GET_STORE, 'user');
-        if (!user ||
-            user?.token ||
-            user?.guid
-        ) return null;
+        if (!user) return null;
         return { guid: user.guid, token: user.token };
     }
 
@@ -230,14 +227,14 @@ class Server {
     private handleLobbyUpdated(response: TResponse<TLobby>): void {
         this.handle<TLobby>(response, (data) => {
             const { LOBBY_UPDATED } = this.mediator.getEventTypes();
-            this.mediator.call(LOBBY_UPDATED, [data]);
+            this.mediator.call(LOBBY_UPDATED, data);
         });
     }
 
     private handleCreateLobby(response: TResponse<TLobby>): void {
         this.handle<TLobby>(response, (data) => {
             const { LOBBY_UPDATED } = this.mediator.getEventTypes();
-            this.mediator.call(LOBBY_UPDATED, [data]);
+            this.mediator.call(LOBBY_UPDATED, data);
         });
     }
 
@@ -251,7 +248,7 @@ class Server {
     private handleJoinToLobby(response: TResponse<TLobby>): void {
         this.handle<TLobby>(response, (data) => {
             const { LOBBY_UPDATED } = this.mediator.getEventTypes();
-            this.mediator.call(LOBBY_UPDATED, [data]);
+            this.mediator.call(LOBBY_UPDATED, data);
         });
     }
 

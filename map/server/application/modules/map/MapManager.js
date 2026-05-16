@@ -12,6 +12,7 @@ class MapManager extends BaseManager {
         if (!this.io) return;
         
         this.io.on('connection', (socket) => {
+            socket.on(MESSAGES.GET_RELIEF, (data) => this.socketGetRelief(data, socket));
             socket.on(MESSAGES.UPDATE_MAP, (data) => this.socketUpdateMap(data, socket));
             socket.on(MESSAGES.GET_MAP_PARAMS, (data) => this.socketGetMapParams(data, socket));
         });
@@ -130,12 +131,25 @@ class MapManager extends BaseManager {
     }
 
     // ============ SOCKETS ============
+
+    _socketGets(data, method, MESSAGE, socket) {
+        const { mapGuid } = data;
+        // проверяем, что карта с таким гуидом есть
+        const map = this.maps[mapGuid];
+        if (!map) return socket.emit(MESSAGE, this.answer.bad(3002));
+        return socket.emit(MESSAGE, this.answer.good(map[method]()));
+    }
+
     socketUpdateMap(data, socket) {
         this._socketGets(data, 'get', MESSAGES.UPDATE_MAP, socket);
     }
 
     socketGetMapParams(data, socket) {
         this._socketGets(data, 'getGen', MESSAGES.GET_MAP_PARAMS, socket);
+    }
+
+    socketGetRelief(data, socket) {
+        this._socketGets(data, 'getRelief', MESSAGES.GET_RELIEF, socket);
     }
 }
 

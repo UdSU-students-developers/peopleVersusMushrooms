@@ -48,24 +48,11 @@ class GameManager extends BaseManager {
 		// запросить ресурсы под жопками рабочих
 		// обновить рельеф и видимость у себя в Экномике
 		// ответить на СВОЙ клиент
-		if (user) {
-			const relief = await this.sendToMap(GLOBAL_CONFIG.URLS.GET_RELIEF, { mapGuid, userGuid: guid });
-			if (relief && relief.length > 0) {
-				this.setRelief(guid, relief);
-			}
-
-			const visibility = await this.sendToMap(GLOBAL_CONFIG.URLS.GET_VISIBILITY, { mapGuid, userGuid: guid });
-			if (visibility && visibility.length > 0) {
-				this.economies[guid].setVisibility(visibility);
-			}
-
-			this.io.to(user.socketId).emit(
-				GLOBAL_CONFIG.SOCKET.UPDATE_SCENE,
-				this.answer.good({...data, relief, visibility})
-			);
-			return;
-		}
-		this.io.to(user.socketId).emit(GLOBAL_CONFIG.SOCKET.UPDATE_SCENE, this.answer.bad(1002));
+		this.io.to(user.socketId).emit(
+			CONFIG.SOCKET.UPDATE_SCENE,
+			this.answer.good(data)
+		);
+		//this.io.to(user.socketId).emit(CONFIG.SOCKET.UPDATE_SCENE, this.answer.bad(1002));
 	}
 
 	async getResources(guid, mapGuid) {

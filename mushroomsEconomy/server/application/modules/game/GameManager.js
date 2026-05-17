@@ -152,15 +152,6 @@ class GameManager extends BaseManager {
 		})
 	}
 
-	updateUnits(guids, units = []) {
-		if (units.length === 0) return;
-		this.sendToMap(GLOBAL_CONFIG.URLS.UPDATE_UNITS, {
-			mapGuid: guids.mapGuid,
-			userGuid: guids.mushroomsEconomy,
-			entities: units,
-		})
-	}
-
 	spawnArmyUnit(data) { //data = {unitType, x, y, armyGuid}
 		this.sendToMushroomsArmy(GLOBAL_CONFIG.URLS.SPAWN_UNIT, data);
 	}

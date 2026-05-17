@@ -96,8 +96,9 @@ class Economy {
     setRelief(relief) {
         this.map.setRelief(relief);
     }
+
     setResources(resources) {
-        this.map.setResources();
+        this.map.setResources(resources);
     }
 
     // Методы добавления объектов
@@ -288,7 +289,7 @@ class Economy {
         this.addSmallReactor(startPoint.x + 1, startPoint.y + 1);
         // создать грибничку
         this.addMycelium(startPoint.x - 1, startPoint.y - 1);
-        this.addReactor(startPoint.x+5, startPoint.x + 5)
+        this.addReactor(startPoint.x + 5, startPoint.y + 5);
         this.updated = true;
     }
 

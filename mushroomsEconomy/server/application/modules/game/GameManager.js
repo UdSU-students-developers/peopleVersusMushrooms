@@ -46,7 +46,7 @@ class GameManager extends BaseManager {
 		this.getRelief(data.map, guid, mapGuid);
 		// запросить видимость
 		// запросить ресурсы под жопками рабочих
-		//this.getResources(data.map, guid, mapGuid);
+		this.getResources(data.map, guid, mapGuid);
 		// обновить рельеф и видимость у себя в Экномике
 		// ответить на СВОЙ клиент
 		this.io.to(user.socketId).emit(

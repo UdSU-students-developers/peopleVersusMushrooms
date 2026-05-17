@@ -24,7 +24,6 @@ class Map {
         this.relief = relief;
     }
 
-
     updateLarvaGrid(buildings) {
         if (!this.relief?.length) return;
 
@@ -45,9 +44,15 @@ class Map {
         ];
 
         for (const building of blockingBuildings) {
-            const { x, y } = building;
-            if (x >= 0 && x < cols && y >= 0 && y < rows) {
-                this.larvaGrid[y][x] = 1;
+            const size = building.size ?? 1;
+            for (let dy = 0; dy < size; dy++) {
+                for (let dx = 0; dx < size; dx++) {
+                    const bx = building.x + dx;
+                    const by = building.y + dy;
+                    if (bx >= 0 && bx < cols && by >= 0 && by < rows) {
+                        this.larvaGrid[by][bx] = 1;
+                    }
+                }
             }
         }
     }

@@ -42,21 +42,6 @@ const resolveMinimapTerrain = (
   return null;
 };
 
-const resolveMinimapTerrain = (
-  map: MapTile[][],
-  visibilityMask: boolean[][],
-  x: number,
-  y: number
-): MapTile => {
-  const serverTerrain = coerceTerrainCell(map[y]?.[x]);
-  const rememberedTerrain = exploredTerrainMap?.[y]?.[x] ?? null;
-  const wasExplored = exploredMask?.[y]?.[x] === true && rememberedTerrain !== null;
-  const currentlyVisible = visibilityMask[y]?.[x] === true && serverTerrain !== null;
-  if (currentlyVisible) return serverTerrain;
-  if (wasExplored) return rememberedTerrain;
-  return null;
-};
-
 const ownBuildingTypes = ['vzryvomor', 'sporovaya_bashnya'];
 const economyBuildingTypes = [
   'mycelium',

@@ -182,10 +182,14 @@ export const fogWarImages: HTMLImageElement[] = (FOG_WAR_TEXTURE_SRCS as readonl
   return img;
 });
 
-
+//лекорации!!
 export const bushImg = Object.assign(new Image(), { src: bushImgSrc });
 export const funnyTrusovFlowerImg = Object.assign(new Image(), { src: funnyTrusovFlower });
 export const cleanScullImg = Object.assign(new Image(), { src: cleanScullSrc });
 export const scullWithSwordImg = Object.assign(new Image(), { src: scullWithSwordSrc });
 export const scullImg = Object.assign(new Image(), { src: scullSrc });
-
+export const plainDecorImages: HTMLImageElement[] = [
+  cleanScullImg,
+  scullWithSwordImg,
+  scullImg,
+];

@@ -1,4 +1,4 @@
-// Игровые изображения: спрайты юнитов, зданий и текстуры тумана войны
+﻿// Игровые изображения: спрайты юнитов, зданий и текстуры тумана войны
 
 import sporometSrc from '../../../assets/units/Sporomet.png';
 import champignebSrc from '../../../assets/units/Champigneb.png';
@@ -21,6 +21,8 @@ import vzryvomorFrame10 from '../../../assets/buildings/vzryvomor/frame_10.png';
 import sporovayaBashnyaIdle from '../../../assets/buildings/sporovaya_bashnya/idle.png';
 import sporovayaBashnyaAttack from '../../../assets/buildings/sporovaya_bashnya/attack.png';
 import sporovayaBashnyaDestroyed from '../../../assets/buildings/sporovaya_bashnya/destroyed.png';
+
+import economySpritesSrc from '../../../assets/buildings/economy/sprites.png';
 
 import champignebExplFrame0 from '../../../assets/units/champigneb_explosion/frame_0.png';
 import champignebExplFrame1 from '../../../assets/units/champigneb_explosion/frame_1.png';
@@ -102,6 +104,8 @@ export const SPOROVAYA_BASHNYA_SRCS = {
   destroyed: sporovayaBashnyaDestroyed,
 };
 
+export const economySpritesImg = Object.assign(new Image(), { src: economySpritesSrc });
+
 const grass1Img = Object.assign(new Image(), { src: grassTextureSrc1 });
 const grass2Img = Object.assign(new Image(), { src: grassTextureSrc2 });
 const grass3Img = Object.assign(new Image(), { src: grassTextureSrc3 });
@@ -144,9 +148,7 @@ export const edgeImages = {
   innerBottomRight: Object.assign(new Image(), { src: waterInnerCornerBottomRight }),
 };
 
-
 export const mountainImg = Object.assign(new Image(), { src: mountainsTextureSrc });
-
 
 export const FOG_WAR_TEXTURE_SRCS = [tumanSrc, tuman2Src, tuman3Src] as const;
 
@@ -156,6 +158,4 @@ export const fogWarImages: HTMLImageElement[] = (FOG_WAR_TEXTURE_SRCS as readonl
   return img;
 });
 
-
 export const bushImg = Object.assign(new Image(), { src: bushImgSrc });
-

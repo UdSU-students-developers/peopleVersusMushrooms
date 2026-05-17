@@ -7,12 +7,29 @@ const GLOBAL_CONFIG = require('../../../../../global/globalConfig');
 
 const { GAME_STATE, LOBBY_START, GAME_STARTED } = CONFIG.SOCKET;
 
-type TStartGame = { guid: string; map?: TMap; buildings: TBuildingInput[]; mapGuid: string; peopleArmyGuid?: string | null };
+type TStartGame = {
+    guid: string;
+    map?: TMap;
+    buildings: TBuildingInput[];
+    mapGuid: string;
+    peopleArmyGuid?: string | null;
+};
+
 type TTakeDamage = { armyGuid: string; unitGuid: string; amount: number };
 type TMoveUnit = { armyGuid: string; unitGuid: string; x: number; y: number };
 type TGetArmy = string;
-type TSpawnUnit = { armyGuid: string; type: 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad'; x: number; y: number };
-type TSpawnBuildingUnit = { armyGuid: string; type: 'vzryvomor' | 'sporovaya_bashnya'; x: number; y: number };
+type TSpawnUnit = {
+    armyGuid: string;
+    type: 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad';
+    x: number;
+    y: number;
+};
+type TSpawnBuildingUnit = {
+    armyGuid: string;
+    type: 'vzryvomor' | 'sporovaya_bashnya';
+    x: number;
+    y: number;
+};
 type TUpdateEconomyBuildings = { armyGuid: string; buildings: TBuildingInput[] };
 type TUser = { guid: string; token: string; socketId: string; name: string };
 
@@ -21,12 +38,24 @@ type TVisibleEntity = {
     type: string;
     x: number;
     y: number;
-    hp: number;
+    hp?: number;
+    role?: string;
+    size?: number;
+    sizeX?: number;
+    sizeY?: number;
+    level?: number;
+    visibility?: number;
 };
 
 type TVisibilityResponse = {
     units: TVisibleEntity[];
     buildings: TVisibleEntity[];
+};
+
+type TAnswer<T> = {
+    result: 'ok' | 'error';
+    data?: T;
+    error?: unknown;
 };
 
 type TReliefResponse = TMap;
@@ -61,7 +90,7 @@ class ArmyManager extends BaseManager {
             this.triggerSpawnUnit(data as TSpawnUnit)
         );
 
-        this.mediator.set(CONFIG.MEDIATOR.TRIGGERS.SPAWN_BUILDING, (data: unknown) => 
+        this.mediator.set(CONFIG.MEDIATOR.TRIGGERS.SPAWN_BUILDING, (data: unknown) =>
             this.triggerSpawnBuildingUnit(data as TSpawnBuildingUnit)
         );
 
@@ -70,9 +99,12 @@ class ArmyManager extends BaseManager {
         );
 
         if (!this.io) return;
+
         this.io.on('connection', (socket: Socket) => {
             socket.on(LOBBY_START, (data: { guid?: string; token?: string }) => this.socketLobbyStart(data, socket));
-            socket.on(CONFIG.SOCKET.SPAWN_UNIT, (data: { guid?: string; token?: string; type?: string; x?: number; y?: number }) => this.socketSpawnUnit(data, socket));
+            socket.on(CONFIG.SOCKET.SPAWN_UNIT, (data: { guid?: string; token?: string; type?: string; x?: number; y?: number }) =>
+                this.socketSpawnUnit(data, socket)
+            );
         });
     }
 
@@ -108,8 +140,8 @@ class ArmyManager extends BaseManager {
         const unit = army.units.find(u => u.guid === unitGuid);
         if (!unit) return false;
 
-        (unit as any).targetX = x;
-        (unit as any).targetY = y;
+        unit.targetX = x;
+        unit.targetY = y;
 
         return true;
     }
@@ -154,10 +186,12 @@ class ArmyManager extends BaseManager {
             const x1 = Math.min(cols - 1, Math.ceil(cx + r));
             const y0 = Math.max(0, Math.floor(cy - r));
             const y1 = Math.min(rows - 1, Math.ceil(cy + r));
+
             for (let y = y0; y <= y1; y++) {
                 for (let x = x0; x <= x1; x++) {
                     const dx = x - cx;
                     const dy = y - cy;
+
                     if (dx * dx + dy * dy <= rr) {
                         visible[y * cols + x] = 1;
                     }
@@ -166,13 +200,18 @@ class ArmyManager extends BaseManager {
         };
 
         for (const unit of armyState.units) {
-            if (unit.hp > 0) reveal(unit.x, unit.y, unit.visibility ?? visionRadius);
+            if (unit.hp > 0) {
+                reveal(unit.x, unit.y, unit.visibility ?? visionRadius);
+            }
         }
+
         for (const building of armyState.buildings) {
             const hp = building.hp ?? 0;
+
             if (hp > 0 && building.type !== 'house' && building.type !== 'barracks' && building.type !== 'tower') {
                 const sizeX = building.sizeX ?? 1;
                 const sizeY = building.sizeY ?? 1;
+
                 reveal(building.x + sizeX / 2, building.y + sizeY / 2, building.visibility ?? visionRadius);
             }
         }
@@ -188,6 +227,7 @@ class ArmyManager extends BaseManager {
 
         const army = this.army[guid];
         const fogMap = army ? this.buildFogMap(armyState, army.map) : armyState.map;
+
         this.io.to(user.socketId).emit(GAME_STATE, this.answer.good({ ...armyState, map: fogMap }));
 
         // if (army && army.getAliveUnits().length === 0) {
@@ -195,7 +235,7 @@ class ArmyManager extends BaseManager {
         //     this.destroyArmy(guid);
         //     return;
         // }
-        
+
         // if (army && army.buildings.length === 0) {
         //     this.io.to(user.socketId).emit(GAME_OVER, this.answer.good({ message: 'Все здания разрушены' }));
         //     this.destroyArmy(guid);
@@ -205,26 +245,64 @@ class ArmyManager extends BaseManager {
         const { units, buildings } = armyState;
 
         // Отправляем юниты и здания на карту
-        // карта читает поля units / buildings (см. useUpdateUnitsHandler.js / useUpdateBuildingsHandler.js)
-        await this.send<{ mapGuid: string; userGuid: string; units: TArmyState['units'] }>(
+        // map ждёт поле entities
+        await this.send<{ mapGuid: string; userGuid: string; entities: TArmyState['units'] }>(
             `${GLOBAL_CONFIG.MAP.URL}${GLOBAL_CONFIG.URLS.UPDATE_UNITS}`,
-            { mapGuid: army.mapGuid, userGuid: army.guid, units }
+            { mapGuid: army.mapGuid, userGuid: army.guid, entities: units }
         );
 
-        await this.send<{ mapGuid: string; userGuid: string; buildings: TArmyState['buildings'] }>(
+        await this.send<{ mapGuid: string; userGuid: string; entities: TArmyState['buildings'] }>(
             `${GLOBAL_CONFIG.MAP.URL}${GLOBAL_CONFIG.URLS.UPDATE_BUILDINGS}`,
-            { mapGuid: army.mapGuid, userGuid: army.guid, buildings }
+            { mapGuid: army.mapGuid, userGuid: army.guid, entities: buildings }
         );
 
-        // карта возвращает { units, buildings } (см. Map.getVisbileEntitiesByRole)
-        const visibility = await this.sendToMap<TVisibilityResponse>(
-            GLOBAL_CONFIG.URLS.GET_VISIBILITY, army.mapGuid, army.guid
+        // карта возвращает answer.good({ units, buildings })
+        const visibilityResponse = await this.sendToMap<TAnswer<TVisibilityResponse>>(
+            GLOBAL_CONFIG.URLS.GET_VISIBILITY,
+            army.mapGuid,
+            army.guid
         );
 
+        const visibility = visibilityResponse?.data;
+
+        const visibleUnits = visibility?.units ?? [];
+        const visibleBuildings = visibility?.buildings ?? [];
+        
+        const economyUnits: TBuildingInput[] = visibleUnits
+            .filter(unit => unit.role === 'mushroomsEconomy')
+            .map(unit => ({
+                guid: unit.guid,
+                type: unit.type,
+                x: unit.x,
+                y: unit.y,
+                hp: unit.hp ?? 1,
+                visibility: unit.visibility,
+            }));
+        
+        if (economyUnits.length > 0) {
+            army.setEconomyUnits(economyUnits);
+        }
+        
         const visibleEnemies: TVisibleEntity[] = [
-            ...(visibility?.units ?? []),
-            ...(visibility?.buildings ?? []),
-        ];
+            ...visibleUnits,
+            ...visibleBuildings,
+        ].filter(entity => entity.role !== 'mushroomsEconomy');
+
+        const economyBuildings: TBuildingInput[] = visibleBuildings.map(building => ({
+            guid: building.guid,
+            type: building.type,
+            x: building.x,
+            y: building.y,
+            hp: building.hp ?? 1,
+            sizeX: building.sizeX ?? building.size ?? 1,
+            sizeY: building.sizeY ?? building.size ?? 1,
+            level: building.level,
+            visibility: building.visibility,
+        }));
+
+        if (economyBuildings.length > 0) {
+            army.setEconomyBuildings(economyBuildings);
+        }
 
         if (visibleEnemies.length > 0) {
             const enemyEntities: TBuildingInput[] = visibleEnemies.map(entity => ({
@@ -232,8 +310,13 @@ class ArmyManager extends BaseManager {
                 type: entity.type,
                 x: entity.x,
                 y: entity.y,
-                hp: entity.hp,
+                hp: entity.hp ?? 1,
+                sizeX: entity.sizeX ?? entity.size ?? 1,
+                sizeY: entity.sizeY ?? entity.size ?? 1,
+                level: entity.level,
+                visibility: entity.visibility,
             }));
+
             army.updateEnemyEntities(enemyEntities);
         }
     }
@@ -241,6 +324,7 @@ class ArmyManager extends BaseManager {
     private async damagePeopleUnit(armyGuid: string, unitGuid: string, amount: number): Promise<void> {
         const guids = this.armyGuids[armyGuid];
         if (!guids?.peopleArmyGuid) return;
+
         await this.send(
             `${GLOBAL_CONFIG.PEOPLE_ARMY.URL}${GLOBAL_CONFIG.URLS.TAKE_DAMAGE_PEOPLE_ARMY}`,
             { userGuid: guids.peopleArmyGuid, unitGuid, damage: amount }
@@ -249,20 +333,23 @@ class ArmyManager extends BaseManager {
 
     private destroyArmy(guid: string): void {
         const army = this.army[guid];
+
         if (army) {
             army.destructor();
         }
+
         delete this.army[guid];
         delete this.armyGuids[guid];
     }
 
-     private async eventStartGame({ guid, map, buildings, mapGuid, peopleArmyGuid }: TStartGame): Promise<void> {
+    private async eventStartGame({ guid, map, buildings, mapGuid, peopleArmyGuid }: TStartGame): Promise<void> {
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
         if (!user) return;
 
         if (this.army[guid]) {
             this.destroyArmy(guid);
         }
+
         let resolvedMap = map;
 
         if (!resolvedMap) {
@@ -279,11 +366,13 @@ class ArmyManager extends BaseManager {
         }
 
         let finalBuildings = buildings;
+
         if (!finalBuildings || finalBuildings.length === 0) {
             finalBuildings = Army.generateDefensiveLayout(resolvedMap, this.common);
         }
 
         this.armyGuids[guid] = { peopleArmyGuid: peopleArmyGuid ?? null };
+
         this.army[guid] = new Army({
             mapGuid,
             map: resolvedMap,
@@ -297,6 +386,7 @@ class ArmyManager extends BaseManager {
         });
 
         const userObj = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid) as TUser | null;
+
         if (userObj?.socketId) {
             this.io.to(userObj.socketId).emit(GAME_STARTED, this.answer.good(true));
         }
@@ -309,6 +399,7 @@ class ArmyManager extends BaseManager {
         }
 
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid) as TUser | null;
+
         if (!user || user.token !== token) {
             socket.emit(LOBBY_START, this.answer.bad(242));
             return;
@@ -318,16 +409,30 @@ class ArmyManager extends BaseManager {
         socket.emit(LOBBY_START, this.answer.good(true));
     }
 
-    private socketSpawnUnit({ guid, token, type, x, y }: { guid?: string; token?: string; type?: string; x?: number; y?: number }, socket: Socket): void {
+    private socketSpawnUnit(
+        { guid, token, type, x, y }: { guid?: string; token?: string; type?: string; x?: number; y?: number },
+        socket: Socket
+    ): void {
         if (!guid || !token || !type || x === undefined || y === undefined) return;
 
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid) as TUser | null;
         if (!user || user.token !== token) return;
 
-        const validTypes: Array<'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad'> = ['sporomet', 'champigneb', 'eblekar', 'pizdoglyad'];
+        const validTypes: Array<'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad'> = [
+            'sporomet',
+            'champigneb',
+            'eblekar',
+            'pizdoglyad'
+        ];
+
         if (!validTypes.includes(type as 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad')) return;
 
-        this.triggerSpawnUnit({ armyGuid: guid, type: type as 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad', x, y });
+        this.triggerSpawnUnit({
+            armyGuid: guid,
+            type: type as 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad',
+            x,
+            y
+        });
     }
 }
 

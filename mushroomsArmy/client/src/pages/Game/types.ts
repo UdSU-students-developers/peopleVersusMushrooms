@@ -18,7 +18,7 @@ export type Unit = {
   guid: string;               
   x: number;                
   y: number;                
-  type: 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad';
+  type: 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad' | 'larva';
   hp: number;               
   visibility?: number;
   isHealing?: boolean;          
@@ -67,6 +67,7 @@ export type GameState = {
   map: MapTile[][];
   units: Unit[];
   buildings: Building[];
+  economyUnits?: Unit[];
   slimePuddles: SlimePuddle[]; 
   projectiles: Projectile[];
 };

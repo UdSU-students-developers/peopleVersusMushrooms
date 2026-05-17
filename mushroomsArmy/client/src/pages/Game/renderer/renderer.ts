@@ -92,7 +92,7 @@ export function drawGame(
 
   drawBuildings(ctx, state, cellW, cellH, circularVisibilityMask);
   drawProjectileLayer(ctx, state, cellW, cellH, circularVisibilityMask);
-  drawUnits(ctx, state.units, cellW, cellH, circularVisibilityMask);
+  drawUnits(ctx, state.units, cellW, cellH, circularVisibilityMask, state.economyUnits ?? []);
 
   ctx.restore();
 }

@@ -20,6 +20,7 @@ const ownBuildingTypes = ['vzryvomor', 'sporovaya_bashnya'];
 const economyBuildingTypes = [
   'mycelium',
   'incubator',
+  'small_reactor',
   'small_bioreactor',
   'big_bioreactor',
   'fat_barrel',

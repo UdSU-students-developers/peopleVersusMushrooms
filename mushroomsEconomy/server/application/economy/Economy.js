@@ -218,7 +218,10 @@ class Economy {
     // 1. вырасти грибочки
     myceliumGrowAll() {
         this.buildings.mycelium.forEach(mycelium => {
-            if (mycelium.update()) this.updated = true;
+            if (mycelium.update()) {
+                this.updatedBuildings.push(mycelium.get());
+                this.updated = true;
+            }
         });
     }
 
@@ -230,7 +233,8 @@ class Economy {
 
             const result = mycelium.extend(freeCells);
             if (!result) return;
-
+            
+            this.updatedBuildings.push(mycelium.get());
             this.addMycelium(result.x, result.y);
             this.updated = true;
         });

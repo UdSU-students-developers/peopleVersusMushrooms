@@ -4,19 +4,23 @@ const CONFIG = require("../../../../config");
 const { HP, SIZE, CONSUMPTION, PRODUCTION, CAPACITY, TYPE, VISIBILITY, CONSUME_RADIUS } = CONFIG.ECONOMY.BIO_REACTOR_SMALL;
 
 class SmallReactor extends Building {
-    constructor({ guid, x, y, callbacks = {} }) {
+    constructor({ guid, x, y, callbacks = {}, 
+        type = TYPE, 
+        hp = HP, 
+        size = SIZE, 
+        consumption = CONSUMPTION, 
+        production = PRODUCTION, 
+        capacity = CAPACITY, 
+        visibility = VISIBILITY }) {
         super({ 
-            guid: guid, 
-            x: x, 
-            y: y, 
-            callbacks: callbacks, 
-            type: TYPE, 
-            hp: HP, 
-            size: SIZE, 
-            consumption: CONSUMPTION, 
-            production: PRODUCTION, 
-            capacity: CAPACITY,
-            visibility: VISIBILITY,
+            guid, x, y, callbacks,
+            type,
+            hp,
+            size,
+            consumption,
+            production,
+            capacity,
+            visibility,
         });
         
         this.consumeRadius = CONSUME_RADIUS;

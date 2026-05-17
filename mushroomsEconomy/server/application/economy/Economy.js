@@ -7,6 +7,7 @@ const EasyStar = require('easystarjs');
 
 const Mycelium = require('./entities/Buildings/Mycelium');
 const SmallReactor = require('./entities/Buildings/SmallReactor');
+const Reactor = require('./entities/Buildings/Reactor');
 const Incubator = require('./entities/Buildings/Incubator');
 const Larva = require('./entities/Unit/Larva');
 const Map = require('./entities/Map/Map');
@@ -30,9 +31,9 @@ class Economy {
 
         //Здания
         this.buildings = {
-            smallReactors: [], // малые реакторы
-            incubators: [],    // инкубаторы
-            mycelium: [],      // грибница
+            reactors: [],   // все реакторы 
+            incubators: [], // инкубаторы
+            mycelium: [],   // грибница
         };
 
         this.updatedBuildings = []; //ПРИ добавлении или удалении здания добавить в этот массив его гуид
@@ -80,9 +81,9 @@ class Economy {
         return {
             guids: this.guids,
             buildings: {
-                smallReactors: this.buildings.smallReactors.map(r => r.get()),
+                reactors:   this.buildings.reactors.map(r => r.get()),
                 incubators: this.buildings.incubators.map(i => i.get()),
-                mycelium: this.buildings.mycelium.map(m => m.get()),
+                mycelium:   this.buildings.mycelium.map(m => m.get()),
             },
             units: {
                 larvae: this.units.larvae.map(l => l.get()),
@@ -116,12 +117,18 @@ class Economy {
 
     addSmallReactor(x, y) {
         const guid = this.common.guid();
-        this.buildings.smallReactors.push(new SmallReactor({
+        this.buildings.reactors.push(new SmallReactor({
             type: CONFIG.ECONOMY.BIO_REACTOR_SMALL.TYPE,
             guid,
             x,
             y,
         }));
+        this.updatedBuildings.push(this.findEntityByGuid(guid).get());
+    }
+
+    addReactor(x, y) {
+        const guid = this.common.guid();
+        this.buildings.reactors.push(new Reactor({ guid, x, y }));
         this.updatedBuildings.push(this.findEntityByGuid(guid).get());
     }
 
@@ -135,7 +142,7 @@ class Economy {
                 getMap: () => this.map.relief,
                 addLarva: (lx, ly, homeX, homeY) => this.addLarva(lx, ly, homeX, homeY),
                 getBuildings: () => [
-                    ...this.buildings.smallReactors,
+                    ...this.buildings.reactors,
                     ...this.buildings.incubators,
                 ],
             },
@@ -173,7 +180,7 @@ class Economy {
 
     getAvailableEnergy() {
         let total = 0;
-        for (const reactor of this.buildings.smallReactors) {
+        for (const reactor of this.buildings.reactors) {
             for (const incubator of this.buildings.incubators) {
                 if (this.checkConnection(reactor, incubator)) {
                     total += reactor.energy;
@@ -186,7 +193,7 @@ class Economy {
 
     consumeEnergyFromReactors(amount) {
         let remaining = amount;
-        for (const reactor of this.buildings.smallReactors) {
+        for (const reactor of this.buildings.reactors) {
             if (remaining <= 0) break;
             const consume = Math.min(reactor.energy, remaining);
             reactor.energy -= consume;
@@ -200,7 +207,7 @@ class Economy {
     }
 
     reactorsConsume() {
-        this.buildings.smallReactors.forEach(reactor => {
+        this.buildings.reactors.forEach(reactor => {
             const consumed = reactor.consumeMycelium(this.buildings.mycelium);
             if (consumed > 0) this.updated = true;
         });
@@ -281,6 +288,7 @@ class Economy {
         this.addSmallReactor(startPoint.x + 1, startPoint.y + 1);
         // создать грибничку
         this.addMycelium(startPoint.x - 1, startPoint.y - 1);
+        this.addReactor(startPoint.x+5, startPoint.x + 5)
         this.updated = true;
     }
 

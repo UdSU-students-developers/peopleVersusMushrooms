@@ -39,7 +39,7 @@ class Map {
         }
 
         const blockingBuildings = [
-            ...(buildings.smallReactors || []),
+            ...(buildings.reactors || []),
             ...(buildings.incubators || []),
         ];
 

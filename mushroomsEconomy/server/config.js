@@ -73,7 +73,14 @@ const CONFIG = {
             VISIBILITY: 5,
         },
         BIO_REACTOR: {
-
+            TYPE: 'reactor',
+            HP: 60,
+            SIZE: 2,           
+            CONSUMPTION: 2,    
+            PRODUCTION: 2,
+            CAPACITY: 180,
+            VISIBILITY: 7,
+            CONSUME_RADIUS: 2, 
         },
         BIO_REACTOR_SMALL: {
             TYPE: "small_reactor",
@@ -83,6 +90,7 @@ const CONFIG = {
             PRODUCTION: 1,  // сколько производит за единицу времени
             CAPACITY: 60, // емкость. Сколько грибочков может лежать на переработке в реакторе, чтобы он работал непрерывно
             VISIBILITY: 5,
+            CONSUME_RADIUS: 1,
         },
         MINE: {
 

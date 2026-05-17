@@ -95,6 +95,9 @@ class Economy {
     setRelief(relief) {
         this.map.setRelief(relief);
     }
+    setResources(resources) {
+        this.map.setResources();
+    }
 
     // Методы добавления объектов
 

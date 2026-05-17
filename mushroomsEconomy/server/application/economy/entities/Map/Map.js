@@ -2,7 +2,7 @@ const GLOBAL_CONFIG = require('../../../../../../global/globalConfig');
 
 class Map {
     constructor() {
-        this.resources = null;
+        this.resources = this._initEmptyMap();
         this.relief = this._initEmptyMap();
 
         this.myceliumGrid = null;

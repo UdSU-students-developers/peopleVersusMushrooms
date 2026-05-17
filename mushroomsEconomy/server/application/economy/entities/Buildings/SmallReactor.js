@@ -6,11 +6,11 @@ const { HP, SIZE, CONSUMPTION, PRODUCTION, CAPACITY, TYPE, VISIBILITY } = CONFIG
 class SmallReactor extends Building {
     constructor({ guid, x, y, callbacks = {} }) {
         super({ 
-            type: TYPE, 
             guid: guid, 
             x: x, 
             y: y, 
             callbacks: callbacks, 
+            type: TYPE, 
             hp: HP, 
             size: SIZE, 
             consumption: CONSUMPTION, 

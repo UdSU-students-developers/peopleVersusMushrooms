@@ -1,41 +1,69 @@
+// widgets/Header/Header.tsx
+
 import React from 'react';
 import './Header.css';
 
 interface HeaderProps {
-  username: string;
-  gameTitle?: string;
-  isMenuOpen: boolean;
-  onMenuToggle: () => void;
+  variant: 'auth' | 'lobby' | 'hud';
+  nickname?: string;           // имя пользователя (для lobby/hud)
+  isMenuOpen?: boolean;        // открыто ли меню (для стилизации кнопки)
+  onMenuClick?: () => void;    // обработчик клика по кнопке меню
 }
 
 const Header: React.FC<HeaderProps> = ({
-  username,
-  gameTitle = 'MUSHROOMS ARMY',
-  isMenuOpen,
-  onMenuToggle,
+  variant,
+  nickname,
+  isMenuOpen = false,
+  onMenuClick,
 }) => {
+  // Определяем, показывать ли левую секцию с ником
+  const showLeftSection = variant !== 'auth';  
+  // Центральный текст всегда одинаковый
+  const centerText = 'mushrooms army';
+  // Кнопка меню есть всегда
+  const showMenuButton = true;
+  
   return (
-    <header className="header-strip" style={{ height: 'var(--header-height)' }}>
-      <div className="header-safe-area">
-        <div className="header-section left" style={{ fontSize: 'var(--font-base)' }}>
-          <span className="user-nickname">{username}</span>
-        </div>
+    <header className={`header header--${variant}`}>
 
-        <div className="header-section center" style={{ fontSize: 'var(--title-font-size)' }}>
-          <h1 className="game-title">{gameTitle}</h1>
-        </div>
-
-        <div className="header-section right">
-          <button
-            type="button"
-            id="header-menu-btn"
-            className={`menu-button ${isMenuOpen ? 'active' : ''}`}
-            style={{ fontSize: 'var(--font-base)' }}
-            onClick={onMenuToggle}
+      <div className="header__safe-area">
+        
+        {/* Левая секция — ник игрока (только для lobby/hud) */}
+        {showLeftSection && (
+          <div className="header__section header__section--left">
+            <span 
+              className="header__nickname"
+              style={{ fontSize: 'var(--font-base)' }}
+            >
+              {nickname || ''}
+            </span>
+          </div>
+        )}
+        
+        {/* Центральная секция — название игры (всегда) */}
+        <div className="header__section header__section--center">
+          <h1 
+            className="header__title"
+            style={{ fontSize: 'var(--title-font-size)' }}
           >
-            MENU
-          </button>
+            {centerText}
+          </h1>
         </div>
+        
+        {/* Правая секция — кнопка меню (всегда) */}
+        <div className="header__section header__section--right">
+          {showMenuButton && (
+            <button
+              type="button"
+              className={`header__menu-button ${isMenuOpen ? 'header__menu-button--active' : ''}`}
+              style={{ fontSize: 'var(--font-base)' }}
+              onClick={onMenuClick}
+            >
+              MENU
+            </button>
+          )}
+        </div>
+        
       </div>
     </header>
   );

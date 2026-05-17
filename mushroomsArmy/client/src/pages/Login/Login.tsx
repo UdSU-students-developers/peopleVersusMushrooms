@@ -3,6 +3,8 @@ import { MediatorContext, ServerContext } from '../../App';
 import { PAGES } from '../PageManager';
 import { validateLogin, validatePassword } from '../../utils/validation';
 import { TError } from '../../services';
+import Header from '../../widgets/Header/Header';
+import OptionsPanel from '../../widgets/OptionsPannel/OptionsPannel'; 
 import './Login.css';
 
 const LOGIN_SERVER_ERRORS: Record<number, string> = {
@@ -25,6 +27,8 @@ const Login: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     const [password, setPassword] = useState('');
     const [serverError, setServerError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const loginCheck = validateLogin(username);
     const passwordCheck = validatePassword(password);
@@ -69,9 +73,26 @@ const Login: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
         setIsLoading(true);
         server.login(username, password);
     };
+    // ← Обработчики для меню
+    const handleMenuClick = () => {
+        setIsMenuOpen(!isMenuOpen);
+    };
+    
+    const handleCloseMenu = () => {
+        setIsMenuOpen(false);
+    };
+
 
     return (
+        <div>
+        <Header
+                variant="auth"
+                isMenuOpen={isMenuOpen}
+                onMenuClick={handleMenuClick}
+            />
+
         <div className="login">
+            
             <h1>Вход</h1>
             <div className="login-form">
                 <div className="form-group">
@@ -122,6 +143,9 @@ const Login: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
                 </button>
             </p>
         </div>
+
+
+        </div>    
     );
 };
 

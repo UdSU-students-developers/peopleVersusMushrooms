@@ -1,4 +1,12 @@
 //константы для маасштабирования игрвого простанства (HUD)
+export const UI_SCALE_STEPS = [
+  { id: 0, label: 'S',  headerHeight: 24, titleFont: 8,  baseFont: 12, smallFont: 10 },
+  { id: 1, label: 'SM', headerHeight: 28, titleFont: 9,  baseFont: 14, smallFont: 13 },
+  { id: 2, label: 'M',  headerHeight: 32, titleFont: 10, baseFont: 14, smallFont: 14 },
+  { id: 3, label: 'ML', headerHeight: 42, titleFont: 15, baseFont: 16, smallFont: 15 },
+  { id: 4, label: 'L',  headerHeight: 40, titleFont: 17, baseFont: 18, smallFont: 16 },
+];
+
 
 export const HUD_SCALE_STEPS = [
   //minimapBox  размер подложки под миникарту

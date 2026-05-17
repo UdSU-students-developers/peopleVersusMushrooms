@@ -3,6 +3,8 @@ import { MediatorContext, ServerContext } from "../../App";
 import { PAGES } from '../PageManager';
 import { authStorage } from "../../utils/authStorage";
 import { ILobby, TUser } from "../../services/server/types";
+import Header from '../../widgets/Header/Header';
+import OptionsPanel from '../../widgets/OptionsPannel/OptionsPannel'; 
 import './Lobby.css';
 
 type TLobbyRole = keyof ILobby['playersGuids'];
@@ -40,6 +42,9 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [newLobbyName, setNewLobbyName] = useState('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const username = user?.name || 'Игрок';
+
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const isCreator =
         Boolean(user?.guid) &&
@@ -53,6 +58,14 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
             .filter((role) => currentLobby.playersGuids[role] !== null)
             .every((role) => currentLobby.playersIsReady[role] === true);
     })();
+
+    const handleMenuClick = () => {
+        setIsMenuOpen(!isMenuOpen);
+    };
+    
+    const handleCloseMenu = () => {
+        setIsMenuOpen(false);
+    };
 
     useEffect(() => {
         let isCancelled = false;
@@ -73,7 +86,6 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
 
     useEffect(() => {
         let isCancelled = false;
-
         const syncLobbyFromList = async () => {
             try {
                 const data = await server.getLobbies();
@@ -234,6 +246,13 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
         const isReady = Boolean(myRole && currentLobby.playersIsReady[myRole]);
 
         return (
+            <div>
+            <Header
+                    variant="lobby"
+                    nickname={username}
+                    isMenuOpen={isMenuOpen}
+                    onMenuClick={handleMenuClick}
+                />
             <div className="lobby">
                 <div className="lobby__container">
                     {errorMsg && <div className="lobby__errorToast">{errorMsg}</div>}
@@ -302,11 +321,27 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
                     </div>
                 </div>
             </div>
+            </div>
         );
     }
 
     return (
+        <>
+        <Header
+                variant="lobby"
+                nickname={username}
+                isMenuOpen={isMenuOpen}
+                onMenuClick={handleMenuClick}
+            />
         <div className="lobby">
+            <header className="lobby__header" style={{ height: 'var(--header-height)' }}>
+                <div className="lobby__header__safe-area">
+                    <div className="lobby__header__text-section center" style={{ fontSize: 'var(titleFont)' }}>
+                        <h1></h1>
+                    </div>
+                </div>
+            </header>
+
             <div className="lobby__container">
                     {errorMsg && <div className="lobby__errorToast">{errorMsg}</div>}
                     <div className="lobby__topBar">
@@ -384,6 +419,7 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
                 )}
             </div>
         </div>
+        </>
     );
 };
 

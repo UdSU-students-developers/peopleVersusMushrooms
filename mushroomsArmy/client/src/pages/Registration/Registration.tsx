@@ -5,6 +5,8 @@ import { validateRegistration } from '../../utils/validation';
 import { TError } from '../../services';
 import { TUser } from '../../services/server/types';
 import { authStorage } from '../../utils/authStorage';
+import Header from '../../widgets/Header/Header'; 
+import OptionsPanel from '../../widgets/OptionsPannel/OptionsPannel';  // ← импорт панели (пока нет, создадим)
 import './Registration.css';
 
 const REG_SERVER_ERRORS: Record<number, string> = {
@@ -31,10 +33,23 @@ const Registration: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage })
     const [serverError, setServerError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    
     const fieldErrors = validateRegistration(username, password, passwordRepeat);
     const hasValidationErrors =
         !!fieldErrors.login || !!fieldErrors.password || !!fieldErrors.passwordRepeat;
 
+
+
+    const handleMenuClick = () => {
+        setIsMenuOpen(!isMenuOpen);
+    };
+    
+    const handleCloseMenu = () => {
+        setIsMenuOpen(false);
+    };
+    
+    
     useEffect(() => {
         const { USER_REGISTERED, ERROR } = mediator.getEventTypes();
 
@@ -87,6 +102,12 @@ const Registration: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage })
         !!fieldErrors.passwordRepeat && (passwordRepeat !== '' || password !== '');
 
     return (
+        <div>
+        <Header
+                variant="auth"
+                isMenuOpen={isMenuOpen}
+                onMenuClick={handleMenuClick}
+            />
         <div className="registration">
             <h1>Регистрация</h1>
             <div className="registration-form">
@@ -148,6 +169,7 @@ const Registration: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage })
                     Войти
                 </button>
             </p>
+        </div>
         </div>
     );
 };

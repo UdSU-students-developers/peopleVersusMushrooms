@@ -1,104 +1,123 @@
-.header-strip {
+/* ========== БАЗОВЫЕ СТИЛИ (общие для всех вариантов) ========== */
+@import url('https://fonts.googleapis.com/css2?family=Handjet:wght,ELSH@100..900,2&family=Press+Start+2P&display=swap');
+
+.header {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  background-color: rgb(48, 66, 35);
-  display: flex;
-  justify-content: center;
-  flex-shrink: 0;
   z-index: 110;
-  /* border-bottom: 1px solid #dad8b2; */
+  --font-main: 'Handjet', monospace;
+  height: var(--header-height);
 }
 
-.header-safe-area {
+.header__safe-area {
   width: 100%;
-  max-width: 100vw;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 50px;
   box-sizing: border-box;
   height: 100%;
-  position: relative;
 }
 
-.header-section {
+/* ТРИ СЕКЦИИ — ВСЕ В ОДНУ ЛИНИЮ */
+.header__section {
   display: flex;
   align-items: center;
-  color: #f1c40f;
-  font-family: var(--main-font);
+  flex: 1;
 }
-
-.header-section.center {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  font-weight: 700;
-  margin: 0;
-  white-space: nowrap;
-  z-index: 2;
-}
-
-.header-section.left {
-  min-width: 150px;
+.header__section--left {
   justify-content: flex-start;
-  flex: 1;
 }
 
-.header-section.right {
+.header__section--center {
+  justify-content: center;
+  flex: 0;
+  min-width: 200px;
+}
+
+.header__section--right {
   justify-content: flex-end;
-  flex: 1;
 }
 
-.user-nickname,
-.game-title {
-  margin: 0;
+/* ========== ЦВЕТА ДЛЯ РАЗНЫХ СТРАНИЦ ========== */
+
+/* Auth */
+.header--auth {
+  background-color: rgb(48, 66, 35);
+  border-bottom: 1px solid #dad8b2;
+}
+.header--auth .header__nickname,
+.header--auth .header__title {
   color: #dad8b2;
-  text-transform: uppercase;
 }
-
-.menu-button {
+.header--auth .header__menu-button {
   background-color: #2d2e0c;
-  color: #dad8b2 ;
+  color: #dad8b2;
   border: 2px solid #423c08;
-  padding: 4px 16px;
+}
+
+/* Lobby */
+.header--lobby {
+  background-color: rgb(26, 46, 49);
+  -webkit-text-stroke: 1px solid rgb(0, 16, 17);
+}
+.header--lobby .header__nickname,
+.header--lobby .header__title {
+  color: rgb(217, 144, 54);
+  border: 1px solid rgb(113, 22, 22);
+  text-stroke: 2px black;
+}
+.header--lobby .header__menu-button {
+  background-color: rgb(26, 46, 49);
+  color: rgb(217, 144, 54);
+}
+
+/* HUD */
+.header--hud {
+  background: rgba(30, 40, 20, 0.95);
+  backdrop-filter: blur(5px);
+  border-bottom: 1px solid #8b8b40;
+}
+.header--hud .header__nickname,
+.header--hud .header__title {
+  color: #ffffff;
+}
+.header--hud .header__menu-button {
+  background-color: #3a3a2a;
+  color: #ffffff;
+  border: 2px solid #8b8b40;
+}
+
+/* Общие стили для текста и кнопок */
+.header__nickname,
+.header__title {
+  margin: 0;
+  font-family: var(--font-main);
+}
+
+.header__menu-button {
   cursor: pointer;
-  font-family: var(--main-font);
+  font-family: var(--font-main);
 }
 
-.menu-button:hover,
-.menu-button.active {
-  color: #673f0e;
+.header__menu-button:hover {
+  opacity: 0.8;
 }
 
+/* ========== АДАПТИВНОСТЬ ========== */
 @media (max-width: 768px) {
-  .header-safe-area {
+  .header__safe-area {
     padding: 0 16px;
-  }
-
-  .header-section.left {
-    min-width: 0;
-  }
-
-  .header-section.center {
-    position: static;
-    transform: none;
-    white-space: normal;
-    text-align: center;
-    justify-content: center;
-    flex: 1;
-    padding: 0 8px;
   }
 }
 
 @media (max-width: 520px) {
-  .header-safe-area {
+  .header__safe-area {
     padding: 0 10px;
   }
-
-  .menu-button {
+  .header__menu-button {
     padding: 4px 10px;
   }
 }

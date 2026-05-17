@@ -20,7 +20,9 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   const server = useContext(ServerContext);
 
   const [isGameOver, setIsGameOver] = useState(true);
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   const [hudScaleStep, setHudScaleStep] = useState(2);
 
   const keysPressed = useRef<{ [key: string]: boolean }>({});
@@ -29,7 +31,13 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   const user = mediator.get(GET_STORE, 'user') as TUser | null;
   const username = user?.name || 'Игрок';
   const hudConfig = HUD_SCALE_STEPS[hudScaleStep] ?? HUD_SCALE_STEPS[2];
+  const handleMenuClick = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
 
+  const handleCloseMenu = () => {
+    setIsMenuOpen(false);
+  };
   useEffect(() => {
     void preloadFogWarTextures();
   }, []);
@@ -238,12 +246,16 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   } as React.CSSProperties;
 
   return (
-    <div className="game-page" style={gamePageStyle}>
-      <Header
-        username={username}
+    <>
+    <Header
+        variant="hud"
+        nickname={username}
         isMenuOpen={isMenuOpen}
-        onMenuToggle={() => setIsMenuOpen((prev) => !prev)}
+        onMenuClick={handleMenuClick}
       />
+    
+    <div className="game-page" style={gamePageStyle}>
+      
 
       <OptionsPannel
         currentStep={hudScaleStep}
@@ -263,6 +275,7 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
 
       {isGameOver && <GameOver onRestart={handleRestartGame} onExit={handleExitToLobby} />}
     </div>
+    </>
   );
 };
 

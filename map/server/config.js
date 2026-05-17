@@ -71,7 +71,8 @@ class CONFIG {
         //map sockets
         GENERATE_MAP: 'GENERATE_MAP',
         UPDATE_MAP: 'UPDATE_MAP',
-        GET_MAP_PARAMS: 'GET_MAP_PARAMS'
+        GET_MAP_PARAMS: 'GET_MAP_PARAMS',
+        GET_RELIEF: 'GET_RELIEF'
     }
 
     static FIELD_NAMES = {

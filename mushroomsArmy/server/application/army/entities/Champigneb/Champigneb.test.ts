@@ -40,6 +40,10 @@ describe('Champigneb', () => {
         expect(typeof champigneb.hp).toBe('number');
     });
 
+    it('leashRadius=20 — поводок к formationTarget, чтобы champigneb не убегал за дальними врагами', () => {
+        expect(champigneb.leashRadius).toBe(20);
+    });
+
     it('baseHp равен 35', () => {
         expect(champigneb.baseHp).toBe(35);
     });

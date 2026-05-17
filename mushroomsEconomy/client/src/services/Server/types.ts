@@ -1,5 +1,11 @@
 import { TPoint } from "../../config";
 
+enum enitityTypes {
+    MYCELIUM = 'mycelium',
+    SMALL_REACTOR = "small_reactor",
+    INCUBATOR = 'incubator',
+};
+
 export type TResponse<T> = {
     result: 'ok' | 'error';
     data?: T;
@@ -36,6 +42,14 @@ export type TGuids = {
     mapGuid: string | null;
 }
 
+export type TReady = {
+    spectator: boolean;
+    peopleArmy: boolean;
+    peopleEconomy: boolean;
+    mushroomsArmy: boolean;
+    mushroomsEconomy: boolean;
+}
+
 export type TResourcePoint = {
     x: number;
     y: number;
@@ -44,28 +58,26 @@ export type TResourcePoint = {
 
 // ========= ЗДАНИЯ ======
 
-export type TSmallReactor = {
+export type TBuilding = {
     guid: string;
     x: number;
     y: number;
-    type: "small_reactor";
+    visibility: number;
+}
+
+export type TSmallReactor = TBuilding & {
+    type: enitityTypes.SMALL_REACTOR;
     consumed: boolean;
     energy?: number;
 }
 
-export type TIncubator = {
-    guid: string;
-    x: number;
-    y: number;
-    type: "incubator";
+export type TIncubator = TBuilding & {
+    type: enitityTypes.INCUBATOR;
 }
 
-export type TMushroom = { 
-    type: 'mycelium';
-    guid: string;
+export type TMushroom = TBuilding & { 
+    type: enitityTypes.MYCELIUM;
     level: number;
-    x: number;
-    y: number;
 }
 
 export type TEconomyBuildings = {
@@ -80,7 +92,6 @@ export type TUnit = {
     guid: string;
     x: number;
     y: number;
-    coords: {x: number, y:number},
     type: string;
     visibility: number;
 }
@@ -124,26 +135,13 @@ export type TScene = {
     units: TEconomyUnits;
 }
 
-
-export type TPlayer = {
-    guid: string;
-    ready: boolean;
-    role: string;
-}
-
 export type TLobby = {
     lobbyGuid: string;
     lobbyName: string;
-    players: TPlayer[];
+    playersGuids: TGuids;
+    playersIsReady: TReady;
 }
 
 export type TLobbies = TLobby[];
-
-export type TLobbyServer = {
-    lobbyGuid: string;
-    lobbyName: string;
-    playersGuids: Record<string, string | null>;
-    playersIsReady?: Record<string, boolean>;
-}
 
 export type TRelief = (number | null)[][];

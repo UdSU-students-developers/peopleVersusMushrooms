@@ -22,6 +22,10 @@ class Champigneb extends Unit {
         this.baseHp = 35;
         this.speed = options.speed ?? 3;
         this.attackRange = options.attackRange ?? 6;
+        // Champigneb стоит в формации "пояса мин" впереди sporomet и срывается
+        // в kamikaze только на врагов в пределах 20 единиц от своего слота.
+        // Иначе раньше любая видимая цель уводила его с поста.
+        this.leashRadius = 20;
     }
 
     protected explode(): void {

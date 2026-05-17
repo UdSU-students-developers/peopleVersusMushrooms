@@ -1,6 +1,7 @@
 import BaseManager, { TManagerOptions } from '../BaseManager';
 import CONFIG from '../../../config';
 import { Army, TMap, TArmyState, TBuildingInput } from '../../army/Army';
+import { ArmyStateManager, ArmyMode, EconomyRequest, EconomyResponse } from '../../army/ArmyStateManager';
 import { Socket } from 'socket.io';
 
 const GLOBAL_CONFIG = require('../../../../../global/globalConfig');
@@ -11,7 +12,7 @@ type TStartGame = { guid: string; map?: TMap; buildings: TBuildingInput[]; mapGu
 type TTakeDamage = { armyGuid: string; unitGuid: string; amount: number };
 type TMoveUnit = { armyGuid: string; unitGuid: string; x: number; y: number };
 type TGetArmy = string;
-type TSpawnUnit = { armyGuid: string; type: 'sporomet' | 'champigneb' | 'eblekar'; x: number; y: number };
+type TSpawnUnit = { armyGuid: string; type: 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad'; x: number; y: number };
 type TSpawnBuildingUnit = { armyGuid: string; type: 'vzryvomor' | 'sporovaya_bashnya'; x: number; y: number };
 type TUpdateEconomyBuildings = { armyGuid: string; buildings: TBuildingInput[] };
 type TUser = { guid: string; token: string; socketId: string; name: string };
@@ -33,12 +34,14 @@ type TReliefResponse = TMap;
 
 class ArmyManager extends BaseManager {
     private army: { [guid: string]: Army };
+    private armyStateManagers: { [guid: string]: ArmyStateManager };
     private armyGuids: Record<string, { peopleArmyGuid: string | null }>;
 
     constructor(options: TManagerOptions) {
         super(options);
 
         this.army = {};
+        this.armyStateManagers = {};
         this.armyGuids = {};
 
         this.mediator.subscribe(this.EVENTS.START_GAME, (data: unknown) => this.eventStartGame(data as TStartGame));
@@ -108,8 +111,8 @@ class ArmyManager extends BaseManager {
         const unit = army.units.find(u => u.guid === unitGuid);
         if (!unit) return false;
 
-        unit.targetX = x;
-        unit.targetY = y;
+        (unit as any).targetX = x;
+        (unit as any).targetY = y;
 
         return true;
     }
@@ -125,7 +128,17 @@ class ArmyManager extends BaseManager {
         const army = this.army[armyGuid];
         if (!army) return null;
 
-        return army.spawnUnit(type, x, y, this.common);
+        const result = army.spawnUnit(type, x, y, this.common);
+        
+        // Регистрируем спавн в State Manager
+        if (result) {
+            const stateManager = this.armyStateManagers[armyGuid];
+            if (stateManager) {
+                stateManager.registerUnitSpawn(type, result.guid);
+            }
+        }
+
+        return result;
     }
 
     private triggerSpawnBuildingUnit({ armyGuid, type, x, y }: TSpawnBuildingUnit): { guid: string } | null {
@@ -141,6 +154,16 @@ class ArmyManager extends BaseManager {
 
         army.setEconomyBuildings(buildings);
         return true;
+    }
+
+    private triggerGetArmyMetrics(armyGuid: string): object | null {
+        const stateManager = this.armyStateManagers[armyGuid];
+        if (!stateManager) return null;
+
+        return {
+            metrics: stateManager.getMetrics(),
+            scouts: stateManager.getScouts(),
+        };
     }
 
     private buildFogMap(armyState: TArmyState, fullMap: TMap, visionRadius: number = 8): TMap {
@@ -188,7 +211,15 @@ class ArmyManager extends BaseManager {
 
         const army = this.army[guid];
         const fogMap = army ? this.buildFogMap(armyState, army.map) : armyState.map;
-        this.io.to(user.socketId).emit(GAME_STATE, this.answer.good({ ...armyState, map: fogMap }));
+        
+        const stateManager = this.armyStateManagers[guid];
+        const metrics = stateManager ? stateManager.getMetrics() : null;
+        
+        this.io.to(user.socketId).emit(GAME_STATE, this.answer.good({ 
+            ...armyState, 
+            map: fogMap,
+            metrics,
+        }));
 
         // if (army && army.getAliveUnits().length === 0) {
         //     this.io.to(user.socketId).emit(GAME_OVER, this.answer.good({ message: 'Все юниты погибли' }));
@@ -205,7 +236,6 @@ class ArmyManager extends BaseManager {
         const { units, buildings } = armyState;
 
         // Отправляем юниты и здания на карту
-        // карта читает поля units / buildings (см. useUpdateUnitsHandler.js / useUpdateBuildingsHandler.js)
         await this.send<{ mapGuid: string; userGuid: string; units: TArmyState['units'] }>(
             `${GLOBAL_CONFIG.MAP.URL}${GLOBAL_CONFIG.URLS.UPDATE_UNITS}`,
             { mapGuid: army.mapGuid, userGuid: army.guid, units }
@@ -216,7 +246,7 @@ class ArmyManager extends BaseManager {
             { mapGuid: army.mapGuid, userGuid: army.guid, buildings }
         );
 
-        // карта возвращает { units, buildings } (см. Map.getVisbileEntitiesByRole)
+        // Получаем видимых врагов
         const visibility = await this.sendToMap<TVisibilityResponse>(
             GLOBAL_CONFIG.URLS.GET_VISIBILITY, army.mapGuid, army.guid
         );
@@ -252,11 +282,57 @@ class ArmyManager extends BaseManager {
         if (army) {
             army.destructor();
         }
+        
+        const stateManager = this.armyStateManagers[guid];
+        if (stateManager) {
+            stateManager.destroy();
+        }
+        
         delete this.army[guid];
+        delete this.armyStateManagers[guid];
         delete this.armyGuids[guid];
     }
 
-     private async eventStartGame({ guid, map, buildings, mapGuid, peopleArmyGuid }: TStartGame): Promise<void> {
+    private async handleEconomyRequest(request: EconomyRequest): Promise<EconomyResponse | null> {
+        try {
+            const response = await this.send<EconomyRequest, { success: boolean; data?: unknown }>(
+                `${GLOBAL_CONFIG.ECONOMY.URL}${GLOBAL_CONFIG.URLS.ECONOMY_REQUEST}`,
+                request
+            );
+
+            if (!response) return null;
+
+            return {
+                success: response.success,
+                data: response.data as EconomyResponse['data'],
+            };
+        } catch (error) {
+            return null;
+        }
+    }
+
+    private handleModeChange(armyGuid: string, newMode: ArmyMode): void {
+        const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, armyGuid) as { socketId: string } | null;
+        if (!user) return;
+
+        this.io.to(user.socketId).emit('army_mode_changed', this.answer.good({ mode: newMode }));
+    }
+
+    private handleDistanceMilestone(armyGuid: string, distance: number): void {
+        const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, armyGuid) as { socketId: string } | null;
+        if (!user) return;
+
+        this.io.to(user.socketId).emit('distance_milestone', this.answer.good({ distance }));
+    }
+
+    private handleScoutRespawn(armyGuid: string, scoutGuid: string): void {
+        const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, armyGuid) as { socketId: string } | null;
+        if (!user) return;
+
+        this.io.to(user.socketId).emit('scout_respawned', this.answer.good({ scoutGuid }));
+    }
+
+    private async eventStartGame({ guid, map, buildings, mapGuid, peopleArmyGuid }: TStartGame): Promise<void> {
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
         if (!user) return;
 
@@ -296,6 +372,15 @@ class ArmyManager extends BaseManager {
             }
         });
 
+        this.armyStateManagers[guid] = new ArmyStateManager({
+            army: this.army[guid],
+            common: this.common,
+            onModeChange: (mode) => this.handleModeChange(guid, mode),
+            onDistanceMilestone: (distance) => this.handleDistanceMilestone(guid, distance),
+            onScoutRespawn: (scoutGuid) => this.handleScoutRespawn(guid, scoutGuid),
+            economyRequestCallback: (request) => this.handleEconomyRequest(request),
+        });
+
         const userObj = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid) as TUser | null;
         if (userObj?.socketId) {
             this.io.to(userObj.socketId).emit(GAME_STARTED, this.answer.good(true));
@@ -324,10 +409,10 @@ class ArmyManager extends BaseManager {
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid) as TUser | null;
         if (!user || user.token !== token) return;
 
-        const validTypes: Array<'sporomet' | 'champigneb' | 'eblekar'> = ['sporomet', 'champigneb', 'eblekar'];
-        if (!validTypes.includes(type as 'sporomet' | 'champigneb' | 'eblekar')) return;
+        const validTypes: Array<'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad'> = ['sporomet', 'champigneb', 'eblekar', 'pizdoglyad'];
+        if (!validTypes.includes(type as 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad')) return;
 
-        this.triggerSpawnUnit({ armyGuid: guid, type: type as 'sporomet' | 'champigneb' | 'eblekar', x, y });
+        this.triggerSpawnUnit({ armyGuid: guid, type: type as 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad', x, y });
     }
 }
 

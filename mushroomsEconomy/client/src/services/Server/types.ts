@@ -3,6 +3,7 @@ import { TPoint } from "../../config";
 enum enitityTypes {
     MYCELIUM = 'mycelium',
     SMALL_REACTOR = "small_reactor",
+    REACTOR = 'reactor',
     INCUBATOR = 'incubator',
 };
 
@@ -62,11 +63,12 @@ export type TBuilding = {
     guid: string;
     x: number;
     y: number;
+    size: number;
     visibility: number;
 }
 
-export type TSmallReactor = TBuilding & {
-    type: enitityTypes.SMALL_REACTOR;
+export type TReactor = TBuilding & {
+    type: enitityTypes.SMALL_REACTOR | enitityTypes.REACTOR;
     consumed: boolean;
     energy?: number;
 }
@@ -81,7 +83,7 @@ export type TMushroom = TBuilding & {
 }
 
 export type TEconomyBuildings = {
-    smallReactors: TSmallReactor[];
+    reactors: TReactor[];
     incubators: TIncubator[];
     mycelium: TMushroom[];
 }

@@ -160,7 +160,11 @@ class Economy {
 
     mutateGeodesistToMine(geo) {
         this.units.geodezists = this.units.geodezists.filter(g => g.guid !== geo.guid);
-    
+
+        this.addMine(this.)
+    }
+
+    addMine(x, y) {
         const guid = this.common.guid();
         this.buildings.mines.push(new Mine({
             guid,
@@ -172,8 +176,7 @@ class Economy {
         }));
         this.updatedBuildings.push(this.findEntityByGuid(guid).get());
         this.updated = true;
-    }
-    
+    }    
     
     addSmallReactor(x, y) {
         const guid = this.common.guid();

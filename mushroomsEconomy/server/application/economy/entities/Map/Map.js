@@ -28,6 +28,7 @@ class Map {
                 res.saturation,
             );
         }
+        console.log(resources);
     }
 
     setRelief(relief) {

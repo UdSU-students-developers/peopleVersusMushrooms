@@ -128,7 +128,7 @@ class GameManager extends BaseManager {
 		);
 
 
-		if (resources.data) {
+		if (resources && resources.data) {
 			if (this.economies[guid]) {
 				this.economies[guid].setResources(resources.data);
 			}

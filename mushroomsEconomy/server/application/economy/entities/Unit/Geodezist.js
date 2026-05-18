@@ -38,14 +38,11 @@ class Geodezist extends Unit {
 
         if (this.mode === 'goToIron') {
             if (this._hasReachedTarget()) {
-                // проверяем — есть ли под нами IRON-ресурс
-                const resource = this._getResourceAt(this.x, this.y);
+                const resource = this._getResourceAt(Math.round(this.x), Math.round(this.y));
                 if (resource && resource.type === 'IRON') {
-                    // мутируем в шахту
                     this.callbacks.mutateToMine(this);
                     return;
                 } else {
-                    // ресурс пропал или не тот — возвращаемся к блужданию
                     this.targetResource = null;
                     this.mode = 'wander';
                     this._pickWanderTarget();
@@ -80,7 +77,6 @@ class Geodezist extends Unit {
                 });
 
                 if (!occupied) {
-                    // нашли свободный IRON — идём к нему
                     if (!this.targetResource || this.targetResource.x !== x || this.targetResource.y !== y) {
                         this.targetResource = { x, y };
                         this.mode = 'goToIron';
@@ -91,7 +87,6 @@ class Geodezist extends Unit {
             }
         }
 
-        // свободного IRON нет — если были в режиме goToIron, возвращаемся к блужданию
         if (this.mode === 'goToIron') {
             this.targetResource = null;
             this.mode = 'wander';
@@ -129,10 +124,10 @@ class Geodezist extends Unit {
     }
 
     _getResourceAt(x, y) {
-        if (!this.callbacks.getResources) return null;
         const resources = this.callbacks.getResources();
-        if (!resources || !resources[y]) return null;
-        return resources[y][x] ?? null;
+        if (resources) {
+            return resources[y][x] ?? null;
+        }
     }
 }
 

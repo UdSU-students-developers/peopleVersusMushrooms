@@ -43,7 +43,6 @@ class GameManager extends BaseManager {
 		// формате отдавать в сервис карты
 		// получить ответ
 		// запросить рельеф
-		console.log("\n\n\n\n\n\n\n\n", data.map);
 		this.getRelief(data.map, guid, mapGuid);
 		// запросить видимость
 		this.getVisibility(data.map, guid, mapGuid);

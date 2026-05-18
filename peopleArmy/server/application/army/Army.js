@@ -55,20 +55,29 @@ class Army {
     }
 
     _initUnits(startPoint) {
-        // создать пехотинца
-        // создать бэху
+        // [type, maxHp, attackRange] — типы и статы как в mushroomsArmy
+        const specs = [
+            ['sporomet', 8, 12],
+            ['champigneb', 35, 8],
+            ['eblekar', 40, 10],
+            ['pizdoglyad', 2, 6],
+            ['vzryvomor', 70, 5],
+        ];
         const diagonalPositions = [1, 4, 10, 20, 30, 40, 50, 60, 70, 80, 90];
-        this.enemyUnits = diagonalPositions.map((position) => ({
-            guid: this.common.guid(),
-            type: 'sporomet',
-            x: position,
-            y: position,
-            hp: 100,
-            maxHp: 100,
-            isAlive: true,
-            speed: 0,
-            attackRange: 0,
-        }));
+        this.enemyUnits = diagonalPositions.map((position, i) => {
+            const [type, maxHp, attackRange] = specs[i % specs.length];
+            return {
+                guid: this.common.guid(),
+                type,
+                x: position,
+                y: position,
+                hp: maxHp,
+                maxHp,
+                isAlive: true,
+                speed: 0,
+                attackRange,
+            };
+        });
         this.callbacks.update(this.guid, this.get());
     }
 
@@ -111,6 +120,7 @@ class Army {
                 return { ok: false, error: 'UNKNOWN_UNIT_TYPE' };
         }
         unit.type = unitType;
+        unit.maxHp = unit.hp;
         unit.damage = Number(stats.DAMAGE) || 1;
 
         this.units.push(unit);
@@ -305,12 +315,18 @@ class Army {
         
     }
 
-    // 2. сходить юнитами
+    // 2. сходить юнитами (если в радиусе есть враги — стоим и стреляем в shotUnits, к цели не идём)
     moveUnits() {
         this.units.forEach((unit) => {
+            const enemiesInRange = this.getUnitsInRange(unit, this.enemyUnits);
+            if (enemiesInRange.length > 0) {
+                unit.path = [];
+                unit.walkPoints = 0;
+                return;
+            }
             if (unit.move(this.map, this.buildings, this.units, this.enemyUnits, this.enemyBuildings)) {
+                console.log(unit.guid);
                 this.updated = true;
-                //console.log('Координаты юнита (guid: ', unit.guid, '): ', unit.x, unit.y);
             }
         });
     }

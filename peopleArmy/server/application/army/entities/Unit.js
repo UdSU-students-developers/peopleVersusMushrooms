@@ -14,6 +14,8 @@ class Unit {
         this.easyStar.enableSync();
 
         this.hp = 1; // здоровье юнита
+        this.maxHp = 1; // максимальное здоровье (будет задано снаружи после конструктора)
+        this.type = 'unknown'; // тип юнита (будет задан снаружи после конструктора)
         this.speed = 1; // скорость юнита
         this.range = 2; // дальность стрельбы
         this.visible = 3; // дальность видимости
@@ -54,9 +56,11 @@ class Unit {
     get() {
         return {
             guid: this.guid,
+            type: this.type,
             x: this.x,
             y: this.y,
             hp: this.hp,
+            maxHp: this.maxHp,
             speed: this.speed,
             range: this.range,
             visible: this.visible,

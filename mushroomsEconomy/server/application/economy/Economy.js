@@ -101,6 +101,17 @@ class Economy {
         this.map.setResources(resources);
     }
 
+    setVisibility({ units = [], buildings = [] } = {}) {
+        for (const building of buildings) {
+            const existingIndex = this.enemyBuildings.findIndex(b => b.guid === building.guid);
+            if (existingIndex !== -1) {
+                this.enemyBuildings[existingIndex] = building;
+            } else {
+                this.enemyBuildings.push(building);
+            }
+        }
+    }
+
     // Методы добавления объектов
 
     addLarva(x, y, homeX, homeY) {

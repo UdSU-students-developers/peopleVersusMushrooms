@@ -45,6 +45,7 @@ class GameManager extends BaseManager {
 		// запросить рельеф
 		this.getRelief(data.map, guid, mapGuid);
 		// запросить видимость
+		this.getVisibility(data.map, guid, mapGuid);
 		// запросить ресурсы под жопками рабочих
 		//this.getResources(data.map, guid, mapGuid);
 		// обновить рельеф и видимость у себя в Экномике
@@ -130,6 +131,16 @@ class GameManager extends BaseManager {
 		if (resources) {
 			if (this.economies[guid]) {
 				this.economies[guid].setResources(resources);
+			}
+		}
+	}
+
+	async getVisibility(map, guid, mapGuid) {
+		const visibility = await this.sendToMap(GLOBAL_CONFIG.URLS.GET_VISIBILITY, { mapGuid, userGuid: guid });
+		
+		if (visibility && visibility.data) {
+			if (this.economies[guid]) {
+				this.economies[guid].setVisibility(visibility.data);
 			}
 		}
 	}

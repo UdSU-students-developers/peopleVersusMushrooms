@@ -38,11 +38,11 @@ class BaseManager {
             }
             const res = await fetch(url, params);
 			
-			//console.log('res', res);
+			console.log('res', res);
 			
             const answer = await res.json();
 			
-			console.log('\nanswer', console.log(answer));
+			console.log('\nanswer', this._log(answer));
             console.log('========================================');
 			
             if (answer && answer.result === 'ok') {

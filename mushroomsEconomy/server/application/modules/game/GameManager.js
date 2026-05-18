@@ -43,7 +43,7 @@ class GameManager extends BaseManager {
 		// формате отдавать в сервис карты
 		// получить ответ
 		// запросить рельеф
-		this.getRelief(data.map, guid, mapGuid);
+		//this.getRelief(data.map, guid, mapGuid);
 		// запросить видимость
 		this.getVisibility(data.map, guid, mapGuid);
 		// запросить ресурсы под жопками рабочих
@@ -91,6 +91,7 @@ class GameManager extends BaseManager {
 				);
 				//this.getResources(guid, mapGuid);
 				console.log("Экономика создана");
+				this.getRelief(this.economies[guid].map, guid, this.economies[guid].guids.mapGuid);
 				return sceneData;
 			}
 			return this.answer.bad(1001)

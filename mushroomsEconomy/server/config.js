@@ -47,7 +47,7 @@ const CONFIG = {
         MYCELIUM: {
             TYPE: 'mycelium',
             HP: 1,
-            GROW_SPEED: 100,
+            GROW_SPEED: 200,
             GROW_LEVEL_UP: 2000,
             MAX_LEVEL: 3,
             CONSUMPTION: 0, // не потребляет энергию (растёт от Солнышка)
@@ -70,10 +70,17 @@ const CONFIG = {
             CAPACITY: 60, // сколько железа доступно для производства личинок
             LARVA_ENERGY_COST: 20,
             LARVA_COOLDOWN_MS: 3000,
-            VISIBILITY: 5,
+            VISIBILITY: 100,
         },
         BIO_REACTOR: {
-
+            TYPE: 'reactor',
+            HP: 60,
+            SIZE: 2,           
+            CONSUMPTION: 2,    
+            PRODUCTION: 2,
+            CAPACITY: 180,
+            VISIBILITY: 7,
+            CONSUME_RADIUS: 2, 
         },
         BIO_REACTOR_SMALL: {
             TYPE: "small_reactor",
@@ -83,6 +90,7 @@ const CONFIG = {
             PRODUCTION: 1,  // сколько производит за единицу времени
             CAPACITY: 60, // емкость. Сколько грибочков может лежать на переработке в реакторе, чтобы он работал непрерывно
             VISIBILITY: 5,
+            CONSUME_RADIUS: 1,
         },
         MINE: {
 

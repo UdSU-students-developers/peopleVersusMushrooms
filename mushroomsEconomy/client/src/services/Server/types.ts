@@ -1,5 +1,12 @@
 import { TPoint } from "../../config";
 
+enum enitityTypes {
+    MYCELIUM = 'mycelium',
+    SMALL_REACTOR = "small_reactor",
+    REACTOR = 'reactor',
+    INCUBATOR = 'incubator',
+};
+
 export type TResponse<T> = {
     result: 'ok' | 'error';
     data?: T;
@@ -52,32 +59,31 @@ export type TResourcePoint = {
 
 // ========= ЗДАНИЯ ======
 
-export type TSmallReactor = {
+export type TBuilding = {
     guid: string;
     x: number;
     y: number;
-    type: "small_reactor";
+    size: number;
+    visibility: number;
+}
+
+export type TReactor = TBuilding & {
+    type: enitityTypes.SMALL_REACTOR | enitityTypes.REACTOR;
     consumed: boolean;
     energy?: number;
 }
 
-export type TIncubator = {
-    guid: string;
-    x: number;
-    y: number;
-    type: "incubator";
+export type TIncubator = TBuilding & {
+    type: enitityTypes.INCUBATOR;
 }
 
-export type TMushroom = { 
-    type: 'mycelium';
-    guid: string;
+export type TMushroom = TBuilding & { 
+    type: enitityTypes.MYCELIUM;
     level: number;
-    x: number;
-    y: number;
 }
 
 export type TEconomyBuildings = {
-    smallReactors: TSmallReactor[];
+    reactors: TReactor[];
     incubators: TIncubator[];
     mycelium: TMushroom[];
 }
@@ -88,7 +94,6 @@ export type TUnit = {
     guid: string;
     x: number;
     y: number;
-    coords: {x: number, y:number},
     type: string;
     visibility: number;
 }

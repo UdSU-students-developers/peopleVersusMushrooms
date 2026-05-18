@@ -16,6 +16,7 @@ export const SPRITE = {
     INCUBATOR: 11,
     SMALL_REACTOR: 8,
     REACTOR_CONSUMED_ANIM: 9,
+    REACTOR: 8, // size = 2
     FALLBACK: 7,
 } as const;
 

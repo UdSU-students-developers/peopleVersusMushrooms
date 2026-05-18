@@ -366,7 +366,7 @@ class Economy {
         this.addSmallReactor(startPoint.x + 1, startPoint.y + 1);
         // создать грибничку
         this.addMycelium(startPoint.x - 1, startPoint.y - 1);
-        //this.addReactor(startPoint.x + 3, startPoint.y + 3);
+        this.addReactor(startPoint.x + 3, startPoint.y + 3);
         this.addGeodesist(startPoint.x-10, startPoint.y)
         this.updated = true;
     }

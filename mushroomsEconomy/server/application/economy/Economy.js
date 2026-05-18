@@ -9,6 +9,8 @@ const Mycelium = require('./entities/Buildings/Mycelium');
 const SmallReactor = require('./entities/Buildings/SmallReactor');
 const Reactor = require('./entities/Buildings/Reactor');
 const Incubator = require('./entities/Buildings/Incubator');
+const Geodezist = require('./entities/Unit/Geodezist');
+const Mine = require('./entities/Buildings/Mine');
 const Larva = require('./entities/Unit/Larva');
 const Map = require('./entities/Map/Map');
 
@@ -31,10 +33,12 @@ class Economy {
 
         //Здания
         this.buildings = {
-            reactors: [],   // все реакторы 
-            incubators: [], // инкубаторы
-            mycelium: [],   // грибница
+            reactors: [], //реакторы (малые и большие)
+            incubators: [], // инкубаотры
+            mycelium: [], // грибы
+            mines: [], // шахты
         };
+
 
         this.updatedBuildings = []; //ПРИ добавлении или удалении здания добавить в этот массив его гуид
 
@@ -42,6 +46,7 @@ class Economy {
         this.units = {
             workers: [], // рабочие
             larvae: [],  // личинки
+            geodezists: [], // геодезисты
         };
 
         this.updatedUnits = [];
@@ -80,15 +85,17 @@ class Economy {
     get() {
         return {
             guids: this.guids,
-            buildings: {
-                reactors:   this.buildings.reactors.map(r => r.get()),
-                incubators: this.buildings.incubators.map(i => i.get()),
-                mycelium:   this.buildings.mycelium.map(m => m.get()),
-            },
-            enemyBuildings: this.enemyBuildings,
             units: {
                 larvae: this.units.larvae.map(l => l.get()),
+                geodezists: this.units.geodezists.map(g => g.get()),
             },
+            buildings: {
+                reactors: this.buildings.reactors.map(r => r.get()),
+                incubators: this.buildings.incubators.map(i => i.get()),
+                mycelium: this.buildings.mycelium.map(m => m.get()),
+                mines: this.buildings.mines.map(m => m.get()),
+            },
+            enemyBuildings: this.enemyBuildings,
             map: this.map.get(),
             //updatedBuildings: this.getUpdatedBuildings(),
         };
@@ -112,9 +119,9 @@ class Economy {
             }
         }
     }
-
+    
     // Методы добавления объектов
-
+    
     addLarva(x, y, homeX, homeY) {
         const larva = new Larva({
             x,
@@ -127,7 +134,41 @@ class Economy {
         this.units.larvae.push(larva);
         this.updatedUnits.push(larva.get());
     }
+    
+    addGeodesist(x, y) {
+        const geodezist = new Geodezist({
+            x,
+            y,
+            guid: this.common.guid(),
+            map: this.map.larvaGrid,
+            callbacks: {
+                getResources: () => this.map.resources,
+                getBuildings: () => Object.values(this.buildings).flat(),
+                mutateToMine: (geo) => this.mutateGeodesistToMine(geo),
+            },
+        });
+        this.units.geodezists.push(geodezist);
+        this.updatedUnits.push(geodezist.get());
+        
+    }
 
+    mutateGeodesistToMine(geo) {
+        this.units.geodezists = this.units.geodezists.filter(g => g.guid !== geo.guid);
+    
+        const guid = this.common.guid();
+        this.buildings.mines.push(new Mine({
+            guid,
+            x: geo.x,
+            y: geo.y,
+            callbacks: {
+                getResources: () => this.map.resources,
+            },
+        }));
+        this.updatedBuildings.push(this.findEntityByGuid(guid).get());
+        this.updated = true;
+    }
+    
+    
     addSmallReactor(x, y) {
         const guid = this.common.guid();
         this.buildings.reactors.push(new SmallReactor({
@@ -137,12 +178,14 @@ class Economy {
             y,
         }));
         this.updatedBuildings.push(this.findEntityByGuid(guid).get());
+        this.updated = true;
     }
 
     addReactor(x, y) {
         const guid = this.common.guid();
         this.buildings.reactors.push(new Reactor({ guid, x, y }));
         this.updatedBuildings.push(this.findEntityByGuid(guid).get());
+        this.updated = true;
     }
 
     addIncubator(x, y) {
@@ -161,6 +204,7 @@ class Economy {
             },
         }));
         this.updatedBuildings.push(this.findEntityByGuid(guid).get());
+        this.updated = true;
     }
 
     addMycelium(x, y) {
@@ -172,6 +216,7 @@ class Economy {
             callbacks: {},
         }));
         this.updatedBuildings.push(this.findEntityByGuid(guid).get());
+        this.updated = true;
     }
 
     getUpdatedBuildings() {
@@ -268,10 +313,14 @@ class Economy {
             larva.update();
         }
 
-        for (const worker of this.units.workers) {
-            worker.setGrid(grid);
-            worker.update();
+        for (const geodezist of this.units.geodezists) {
+            geodezist.setGrid(grid);
+            geodezist.update();
         }
+    }
+
+    updateMines() {
+        this.buildings.mines.forEach(mine => mine.update());
     }
 
     findEntityByGuid(guid) {

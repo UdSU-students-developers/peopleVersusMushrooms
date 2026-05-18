@@ -93,7 +93,13 @@ const CONFIG = {
             CONSUME_RADIUS: 1,
         },
         MINE: {
-
+            TYPE: "mine",
+            HP: 80,
+            SIZE: 1,
+            CONSUMPTION: 1,
+            PRODUCTION: 1,
+            CAPACITY: 500,
+            VISIBILITY: 1,
         },
         STORAGE_IRON: {
 
@@ -104,19 +110,22 @@ const CONFIG = {
         UNIT: {
             RADIUS: 10, //максимальный радиус расчета ближайшей точки от центра стремления(больше 20 не ставить)
         },
-        WORKER: {
-            HP: 100,
-            SPEED: 1,
-            TYPE: "worker",
-            VISIBILITY: 3,
-        },
+
         LARVA: {
             HP: 40,
             SPEED: 0.05,
             WANDER_RADIUS: 4, //радиус блуждания личинки
             TYPE: "larva",
             VISIBILITY: 2,
-        }
+        },
+        
+        GEODEZIST: {
+            TYPE: "geodezist",
+            HP: 60,
+            SPEED: 0.8,
+            WANDER_RADIUS: 8,
+            VISIBILITY: 4,
+        },
     }
 };
 

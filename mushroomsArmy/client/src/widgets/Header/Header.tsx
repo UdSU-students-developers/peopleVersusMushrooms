@@ -1,69 +1,71 @@
-// widgets/Header/Header.tsx
-
 import React from 'react';
 import './Header.css';
+import '../headerThemes.css';
 
-interface HeaderProps {
-  variant: 'auth' | 'lobby' | 'hud';
-  nickname?: string;           // имя пользователя (для lobby/hud)
-  isMenuOpen?: boolean;        // открыто ли меню (для стилизации кнопки)
-  onMenuClick?: () => void;    // обработчик клика по кнопке меню
-}
+import { UI_SCALES } from '../uiScales';
+import type { HeaderProps } from './types';
 
 const Header: React.FC<HeaderProps> = ({
-  variant,
+  theme,
+  scale = 'M',
+
+  title = 'mushrooms army',
   nickname,
+
+  showNickname = false,
+  showMenuButton = true,
+
   isMenuOpen = false,
+
   onMenuClick,
 }) => {
-  // Определяем, показывать ли левую секцию с ником
-  const showLeftSection = variant !== 'auth';  
-  // Центральный текст всегда одинаковый
-  const centerText = 'mushrooms army';
-  // Кнопка меню есть всегда
-  const showMenuButton = true;
-  
-  return (
-    <header className={`header header--${variant}`}>
+  const currentScale = UI_SCALES[scale];
 
+  const cssVariables = {
+    '--header-height': `${currentScale.headerHeight}px`,
+    '--title-font-size': `${currentScale.titleFont}px`,
+    '--font-base': `${currentScale.baseFont}px`,
+    '--font-small': `${currentScale.smallFont}px`,
+    '--spacing': `${currentScale.spacing}px`,
+  } as React.CSSProperties;
+
+  return (
+    <header
+      className={`
+        header
+        header--theme-${theme}
+        ${isMenuOpen ? 'header--menu-open' : ''}
+      `}
+      style={cssVariables}
+    >
       <div className="header__safe-area">
-        
-        {/* Левая секция — ник игрока (только для lobby/hud) */}
-        {showLeftSection && (
-          <div className="header__section header__section--left">
-            <span 
-              className="header__nickname"
-              style={{ fontSize: 'var(--font-base)' }}
-            >
-              {nickname || ''}
+
+        <div className="header__left">
+          {showNickname && (
+            <span className="header__nickname">
+              {nickname}
             </span>
-          </div>
-        )}
-        
-        {/* Центральная секция — название игры (всегда) */}
-        <div className="header__section header__section--center">
-          <h1 
-            className="header__title"
-            style={{ fontSize: 'var(--title-font-size)' }}
-          >
-            {centerText}
+          )}
+        </div>
+
+        <div className="header__center">
+          <h1 className="header__title">
+            {title}
           </h1>
         </div>
-        
-        {/* Правая секция — кнопка меню (всегда) */}
-        <div className="header__section header__section--right">
+
+        <div className="header__right">
           {showMenuButton && (
             <button
               type="button"
-              className={`header__menu-button ${isMenuOpen ? 'header__menu-button--active' : ''}`}
-              style={{ fontSize: 'var(--font-base)' }}
+              className="header__menu-button"
               onClick={onMenuClick}
             >
-              MENU
+              menu
             </button>
           )}
         </div>
-        
+
       </div>
     </header>
   );

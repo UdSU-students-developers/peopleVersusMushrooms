@@ -11,9 +11,14 @@ import Header from '../../widgets/Header/Header';
 import Footer from '../../widgets/Footer/Footer';
 import GameOver from '../../widgets/GameOver/GameOver';
 import OptionsPannel from '../../widgets/OptionsPannel/OptionsPannel';
-import { HUD_SCALE_STEPS } from '../../widgets/uiConstants';
+import { useUIScale } from '../../widgets/UIScaleContext';
+import { HUD_LAYOUT } from '../../widgets/hudLayout';  // ← новый файл
 
 const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
+
+  const { scale } = useUIScale();  
+  const hudConfig = HUD_LAYOUT[scale]; 
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const gameStateRef = useRef<GameState | null>(null);
   const mediator = useContext(MediatorContext);
@@ -30,7 +35,6 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   const GET_STORE = mediator.getTriggerTypes().GET_STORE;
   const user = mediator.get(GET_STORE, 'user') as TUser | null;
   const username = user?.name || 'Игрок';
-  const hudConfig = HUD_SCALE_STEPS[hudScaleStep] ?? HUD_SCALE_STEPS[2];
   const handleMenuClick = () => {
     setIsMenuOpen(!isMenuOpen);
   };
@@ -236,34 +240,31 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   };
 
   const gamePageStyle = {
-    '--scale': (hudConfig.footer / 112).toString(),
-    '--header-height': `${hudConfig.header}px`,
-    '--footer-height': `${hudConfig.footer}px`,
-    '--font-base': `${hudConfig.baseFont}px`,
-    '--title-font-size': `${hudConfig.titleFont}px`,
-    '--minimap-box-size': `${hudConfig.minimapBox}px`,
-    '--minimap-canvas-size': `${hudConfig.minimapCanvas}px`,
-  } as React.CSSProperties;
+  '--scale': (hudConfig.footerHeight / 112).toString(),
+  '--footer-height': `${hudConfig.footerHeight}px`,
+  '--minimap-box-size': `${hudConfig.minimapBox}px`,
+  '--minimap-canvas-size': `${hudConfig.minimapCanvas}px`,
+} as React.CSSProperties;
 
   return (
     <>
     <Header
-        variant="hud"
+        theme="hud"
+        scale={scale} 
         nickname={username}
-        isMenuOpen={isMenuOpen}
+        showNickname={true}
+        showMenuButton={true}
         onMenuClick={handleMenuClick}
-      />
+        isMenuOpen={isMenuOpen}
+    />
     
     <div className="game-page" style={gamePageStyle}>
       
 
       <OptionsPannel
-        currentStep={hudScaleStep}
-        topOffset={hudConfig.header}
-        panelSize={280}
+        variant="hud"
         isOpen={isMenuOpen}
-        onStepChange={setHudScaleStep}
-        onClose={() => setIsMenuOpen(false)}
+        onClose={handleCloseMenu}
         onSurrender={handleSurrender}
       />
 

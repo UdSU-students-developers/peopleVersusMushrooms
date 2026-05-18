@@ -4,7 +4,8 @@ import { PAGES } from '../PageManager';
 import { validateLogin, validatePassword } from '../../utils/validation';
 import { TError } from '../../services';
 import Header from '../../widgets/Header/Header';
-import OptionsPanel from '../../widgets/OptionsPannel/OptionsPannel'; 
+import OptionsPannel from '../../widgets/OptionsPannel/OptionsPannel'; 
+import { useUIScale } from '../../widgets/UIScaleContext';
 import './Login.css';
 
 const LOGIN_SERVER_ERRORS: Record<number, string> = {
@@ -21,6 +22,7 @@ const mapLoginError = (error?: TError | null): string => {
 };
 
 const Login: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
+    
     const server = useContext(ServerContext);
     const mediator = useContext(MediatorContext);
     const [username, setUsername] = useState('');
@@ -84,12 +86,15 @@ const Login: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
 
 
     return (
-        <div>
+        <>
         <Header
-                variant="auth"
-                isMenuOpen={isMenuOpen}
-                onMenuClick={handleMenuClick}
-            />
+            theme="auth"
+            scale="M"  // из контекста
+            showNickname={false}
+            showMenuButton={true}
+            onMenuClick={handleMenuClick}
+            isMenuOpen={isMenuOpen}
+        />
 
         <div className="login">
             
@@ -143,9 +148,13 @@ const Login: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
                 </button>
             </p>
         </div>
+        <OptionsPannel
+            variant="auth"
+            isOpen={isMenuOpen}
+            onClose={handleCloseMenu}
+        />
 
-
-        </div>    
+        </>    
     );
 };
 

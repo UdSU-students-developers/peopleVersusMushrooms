@@ -4,8 +4,10 @@ import { PAGES } from '../PageManager';
 import { authStorage } from "../../utils/authStorage";
 import { ILobby, TUser } from "../../services/server/types";
 import Header from '../../widgets/Header/Header';
-import OptionsPanel from '../../widgets/OptionsPannel/OptionsPannel'; 
+import OptionsPannel from '../../widgets/OptionsPannel/OptionsPannel'; 
+import { useUIScale } from '../../widgets/UIScaleContext';
 import './Lobby.css';
+
 
 type TLobbyRole = keyof ILobby['playersGuids'];
 const LOBBY_ROLES: TLobbyRole[] = ['spectator', 'mushroomsArmy', 'mushroomsEconomy', 'peopleArmy', 'peopleEconomy'];
@@ -18,6 +20,7 @@ const ROLE_LABELS: Record<TLobbyRole, string> = {
 };
 
 const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
+    const { scale } = useUIScale();  
     const server = useContext(ServerContext);
     const mediator = useContext(MediatorContext);
 
@@ -143,7 +146,6 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
         };
 
         const handleSetReady = async (data?: unknown) => {
-            // На сервере может приходить boolean; актуальная комната обычно прилетает через LOBBY_UPDATED.
             const lobby = data as ILobby | null | undefined;
             if (lobby?.lobbyGuid) setCurrentLobby(lobby);
             await syncLobbyFromList();
@@ -248,75 +250,77 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
         return (
             <div>
             <Header
-                    variant="lobby"
-                    nickname={username}
-                    isMenuOpen={isMenuOpen}
-                    onMenuClick={handleMenuClick}
-                />
+                theme="lobby"
+                scale={scale}  
+                nickname={username} 
+                showNickname={!!username}  
+                onMenuClick={handleMenuClick}
+                isMenuOpen={isMenuOpen}
+            />
             <div className="lobby">
                 <div className="lobby__container">
-                    {errorMsg && <div className="lobby__errorToast">{errorMsg}</div>}
-                    <h2 className="lobby__title">Комната: {currentLobby.lobbyName}</h2>
+                    <div className="lobby__inner-border">
+                        {errorMsg && <div className="lobby__errorToast">{errorMsg}</div>}
+                        <h2 className="lobby__title">комната: {currentLobby.lobbyName}</h2>
 
-                    <div className="lobby__tableWrap">
-                        <table className="lobby__rolesTable">
-                            <thead>
-                                <tr>
-                                    <th>Роль</th>
-                                    <th>Игрок</th>
-                                    <th>Готовность</th>
-                                    <th>Действие</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {LOBBY_ROLES.map((role) => {
-                                    const playerGuid = currentLobby.playersGuids[role];
-                                    const ready = currentLobby.playersIsReady[role];
-                                    const canKick = Boolean(isCreator && playerGuid && playerGuid !== user?.guid);
+                        <div className="lobby__tableWrap">
+                            <table className="lobby__rolesTable">
+                                <thead>
+                                    <tr>
+                                        <th>роль</th>
+                                        <th>игрок</th>
+                                        <th>готовность</th>
+                                        <th>действие</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {LOBBY_ROLES.map((role) => {
+                                        const playerGuid = currentLobby.playersGuids[role];
+                                        const ready = currentLobby.playersIsReady[role];
+                                        const canKick = Boolean(isCreator && playerGuid && playerGuid !== user?.guid);
 
-                                    return (
-                                        <tr key={role}>
-                                            <td>{ROLE_LABELS[role]}</td>
-                                            <td>{playerGuid ?? 'пусто'}</td>
-                                            <td>
-                                                <span className={ready ? 'lobby__readyBadge lobby__readyBadge--yes' : 'lobby__readyBadge'}>
-                                                    {playerGuid ? (ready ? 'готов' : 'не готов') : '-'}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                {canKick ? (
-                                                    <button
-                                                        className="lobby__dangerButton"
-                                                        onClick={() => handleKickPlayer(playerGuid!)}
-                                                    >
-                                                        Кикнуть
-                                                    </button>
-                                                ) : (
-                                                    '-'
-                                                )}
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                                        return (
+                                            <tr key={role}>
+                                                <td>{ROLE_LABELS[role]}</td>
+                                                <td>{playerGuid ?? 'пусто'}</td>
+                                                <td>
+                                                    <span className={ready ? 'lobby__readyBadge lobby__readyBadge--yes' : 'lobby__readyBadge'}>
+                                                        {playerGuid ? (ready ? 'готов' : 'не готов') : '-'}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {canKick ? (
+                                                        <button
+                                                            className="lobby__dangerButton"
+                                                            onClick={() => handleKickPlayer(playerGuid!)}
+                                                            >
+                                                                кикнуть
+                                                        </button>
+                                                        ) : ('-'
+                                                        )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-
                     <div className="lobby__roomActions">
                         {!isReady && myRole && (
                             <button className="lobby__primaryButton" onClick={handleToggleReady}>
-                                Готов
+                                готов
                             </button>
                         )}
 
                         {isCreator && (
                             <button className="lobby__primaryButton" disabled={!allReady} onClick={handleStart}>
-                                Старт
+                                старт
                             </button>
                         )}
 
                         <button className="lobby__secondaryButton" onClick={handleLeaveLobby}>
-                            Покинуть комнату
+                            покинуть комнату
                         </button>
                     </div>
                 </div>
@@ -328,34 +332,27 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     return (
         <>
         <Header
-                variant="lobby"
-                nickname={username}
-                isMenuOpen={isMenuOpen}
-                onMenuClick={handleMenuClick}
-            />
+            theme="lobby"
+            scale={scale}  
+            nickname={username} 
+            showNickname={!!username}
+            onMenuClick={handleMenuClick}
+            isMenuOpen={isMenuOpen}
+        />
+
+
+
+
         <div className="lobby">
-            <header className="lobby__header" style={{ height: 'var(--header-height)' }}>
-                <div className="lobby__header__safe-area">
-                    <div className="lobby__header__text-section center" style={{ fontSize: 'var(titleFont)' }}>
-                        <h1></h1>
-                    </div>
-                </div>
-            </header>
-
             <div className="lobby__container">
+                <div className="lobby__inner-border">
                     {errorMsg && <div className="lobby__errorToast">{errorMsg}</div>}
-                    <div className="lobby__topBar">
-                    <div className="lobby__userName">{user?.name ?? 'Игрок'}</div>
-                    <button className="lobby__dangerButton" onClick={handleLogout}>
-                        Выход
-                    </button>
-                </div>
 
-                <h1 className="lobby__title">Список комнат</h1>
+                    <h1 className="lobby__title">•список комнат•</h1>
 
-                <div className="lobby__list">
+                    <div className="lobby__list">
                     {lobbies.length === 0 ? (
-                        <div className="lobby__empty">Пока нет комнат</div>
+                        <div className="lobby__empty">пока нет комнат :(</div>
                     ) : (
                         lobbies.map((lobby) => {
                             const takenSlotsCount = LOBBY_ROLES.filter((role) => lobby.playersGuids[role] !== null).length;
@@ -370,55 +367,66 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
                                     </div>
 
                                     <div className="lobby__cardActions">
-                                        <span className="lobby__roleLabel">Армия грибов</span>
+                                        <span className="lobby__roleLabel">армия грибов</span>
 
                                         <button
                                             className="lobby__primaryButton"
                                             disabled={armySlotTaken}
                                             onClick={() => handleJoinLobby(lobby.lobbyGuid)}
                                         >
-                                            Войти
+                                            войти
                                         </button>
                                     </div>
                                 </div>
                             );
                         })
                     )}
-                </div>
+                    </div>
 
-                <button className="lobby__secondaryButton" onClick={handleCreateLobby}>
-                    Создать комнату
-                </button>
+                    <button 
+                    className="lobby__secondaryButton lobby__secondaryButton--create" 
+                    onClick={handleCreateLobby}
+                    >
+                        создать комнату
+                    </button>
 
-                {isCreateModalOpen && (
+                    {isCreateModalOpen && (
                     <div className="lobby__modalOverlay" onClick={() => setIsCreateModalOpen(false)}>
                         <div className="lobby__modal" onClick={(event) => event.stopPropagation()}>
-                            <h3 className="lobby__modalTitle">Создать комнату</h3>
+                            <h3 className="lobby__modalTitle">создать комнату</h3>
 
                             <input
                                 className="lobby__input"
-                                placeholder="Название комнаты"
+                                placeholder="название комнаты"
                                 value={newLobbyName}
                                 onChange={(event) => setNewLobbyName(event.target.value)}
                             />
 
                             <div className="lobby__modalActions">
                                 <button className="lobby__secondaryButton" onClick={() => setIsCreateModalOpen(false)}>
-                                    Отмена
+                                    отмена
                                 </button>
                                 <button
                                     className="lobby__primaryButton"
                                     disabled={!newLobbyName.trim()}
                                     onClick={handleConfirmCreateLobby}
                                 >
-                                    Создать
+                                    создать
                                 </button>
                             </div>
                         </div>
                     </div>
-                )}
+                    )}
+                </div>
             </div>
         </div>
+
+        <OptionsPannel
+            variant="lobby" 
+            isOpen={isMenuOpen}
+            onClose={handleCloseMenu}
+            onExit={handleLogout}   
+        />
         </>
     );
 };

@@ -3,12 +3,17 @@
   left: 0;
   bottom: 0;
   width: 100%;
+  display: flex;
+  align-items: flex-end;
   z-index: 100;
+  box-sizing: border-box; 
+  font-family: 'Handjet', monospace;
 }
 
 .game-footer-main-panel {
   width: 100%;
   height: var(--footer-height);
+
   background-color: rgb(25, 19, 5);
   background-image:
     linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
@@ -20,6 +25,13 @@
   min-width: 0;
   overflow: hidden;
   box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5), 0 -4px 14px rgba(0, 0, 0, 0.35);
+  border: 2px solid rgb(25, 19, 5);
+
+  display: flex;
+  padding-left: calc(var(--minimap-box-size) + 20px);
+  padding-right: calc(40px * var(--scale));
+  gap: calc(20px * var(--scale));
+  align-items: center; 
 }
 
 .minimap-container {
@@ -42,7 +54,7 @@
   background-position: center;
   background-repeat: repeat;
   border-radius: 10px;
-  z-index: 101;
+  z-index: 101;  
 }
 
 .game-minimap {
@@ -52,6 +64,36 @@
   overflow: hidden;
 }
 
+
+.game-economy-container {
+
+  background-color: rgba(0, 0, 255, 0);
+
+  display: flex;
+  flex-direction: column;
+  gap: calc(0px * var(--scale));
+  
+  flex: 0 1 auto;
+  min-width: calc(200px * var(--scale));
+  
+  align-self: flex-end;
+  padding-bottom: calc(15px * var(--scale));
+  z-index: 101;
+}
+/* Блок статистики армии */
+.game-footer-stats-layout {
+  background-color: rgba(255, 18, 148, 0);
+  display: flex;
+  flex-direction: column;
+  gap: calc(4px * var(--scale));
+  
+  flex: 1;
+  
+  align-self: flex-start;
+  padding-top: calc(15px * var(--scale));
+  z-index: 101;
+}
+
 @media (max-width: 768px) {
   .minimap-container {
     width: min(var(--minimap-box-size), calc(100vw - 8px));
@@ -59,3 +101,25 @@
   }
 }
 
+.game-economy-resources-title {
+  font-size: calc(18px * var(--scale)); 
+  font-weight: 700;
+  color: #c7a066;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  text-transform: uppercase; 
+  letter-spacing: 1px;
+}
+.game-economy-resource-label,
+.game-stat-label {
+  font-size: calc(18px * var(--scale));
+  color: #e0e0e0; 
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.9);
+}
+
+.game-economy-resource-value,
+.game-stat-value {
+  font-size: calc(15px * var(--scale)); 
+  font-weight: bold;
+  color: #ffffff; 
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.2), 1px 1px 2px rgba(0, 0, 0, 0.9);
+}

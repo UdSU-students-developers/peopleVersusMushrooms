@@ -5,7 +5,7 @@ import Mediator from './services/Mediator/Mediator';
 import Server from './services/server/Server';
 import CONFIG from './config'
 import useStore from './services/Store/useStore';
-import { UI_SCALE_STEPS } from './widgets/uiConstants';
+import { UIScaleProvider } from './widgets/UIScaleContext';
 
 import './App.css';
 
@@ -21,12 +21,6 @@ function App() {
 
   useEffect(() => {
 
-    const config = UI_SCALE_STEPS[2]; // M по умолчанию
-  
-    const root = document.documentElement;
-    root.style.setProperty('--header-height', `${config.headerHeight}px`);
-    root.style.setProperty('--font-base', `${config.baseFont}px`);
-    root.style.setProperty('--title-font-size', `${config.titleFont}px`);
 
     const { token, user } = authStorage.getAuth();
     if (token && user) {
@@ -39,16 +33,18 @@ function App() {
   }, [mediator]);
 
   return (
-    <div className="App">
-        <div className='app'>
-          <PageManager 
-            page={page} 
-            setPage={setPage} 
-            mediator={mediator} 
-            server={server} 
-          />
-        </div>
-    </div>
+    <UIScaleProvider>
+      <div className="App">
+          <div className='app'>
+            <PageManager 
+              page={page} 
+              setPage={setPage} 
+              mediator={mediator} 
+              server={server} 
+            />
+          </div>
+      </div>
+    </UIScaleProvider>
   );
 }
 

@@ -9,8 +9,6 @@ export const UI_SCALE_STEPS = [
 
 
 export const HUD_SCALE_STEPS = [
-  //minimapBox  размер подложки под миникарту
-  //minimapCanvas размер живой карты внутри
   { id: 0, label: 'S',  
     minimapBox: 180, minimapCanvas: 164, 
     footer: 80, header: 24,

@@ -16,7 +16,6 @@
   background: #393874;
   height: 344px;
   width: 210px;
-  background: url('../../assets/ui/end.png');
   text-align: center;
   color: rgb(220, 51, 51);
   box-shadow: 0 0 700px rgb(0, 0, 0);
@@ -68,7 +67,6 @@
   font-weight: bold;
 }
 
-/* Вторая кнопка */
 .game-btn-secondary {
   background-color: #835134bb;
   color: #ffcc00;

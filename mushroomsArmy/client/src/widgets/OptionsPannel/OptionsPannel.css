@@ -179,4 +179,38 @@
   }
 }
 
+/* ================= ТЕМЫ ДЛЯ РАЗНЫХ ЭКРАНОВ ================= */
 
+/* Auth — стиль для экрана авторизации */
+.options-pannel-container--auth {
+}
+
+/* Lobby — стиль для лобби */
+.options-pannel-container--lobby {
+}
+
+/* HUD — стиль для игрового экрана */
+.options-pannel-container--hud {
+}
+.options-exit-button {
+  position: absolute;
+  left: 23px;
+  right: 23px;
+  bottom: 23px;
+  width: auto;
+  min-height: 34px;
+  background-color: #2d3d14;
+  color: #b30e0e;
+  border: 2px solid #bc1907;
+  border-radius: 6px;
+  font-family: var(--main-font);
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.options-exit-button:hover {
+  background-color: #a00a0a;
+  border-color: #c0392b;
+  color: #ffd8d8;
+}

@@ -6,7 +6,8 @@ import { TError } from '../../services';
 import { TUser } from '../../services/server/types';
 import { authStorage } from '../../utils/authStorage';
 import Header from '../../widgets/Header/Header'; 
-import OptionsPanel from '../../widgets/OptionsPannel/OptionsPannel';  // ← импорт панели (пока нет, создадим)
+import OptionsPannel from '../../widgets/OptionsPannel/OptionsPannel'; 
+import { useUIScale } from '../../widgets/UIScaleContext';
 import './Registration.css';
 
 const REG_SERVER_ERRORS: Record<number, string> = {
@@ -102,12 +103,15 @@ const Registration: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage })
         !!fieldErrors.passwordRepeat && (passwordRepeat !== '' || password !== '');
 
     return (
-        <div>
+        <>
         <Header
-                variant="auth"
-                isMenuOpen={isMenuOpen}
-                onMenuClick={handleMenuClick}
-            />
+            theme="auth"
+            scale="M" 
+            showNickname={false}
+            showMenuButton={true}
+            onMenuClick={handleMenuClick}
+            isMenuOpen={isMenuOpen}
+        />
         <div className="registration">
             <h1>Регистрация</h1>
             <div className="registration-form">
@@ -170,7 +174,13 @@ const Registration: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage })
                 </button>
             </p>
         </div>
-        </div>
+
+        <OptionsPannel
+            variant="auth"
+            isOpen={isMenuOpen}
+            onClose={handleCloseMenu}
+            />
+        </>
     );
 };
 

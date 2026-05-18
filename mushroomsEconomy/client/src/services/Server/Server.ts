@@ -225,17 +225,23 @@ class Server {
     }
 
     private handleLobbyUpdated(response: TResponse<TLobby>): void {
-        this.handle<TLobby>(response, (data) => {
-            const { LOBBY_UPDATED } = this.mediator.getEventTypes();
-            this.mediator.call(LOBBY_UPDATED, data);
-        });
-    }
+        if (this.checkError(response)) return;
 
-    private handleCreateLobby(response: TResponse<TLobby>): void {
-        this.handle<TLobby>(response, (data) => {
+        if (response.data) {
             const { LOBBY_UPDATED } = this.mediator.getEventTypes();
-            this.mediator.call(LOBBY_UPDATED, data);
-        });
+
+            this.mediator.call(LOBBY_UPDATED, response.data);
+        }
+    }
+    
+    private handleCreateLobby(response: TResponse<TLobby>): void {
+        if (this.checkError(response)) return;
+
+        if (response.data) {
+            const { LOBBY_UPDATED } = this.mediator.getEventTypes();
+
+            this.mediator.call(LOBBY_UPDATED, response.data);
+        }
     }
 
     private handleLobbiesListUpdated(response: TResponse<TLobbies>): void {
@@ -246,10 +252,12 @@ class Server {
     }
 
     private handleJoinToLobby(response: TResponse<TLobby>): void {
-        this.handle<TLobby>(response, (data) => {
+        if (this.checkError(response)) return;
+
+        if (response.data) {
             const { LOBBY_UPDATED } = this.mediator.getEventTypes();
-            this.mediator.call(LOBBY_UPDATED, data);
-        });
+            this.mediator.call(LOBBY_UPDATED, response.data);
+        }
     }
 
     private handleLeaveLobby(response: TResponse<TLobbies>): void {
@@ -260,9 +268,13 @@ class Server {
     }
 
     private handleSetReady(response: TResponse<any>): void {
-        this.handle<any>(response, () => {
-            console.log("Готов");
-        });
+        if (this.checkError(response)) return;
+
+        console.log("SET_READY RESPONSE:", response);
+
+        if (response.data?.data === true) {
+            this.getLobbies();
+        }
     }
 
     private handleDropFromLobby(response: TResponse<TLobbies>): void {

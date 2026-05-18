@@ -23,8 +23,8 @@ class Building extends Unit {
 
     getPos() {
         return {
-            x: [this.x, this.x + size],
-            y: [this.y, this.y + size]
+            x: [this.x, this.x + this.size],
+            y: [this.y, this.y + this.size]
         }
     }
 

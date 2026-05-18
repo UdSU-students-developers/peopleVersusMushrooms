@@ -50,15 +50,15 @@ class Map {
         }
     }
 
-    getSelf() {
-        return {
-            ...this.get(),
-            sources: this.sources.map(source => source)
-        };
-    }
-
     getRelief() {
         return this.map.map(row => row.map(tile => tile));
+    }
+
+    getSelf() {
+        return {
+            ...this.getRelief(),
+            sources: this.sources.map(source => source)
+        };
     }
 
     getGen() {
@@ -77,7 +77,7 @@ class Map {
         const visibleEntities = [];
         for (const entity of searchedEntities) {
             const pos = entity.getPos();
-            for (const searchingEntity in searchingEntities) {
+            for (const searchingEntity of searchingEntities) {
                 const vis = searchingEntity.getVisibleRange();
                 if ((
                     vis.x[0] <= pos.x[0] && pos.x[0] <= vis.x[1] ||

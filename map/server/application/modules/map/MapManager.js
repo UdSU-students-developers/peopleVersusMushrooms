@@ -149,7 +149,7 @@ class MapManager extends BaseManager {
     }
 
     socketGetRelief(data, socket) {
-        this._socketGets(data, 'getRelief', MESSAGES.GET_RELIEF, socket);
+        this._socketGets(data, 'getSelf', MESSAGES.GET_RELIEF, socket);
     }
 }
 

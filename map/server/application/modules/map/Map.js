@@ -56,7 +56,7 @@ class Map {
 
     getSelf() {
         return {
-            ...this.getRelief(),
+            map: this.getRelief(),
             sources: this.sources.map(source => source)
         };
     }

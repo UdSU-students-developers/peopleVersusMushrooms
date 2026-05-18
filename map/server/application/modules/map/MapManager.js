@@ -66,7 +66,7 @@ class MapManager extends BaseManager {
             const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, spectatorGuid);
             this.io.to(user.socketId).emit(MESSAGES.UPDATE_MAP, map.get())
         }
-        return this.answer.good(true);
+        return true;
     }
 
     _getVisibility(data, method) {
@@ -77,7 +77,7 @@ class MapManager extends BaseManager {
         // определяем роль игрока на карте по гуиду
         const role = this._getRoleByGuid(map, userGuid);
         if (!role) return this.answer.bad(3003);
-        return this.answer.good(map[method](role));
+        return map[method](role);
     }
 
     //EVENTS

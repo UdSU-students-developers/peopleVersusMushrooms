@@ -38,7 +38,7 @@ class BaseManager {
             }
             const res = await fetch(url, params);
 			
-			//console.log('res', res);
+			console.log('res', res);
 			
             const answer = await res.json();
 			

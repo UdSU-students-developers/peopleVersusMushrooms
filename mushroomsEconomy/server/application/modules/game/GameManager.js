@@ -43,6 +43,7 @@ class GameManager extends BaseManager {
 		// формате отдавать в сервис карты
 		// получить ответ
 		// запросить рельеф
+		console.log("\n\n\n\n\n\n\n\n", data.map);
 		this.getRelief(data.map, guid, mapGuid);
 		// запросить видимость
 		this.getVisibility(data.map, guid, mapGuid);
@@ -122,7 +123,7 @@ class GameManager extends BaseManager {
 	}
 
 	async getResources(map, guid, mapGuid) {
-		if (typeof(map.resources[0][0]) !== "object") return;
+		if (!map || ! map.resources) return;
 		const resources = await this.sendToMap(
 			GLOBAL_CONFIG.URLS.GET_RESOURSE_VISIBILITY,
 			{ mapGuid, userGuid: guid }

@@ -18,30 +18,26 @@ class Mine extends Building {
             capacity: CAPACITY,
             visibility: VISIBILITY,
         });
-
-        this.resources = {
-            iron: 0,
-            fat: 0,
-        };
     }
 
     get() {
         return {
             ...super.get(),
-            resources: { ...this.resources },
         };
     }
 
-    update() {
-        if (!this.callbacks.getResources) return;
+    extractIron() {
+        if (!this.callbacks.getResources) return 0;
 
         const resources = this.callbacks.getResources();
-        if (!resources || !resources[this.y]) return;
+        if (!resources || !resources[this.y]) return 0;
 
         const res = resources[this.y][this.x];
         if (res && res.type === 'IRON') {
-            this.resources.iron += res.saturation;
+            return res.saturation;
         }
+
+        return 0;
     }
 }
 

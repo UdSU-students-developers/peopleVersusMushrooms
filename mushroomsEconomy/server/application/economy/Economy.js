@@ -31,6 +31,11 @@ class Economy {
         // данные экономики
         this.lastUpdateTime = Date.now();
 
+        this.resources = {
+            iron: 0,
+            fat: 0,
+        };
+
         //Здания
         this.buildings = {
             reactors: [], //реакторы (малые и большие)
@@ -85,6 +90,7 @@ class Economy {
     get() {
         return {
             guids: this.guids,
+            resources: { ...this.resources },
             units: {
                 larvae: this.units.larvae.map(l => l.get()),
                 geodezists: this.units.geodezists.map(g => g.get()),
@@ -320,7 +326,13 @@ class Economy {
     }
 
     updateMines() {
-        this.buildings.mines.forEach(mine => mine.update());
+        for (const mine of this.buildings.mines) {
+            const extracted = mine.extractIron();
+            if (extracted > 0) {
+                this.resources.iron += extracted;
+                this.updated = true;
+            }
+        }
     }
 
     findEntityByGuid(guid) {
@@ -376,6 +388,9 @@ class Economy {
 
         // 3. реакторы потребляют мицелий
         this.reactorsConsume();
+
+        // 4. шахты добывают железо
+        this.updateMines();
 
         // отбросить апдейт, если он случился
         if (this.updated) {

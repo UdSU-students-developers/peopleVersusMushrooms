@@ -132,7 +132,8 @@ export type TMap = {
 
 export type TScene = {
     guid: string;
-    buildings: TEconomyBuildings
+    buildings: TEconomyBuildings;
+    enemyBuildings: TBuilding[];
     map: TMap;
     units: TEconomyUnits;
 }

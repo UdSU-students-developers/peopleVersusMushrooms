@@ -86,6 +86,9 @@ const GameCanvas: React.FC = () => {
         // larvae
         for (const l of scene.units.larvae)
             drawTile(SPRITE.LARVA, l.x, l.y);
+
+        for (const enemy of scene.enemyBuildings)
+            drawTile(SPRITE.ENEMY_BUILDING, enemy.x, enemy.y);
     };
 
     function render(FPS: number) {

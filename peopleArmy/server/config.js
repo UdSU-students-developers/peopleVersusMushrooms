@@ -2,6 +2,7 @@ const CONFIG = {
     NAME: 'PeopleArmy',
     PORT: 3007, //Порт соостветсвующий серверу вашего сервиса
     ROLE: 'peopleArmy',
+    START_POINT: {x: 4, y: 4},
     CORS: {
         origin: "*",
         middleware: (_, res, next) => {

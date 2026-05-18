@@ -1,109 +1,88 @@
 const Unit = require('./Unit');
 const CONFIG = require('../../../../config');
 
-const { HP, SPEED, TYPE, VISIBILITY } = CONFIG.ECONOMY.GEODEZIST;
+const { HP, SPEED, TYPE, VISIBILITY, WANDER_RADIUS } = CONFIG.ECONOMY.GEODEZIST;
 
 class Geodezist extends Unit {
     constructor(options) {
-        super({
-            ...options,
-            type: TYPE,
-            visibility: VISIBILITY,
-            speed: SPEED,
-        });
-
+        super({ ...options, type: TYPE, visibility: VISIBILITY, speed: SPEED });
         this.hp = HP;
-        this.wanderRadius = CONFIG.ECONOMY.GEODEZIST.WANDER_RADIUS;
-
-        this.targetResource = null; // { x, y } — координаты целевого ресурса IRON
+        this.wanderRadius = WANDER_RADIUS;
+        this.targetResource = null;
         this.mode = 'wander'; // 'wander' | 'goToIron'
-
         this.callbacks = options.callbacks || {};
-        // callbacks.getResources() — возвращает 2D-массив ресурсов карты
-        // callbacks.getBuildings() — возвращает массив всех зданий
-        // callbacks.mutateToMine(geodezist) — вызывается когда геодезист достигает IRON-ресурса
     }
 
     get() {
-        return {
-            ...super.get(),
-            hp: this.hp,
-            mode: this.mode,
-            targetResource: this.targetResource,
-        };
+        return { ...super.get(), hp: this.hp, mode: this.mode, targetResource: this.targetResource };
     }
 
     update() {
         this._scanForIron();
 
-        if (this.mode === 'goToIron') {
-            if (this._hasReachedTarget()) {
-                const resource = this._getResourceAt(Math.round(this.x), Math.round(this.y));
-                if (resource && resource.type === 'IRON') {
-                    this.callbacks.mutateToMine(this);
-                    return;
-                } else {
-                    this.targetResource = null;
-                    this.mode = 'wander';
-                    this._pickWanderTarget();
-                }
+        if (this.mode === 'goToIron' && this._hasReachedTarget()) {
+            const res = this._getResourceAt(Math.round(this.x), Math.round(this.y));
+            if (res?.type === 'IRON') {
+                this.callbacks.mutateToMine?.(this);
+                return;
             }
-        } else {
-            // режим блуждания
-            if (this._hasReachedTarget()) {
-                this._pickWanderTarget();
-            }
+            this._resetToWander();
+        } else if (this.mode === 'wander' && this._hasReachedTarget()) {
+            this._pickWanderTarget();
         }
 
         super.update();
     }
 
     _scanForIron() {
-        if (!this.callbacks.getResources || !this.callbacks.getBuildings) return;
+        const resources = this.callbacks.getResources?.();
+        const buildings = this.callbacks.getBuildings?.();
+        if (!resources || !buildings) return;
 
-        const resources = this.callbacks.getResources();
-        const buildings = this.callbacks.getBuildings();
+        let closestIron = null;
+        let minDistanceSq = Infinity;
 
-        if (!resources) return;
-
-        for (let y = 0; y < resources.length; y++) {
-            for (let x = 0; x < resources[y].length; x++) {
-                const res = resources[y][x];
-                if (!res || res.type !== 'IRON') continue;
+        resources.forEach((row, y) => {
+            if (!row) return;
+            row.forEach((res, x) => {
+                if (res?.type !== 'IRON') return;
 
                 const occupied = buildings.some(b => {
+                    if (b.type === 'mycelium') return false;
+                    
                     const size = b.size ?? 1;
                     return x >= b.x && x < b.x + size && y >= b.y && y < b.y + size;
                 });
 
                 if (!occupied) {
-                    if (!this.targetResource || this.targetResource.x !== x || this.targetResource.y !== y) {
-                        this.targetResource = { x, y };
-                        this.mode = 'goToIron';
-                        this.setTarget(x, y);
+                    const distSq = (this.x - x) ** 2 + (this.y - y) ** 2;
+                    if (distSq < minDistanceSq) {
+                        minDistanceSq = distSq;
+                        closestIron = { x, y };
                     }
-                    return;
                 }
-            }
-        }
+            });
+        });
 
-        if (this.mode === 'goToIron') {
-            this.targetResource = null;
-            this.mode = 'wander';
-            this._pickWanderTarget();
+        if (closestIron) {
+            if (!this.targetResource || this.targetResource.x !== closestIron.x || this.targetResource.y !== closestIron.y) {
+                this.targetResource = closestIron;
+                this.mode = 'goToIron';
+                this.setTarget(closestIron.x, closestIron.y);
+            }
+        } else if (this.mode === 'goToIron') {
+            this._resetToWander();
         }
+    }
+
+    _resetToWander() {
+        this.targetResource = null;
+        this.mode = 'wander';
+        this._pickWanderTarget();
     }
 
     _pickWanderTarget() {
-        const target = this._pickRandomWalkableCell();
-        if (target) {
-            this.setTarget(target.x, target.y);
-        }
-    }
-
-    _pickRandomWalkableCell() {
-        if (!this.grid) return null;
-
+        if (!this.grid) return;
         const rows = this.grid.length;
         const cols = this.grid[0]?.length ?? 0;
 
@@ -114,20 +93,15 @@ class Geodezist extends Unit {
             const x = Math.round(this.x + Math.cos(angle) * radius);
             const y = Math.round(this.y + Math.sin(angle) * radius);
 
-            const inBounds = x >= 0 && x < cols && y >= 0 && y < rows;
-            const walkable = inBounds && this.grid[y][x] === 0;
-
-            if (walkable) return { x, y };
+            if (x >= 0 && x < cols && y >= 0 && y < rows && this.grid[y][x] === 0) {
+                this.setTarget(x, y);
+                return;
+            }
         }
-
-        return null;
     }
 
     _getResourceAt(x, y) {
-        const resources = this.callbacks.getResources();
-        if (resources) {
-            return resources[y][x] ?? null;
-        }
+        return this.callbacks.getResources?.()[y]?.[x] ?? null;
     }
 }
 

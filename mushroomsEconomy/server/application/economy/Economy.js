@@ -112,6 +112,7 @@ class Economy {
     }
 
     setResources(resources) {
+        //console.log("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", resources)
         this.map.setResources(resources);
     }
 
@@ -161,15 +162,15 @@ class Economy {
     mutateGeodesistToMine(geo) {
         this.units.geodezists = this.units.geodezists.filter(g => g.guid !== geo.guid);
 
-        this.addMine(this.)
+        this.addMine(geo.x, geo.y);
     }
 
     addMine(x, y) {
         const guid = this.common.guid();
         this.buildings.mines.push(new Mine({
             guid,
-            x: geo.x,
-            y: geo.y,
+            x: x,
+            y: y,
             callbacks: {
                 getResources: () => this.map.resources,
             },

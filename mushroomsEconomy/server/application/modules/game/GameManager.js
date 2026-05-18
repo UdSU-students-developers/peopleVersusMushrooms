@@ -127,10 +127,9 @@ class GameManager extends BaseManager {
 			{ mapGuid, userGuid: guid }
 		);
 
-
-		if (resources && resources.data) {
+		if (resources) {
 			if (this.economies[guid]) {
-				this.economies[guid].setResources(resources.data);
+				this.economies[guid].setResources(resources.sources);
 			}
 		}
 	}

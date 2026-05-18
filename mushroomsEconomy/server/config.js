@@ -55,7 +55,7 @@ const CONFIG = {
             CAPACITY: 0, // ничего в себе хранить не умеет
             POWER: 1,
             SIZE: 1,
-            VISIBILITY: 3, //Сколько клеток вокруг видит
+            VISIBILITY: 1, //Сколько клеток вокруг видит
         },
         // грибница вырастает за 12 секунд
         // 2*2*3 = 12 sec
@@ -70,7 +70,7 @@ const CONFIG = {
             CAPACITY: 60, // сколько железа доступно для производства личинок
             LARVA_ENERGY_COST: 20,
             LARVA_COOLDOWN_MS: 3000,
-            VISIBILITY: 100,
+            VISIBILITY: 1,
         },
         BIO_REACTOR: {
             TYPE: 'reactor',
@@ -79,7 +79,7 @@ const CONFIG = {
             CONSUMPTION: 2,    
             PRODUCTION: 2,
             CAPACITY: 180,
-            VISIBILITY: 7,
+            VISIBILITY: 1,
             CONSUME_RADIUS: 2, 
         },
         BIO_REACTOR_SMALL: {

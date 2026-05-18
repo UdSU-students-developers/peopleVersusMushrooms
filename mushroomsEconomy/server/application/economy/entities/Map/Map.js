@@ -1,5 +1,7 @@
 const GLOBAL_CONFIG = require('../../../../../../global/globalConfig');
 
+const Resource = require('./Resource');
+
 class Map {
     constructor() {
         this.resources = this._initEmptyMap();
@@ -17,7 +19,15 @@ class Map {
     }
 
     setResources(resources) {
-        this.resources = resources;
+        for(const res of resources) {
+            if (this.resources[res.y][res.x] != null) continue;
+            this.resources[res.y][res.x] = new Resource(
+                res.x,
+                res.y,
+                res.type,
+                res.saturation,
+            );
+        }
     }
 
     setRelief(relief) {

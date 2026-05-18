@@ -122,15 +122,15 @@ class GameManager extends BaseManager {
 	}
 
 	async getResources(map, guid, mapGuid) {
-		if (!map || ! map.resources) return;
 		const resources = await this.sendToMap(
 			GLOBAL_CONFIG.URLS.GET_RESOURSE_VISIBILITY,
 			{ mapGuid, userGuid: guid }
 		);
 
-		if (resources) {
+
+		if (resources.data) {
 			if (this.economies[guid]) {
-				this.economies[guid].setResources(resources);
+				this.economies[guid].setResources(resources.data);
 			}
 		}
 	}

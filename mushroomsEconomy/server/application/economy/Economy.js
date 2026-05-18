@@ -85,6 +85,7 @@ class Economy {
                 incubators: this.buildings.incubators.map(i => i.get()),
                 mycelium:   this.buildings.mycelium.map(m => m.get()),
             },
+            enemyBuildings: this.enemyBuildings,
             units: {
                 larvae: this.units.larvae.map(l => l.get()),
             },

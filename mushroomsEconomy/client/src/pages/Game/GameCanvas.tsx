@@ -83,9 +83,17 @@ const GameCanvas: React.FC = () => {
         for (const i of scene.buildings.incubators as TIncubator[])
             drawTile(SPRITE.INCUBATOR, i.x, i.y);
 
+        // mines
+        for (const m of scene.buildings.mines ?? [])
+            drawTile(SPRITE.MINE, m.x, m.y);
+
         // larvae
         for (const l of scene.units.larvae)
             drawTile(SPRITE.LARVA, l.x, l.y);
+
+        // geodezists
+        for (const g of scene.units.geodezists ?? [])
+            drawTile(SPRITE.GEODEZIST, g.x, g.y);
 
         for (const enemy of scene.enemyBuildings)
             drawTile(SPRITE.ENEMY_BUILDING, enemy.x, enemy.y);

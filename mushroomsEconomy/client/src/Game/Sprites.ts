@@ -18,6 +18,8 @@ export const SPRITE = {
     REACTOR_CONSUMED_ANIM: 9,
     REACTOR: 8, // size = 2
     FALLBACK: 7,
+    GEODEZIST: 12,
+    MINE: 14,
     ENEMY_BUILDING: 13
 } as const;
 

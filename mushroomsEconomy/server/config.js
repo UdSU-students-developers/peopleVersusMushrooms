@@ -118,11 +118,11 @@ const CONFIG = {
             TYPE: "larva",
             VISIBILITY: 2,
         },
-        
+
         GEODEZIST: {
             TYPE: "geodezist",
             HP: 60,
-            SPEED: 0.8,
+            SPEED: 0.08,
             WANDER_RADIUS: 8,
             VISIBILITY: 4,
         },

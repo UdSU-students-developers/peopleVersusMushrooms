@@ -69,7 +69,7 @@ class Lobby {
     setPlayerReady(guid) {
         const role = Object.keys(this.playersGuids).find(role => this.playersGuids[role] === guid);
         if (role) {
-            this.playersIsReady[role] = true;
+            this.playersIsReady[role] = !this.playersIsReady[role];
             return true;
         }
         return false;

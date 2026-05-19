@@ -100,8 +100,14 @@ class Eblekar extends Unit {
         if (!nearestAlly) {
             this.currentAllyTarget = null;
             this.isAiming = false;
-            this.targetX = this.x;
-            this.targetY = this.y;
+            if (this.formationTarget) {
+                // Нет ally на лечение — возвращаемся в свой слот формации
+                this.targetX = this.formationTarget.x;
+                this.targetY = this.formationTarget.y;
+            } else {
+                this.targetX = this.x;
+                this.targetY = this.y;
+            }
             return;
         }
 

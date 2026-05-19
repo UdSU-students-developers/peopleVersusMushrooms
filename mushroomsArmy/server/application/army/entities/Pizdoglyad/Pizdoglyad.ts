@@ -20,8 +20,8 @@ class Pizdoglyad extends Unit {
     constructor(options: TUnitOptions) {
         super({ ...options, hp: 2, speed: 7, attackRange: 0 });
         this.baseHp = 2;
-        this.visibility = 28; 
-        (this as any).DECISION_INTERVAL = 0.3;
+        this.visibility = 28;
+        this.DECISION_INTERVAL = 0.3;
     }
 
     protected onEnemyFound(enemy: Unit, distance: number): void {
@@ -73,7 +73,7 @@ class Pizdoglyad extends Unit {
 
     private onNoEnemy(map: TMap): void {
         this.currentMode = 'scout';
-        this.scoutCooldown -= (this as any).lastDeltaTime ?? 0.3;
+        this.scoutCooldown -= this.lastDeltaTime || 0.3;
         this.doScout(map);
     }
 
@@ -81,8 +81,7 @@ class Pizdoglyad extends Unit {
         if (!this.isAlive) return;
 
         this.lastAllies = allies;
-        // Сохраняем deltaTime для использования внутри onNoEnemy
-        (this as any).lastDeltaTime = deltaTime;
+        this.lastDeltaTime = deltaTime;
 
         const nearestEnemy = this.findNearestEnemy(enemies);
 
@@ -100,8 +99,7 @@ class Pizdoglyad extends Unit {
 
 
     private pizdoglyadMoveOnly(map: TMap, deltaTime: number): void {
-        // Напрямую вызываем protected moveTo через any, не трогая makeDecision
-        (this as any).moveTo(this.targetX, this.targetY, map, deltaTime);
+        this.moveTo(this.targetX, this.targetY, map, deltaTime);
     }
 
     private doScout(map: TMap): void {

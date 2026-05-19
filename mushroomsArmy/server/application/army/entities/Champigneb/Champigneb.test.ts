@@ -1,6 +1,16 @@
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import Champigneb from './Champigneb';
 import Unit, { TUnitOptions } from '../Units';
+import { TMap } from '../../Army';
+
+/** Вспомогательный тип для доступа к protected членам в тестах */
+interface ITChampignebTestable {
+    enemies: Unit[];
+    targetX: number;
+    targetY: number;
+    onEnemyFound(enemy: Unit, distance: number): void;
+    explode(): void;
+}
 
 const defaultOptions: TUnitOptions = {
     guid: 'test-champigneb-1',
@@ -28,6 +38,10 @@ describe('Champigneb', () => {
         expect(champigneb.speed).toBe(3);
         expect(champigneb.attackRange).toBe(6);
         expect(typeof champigneb.hp).toBe('number');
+    });
+
+    it('leashRadius=20 — поводок к formationTarget, чтобы champigneb не убегал за дальними врагами', () => {
+        expect(champigneb.leashRadius).toBe(20);
     });
 
     it('baseHp равен 35', () => {
@@ -94,8 +108,8 @@ describe('Champigneb', () => {
             takeDamage: jest.fn(),
         } as unknown as Unit;
 
-        (champigneb as any).enemies = [near, far];
-        (champigneb as any).onEnemyFound(near, 3);
+        (champigneb as unknown as ITChampignebTestable).enemies = [near, far];
+        (champigneb as unknown as ITChampignebTestable).onEnemyFound(near, 3);
 
         expect(near.takeDamage).toHaveBeenCalledTimes(1);
         expect(near.takeDamage).toHaveBeenCalledWith(60);
@@ -113,13 +127,13 @@ describe('Champigneb', () => {
             takeDamage: jest.fn(),
         } as unknown as Unit;
 
-        (champigneb as any).enemies = [enemy];
-        (champigneb as any).onEnemyFound(enemy, 10);
+        (champigneb as unknown as ITChampignebTestable).enemies = [enemy];
+        (champigneb as unknown as ITChampignebTestable).onEnemyFound(enemy, 10);
 
         expect(champigneb.hasExploded).toBe(false);
         expect(champigneb.isAlive).toBe(true);
-        expect((champigneb as any).targetX).toBe(30);
-        expect((champigneb as any).targetY).toBe(20);
+        expect((champigneb as unknown as ITChampignebTestable).targetX).toBe(30);
+        expect((champigneb as unknown as ITChampignebTestable).targetY).toBe(20);
         expect(enemy.takeDamage).not.toHaveBeenCalled();
     });
 
@@ -131,13 +145,13 @@ describe('Champigneb', () => {
             takeDamage: jest.fn(),
         } as unknown as Unit;
 
-        (champigneb as any).enemies = [enemy];
-        (champigneb as any).explode();
+        (champigneb as unknown as ITChampignebTestable).enemies = [enemy];
+        (champigneb as unknown as ITChampignebTestable).explode();
 
         expect(enemy.takeDamage).toHaveBeenCalledTimes(1);
         const slimeAfterFirst = { ...champigneb.slimePuddle };
 
-        (champigneb as any).explode();
+        (champigneb as unknown as ITChampignebTestable).explode();
 
         expect(enemy.takeDamage).toHaveBeenCalledTimes(1);
         expect(champigneb.slimePuddle).toEqual(slimeAfterFirst);
@@ -151,8 +165,8 @@ describe('Champigneb', () => {
             takeDamage: jest.fn(),
         } as unknown as Unit;
 
-        (champigneb as any).enemies = [outOfRange];
-        (champigneb as any).explode();
+        (champigneb as unknown as ITChampignebTestable).enemies = [outOfRange];
+        (champigneb as unknown as ITChampignebTestable).explode();
 
         expect(outOfRange.takeDamage).not.toHaveBeenCalled();
         expect(champigneb.hasExploded).toBe(true);
@@ -171,7 +185,7 @@ describe('Champigneb', () => {
 
         const originalX = champigneb.x;
         expect(() => {
-            champigneb.update([enemy], [] as any, 1);
+            champigneb.update([enemy], [] as TMap, 1);
         }).not.toThrow();
         expect(champigneb.x).toBe(originalX);
     });

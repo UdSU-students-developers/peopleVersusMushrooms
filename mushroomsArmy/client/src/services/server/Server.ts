@@ -59,6 +59,34 @@ class Server {
         this.socket.on('connect', () => this.autoRestore());
     }
 
+    /**
+     * Ответы карты через HTTP на сервере армии иногда попадают на клиент вложенными
+     * ({ result:'ok', data: { result:'ok', data: ... } }). Разворачиваем только здесь.
+     */
+    private unwrapMapProxyPayload<T>(response: TResponse<T>): TResponse<T> {
+        if (!response || typeof response !== 'object' || response.result !== 'ok') {
+            return response;
+        }
+        let current: TResponse<T> = response;
+        let depth = 0;
+        while (depth < 10) {
+            const d = current.data;
+            if (
+                d !== null &&
+                d !== undefined &&
+                typeof d === 'object' &&
+                !Array.isArray(d) &&
+                (d as { result?: string }).result === 'ok'
+            ) {
+                current = d as unknown as TResponse<T>;
+                depth += 1;
+                continue;
+            }
+            break;
+        }
+        return current;
+    }
+
     private autoRestore(): void {
         const credentials = authStorage.getCredentials();
         const { user } = authStorage.getAuth();
@@ -218,7 +246,8 @@ class Server {
             throw new Error(`Failed to load lobbies: ${response.status}`);
         }
 
-        const data = await response.json() as TResponse<ILobby[]>;
+        const raw = await response.json() as TResponse<ILobby[]>;
+        const data = this.unwrapMapProxyPayload(raw);
 
         if (data.result === 'ok' && Array.isArray(data.data)) {
             return data.data;
@@ -227,7 +256,8 @@ class Server {
         throw new Error(data.error?.message || 'Failed to load lobbies');
     }
 
-    private handleCreateLobby(response: TResponse<boolean>): void {
+    private handleCreateLobby(raw: TResponse<boolean>): void {
+        const response = this.unwrapMapProxyPayload(raw);
         if (response?.result === 'ok' && response.data) {
             const CREATE_LOBBY_EVENT = this.mediator.getEventTypes().CREATE_LOBBY;
             this.mediator.call(CREATE_LOBBY_EVENT, response.data);
@@ -237,7 +267,8 @@ class Server {
         this.mediator.call(this.mediator.getEventTypes().ERROR, response.error);
     }
 
-    private handleJoinToLobby(response: TResponse<boolean>): void {
+    private handleJoinToLobby(raw: TResponse<boolean>): void {
+        const response = this.unwrapMapProxyPayload(raw);
         if (response?.result === 'ok' && response.data) {
             const JOIN_TO_LOBBY_EVENT = this.mediator.getEventTypes().JOIN_TO_LOBBY;
             this.mediator.call(JOIN_TO_LOBBY_EVENT, response.data);
@@ -247,7 +278,8 @@ class Server {
         this.mediator.call(this.mediator.getEventTypes().ERROR, response.error);
     }
 
-    private handleLeaveLobby(response: TResponse<boolean>): void {
+    private handleLeaveLobby(raw: TResponse<boolean>): void {
+        const response = this.unwrapMapProxyPayload(raw);
         if (response?.result === 'ok' && response.data) {
             const LEAVE_LOBBY_EVENT = this.mediator.getEventTypes().LEAVE_LOBBY;
             this.mediator.call(LEAVE_LOBBY_EVENT, response.data);
@@ -257,7 +289,8 @@ class Server {
         this.mediator.call(this.mediator.getEventTypes().ERROR, response.error);
     }
 
-    private handleDropFromLobby(response: TResponse<boolean>): void {
+    private handleDropFromLobby(raw: TResponse<boolean>): void {
+        const response = this.unwrapMapProxyPayload(raw);
         if (response?.result === 'ok' && response.data) {
             const DROP_FROM_LOBBY_EVENT = this.mediator.getEventTypes().DROP_FROM_LOBBY;
             this.mediator.call(DROP_FROM_LOBBY_EVENT, response.data);
@@ -267,17 +300,19 @@ class Server {
         this.mediator.call(this.mediator.getEventTypes().ERROR, response.error);
     }
 
-    private handleSetReady(response: TResponse<boolean>): void {
-        if (response?.result === 'ok' && response.data) {
+    private handleSetReady(raw: TResponse<boolean>): void {
+        const response = this.unwrapMapProxyPayload(raw);
+        if (response?.result === 'ok') {
             const SET_READY_EVENT = this.mediator.getEventTypes().SET_READY;
             this.mediator.call(SET_READY_EVENT, response.data);
             return;
         }
 
-        this.mediator.call(this.mediator.getEventTypes().ERROR, response.error);
+        this.mediator.call(this.mediator.getEventTypes().ERROR, response?.error);
     }
 
-    private handleLobbyUpdated(response: TResponse<ILobby>): void {
+    private handleLobbyUpdated(raw: TResponse<ILobby>): void {
+        const response = this.unwrapMapProxyPayload(raw);
         if (response?.result === 'ok' && response.data) {
             const LOBBY_UPDATED_EVENT = this.mediator.getEventTypes().LOBBY_UPDATED;
             this.mediator.call(LOBBY_UPDATED_EVENT, response.data);
@@ -287,7 +322,8 @@ class Server {
         this.mediator.call(this.mediator.getEventTypes().ERROR, response.error);
     }
 
-    private handleGetLobbys(response: TResponse<boolean>): void {
+    private handleGetLobbys(raw: TResponse<boolean>): void {
+        const response = this.unwrapMapProxyPayload(raw);
         if (response?.result === 'ok' && response.data) {
             const GET_LOBBYS_EVENT = this.mediator.getEventTypes().GET_LOBBYS;
             this.mediator.call(GET_LOBBYS_EVENT, response.data);
@@ -297,7 +333,8 @@ class Server {
         this.mediator.call(this.mediator.getEventTypes().ERROR, response.error);
     }
 
-    private handleLobbysListUpdate(response: TResponse<ILobby[]>): void {
+    private handleLobbysListUpdate(raw: TResponse<ILobby[]>): void {
+        const response = this.unwrapMapProxyPayload(raw);
         if (response?.result === 'ok' && response.data) {
             const LOBBYS_LIST_UPDATED_EVENT = this.mediator.getEventTypes().LOBBYS_LIST_UPDATED;
             this.mediator.call(LOBBYS_LIST_UPDATED_EVENT, response.data);
@@ -307,7 +344,8 @@ class Server {
         this.mediator.call(this.mediator.getEventTypes().ERROR, response.error);
     }
 
-    private handleStartGame(response: TResponse<boolean>): void {
+    private handleStartGame(raw: TResponse<boolean>): void {
+        const response = this.unwrapMapProxyPayload(raw);
         if (response?.result === 'ok' && response.data) {
             const GAME_STARTED = this.mediator.getEventTypes().GAME_STARTED;
             this.mediator.call(GAME_STARTED);
@@ -377,7 +415,8 @@ class Server {
         this.mediator.call(USER_LOGGED_OUT);
     }
 
-    private handleLobbyStart(response: TResponse<boolean>) {
+    private handleLobbyStart(raw: TResponse<boolean>) {
+        const response = this.unwrapMapProxyPayload(raw);
         if (response?.result !== 'ok') {
             this.mediator.call(this.mediator.getEventTypes().ERROR, response.error);
         }
@@ -385,7 +424,8 @@ class Server {
         // она произойдёт при получении 'game:started'
     }
 
-    private handleGameStarted(response: TResponse<boolean>) {
+    private handleGameStarted(raw: TResponse<boolean>) {
+        const response = this.unwrapMapProxyPayload(raw);
         if (response?.result === 'ok' && response.data) {
             const GAME_STARTED_EVENT = this.mediator.getEventTypes().GAME_STARTED;
             this.mediator.call(GAME_STARTED_EVENT, response.data);
@@ -395,7 +435,8 @@ class Server {
         this.mediator.call(this.mediator.getEventTypes().ERROR, response.error);
     }
 
-    private handleGameState(response: TResponse<TArmyState>) {
+    private handleGameState(raw: TResponse<TArmyState>) {
+        const response = this.unwrapMapProxyPayload(raw);
         if (response?.result !== 'ok' || !response.data) return;
         const GAME_STATE_UPDATED = this.mediator.getEventTypes().GAME_STATE_UPDATED;
         this.mediator.call(GAME_STATE_UPDATED, response.data);

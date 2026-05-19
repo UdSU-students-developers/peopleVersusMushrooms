@@ -15,10 +15,11 @@ import {
     useSpawnBuildingHandler,
     useUpdateEconomyBuildingsHandler,
 } from './handlers';
+import { IAnswer, IMediator } from '../types/global';
 
 type TRouterOptions = {
-    answer: any;
-    mediator: any;
+    answer: IAnswer;
+    mediator: IMediator;
 };
 
 function Router({ answer, mediator }: TRouterOptions): ExpressRouter {

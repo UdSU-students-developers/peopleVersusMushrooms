@@ -1,9 +1,8 @@
-const Unit = require("./Entity");
+const Unit = require("./Unit");
 
 class Building extends Unit {
     constructor({ x, y, type, guid, role, size = 1, visibility = 1 }) {
         super({ x, y, type, guid, role, visibility });
-
         this.size = size;
     }
 
@@ -23,16 +22,24 @@ class Building extends Unit {
 
     getPos() {
         return {
-            x: [this.x, this.x + this.size],
-            y: [this.y, this.y + this.size]
+            x: [this.x, this.x + this.size - 1],
+            y: [this.y, this.y + this.size - 1]
         }
     }
 
-    getVisibleRange() {
+    getRange(range) {
         return {
-            x: [this.x - this.visibility, this.x + this.visibility + this.size],
-            y: [this.y - this.visibility, this.y + this.visibility + this.size],
-        }
+            x: [this.x - range, this.x + range + this.size - 1],
+            y: [this.y - range, this.y + range + this.size - 1],
+        };
+    }
+
+    getVisibleRange() {
+        return this.getRange(this.visibility);
+    }
+
+    getVisibleSoursesRange() {
+        return this.getRange(this.soursesVisibility);
     }
 }
 

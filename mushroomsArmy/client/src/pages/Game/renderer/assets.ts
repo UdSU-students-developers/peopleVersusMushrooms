@@ -6,6 +6,10 @@ import eblekarSrc from '../../../assets/units/Eblekar.png';
 import pizdoglyadIdleSrc from '../../../assets/units/Pizdoglyad2.png';
 import pizdoglyadWalkSrc from '../../../assets/units/Pizdoglyad1.png';
 
+import peopleSoldierSrc from '../../../assets/people/soldier.png';
+import peopleBmpSrc from '../../../assets/people/bmp.png';
+import peopleSniperSrc from '../../../assets/people/sniper.png';
+
 import vzryvomorFrame0 from '../../../assets/buildings/vzryvomor/frame_0.png';
 import vzryvomorFrame1 from '../../../assets/buildings/vzryvomor/frame_1.png';
 import vzryvomorFrame2 from '../../../assets/buildings/vzryvomor/frame_2.png';
@@ -69,6 +73,13 @@ export const UNIT_SRCS: Record<string, string> = {
   champigneb: champignebSrc,
   eblekar: eblekarSrc,
   pizdoglyad: pizdoglyadIdleSrc,
+};
+
+export const PEOPLE_UNIT_SRCS: Record<string, string> = {
+  soldier: peopleSoldierSrc,
+  bmp: peopleBmpSrc,
+  sniper: peopleSniperSrc,
+  partizan: peopleSoldierSrc,
 };
 
 export const CHAMPIGNEB_EXPL_FRAME_SRCS: string[] = [

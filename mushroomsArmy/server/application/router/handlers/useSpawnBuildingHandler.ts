@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import CONFIG from '../../../config';
+import { IAnswer, IMediator } from '../../types/global';
 
 const VALID_BUILDING_TYPES = ['vzryvomor', 'sporovaya_bashnya'];
 
-export const useSpawnBuildingHandler = (mediator: any, answer: any) =>
+export const useSpawnBuildingHandler = (mediator: IMediator, answer: IAnswer) =>
     (req: Request, res: Response): void => {
         const { armyGuid, type, x, y } = req.body;
 

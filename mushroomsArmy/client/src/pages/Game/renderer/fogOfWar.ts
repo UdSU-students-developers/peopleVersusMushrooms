@@ -209,8 +209,13 @@ export function syncFogRevealTracking(map: MapTile[][]): void {
     for (let x = 0; x < cols; x++) {
       const prevT = fogPrevMap[y][x];
       const currT = coerceTerrainCell(map[y][x]);
+      const key = `${x},${y}`;
       if (prevT === null && currT !== null) {
-        fogRevealAt.set(`${x},${y}`, performance.now());
+        if (exploredMask?.[y]?.[x] === true) {
+          fogRevealAt.delete(key);
+        } else {
+          fogRevealAt.set(key, performance.now());
+        }
       }
     }
   }

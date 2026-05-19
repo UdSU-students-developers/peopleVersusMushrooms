@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import CONFIG from '../../../config';
+import { IAnswer, IMediator } from '../../types/global';
 
-export const useStartGameHandler = (mediator: any, answer: any) =>
+export const useStartGameHandler = (mediator: IMediator, answer: IAnswer) =>
     (req: Request, res: Response): void => {
         const { armyGuid, mushroomsArmy, mapGuid, map, buildings, peopleArmy } = req.body;
 

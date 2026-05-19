@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import CONFIG from '../../../config';
+import { IAnswer, IMediator } from '../../types/global';
 
 const VALID_UNIT_TYPES = ['sporomet', 'champigneb', 'eblekar', 'pizdoglyad'];
 
-export const useSpawnUnitHandler = (mediator: any, answer: any) =>
+export const useSpawnUnitHandler = (mediator: IMediator, answer: IAnswer) =>
     (req: Request, res: Response): void => {
         const { armyGuid, type, x, y } = req.body;
 

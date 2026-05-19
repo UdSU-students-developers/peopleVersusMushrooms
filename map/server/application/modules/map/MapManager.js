@@ -51,6 +51,14 @@ class MapManager extends BaseManager {
         return Object.keys(map.playerGuids).find(role => map.playerGuids[role] === userGuid);
     }
 
+    _emit(MESSAGE, map, result) {
+        if (map.playerGuids.spectator) {
+            const spectatorGuid = map.playerGuids.spectator;
+            const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, spectatorGuid);
+            this.io.to(user.socketId).emit(MESSAGE, this.answer.good(result));
+        }
+    }
+
     _updateEntities(data, method) {
         const { mapGuid, userGuid, entities } = data;
         // проверяем, что карта с таким гуидом есть
@@ -61,11 +69,7 @@ class MapManager extends BaseManager {
         if (!role) return this.answer.bad(3003);
 
         entities.forEach(entity => map[method]({ ...entity, role }));
-        if (map.playerGuids.spectator) {
-            const spectatorGuid = map.playerGuids.spectator;
-            const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, spectatorGuid);
-            this.io.to(user.socketId).emit(MESSAGES.UPDATE_MAP, map.get())
-        }
+        this._emit(MESSAGES.UPDATE_MAP, map, map.get());
         return true;
     }
 
@@ -96,6 +100,7 @@ class MapManager extends BaseManager {
         map.playerGuids = { ...playerGuids };
         //сообщить всем сервисам, что игра началась и сообщить guid карты
         this.sendToAll(URLS.START_GAME, { mapGuid: lobbyGuid, ...playerGuids });
+        this._emit(MESSAGES.START_GAME, map, true);
     }
 
     //TRIGGERS

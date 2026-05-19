@@ -48,20 +48,25 @@ class ArmyManager extends BaseManager {
         if (!army?.mapGuid) {
             return;
         }
-        // послать в карту И в экономику изменение положения юнитов (просто послать юниты)
-        //...
+
+        // отправить позиции наших юнитов на карту
+        const entities = army.units
+            .filter(u => typeof u.get === 'function')
+            .map(u => {
+                const s = u.get();
+                return { guid: s.guid, x: s.x, y: s.y, type: s.type, visibility: s.visible };
+            });
+        await this.sendToMap(URLS.UPDATE_UNITS, { mapGuid: army.mapGuid, userGuid: guid, entities });
+
         // запросить видимость
-        const visibility = await this.sendToMap(`${URLS.GET_VISIBILITY}`, { mapGuid: army.mapGuid, userGuid: guid });
+        const visibility = await this.sendToMap(URLS.GET_VISIBILITY, { mapGuid: army.mapGuid, userGuid: guid });
         if (visibility) {
             army.setVisibility(visibility);
         }
 
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
         if (user) {
-            this.io.to(user.socketId).emit(
-                UPDATE_ARMY,
-                this.answer.good(army.get())
-            );
+            this.io.to(user.socketId).emit(UPDATE_ARMY, this.answer.good(army.get()));
         }
     }
 

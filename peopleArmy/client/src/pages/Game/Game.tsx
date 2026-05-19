@@ -44,7 +44,8 @@ const CANVAS_WRAP_PAD_PX = 40;
 const ZOOM_DEFAULT = 1;
 const ZOOM_MIN = 0.15;
 const ZOOM_MAX = 4.0;
-const ZOOM_STEP = 0.15;
+/** Мультипликативный шаг зума — как в map-клиенте (20% за шаг колёсика) */
+const ZOOM_FACTOR = 0.2;
 
 /** Типы клеток рельефа (как в map/server/.../MapConfig.js TILES) */
 const TILE = {
@@ -442,16 +443,16 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
         if (!wrap) return;
         const onWheel = (e: WheelEvent) => {
             e.preventDefault();
-            const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
-            const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomRef.current + delta));
+            const factor = e.deltaY < 0 ? 1 + ZOOM_FACTOR : 1 - ZOOM_FACTOR;
+            const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomRef.current * factor));
             applyZoom(next);
         };
         wrap.addEventListener('wheel', onWheel, { passive: false });
         return () => wrap.removeEventListener('wheel', onWheel);
     }, [applyZoom]);
 
-    const zoomIn  = useCallback(() => applyZoom(Math.min(ZOOM_MAX, zoomRef.current + ZOOM_STEP)), [applyZoom]);
-    const zoomOut = useCallback(() => applyZoom(Math.max(ZOOM_MIN, zoomRef.current - ZOOM_STEP)), [applyZoom]);
+    const zoomIn  = useCallback(() => applyZoom(Math.min(ZOOM_MAX, zoomRef.current * (1 + ZOOM_FACTOR))), [applyZoom]);
+    const zoomOut = useCallback(() => applyZoom(Math.max(ZOOM_MIN, zoomRef.current * (1 - ZOOM_FACTOR))), [applyZoom]);
     const zoomReset = useCallback(() => applyZoom(ZOOM_DEFAULT), [applyZoom]);
 
     const zoomPercent = useMemo(() => Math.round(zoom / ZOOM_DEFAULT * 100), [zoom]);

@@ -39,7 +39,7 @@ class Map {
     get() {
         return {
             buildings: this.buildings.map(building => building),
-            units: this.buildings.map(unit => unit),
+            units: this.units.map(unit => unit),
         };
     }
 
@@ -85,8 +85,8 @@ class Map {
                 ) && (
                         vis.y[0] <= pos.y[0] && pos.y[0] <= vis.y[1] ||
                         vis.y[0] <= pos.y[1] && pos.y[1] <= vis.y[1]
-                    ));
-                {
+                    )
+                ) {
                     visibleEntities.push(entity);
                     break;
                 }
@@ -122,9 +122,10 @@ class Map {
 
     getVisbileSourcesByRole(role) {
         const roleEntities = [];
-        [...this.units, ...this.buildings].forEach(entity => {
-            if (entity.role === role) {
-                roleEntities.push(entity);
+        this.units.forEach(unit => {
+            if (unit.role === role) {
+            //if (unit.role === role && ['mushroomWorker', 'humanWorker'].includes(unit.type)) {
+                roleEntities.push(unit);
             }
         });
         const sources = this.getVisibleEntities(this.sources, roleEntities).map(source => source.get());

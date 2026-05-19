@@ -143,10 +143,26 @@ class ArmyManager extends BaseManager {
         return this.answer.good(result.data);
     }
 
-    async damageMushroomsUnit({ armyGuid="123efthgfrds", unitGuid, amount }) {
-        if (!armyGuid || !unitGuid || !Number.isFinite(Number(amount))) {
+    async damageMushroomsUnit({ armyGuid, economyGuid, unitGuid, amount, targetKind }) {
+        if (!unitGuid || !Number.isFinite(Number(amount))) {
             return null;
         }
+
+        if (targetKind === 'building') {
+            if (!economyGuid) {
+                return null;
+            }
+            return this.sendToMushroomsEconomy(URLS.APPLY_DAMAGE, {
+                economyGuid,
+                guid: unitGuid,
+                damage: Number(amount),
+            });
+        }
+
+        if (!armyGuid) {
+            return null;
+        }
+
         return this.sendToMushroomsArmy('/takeDamage', {
             armyGuid,
             unitGuid,

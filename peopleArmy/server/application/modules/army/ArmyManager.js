@@ -25,7 +25,6 @@ class ArmyManager extends BaseManager {
         // mediator trigger setters
         this.mediator.set(this.TRIGGERS.CREATE_UNIT, (data) => this.createUnit(data));
         this.mediator.set(this.TRIGGERS.UNIT_TAKE_DAMAGE, (data) => this.unitTakeDamage(data));
-        this.mediator.set(this.TRIGGERS.MOVE_UNIT, (data) => this.unitMove(data));
     }
 
     async loadUnitTypes() {
@@ -142,30 +141,6 @@ class ArmyManager extends BaseManager {
         }
 
         return this.answer.good(result.data);
-    }
-
-    unitMove(data) {
-        const userGuid = data?.userGuid;
-        const unitGuid = data?.unitGuid;
-        const x = Number(data?.x);
-        const y = Number(data?.y);
-        if (!userGuid || !unitGuid || !Number.isFinite(x) || !Number.isFinite(y)) {
-            return this.answer.bad(400);
-        }
-        const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, userGuid);
-        if (!user || !user?.isLogin()) {
-            return this.answer.bad(11);
-        }
-        const army = this.army[userGuid];
-        if (!army) {
-            return this.answer.bad(400);
-        }
-        const unit = army.units.find(unit => unit.guid === unitGuid);
-        if (!unit) {
-            return this.answer.bad(400);
-        }
-        unit.setTarget(x, y);
-        return this.answer.good(true);
     }
 
     async damageMushroomsUnit({ armyGuid="123efthgfrds", unitGuid, amount }) {

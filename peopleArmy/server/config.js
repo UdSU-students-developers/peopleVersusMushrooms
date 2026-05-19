@@ -27,7 +27,6 @@ const CONFIG = {
 
             CREATE_UNIT: "CREATE_UNIT",           // создать юнита (см. ArmyManager)
             UNIT_TAKE_DAMAGE: "UNIT_TAKE_DAMAGE", // нанести урон юниту (см. ArmyManager)
-            MOVE_UNIT: "MOVE_UNIT", // переместить юнита (см. ArmyManager) 
         },
     },
 

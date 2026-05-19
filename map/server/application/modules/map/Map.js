@@ -122,9 +122,10 @@ class Map {
 
     getVisbileSourcesByRole(role) {
         const roleEntities = [];
-        [...this.units, ...this.buildings].forEach(entity => {
-            if (entity.role === role) {
-                roleEntities.push(entity);
+        this.units.forEach(unit => {
+            if (unit.role === role) {
+                //if (unit.role === role && ['mushroomWorker', 'humanWorker'].includes(unit.type)) {
+                roleEntities.push(unit);
             }
         });
         const sources = this.getVisibleEntities(this.sources, roleEntities).map(source => source.get());
@@ -134,15 +135,16 @@ class Map {
     updateUnit(unit) {
         // ищем юнита по гуиду
         const unitIndex = this.units.findIndex(elem => unit.guid === elem.guid);
-        if (unit.hp !== undefined && Number(unit.hp) <= 0) {
-            if (unitIndex + 1) {
-                this.units.splice(unitIndex, 1);
-            }
-            return;
-        }
         if (unitIndex + 1) {
-            this.units[unitIndex].x = unit.x;
-            this.units[unitIndex].y = unit.y;
+            const unitInArray = this.units[unitIndex]
+            // если нашелся и не изменился - считаем убитым
+            if (unit.x === unitInArray.x && unit.y === unitInArray.y) {
+                this.units.splice(unitIndex, 1);
+            } else {
+                // если нашелся и изменился - передвинулся
+                unitInArray.x = unit.x;
+                unitInArray.y = unit.y;
+            }
         } else {
             // не нашли - добавляем
             this.units.push(
@@ -154,15 +156,9 @@ class Map {
     updateBuilding(building) {
         // ищем юнита по гуиду
         const buildingIndex = this.buildings.findIndex(elem => building.guid === elem.guid);
-        if (building.hp !== undefined && Number(building.hp) <= 0) {
-            if (buildingIndex + 1) {
-                this.buildings.splice(buildingIndex, 1);
-            }
-            return;
-        }
         if (buildingIndex + 1) {
-            this.buildings[buildingIndex].x = building.x;
-            this.buildings[buildingIndex].y = building.y;
+            // если нашлось - удаляем
+            this.buildings.splice(buildingIndex, 1);
         } else {
             // не нашли - добавляем
             this.buildings.push(

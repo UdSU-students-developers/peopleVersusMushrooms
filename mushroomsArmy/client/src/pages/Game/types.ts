@@ -24,6 +24,10 @@ export type Unit = {
   isHealing?: boolean;          
 };
 
+export type EnemyUnit = Omit<Unit, 'type'> & {
+  type: string;
+};
+
 /**
  * Здание (цель для армии грибов)
  */
@@ -66,6 +70,7 @@ export type Projectile = {
 export type GameState = {
   map: MapTile[][];
   units: Unit[];
+  enemyUnits?: EnemyUnit[];
   buildings: Building[];
   slimePuddles: SlimePuddle[]; 
   projectiles: Projectile[];

@@ -185,6 +185,8 @@ class ArmyManager extends BaseManager {
                 this.SOCKET.START_GAME,
                 this.answer.good({ map })
             );
+            // Отправить начальное состояние армии сразу после старта
+            await this.updateArmyCallback(guid, null);
         }
     }
 

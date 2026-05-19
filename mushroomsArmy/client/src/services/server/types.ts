@@ -120,6 +120,7 @@ export type TMapData = (number | null)[][];
 export type TArmyState = {
     map: TMapData;
     units: TUnit[];
+    enemyUnits?: TUnit[];
     buildings: TBuilding[];
     slimePuddles: TSlimePool[];
     projectiles: TProjectile[];

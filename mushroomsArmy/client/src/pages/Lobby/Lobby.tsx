@@ -37,7 +37,6 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
 
     const [lobbies, setLobbies] = useState<ILobby[]>([]);
     const [currentLobby, setCurrentLobby] = useState<ILobby | null>(null);
-    const [isReady, setIsReady] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [newLobbyName, setNewLobbyName] = useState('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -102,24 +101,21 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
 
         const handleLobbyUpdated = (data?: unknown) => {
             const lobby = data as ILobby | null | undefined;
-            if (!lobby) return;
-
-            setCurrentLobby(lobby);
-
-            const myGuid = user?.guid;
-            if (!myGuid) return;
-
-            const roles = Object.keys(lobby.playersGuids) as TLobbyRole[];
-            const myRole = roles.find((role) => lobby.playersGuids[role] === myGuid);
-            if (!myRole) return;
-
-            setIsReady(Boolean(lobby.playersIsReady?.[myRole]));
+            if (lobby?.lobbyGuid) setCurrentLobby(lobby);
         };
 
         const handleLobbiesListUpdated = (data?: unknown) => {
             const list = data as ILobby[] | null | undefined;
             if (!Array.isArray(list)) return;
             setLobbies(list);
+
+            const myGuid = user?.guid;
+            if (!myGuid) return;
+
+            const joinedLobby = list.find((lobby) =>
+                Object.values(lobby.playersGuids).includes(myGuid)
+            );
+            if (joinedLobby) setCurrentLobby(joinedLobby);
         };
 
         const handleCreateLobby = async () => {
@@ -132,7 +128,6 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
 
         const handleLeaveLobby = () => {
             setCurrentLobby(null);
-            setIsReady(false);
         };
 
         const handleSetReady = async (data?: unknown) => {
@@ -214,7 +209,6 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     };
 
     const handleLeaveLobby = () => {
-        setIsReady(false);
         server.leaveLobby();
     };
 
@@ -237,6 +231,7 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     if (currentLobby) {
         const myGuid = user?.guid ?? null;
         const myRole = LOBBY_ROLES.find((role) => currentLobby.playersGuids[role] === myGuid) ?? null;
+        const isReady = Boolean(myRole && currentLobby.playersIsReady[myRole]);
 
         return (
             <div className="lobby">

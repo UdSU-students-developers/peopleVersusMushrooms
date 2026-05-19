@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import CONFIG from '../../../config';
+import { IAnswer, IMediator } from '../../types/global';
 
-export const useTakeDamageHandler = (mediator: any, answer: any) =>
+export const useTakeDamageHandler = (mediator: IMediator, answer: IAnswer) =>
     (req: Request, res: Response): void => {
         const { armyGuid, unitGuid, amount } = req.body;
 

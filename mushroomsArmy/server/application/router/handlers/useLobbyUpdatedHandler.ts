@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
+import { IAnswer, IMediator } from '../../types/global';
 
-export const useLobbyUpdatedHandler = (mediator: any, answer: any) =>
+export const useLobbyUpdatedHandler = (mediator: IMediator, answer: IAnswer) =>
     (req: Request, res: Response): void => {
         const { lobbies } = req.body;
         if (!lobbies) {

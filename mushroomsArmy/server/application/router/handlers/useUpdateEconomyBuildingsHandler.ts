@@ -1,13 +1,14 @@
 import { Request, Response } from 'express';
 import CONFIG from '../../../config';
 import { TBuildingInput } from '../../army/Army';
+import { IAnswer, IMediator } from '../../types/global';
 
 type TBody = {
     armyGuid: string;
     buildings: TBuildingInput[];
 };
 
-export const useUpdateEconomyBuildingsHandler = (mediator: any, answer: any) => {
+export const useUpdateEconomyBuildingsHandler = (mediator: IMediator, answer: IAnswer) => {
     return (req: Request, res: Response) => {
         const { armyGuid, buildings } = req.body as TBody;
 

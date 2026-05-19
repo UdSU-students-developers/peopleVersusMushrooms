@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import SporovayaBashnya from './SporovayaBashnya';
 import Unit from '../Units';
+import { TMap } from '../../Army';
 
 const defaultOptions = {
     guid: 'test-sporovaya-bashnya-1',
@@ -70,7 +71,7 @@ describe('SporovayaBashnya', () => {
             takeDamage: jest.fn() 
         } as unknown as Unit; 
         bashnya.takeDamage(100);
-        bashnya.update([enemy], [] as any, 5);
+        bashnya.update([enemy], [] as TMap, 5);
         expect(enemy.takeDamage).not.toHaveBeenCalled();
     });
 });

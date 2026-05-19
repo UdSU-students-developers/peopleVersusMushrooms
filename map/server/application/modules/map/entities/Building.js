@@ -27,11 +27,19 @@ class Building extends Unit {
         }
     }
 
-    getVisibleRange() {
+    getRange(range) {
         return {
-            x: [this.x - this.visibility, this.x + this.visibility + this.size - 1],
-            y: [this.y - this.visibility, this.y + this.visibility + this.size - 1],
-        }
+            x: [this.x - range, this.x + range + this.size - 1],
+            y: [this.y - range, this.y + range + this.size - 1],
+        };
+    }
+
+    getVisibleRange() {
+        return this.getRange(this.visibility);
+    }
+
+    getVisibleSoursesRange() {
+        return this.getRange(this.soursesVisibility);
     }
 }
 

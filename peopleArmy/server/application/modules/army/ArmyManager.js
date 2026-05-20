@@ -42,7 +42,7 @@ class ArmyManager extends BaseManager {
     }
 
     /* PRIVATE */
-    async updateArmyCallback(guid, data) {
+    async updateArmyCallback(guid) {
         const army = this.army[guid];
         if (!army?.mapGuid) {
             return;
@@ -143,19 +143,33 @@ class ArmyManager extends BaseManager {
         return this.answer.good(result.data);
     }
 
-    async damageMushroomsUnit({ armyGuid, economyGuid, unitGuid, amount, targetKind }) {
+    async damageMushroomsUnit({ armyGuid, economyGuid, unitGuid, amount, targetKind, type }) {
         if (!unitGuid || !Number.isFinite(Number(amount))) {
             return null;
         }
 
+        const sanitizedAmount = Number(amount);
+
         if (targetKind === 'building') {
+            const buildingType = String(type || '').toLowerCase();
+            // башня и взрывомор — здания mushroomsArmy, не economy
+            if (buildingType === 'sporovaya_bashnya' || buildingType === 'vzryvomor') {
+                if (!armyGuid) {
+                    return null;
+                }
+                return this.sendToMushroomsArmy('/takeDamage', {
+                    armyGuid,
+                    unitGuid,
+                    amount: sanitizedAmount,
+                });
+            }
             if (!economyGuid) {
                 return null;
             }
             return this.sendToMushroomsEconomy(URLS.APPLY_DAMAGE, {
                 economyGuid,
                 guid: unitGuid,
-                damage: Number(amount),
+                damage: sanitizedAmount,
             });
         }
 
@@ -166,7 +180,7 @@ class ArmyManager extends BaseManager {
         return this.sendToMushroomsArmy('/takeDamage', {
             armyGuid,
             unitGuid,
-            amount: Number(amount),
+            amount: sanitizedAmount,
         });
     }
 
@@ -193,7 +207,7 @@ class ArmyManager extends BaseManager {
             }
             this.army[guid] = new Army({ guids, mapGuid, map, buildings: [], unitTypes: this.unitTypes, common: this.common, guid,
                 callbacks: {
-                    update: (guid, data) => this.updateArmyCallback(guid, data),
+                    update: (guid) => this.updateArmyCallback(guid),
                     takeDamage: (payload) => this.damageMushroomsUnit(payload),
                 }
             });
@@ -201,8 +215,7 @@ class ArmyManager extends BaseManager {
                 this.SOCKET.START_GAME,
                 this.answer.good({ map })
             );
-            // Отправить начальное состояние армии сразу после старта
-            await this.updateArmyCallback(guid, null);
+            await this.updateArmyCallback(guid);
         }
     }
 
@@ -212,7 +225,6 @@ class ArmyManager extends BaseManager {
         }
         this.army[guid].destructor();
         delete this.army[guid];
-        this.updateArmyCallback(guid, { units: [] });
         console.log(`армия с guid: ${guid} уничтожена`);
     }
 

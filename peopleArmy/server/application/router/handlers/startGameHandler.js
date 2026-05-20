@@ -7,6 +7,7 @@ module.exports = (mediator, answer) => {
         }
 
         const { START_GAME } = mediator.getEventTypes();
+        console.log(mapGuid, guids);
         mediator.call(START_GAME, { mapGuid, guids });
         res.json(answer.good(true));
     };

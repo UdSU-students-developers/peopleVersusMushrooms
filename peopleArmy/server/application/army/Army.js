@@ -6,6 +6,11 @@ const Partizan = require("./entities/Partizan");
 
 const { INTERVAL } = GLOBAL_CONFIG;
 
+const BUILDING_MAX_HP = {
+    sporovaya_bashnya: 160,
+    vzryvomor: 70,
+};
+
 class Army {
     constructor({ guids = {}, startPoint = null, map = null, buildings = [], unitTypes = {}, mapGuid = null, common, callbacks = {}, guid }) {
         this.guids = {};
@@ -21,6 +26,7 @@ class Army {
         this.buildings = buildings; // постройки на карте
         this.enemyUnits = []; // юниты-враги
         this.enemyBuildings = []; // здания-враги
+        this.destroyedEnemyBuildingGuids = new Set(); // уничтожены нами — не показывать даже если карта ещё отдаёт
 
         this.unitTypes = unitTypes;
 
@@ -42,7 +48,16 @@ class Army {
         return {
             units: this.units.map((u) => (typeof u.get === 'function' ? u.get() : u)),
             enemyUnits: this.enemyUnits,
+            enemyBuildings: this.enemyBuildings.filter((b) => Army._isBuildingAlive(b)),
+            destroyedEnemyBuildingGuids: [...this.destroyedEnemyBuildingGuids],
         };
+    }
+
+    static _isBuildingAlive(b) {
+        if (!b || typeof b.guid !== 'string') return false;
+        if (b.isAlive === false) return false;
+        if (typeof b.hp === 'number' && b.hp <= 0) return false;
+        return true;
     }
 
     _initMap(map = null) {
@@ -58,16 +73,66 @@ class Army {
         this.enemyUnits = [];
     }
 
+    /**
+     * Обновляет врагов по ответу map GET_VISIBILITY (ArmyManager → updateArmyCallback).
+     *
+     * units — видимые вражеские юниты (грибы). Список каждый тик полностью заменяем:
+     * юниты двигаются, состав видимости меняется.
+     *
+     * buildings — видимые вражеские здания (башня, взрывомор, постройки economy).
+     * После фикса карты (instanceof Building) они приходят в buildings, а не в units.
+     *
+     * destroyedEnemyBuildingGuids — guid зданий, которые мы уже «убили» локально
+     * (_markBuildingDamaged). Карта может ещё отдавать их в buildings, т.к. при смерти
+     * здание не удаляется из map.buildings (UPDATE_BUILDINGS шлёт только живых).
+     * Такие guid отфильтровываем, чтобы клиент не рисовал труп.
+     *
+     * hp — с карты не приходит; если здание уже было в enemyBuildings, подставляем
+     * накопленный hp с прошлого тика (учёт урона от shotUnits).
+     */
     setVisibility({ units = [], buildings = [] } = {}) {
         this.enemyUnits = Array.isArray(units) ? units : [];
-        this.enemyBuildings = Array.isArray(buildings) ? buildings : [];
+
+        const prevHpByGuid = new Map(
+            this.enemyBuildings.map((b) => [b.guid, b.hp]),
+        );
+        const incoming = Array.isArray(buildings) ? buildings : [];
+        this.enemyBuildings = incoming
+            .filter((b) => b?.guid && !this.destroyedEnemyBuildingGuids.has(b.guid))
+            .map((b) => {
+                const trackedHp = prevHpByGuid.get(b.guid);
+                if (typeof trackedHp === 'number') {
+                    return { ...b, hp: trackedHp };
+                }
+                return b;
+            });
+
         this.updated = true;
+    }
+
+    _markBuildingDamaged(guid, type, amount) {
+        const index = this.enemyBuildings.findIndex((b) => b.guid === guid);
+        if (index < 0) {
+            return;
+        }
+        const building = this.enemyBuildings[index];
+        const maxHp = BUILDING_MAX_HP[String(type || '').toLowerCase()] ?? 100;
+        let hp = Number.isFinite(Number(building.hp)) ? Number(building.hp) : maxHp;
+        hp -= Number(amount) || 0;
+
+        if (hp <= 0) {
+            this.destroyedEnemyBuildingGuids.add(guid);
+            this.enemyBuildings.splice(index, 1);
+            return;
+        }
+
+        this.enemyBuildings[index] = { ...building, hp };
     }
 
     // Возвращает все цели: здания и юниты, помеченные targetKind
     getShootableTargets() {
         const buildings = this.enemyBuildings
-            .filter((b) => b && typeof b.guid === 'string')
+            .filter((b) => Army._isBuildingAlive(b))
             .map((b) => ({
                 ...b,
                 hp: Number.isFinite(Number(b.hp)) ? Number(b.hp) : 1,
@@ -244,7 +309,11 @@ class Army {
         const range = Number(unit.range) || 0;
         const rangeSquared = range * range;
         return units.filter((enemy) => {
-            if (!enemy || enemy.isAlive === false || typeof enemy.hp !== 'number' || enemy.hp <= 0) {
+            if (!enemy || enemy.isAlive === false) {
+                return false;
+            }
+            // hp может отсутствовать если цель пришла с карты (карта не хранит hp)
+            if (typeof enemy.hp === 'number' && enemy.hp <= 0) {
                 return false;
             }
             return this.getTargetDistanceSquared(unit, enemy) <= rangeSquared;
@@ -261,8 +330,8 @@ class Army {
             return;
         }
 
-        const armyGuid = this.guids?.mushroomsArmy;
-        const economyGuid = this.guids?.mushroomsEconomy;
+        const armyGuid = this.guids.mushroomsArmy;
+        const economyGuid = this.guids.mushroomsEconomy;
         const prefersBuildings = (type) => type === 'partizan' || type === 'bmp';
 
         for (const unit of this.units) {
@@ -279,9 +348,8 @@ class Army {
                 continue;
             }
 
-            // всегда бьём наислабейшего в пуле
-            const target = pool.reduce((weakest, t) => t.hp < weakest.hp ? t : weakest);
-
+            // бьём наислабейшего; если hp не известен — считаем его бесконечным
+            const target = pool.reduce((weakest, t) => (t.hp ?? Infinity) < (weakest.hp ?? Infinity) ? t : weakest);
             const amount = Number(unit.damage) || 1;
             await this.callbacks.takeDamage({
                 armyGuid,
@@ -289,7 +357,12 @@ class Army {
                 unitGuid: target.guid,
                 amount,
                 targetKind: target.targetKind,
+                type: target.type,
             });
+
+            if (target.targetKind === 'building') {
+                this._markBuildingDamaged(target.guid, target.type, amount);
+            }
         }
     }
 
@@ -312,16 +385,15 @@ class Army {
     }
 
     async update() {
+        console.log(this.guids.mushroomsArmy, this.guids.mushroomsEconomy);
         // 1. выстрелить юнитами по врагам
         await this.shotUnits();
         this.setUnitsTarget();
         // 2. сходить юнитами
         this.moveUnits();
-
-        if (this.updated) {
-            this.updated = false;
-            this.callbacks.update(this.guid, this.get());
-        }
+        this.updated = false;
+        // 3. обновить видимость и отправить состояние клиенту каждый такт
+        this.callbacks.update(this.guid);
     }
 }
 

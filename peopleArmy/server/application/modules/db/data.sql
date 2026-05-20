@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS unit_types (
 );
 
 INSERT OR REPLACE INTO unit_types (type, hp, speed, range, visible, damage) VALUES
-  ('soldier', 10,  1,  3,  5,  3),
-  ('bmp',    100,  3,  5,  3, 25),
-  ('sniper',  10,  1, 12, 15,  8),
-  ('partizan', 10, 4,  8, 10,  5);
+  ('soldier',  20, 1,  3,  50,  5),
+  ('bmp',     130, 3,  5,  70, 20),
+  ('sniper',   18, 1, 12, 150, 22),
+  ('partizan', 72, 4,  8, 100, 14);

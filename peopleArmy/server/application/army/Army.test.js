@@ -304,6 +304,54 @@ describe('shotUnits — атака наислабейшего', () => {
 
 // ─── shotUnits: параметры колбэка ─────────────────────────────────────────────
 
+describe('уничтоженные здания', () => {
+    let army;
+    let takeDamage;
+
+    beforeEach(() => {
+        takeDamage = jest.fn().mockResolvedValue(true);
+        army = makeArmy({ callbacks: { update: jest.fn(), takeDamage } });
+    });
+
+    test('после смерти здание пропадает из get().enemyBuildings', async () => {
+        army.units = [makeUnit({ type: 'partizan', x: 0, y: 0, range: 5, damage: 200 })];
+        army.enemyBuildings = [makeBuilding({
+            guid: 'tower-1',
+            type: 'sporovaya_bashnya',
+            x: 1,
+            y: 0,
+            hp: 160,
+        })];
+
+        await army.shotUnits();
+
+        expect(army.get().enemyBuildings).toHaveLength(0);
+        expect(army.destroyedEnemyBuildingGuids.has('tower-1')).toBe(true);
+    });
+
+    test('setVisibility не возвращает guid из destroyedEnemyBuildingGuids', () => {
+        army.destroyedEnemyBuildingGuids.add('dead-tower');
+        army.setVisibility({
+            units: [],
+            buildings: [makeBuilding({ guid: 'dead-tower', type: 'sporovaya_bashnya' })],
+        });
+        expect(army.enemyBuildings).toHaveLength(0);
+    });
+
+    test('get() отдаёт destroyedEnemyBuildingGuids для клиента', async () => {
+        army.units = [makeUnit({ type: 'partizan', x: 0, y: 0, range: 5, damage: 200 })];
+        army.enemyBuildings = [makeBuilding({
+            guid: 'tower-1',
+            type: 'sporovaya_bashnya',
+            x: 1,
+            y: 0,
+            hp: 160,
+        })];
+        await army.shotUnits();
+        expect(army.get().destroyedEnemyBuildingGuids).toEqual(['tower-1']);
+    });
+});
+
 describe('shotUnits — параметры takeDamage', () => {
     let army;
     let takeDamage;
@@ -322,13 +370,30 @@ describe('shotUnits — параметры takeDamage', () => {
         expect(takeDamage).toHaveBeenCalledWith(expect.objectContaining({ armyGuid: 'army-guid' }));
     });
 
-    test('передаёт economyGuid из guids.mushroomsEconomy', async () => {
+    test('передаёт economyGuid для здания economy (не army)', async () => {
         army.units = [makeUnit({ type: 'partizan', x: 0, y: 0, range: 5, damage: 7 })];
-        army.enemyBuildings = [makeBuilding({ guid: 'b1', x: 1, y: 0, hp: 20 })];
+        army.enemyBuildings = [makeBuilding({ guid: 'b1', type: 'reactor', x: 1, y: 0, hp: 20 })];
 
         await army.shotUnits();
 
-        expect(takeDamage).toHaveBeenCalledWith(expect.objectContaining({ economyGuid: 'eco-guid' }));
+        expect(takeDamage).toHaveBeenCalledWith(expect.objectContaining({
+            economyGuid: 'eco-guid',
+            targetKind: 'building',
+            type: 'reactor',
+        }));
+    });
+
+    test('передаёт armyGuid для sporovaya_bashnya', async () => {
+        army.units = [makeUnit({ type: 'partizan', x: 0, y: 0, range: 5, damage: 7 })];
+        army.enemyBuildings = [makeBuilding({ guid: 'b1', type: 'sporovaya_bashnya', x: 1, y: 0, hp: 20 })];
+
+        await army.shotUnits();
+
+        expect(takeDamage).toHaveBeenCalledWith(expect.objectContaining({
+            armyGuid: 'army-guid',
+            targetKind: 'building',
+            type: 'sporovaya_bashnya',
+        }));
     });
 
     test('amount равен unit.damage', async () => {

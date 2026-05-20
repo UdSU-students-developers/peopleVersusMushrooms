@@ -2,38 +2,12 @@ import React, { useEffect, useLayoutEffect, useRef, useCallback, useState, useMe
 import { IBasePage, PAGES } from '../PageManager';
 import CONFIG from '../../config';
 import './Game.css';
-
-import soldier1Src from '../../assets/units/soldier/soldier1.png';
-import soldier2Src from '../../assets/units/soldier/soldier2.png';
-import soldier3Src from '../../assets/units/soldier/soldier3.png';
-import soldier4Src from '../../assets/units/soldier/soldier4.png';
-import bmp1Src from '../../assets/units/bmp/bmp1.png';
-import bmp2Src from '../../assets/units/bmp/bmp2.png';
-import bmp3Src from '../../assets/units/bmp/bmp3.png';
-import bmp4Src from '../../assets/units/bmp/bmp4.png';
-import bmp5Src from '../../assets/units/bmp/bmp5.png';
-import bmp6Src from '../../assets/units/bmp/bmp6.png';
-import bmp7Src from '../../assets/units/bmp/bmp7.png';
-import bmp8Src from '../../assets/units/bmp/bmp8.png';
-import partizan1Src from '../../assets/units/partizan/partizan1.png';
-import partizan2Src from '../../assets/units/partizan/partizan2.png';
-import sniper1Src from '../../assets/units/sniper/sniper1.png';
-import sniper2Src from '../../assets/units/sniper/sniper2.png';
-import sniper3Src from '../../assets/units/sniper/sniper3.png';
-import sporomet1Src from '../../assets/units/sporomet/sporomet1.png';
-import sporomet2Src from '../../assets/units/sporomet/sporomet2.png';
-import sporomet3Src from '../../assets/units/sporomet/sporomet3.png';
-import champigneb1Src from '../../assets/units/champigneb/champigneb1.png';
-import champigneb2Src from '../../assets/units/champigneb/champigneb2.png';
-import eblekar1Src from '../../assets/units/eblekar/eblekar1.png';
-import eblekar2Src from '../../assets/units/eblekar/eblekar2.png';
-import eblekar3Src from '../../assets/units/eblekar/eblekar3.png';
-import eblekar4Src from '../../assets/units/eblekar/eblekar4.png';
-import eblekar5Src from '../../assets/units/eblekar/eblekar5.png';
-import eblekar6Src from '../../assets/units/eblekar/eblekar6.png';
-import pizdoglyad1Src from '../../assets/units/pizdoglyad/pizdoglyad1.png';
-import pizdoglyad2Src from '../../assets/units/pizdoglyad/pizdoglyad2.png';
-import vzryvomorSrc from '../../assets/units/vzryvomor/frame_0.png';
+import {
+    UNIT_FRAME_SRCS,
+    VZRYVOMOR_BUILDING_SRCS,
+    SPOROVAYA_BASHNYA_SRCS,
+    BUILDING_DEFAULT_SIZE,
+} from './assets';
 
 /** Базовый размер клетки (карта скроллится, если не влезает) */
 const MIN_CELL_PX = 40;
@@ -77,21 +51,22 @@ const COLOR = {
     enemyMushroomBorder: '#e9ddff',
 };
 
-// --- Спрайты юнитов ---
-
-const UNIT_FRAME_SRCS: Record<string, string[]> = {
-    soldier:    [soldier1Src, soldier2Src, soldier3Src, soldier4Src],
-    bmp:        [bmp1Src, bmp2Src, bmp3Src, bmp4Src, bmp5Src, bmp6Src, bmp7Src, bmp8Src],
-    partizan:   [partizan1Src, partizan2Src],
-    sniper:     [sniper1Src, sniper2Src, sniper3Src],
-    sporomet:   [sporomet1Src, sporomet2Src, sporomet3Src],
-    champigneb: [champigneb1Src, champigneb2Src],
-    eblekar:    [eblekar1Src, eblekar2Src, eblekar3Src, eblekar4Src, eblekar5Src, eblekar6Src],
-    pizdoglyad: [pizdoglyad2Src, pizdoglyad1Src],
-    vzryvomor:  [vzryvomorSrc],
-};
-
 const WALK_FRAME_MS = 150;
+const VZRYVOMOR_FRAME_MS = 120;
+
+const buildingImageCache: Record<string, HTMLImageElement> = {};
+function getBuildingImage(key: string, src: string): HTMLImageElement {
+    if (!buildingImageCache[key]) {
+        const img = new Image();
+        img.src = src;
+        buildingImageCache[key] = img;
+    }
+    return buildingImageCache[key];
+}
+const vzryvomorBuildingImgs = VZRYVOMOR_BUILDING_SRCS.map((src, i) =>
+    getBuildingImage(`vzryvomor_b_${i}`, src)
+);
+const bashnyaIdleImg = getBuildingImage('bashnya_idle', SPOROVAYA_BASHNYA_SRCS.idle);
 
 const unitImageCache: Record<string, HTMLImageElement[]> = {};
 const prevUnitPositions = new Map<string, { x: number; y: number }>();
@@ -156,14 +131,38 @@ interface EnemyUnitData {
     y: number;
     hp: number;
     maxHp: number;
-    isAlive: boolean;
+    isAlive?: boolean;
     speed: number;
     attackRange: number;
+}
+
+interface EnemyBuildingData {
+    guid: string;
+    type: string;
+    x: number;
+    y: number;
+    size?: number;
+    hp?: number;
+    isAlive?: boolean;
+}
+
+function isEnemyBuildingAlive(b: EnemyBuildingData): boolean {
+    if (b.isAlive === false) return false;
+    if (typeof b.hp === 'number' && b.hp <= 0) return false;
+    return true;
 }
 
 interface ArmyData {
     units: UnitData[];
     enemyUnits?: EnemyUnitData[];
+    enemyBuildings?: EnemyBuildingData[];
+    /** guid зданий, уничтоженных нашей армией — клиент убирает с карты */
+    destroyedEnemyBuildingGuids?: string[];
+}
+
+function getBuildingSize(b: EnemyBuildingData): number {
+    const type = String(b.type || '').toLowerCase();
+    return Math.max(1, Number(b.size) || BUILDING_DEFAULT_SIZE[type] || 1);
 }
 
 function drawWaterCell(ctx: CanvasRenderingContext2D, px: number, py: number, cell: number) {
@@ -319,7 +318,7 @@ function drawUnit(ctx: CanvasRenderingContext2D, unit: UnitData, cell: number) {
 }
 
 function drawEnemyUnit(ctx: CanvasRenderingContext2D, unit: EnemyUnitData, cell: number) {
-    if (!unit.isAlive || unit.hp <= 0) return;
+    if (unit.isAlive === false || unit.hp <= 0) return;
 
     const cx = unit.x * cell + cell / 2;
     const cy = unit.y * cell + cell / 2;
@@ -347,6 +346,35 @@ function drawEnemyUnit(ctx: CanvasRenderingContext2D, unit: EnemyUnitData, cell:
     ctx.fillRect(barX, barY, barW, barH);
     ctx.fillStyle = '#9c27b0';
     ctx.fillRect(barX, barY, barW * hpPct, barH);
+}
+
+function drawEnemyBuilding(ctx: CanvasRenderingContext2D, b: EnemyBuildingData, cell: number) {
+    if (!isEnemyBuildingAlive(b)) return;
+
+    const size = getBuildingSize(b);
+    const px = b.x * cell;
+    const py = b.y * cell;
+    const pw = size * cell;
+    const ph = size * cell;
+
+    let img: HTMLImageElement | undefined;
+    const type = String(b.type || '').toLowerCase();
+    if (type === 'vzryvomor') {
+        const frameIdx = Math.floor(Date.now() / VZRYVOMOR_FRAME_MS) % vzryvomorBuildingImgs.length;
+        img = vzryvomorBuildingImgs[frameIdx];
+    } else if (type === 'sporovaya_bashnya') {
+        img = bashnyaIdleImg;
+    }
+
+    if (img && isImageDrawable(img) && tryDrawImageScaled(ctx, img, px, py, pw, ph)) {
+        return;
+    }
+
+    ctx.fillStyle = '#6a0dad';
+    ctx.strokeStyle = '#b388ff';
+    ctx.lineWidth = Math.max(1, cell * 0.06);
+    ctx.fillRect(px, py, pw, ph);
+    ctx.strokeRect(px, py, pw, ph);
 }
 
 function isValidMap(map: unknown): map is number[][] {
@@ -381,6 +409,7 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
     const mapRef = useRef<number[][]>([]);
     const unitsRef = useRef<UnitData[]>([]);
     const enemyUnitsRef = useRef<EnemyUnitData[]>([]);
+    const enemyBuildingsRef = useRef<Map<string, EnemyBuildingData>>(new Map());
     const animFrameRef = useRef<number>(0);
     const [unitCount, setUnitCount] = useState(0);
     const [hasMap, setHasMap] = useState(false);
@@ -520,6 +549,7 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
                 canvas.height = h;
             }
             drawMap(ctx, map, cell);
+            enemyBuildingsRef.current.forEach((b) => drawEnemyBuilding(ctx, b, cell));
             enemyUnitsRef.current.forEach((eu) => drawEnemyUnit(ctx, eu, cell));
             unitsRef.current.forEach((unit) => drawUnit(ctx, unit, cell));
 
@@ -556,6 +586,23 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
             }
             if (Array.isArray(data.enemyUnits)) {
                 enemyUnitsRef.current = data.enemyUnits;
+            }
+            if (Array.isArray(data.destroyedEnemyBuildingGuids)) {
+                data.destroyedEnemyBuildingGuids.forEach((guid) => {
+                    if (guid) enemyBuildingsRef.current.delete(guid);
+                });
+            }
+            if (Array.isArray(data.enemyBuildings)) {
+                // Накапливаем увиденные здания: пустой тик с карты не стирает уже показанные.
+                // Убираем только мёртвые (hp) или guid из destroyedEnemyBuildingGuids (выше).
+                data.enemyBuildings.forEach((b: EnemyBuildingData) => {
+                    if (!b?.guid) return;
+                    if (!isEnemyBuildingAlive(b)) {
+                        enemyBuildingsRef.current.delete(b.guid);
+                        return;
+                    }
+                    enemyBuildingsRef.current.set(b.guid, b);
+                });
             }
         };
 

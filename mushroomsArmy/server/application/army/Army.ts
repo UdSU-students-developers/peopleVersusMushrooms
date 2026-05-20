@@ -333,8 +333,11 @@ export class Army {
         });
 
         this.units = this.units.filter(unit => {
-            if (unit.type === 'champigneb' && !unit.isAlive) {
-                return (unit as unknown as Champigneb).slimePuddle.ttl > 0;
+            if (!unit.isAlive) {
+                if (unit.type === 'champigneb') {
+                    return (unit as unknown as Champigneb).slimePuddle.ttl > 0;
+                }
+                return false;
             }
             return true;
         });

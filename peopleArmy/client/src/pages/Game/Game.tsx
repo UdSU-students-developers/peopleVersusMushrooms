@@ -156,7 +156,7 @@ interface EnemyUnitData {
     y: number;
     hp: number;
     maxHp: number;
-    isAlive: boolean;
+    isAlive?: boolean;
     speed: number;
     attackRange: number;
 }
@@ -319,7 +319,7 @@ function drawUnit(ctx: CanvasRenderingContext2D, unit: UnitData, cell: number) {
 }
 
 function drawEnemyUnit(ctx: CanvasRenderingContext2D, unit: EnemyUnitData, cell: number) {
-    if (!unit.isAlive || unit.hp <= 0) return;
+    if (unit.isAlive === false || unit.hp <= 0) return;
 
     const cx = unit.x * cell + cell / 2;
     const cy = unit.y * cell + cell / 2;

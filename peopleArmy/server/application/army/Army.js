@@ -317,11 +317,9 @@ class Army {
         this.setUnitsTarget();
         // 2. сходить юнитами
         this.moveUnits();
-
-        if (this.updated) {
-            this.updated = false;
-            this.callbacks.update(this.guid, this.get());
-        }
+        this.updated = false;
+        // 3. обновить видимость и отправить состояние клиенту каждый такт
+        this.callbacks.update(this.guid);
     }
 }
 

@@ -115,10 +115,10 @@ class Map {
             'getVisibleRange'
         );
         visibleEntities.forEach(entity => {
-            if (entity instanceof Unit) {
-                units.push(entity.get());
-            } else {
+            if (entity instanceof Building) {
                 buildings.push(entity.get());
+            } else {
+                units.push(entity.get());
             }
         });
         return { units, buildings };

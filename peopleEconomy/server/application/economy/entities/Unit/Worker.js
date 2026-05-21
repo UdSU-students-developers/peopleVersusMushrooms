@@ -28,7 +28,6 @@ class Worker extends Unit {
         switch (status) {
             case WORKER_STATUS.FLEE:
                 if (target) {
-                    this.target = target;
                     this.setTarget({ x: target.x, y: target.y });
                 }
                 break;
@@ -40,7 +39,7 @@ class Worker extends Unit {
                 //выбираем место для постройки
                 //строим
             default:
-                this.target = null;
+                this.status = WORKER_STATUS.SEARCH;
                 break;
         }
     }
@@ -50,38 +49,26 @@ class Worker extends Unit {
         return this.status;
     }
 
-    //проверка, нужно ли бежать (есть ли враги в экстрем радиусе)
+    //проверка, надо ли бежать (есть ли враги в экстрем радиусе) ... отдает true если надо, false не надо (врага нет в экстрим радиусе)
     shouldFlee(enemies) {
-        if (!enemies || enemies.length === 0) return false;
-        
-        const extremeRadius = Math.floor(this.visibility * FLEE.RADIUS_RATIO);
-        
-        for (const enemy of enemies) {
-            const dx = Math.abs(this.x - enemy.x);
-            const dy = Math.abs(this.y - enemy.y);
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            if (distance <= extremeRadius) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    //обновление цели для бегства (вроде как должно вызываться экономикой при пересчете)
-    updateTarget(target) {
-        if (this.status === WORKER_STATUS.FLEE && target) {
-            this.target = target;
-            this.setTarget({ x: target.x, y: target.y });
-        }
+        const extremeRadius = Math.floor(this.visibility * CONFIG.ECONOMY.FLEE.DETECTION_RATIO);
+        const enemiesInExtremeRadius = this.getEnemiesInRadius(enemies, extremeRadius);
+        return enemiesInExtremeRadius.length > 0;
     }
 
     //проверка, находится ли точка в радиусе от рабочего
-    _isInRadius(x, y, radius = CONFIG.ECONOMY.UNIT.RADIUS) {
+    _isInRadius(x, y, radius) {
         const dx = Math.abs(this.x - x);
         const dy = Math.abs(this.y - y);
         const distance = Math.sqrt(dx * dx + dy * dy);
         return distance <= radius;
+    }
+
+    //получить всех врагов в заданном радиусе
+    getEnemiesInRadius(enemies, radius) {
+        if (!enemies || enemies.length === 0) return [];
+        
+        return enemies.filter(enemy => this._isInRadius(enemy.x, enemy.y, radius));
     }
 
     //постройка здания
@@ -96,7 +83,7 @@ class Worker extends Unit {
         }
 
         //проверка, что точка находится в радиусе досягаемости
-        if (!this._isInRadius(x, y)) {
+        if (!this._isInRadius(x, y, CONFIG.ECONOMY.UNIT.RADIUS)) {
             return false;
         }
         

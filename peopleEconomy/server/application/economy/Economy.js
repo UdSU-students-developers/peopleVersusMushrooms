@@ -105,92 +105,83 @@ class Economy {
         let sumY = 0;
         
         for (const enemy of enemies) {
-            //вектор от врага к рабочему (противоположное направление)
-            const dx = worker.x - enemy.x;
-            const dy = worker.y - enemy.y;
-            sumX += dx;
-            sumY += dy;
+            sumX += enemy.x;
+            sumY += enemy.y;
         }
         
-        //среднее арифметическое
-        const avgX = sumX / enemies.length;
-        const avgY = sumY / enemies.length;
+        const centerX = sumX / enemies.length;
+        const centerY = sumY / enemies.length;
         
-        //нормализуем
-        const length = Math.sqrt(avgX * avgX + avgY * avgY);
-        if (length === 0) return null;
+        //вектор от центра врагов к рабочему (противоположное направление)
+        const dx = worker.x - centerX;
+        const dy = worker.y - centerY;
         
-        //бежим на 1 клетку в сторону от врагов (нормализованный вектор)
-        const targetX = worker.x + (avgX / length);
-        const targetY = worker.y + (avgY / length);
+        const length = Math.sqrt(dx * dx + dy * dy);
         
-        //округляем и ограничиваем картой
+        //если воркер в центре масс врагов - выбираем случайное направление
+        if (length === 0) {
+            //случайный угол от 0 до 2П
+            const angle = Math.random() * Math.PI * 2;
+            dx = Math.cos(angle);
+            dy = Math.sin(angle);
+        } else {
+            //нормализуем вектор
+            dx /= length;
+            dy /= length;
+        }
+        
+        //бежим в сторону от центра врагов на расстояние = visibility*2
+        const fleeDistance = worker.visibility * 2;
+        const targetX = worker.x + (dx / length) * fleeDistance;
+        const targetY = worker.y + (dy / length) * fleeDistance;
+        
+        //ограничиваем картой
         const maxX = this.map[0].length - 1;
         const maxY = this.map.length - 1;
         
-        return {
+        const target = {
             x: Math.round(Math.min(Math.max(targetX, 0), maxX)),
             y: Math.round(Math.min(Math.max(targetY, 0), maxY))
         };
+        
+        return target;
     }
 
     //обновление статусов воркеров
-    updateWorkersBehavior() {
+    updateWorkersStatus() {
         const enemyUnits = this.getEnemyUnits();
         
         for (const worker of this.workers) {
-            //находим видимых врагов в экстремальном радиусе
-            const visibleEnemies = [];
-            const extremeRadius = Math.floor(worker.visibility * CONFIG.ECONOMY.FLEE.DETECTION_RATIO);
+            //видимые враги
+            const visibleEnemies = worker.getEnemiesInRadius(enemyUnits, worker.visibility);
             
-            for (const enemy of enemyUnits) {
-                //проверяем дистанцию до врага
-                const dx = Math.abs(worker.x - enemy.x);
-                const dy = Math.abs(worker.y - enemy.y);
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                
-                //враг в радиусе видимости
-                if (distance <= worker.visibility) {
-                    visibleEnemies.push(enemy);
-                }
-            }
-            
-            //проверяем, нужно ли бежать (экстремальное расстояние)
+            //враги в экстремальном радиусе
             const shouldFlee = worker.shouldFlee(visibleEnemies);
             
             switch (worker.getStatus()) {
                 case CONFIG.ECONOMY.WORKER_STATUS.FLEE:
                     if (!shouldFlee) {
-                        //врагов нет - возвращаемся в брожение
                         worker.setStatus(CONFIG.ECONOMY.WORKER_STATUS.SEARCH);
                     } else {
-                        //враги есть - обновляем направление бегства
                         const fleeTarget = this._calculateFleeDirection(visibleEnemies, worker);
-                        if (fleeTarget) {
-                            worker.updateTarget(fleeTarget);
-                        }
+                        worker.setStatus(CONFIG.ECONOMY.WORKER_STATUS.FLEE, fleeTarget);
                     }
                     break;
                     
                 case CONFIG.ECONOMY.WORKER_STATUS.SEARCH:
+                    //...
                 case CONFIG.ECONOMY.WORKER_STATUS.BUILD:
+                    //...
                 default:
                     if (shouldFlee) {
-                        //появились враги - переключаемся на бегство
                         const fleeTarget = this._calculateFleeDirection(visibleEnemies, worker);
-                        if (fleeTarget) {
-                            worker.setStatus(CONFIG.ECONOMY.WORKER_STATUS.FLEE, fleeTarget);
-                        }
+                        worker.setStatus(CONFIG.ECONOMY.WORKER_STATUS.FLEE, fleeTarget);
                     }
                     break;
             }
         }
     }
 
-     //проверка, является ли юнит врагом (юниты грибов)
-    _isEnemy(unit) {
-        return unit.type === 'mushroomArmy' || unit.type === 'mushroomEconomy';
-    }
 
     //получить всех вражеских юнитов (вроде от GameManager)
     getEnemyUnits() {
@@ -218,7 +209,7 @@ class Economy {
 
     // 3. переместить юнитов
     moveUnits() {
-        this.workers.forEach(unit => unit.moveOneStep())
+        this.workers.forEach(unit => unit.move())
     }
     
 
@@ -234,7 +225,7 @@ class Economy {
         /************************/
         /* Про рабочих/крестьян */
         // ОБНОВЛЯЕМ СТАТУСЫ ВОРКЕРОВ
-        this.updateWorkersBehavior();
+        this.updateWorkersStatus();
         // 3. переместить юнитов
         this.moveUnits();
         // 4. выдать ресурсы рабочему, если надо

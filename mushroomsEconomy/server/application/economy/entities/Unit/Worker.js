@@ -3,7 +3,7 @@ const CONFIG = require('../../../../config');
 
 const { HP, SPEED, TYPE, VISIBILITY, WANDER_RADIUS } = CONFIG.ECONOMY.GEODEZIST;
 
-class Geodezist extends Unit {
+class Worker extends Unit {
     constructor(options) {
         super({ ...options, type: TYPE, visibility: VISIBILITY, speed: SPEED });
         this.hp = HP;
@@ -105,4 +105,4 @@ class Geodezist extends Unit {
     }
 }
 
-module.exports = Geodezist;
+module.exports = Worker;

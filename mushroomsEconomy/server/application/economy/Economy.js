@@ -9,7 +9,7 @@ const Mycelium = require('./entities/Buildings/Mycelium');
 const SmallReactor = require('./entities/Buildings/SmallReactor');
 const Reactor = require('./entities/Buildings/Reactor');
 const Incubator = require('./entities/Buildings/Incubator');
-const Geodezist = require('./entities/Unit/Geodezist');
+const Worker = require('./entities/Unit/Worker');
 const Mine = require('./entities/Buildings/Mine');
 const Larva = require('./entities/Unit/Larva');
 const Map = require('./entities/Map/Map');
@@ -51,7 +51,7 @@ class Economy {
         this.units = {
             workers: [], // рабочие
             larvae: [],  // личинки
-            geodezists: [], // геодезисты
+            workers: [], // рабочие
         };
 
         this.updatedUnits = [];
@@ -93,7 +93,7 @@ class Economy {
             resources: { ...this.resources },
             units: {
                 larvae: this.units.larvae.map(l => l.get()),
-                geodezists: this.units.geodezists.map(g => g.get()),
+                workers: this.units.workers.map(g => g.get()),
             },
             buildings: {
                 reactors: this.buildings.reactors.map(r => r.get()),
@@ -141,9 +141,15 @@ class Economy {
         this.units.larvae.push(larva);
         this.updatedUnits.push(larva.get());
     }
+
+    mutateLarvaToWorker(lar) {
+        this.units.larvae = this.units.larvae.filter(l => l.guid !== lar.guid);
+
+        this.addWorker(wor.x, wor.y);
+    }
     
-    addGeodesist(x, y) {
-        const geodezist = new Geodezist({
+    addWorker(x, y) {
+        const worker = new Worker({
             x,
             y,
             guid: this.common.guid(),
@@ -151,18 +157,30 @@ class Economy {
             callbacks: {
                 getResources: () => this.map.resources,
                 getBuildings: () => Object.values(this.buildings).flat(),
-                mutateToMine: (geo) => this.mutateGeodesistToMine(geo),
+                mutateToMine: (wor) => this.mutateWorkerToMine(wor),
             },
         });
-        this.units.geodezists.push(geodezist);
-        this.updatedUnits.push(geodezist.get());
+        this.units.workers.push(worker);
+        this.updatedUnits.push(worker.get());
         
     }
 
-    mutateGeodesistToMine(geo) {
-        this.units.geodezists = this.units.geodezists.filter(g => g.guid !== geo.guid);
+    mutateWorkerToMine(wor) {
+        this.units.workers = this.units.workers.filter(w => w.guid !== wor.guid);
 
-        this.addMine(geo.x, geo.y);
+        this.addMine(wor.x, wor.y);
+    }
+
+    mutateWorkerToReactor(wor) {
+        this.units.workers = this.units.workers.filter(w => w.guid !== wor.guid);
+
+        this.addReactor(wor.x, wor.y);
+    }
+
+    mutateWorkerToSmallReactor(wor) {
+        this.units.workers = this.units.workers.filter(w => w.guid !== wor.guid);
+
+        this.addSmallReactor(wor.x, wor.y);
     }
 
     addMine(x, y) {
@@ -323,9 +341,9 @@ class Economy {
             larva.update();
         }
 
-        for (const geodezist of this.units.geodezists) {
-            geodezist.setGrid(grid);
-            geodezist.update();
+        for (const worker of this.units.workers) {
+            worker.setGrid(grid);
+            worker.update();
         }
     }
 
@@ -367,7 +385,7 @@ class Economy {
         // создать грибничку
         this.addMycelium(startPoint.x - 1, startPoint.y - 1);
         this.addReactor(startPoint.x + 3, startPoint.y + 3);
-        this.addGeodesist(startPoint.x-10, startPoint.y)
+        this.addWorker(startPoint.x-10, startPoint.y)
         this.updated = true;
     }
 

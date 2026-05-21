@@ -100,14 +100,14 @@ class GameManager extends BaseManager {
 	}
 	
 	eventApplyDamage(data = {}) {
-		const { unitGuid, damage, userGuid } = data;
+		const { entityGuid, damage, userGuid } = data;
 		const economy = this.economies[userGuid];
 		
 		if (!economy) {
 			return false;
 		}
 		
-		return economy.applyDamage(unitGuid, damage);
+		return economy.applyDamage(entityGuid, damage);
 	}
 	
 	async getRelief(map, guid, mapGuid) {

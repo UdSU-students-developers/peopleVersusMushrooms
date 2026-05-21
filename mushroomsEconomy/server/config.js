@@ -6,7 +6,7 @@ const CONFIG = {
         EVENTS: {
             LOBBY_UPDATED: 'LOBBY_UPDATED',
             START_GAME: 'START_GAME',
-            APPLY_DAMAGE: 'APPLY_DAMAGE',
+            DAMAGE: 'DAMAGE',
             MOVE_UNIT: 'MOVE_UNIT',
         },
         TRIGGERS: {

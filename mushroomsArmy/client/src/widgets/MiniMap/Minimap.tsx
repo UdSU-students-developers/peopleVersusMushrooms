@@ -75,6 +75,15 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
         y: clamp(((u.y + 0.5) / rows) * 100),
       }));
 
+    const enemyUnitDots = (gameState.enemyUnits ?? [])
+      .filter((u) => u.hp > 0)
+      .map((u) => ({
+        guid: u.guid,
+        color: '#e53935',
+        x: clamp(((u.x + 0.5) / cols) * 100),
+        y: clamp(((u.y + 0.5) / rows) * 100),
+      }));
+
     const buildingDots = gameState.buildings
       .filter((b) => b.hp > 0 && b.isAlive !== false)
       .map((b) => ({
@@ -88,7 +97,7 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
         y: clamp(((b.y + (b.sizeY ?? 1) / 2) / rows) * 100),
       }));
 
-    return [...unitDots, ...buildingDots];
+    return [...unitDots, ...enemyUnitDots, ...buildingDots];
   }, [gameState]);
 
   // Позиция и размер рамки камеры на миникарте (в процентах от размера карты)

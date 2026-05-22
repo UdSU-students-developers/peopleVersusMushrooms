@@ -2,15 +2,24 @@ import React, { useEffect, useLayoutEffect, useRef, useCallback, useState, useMe
 import { IBasePage, PAGES } from '../PageManager';
 import CONFIG from '../../config';
 import './Game.css';
+import {
+    UNIT_FRAME_SRCS,
+    VZRYVOMOR_BUILDING_SRCS,
+    SPOROVAYA_BASHNYA_SRCS,
+    BUILDING_DEFAULT_SIZE,
+} from './assets';
 
-/** Максимальный размер клетки при полном зуме */
-const MAX_CELL_PX = 14;
+/** Базовый размер клетки (карта скроллится, если не влезает) */
+const MIN_CELL_PX = 40;
+/** Максимум клетки при зуме */
+const MAX_CELL_PX = 72;
 /** Запас под padding обёртки (см. Game.css .game-canvas-wrap) */
 const CANVAS_WRAP_PAD_PX = 40;
 const ZOOM_DEFAULT = 1;
 const ZOOM_MIN = 0.15;
 const ZOOM_MAX = 4.0;
-const ZOOM_STEP = 0.15;
+/** Мультипликативный шаг зума — как в map-клиенте (20% за шаг колёсика) */
+const ZOOM_FACTOR = 0.2;
 
 /** Типы клеток рельефа (как в map/server/.../MapConfig.js TILES) */
 const TILE = {
@@ -42,15 +51,76 @@ const COLOR = {
     enemyMushroomBorder: '#e9ddff',
 };
 
+const WALK_FRAME_MS = 150;
+const VZRYVOMOR_FRAME_MS = 120;
+
+const buildingImageCache: Record<string, HTMLImageElement> = {};
+function getBuildingImage(key: string, src: string): HTMLImageElement {
+    if (!buildingImageCache[key]) {
+        const img = new Image();
+        img.src = src;
+        buildingImageCache[key] = img;
+    }
+    return buildingImageCache[key];
+}
+const vzryvomorBuildingImgs = VZRYVOMOR_BUILDING_SRCS.map((src, i) =>
+    getBuildingImage(`vzryvomor_b_${i}`, src)
+);
+const bashnyaIdleImg = getBuildingImage('bashnya_idle', SPOROVAYA_BASHNYA_SRCS.idle);
+
+const unitImageCache: Record<string, HTMLImageElement[]> = {};
+const prevUnitPositions = new Map<string, { x: number; y: number }>();
+
+function isImageDrawable(img: HTMLImageElement | undefined): img is HTMLImageElement {
+    return img !== undefined && img.complete && img.naturalWidth > 0;
+}
+
+function tryDrawImageScaled(
+    ctx: CanvasRenderingContext2D,
+    img: HTMLImageElement,
+    dx: number, dy: number, dw: number, dh: number,
+): boolean {
+    try {
+        ctx.drawImage(img, dx, dy, dw, dh);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function getUnitFrames(type: string): HTMLImageElement[] {
+    if (unitImageCache[type]) return unitImageCache[type];
+    const srcs = UNIT_FRAME_SRCS[type];
+    if (!srcs) return [];
+    const imgs = srcs.map(src => Object.assign(new Image(), { src }));
+    unitImageCache[type] = imgs;
+    return imgs;
+}
+
+function getUnitImage(unit: { guid: string; x: number; y: number; type?: string }): HTMLImageElement | undefined {
+    const type = unit.type ?? 'soldier';
+    const frames = getUnitFrames(type);
+    if (frames.length === 0) return undefined;
+    if (frames.length === 1) return frames[0];
+    const prev = prevUnitPositions.get(unit.guid);
+    const isMoving = prev !== undefined && (prev.x !== unit.x || prev.y !== unit.y);
+    prevUnitPositions.set(unit.guid, { x: unit.x, y: unit.y });
+    if (!isMoving) return frames[0];
+    return frames[Math.floor(Date.now() / WALK_FRAME_MS) % frames.length];
+}
+
+// --- Интерфейсы ---
+
 interface UnitData {
     guid: string;
+    type?: string;
     x: number;
     y: number;
     hp: number;
+    maxHp?: number;
     speed: number;
     targetX: number | null;
     targetY: number | null;
-    type?: string;
 }
 
 /** Формат unit армии грибов (mushroomsArmy) для enemyUnits */
@@ -61,14 +131,38 @@ interface EnemyUnitData {
     y: number;
     hp: number;
     maxHp: number;
-    isAlive: boolean;
+    isAlive?: boolean;
     speed: number;
     attackRange: number;
+}
+
+interface EnemyBuildingData {
+    guid: string;
+    type: string;
+    x: number;
+    y: number;
+    size?: number;
+    hp?: number;
+    isAlive?: boolean;
+}
+
+function isEnemyBuildingAlive(b: EnemyBuildingData): boolean {
+    if (b.isAlive === false) return false;
+    if (typeof b.hp === 'number' && b.hp <= 0) return false;
+    return true;
 }
 
 interface ArmyData {
     units: UnitData[];
     enemyUnits?: EnemyUnitData[];
+    enemyBuildings?: EnemyBuildingData[];
+    /** guid зданий, уничтоженных нашей армией — клиент убирает с карты */
+    destroyedEnemyBuildingGuids?: string[];
+}
+
+function getBuildingSize(b: EnemyBuildingData): number {
+    const type = String(b.type || '').toLowerCase();
+    return Math.max(1, Number(b.size) || BUILDING_DEFAULT_SIZE[type] || 1);
 }
 
 function drawWaterCell(ctx: CanvasRenderingContext2D, px: number, py: number, cell: number) {
@@ -152,7 +246,8 @@ function drawUnit(ctx: CanvasRenderingContext2D, unit: UnitData, cell: number) {
     const cx = unit.x * cell + cell / 2;
     const cy = unit.y * cell + cell / 2;
     const isBmp = unit.type === 'bmp' || unit.speed >= 3;
-    const r = isBmp ? cell * 0.42 : cell * 0.35;
+    const r = isBmp ? cell * 0.48 : cell * 0.44;
+    const size = r * 2;
 
     // Линия к цели
     if (unit.targetX != null && unit.targetY != null) {
@@ -178,47 +273,108 @@ function drawUnit(ctx: CanvasRenderingContext2D, unit: UnitData, cell: number) {
         ctx.strokeRect(unit.targetX * cell + m, unit.targetY * cell + m, cell - 2 * m, cell - 2 * m);
     }
 
-    if (isBmp) {
-        const s = r * 1.6;
-        ctx.fillStyle = COLOR.bmp;
-        ctx.strokeStyle = COLOR.bmpBorder;
-        ctx.lineWidth = Math.max(1, cell * 0.1);
-        ctx.beginPath();
-        ctx.roundRect(cx - s / 2, cy - s / 2, s, s, Math.max(1, cell * 0.12));
-        ctx.fill();
-        ctx.stroke();
-    } else {
-        ctx.fillStyle = COLOR.soldier;
-        ctx.strokeStyle = COLOR.soldierBorder;
-        ctx.lineWidth = Math.max(1, cell * 0.1);
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+    // Спрайт юнита (по умолчанию отражён по горизонтали), при недоступности — цветная фигура
+    const img = getUnitImage(unit);
+    let spriteOk = false;
+    if (isImageDrawable(img)) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.scale(-1, 1);
+        spriteOk = tryDrawImageScaled(ctx, img, -size / 2, -size / 2, size, size);
+        ctx.restore();
     }
+    if (!spriteOk) {
+        if (isBmp) {
+            const s = r * 1.6;
+            ctx.fillStyle = COLOR.bmp;
+            ctx.strokeStyle = COLOR.bmpBorder;
+            ctx.lineWidth = Math.max(1, cell * 0.1);
+            ctx.beginPath();
+            ctx.roundRect(cx - s / 2, cy - s / 2, s, s, Math.max(1, cell * 0.12));
+            ctx.fill();
+            ctx.stroke();
+        } else {
+            ctx.fillStyle = COLOR.soldier;
+            ctx.strokeStyle = COLOR.soldierBorder;
+            ctx.lineWidth = Math.max(1, cell * 0.1);
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        }
+    }
+
+    // Полоска HP
+    const maxHp = unit.maxHp ?? (isBmp ? 30 : 10);
+    const hpPct = Math.max(0, Math.min(1, unit.hp / maxHp));
+    const barW = size;
+    const barH = Math.max(3, cell * 0.07);
+    const barX = cx - barW / 2;
+    const barY = cy - r - barH - 2;
+    ctx.fillStyle = '#d32f2f';
+    ctx.fillRect(barX, barY, barW, barH);
+    ctx.fillStyle = '#4caf50';
+    ctx.fillRect(barX, barY, barW * hpPct, barH);
 }
 
 function drawEnemyUnit(ctx: CanvasRenderingContext2D, unit: EnemyUnitData, cell: number) {
-    if (!unit.isAlive || unit.hp <= 0) {
-        return;
-    }
+    if (unit.isAlive === false || unit.hp <= 0) return;
+
     const cx = unit.x * cell + cell / 2;
     const cy = unit.y * cell + cell / 2;
-    const r = cell * 0.38;
+    const isLarge = unit.type === 'vzryvomor';
+    const r = isLarge ? cell * 0.48 : cell * 0.44;
+    const size = r * 2;
 
-    ctx.fillStyle = COLOR.enemyMushroom;
-    ctx.strokeStyle = COLOR.enemyMushroomBorder;
-    ctx.lineWidth = Math.max(1, cell * 0.1);
-    ctx.beginPath();
-    ctx.roundRect(cx - r, cy - r, r * 2, r * 2, Math.max(2, cell * 0.2));
-    ctx.fill();
-    ctx.stroke();
+    const img = getUnitImage(unit);
+    if (!isImageDrawable(img) || !tryDrawImageScaled(ctx, img, cx - size / 2, cy - size / 2, size, size)) {
+        ctx.fillStyle = COLOR.enemyMushroom;
+        ctx.strokeStyle = COLOR.enemyMushroomBorder;
+        ctx.lineWidth = Math.max(1, cell * 0.1);
+        ctx.beginPath();
+        ctx.roundRect(cx - r, cy - r, size, size, Math.max(2, cell * 0.2));
+        ctx.fill();
+        ctx.stroke();
+    }
 
-    // простая «головка» гриба
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.beginPath();
-    ctx.arc(cx, cy - r * 0.35, r * 0.35, 0, Math.PI * 2);
-    ctx.fill();
+    const hpPct = Math.max(0, Math.min(1, unit.hp / (unit.maxHp || unit.hp)));
+    const barW = size;
+    const barH = Math.max(3, cell * 0.07);
+    const barX = cx - barW / 2;
+    const barY = cy - r - barH - 2;
+    ctx.fillStyle = '#d32f2f';
+    ctx.fillRect(barX, barY, barW, barH);
+    ctx.fillStyle = '#9c27b0';
+    ctx.fillRect(barX, barY, barW * hpPct, barH);
+}
+
+function drawEnemyBuilding(ctx: CanvasRenderingContext2D, b: EnemyBuildingData, cell: number) {
+    if (!isEnemyBuildingAlive(b)) return;
+
+    const size = getBuildingSize(b);
+    const px = b.x * cell;
+    const py = b.y * cell;
+    const pw = size * cell;
+    const ph = size * cell;
+
+    let img: HTMLImageElement | undefined;
+    const type = String(b.type || '').toLowerCase();
+    if (type === 'vzryvomor') {
+        const frameIdx = Math.floor(Date.now() / VZRYVOMOR_FRAME_MS) % vzryvomorBuildingImgs.length;
+        img = vzryvomorBuildingImgs[frameIdx];
+    } else if (type === 'sporovaya_bashnya') {
+        img = bashnyaIdleImg;
+    }
+
+    if (img && isImageDrawable(img) && tryDrawImageScaled(ctx, img, px, py, pw, ph)) {
+        return;
+    }
+
+    ctx.fillStyle = '#6a0dad';
+    ctx.strokeStyle = '#b388ff';
+    ctx.lineWidth = Math.max(1, cell * 0.06);
+    ctx.fillRect(px, py, pw, ph);
+    ctx.strokeRect(px, py, pw, ph);
 }
 
 function isValidMap(map: unknown): map is number[][] {
@@ -235,24 +391,25 @@ function getMapSize(map: number[][]): { cols: number; rows: number } {
 }
 
 function fitCellToWrap(wrap: HTMLElement, cols: number, rows: number): number {
-    if (cols <= 0 || rows <= 0) return MAX_CELL_PX;
+    if (cols <= 0 || rows <= 0) return MIN_CELL_PX;
     const { width, height } = wrap.getBoundingClientRect();
     const aw = Math.max(1, width - CANVAS_WRAP_PAD_PX);
     const ah = Math.max(1, height - CANVAS_WRAP_PAD_PX);
     const fit = Math.min(aw / cols, ah / rows);
-    return Math.min(Math.max(fit, 0.25), MAX_CELL_PX);
+    return Math.min(Math.max(fit, MIN_CELL_PX), MAX_CELL_PX);
 }
 
 const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const canvasWrapRef = useRef<HTMLDivElement>(null);
     const pendingScrollRef = useRef<{ ratio: number; sl: number; st: number } | null>(null);
-    const cellPxRef = useRef(MAX_CELL_PX);
-    const baseCellRef = useRef(MAX_CELL_PX);
+    const cellPxRef = useRef(MIN_CELL_PX);
+    const baseCellRef = useRef(MIN_CELL_PX);
     const zoomRef = useRef(ZOOM_DEFAULT);
     const mapRef = useRef<number[][]>([]);
     const unitsRef = useRef<UnitData[]>([]);
     const enemyUnitsRef = useRef<EnemyUnitData[]>([]);
+    const enemyBuildingsRef = useRef<Map<string, EnemyBuildingData>>(new Map());
     const animFrameRef = useRef<number>(0);
     const [unitCount, setUnitCount] = useState(0);
     const [hasMap, setHasMap] = useState(false);
@@ -315,16 +472,16 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
         if (!wrap) return;
         const onWheel = (e: WheelEvent) => {
             e.preventDefault();
-            const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
-            const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomRef.current + delta));
+            const factor = e.deltaY < 0 ? 1 + ZOOM_FACTOR : 1 - ZOOM_FACTOR;
+            const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomRef.current * factor));
             applyZoom(next);
         };
         wrap.addEventListener('wheel', onWheel, { passive: false });
         return () => wrap.removeEventListener('wheel', onWheel);
     }, [applyZoom]);
 
-    const zoomIn  = useCallback(() => applyZoom(Math.min(ZOOM_MAX, zoomRef.current + ZOOM_STEP)), [applyZoom]);
-    const zoomOut = useCallback(() => applyZoom(Math.max(ZOOM_MIN, zoomRef.current - ZOOM_STEP)), [applyZoom]);
+    const zoomIn  = useCallback(() => applyZoom(Math.min(ZOOM_MAX, zoomRef.current * (1 + ZOOM_FACTOR))), [applyZoom]);
+    const zoomOut = useCallback(() => applyZoom(Math.max(ZOOM_MIN, zoomRef.current * (1 - ZOOM_FACTOR))), [applyZoom]);
     const zoomReset = useCallback(() => applyZoom(ZOOM_DEFAULT), [applyZoom]);
 
     const zoomPercent = useMemo(() => Math.round(zoom / ZOOM_DEFAULT * 100), [zoom]);
@@ -392,6 +549,7 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
                 canvas.height = h;
             }
             drawMap(ctx, map, cell);
+            enemyBuildingsRef.current.forEach((b) => drawEnemyBuilding(ctx, b, cell));
             enemyUnitsRef.current.forEach((eu) => drawEnemyUnit(ctx, eu, cell));
             unitsRef.current.forEach((unit) => drawUnit(ctx, unit, cell));
 
@@ -428,6 +586,23 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
             }
             if (Array.isArray(data.enemyUnits)) {
                 enemyUnitsRef.current = data.enemyUnits;
+            }
+            if (Array.isArray(data.destroyedEnemyBuildingGuids)) {
+                data.destroyedEnemyBuildingGuids.forEach((guid) => {
+                    if (guid) enemyBuildingsRef.current.delete(guid);
+                });
+            }
+            if (Array.isArray(data.enemyBuildings)) {
+                // Накапливаем увиденные здания: пустой тик с карты не стирает уже показанные.
+                // Убираем только мёртвые (hp) или guid из destroyedEnemyBuildingGuids (выше).
+                data.enemyBuildings.forEach((b: EnemyBuildingData) => {
+                    if (!b?.guid) return;
+                    if (!isEnemyBuildingAlive(b)) {
+                        enemyBuildingsRef.current.delete(b.guid);
+                        return;
+                    }
+                    enemyBuildingsRef.current.set(b.guid, b);
+                });
             }
         };
 

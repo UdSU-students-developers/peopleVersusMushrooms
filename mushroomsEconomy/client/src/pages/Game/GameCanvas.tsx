@@ -2,7 +2,7 @@ import React, { useEffect, useContext } from 'react';
 import CONFIG from '../../config';
 import { GameContext } from '../../App';
 import { TPoint } from '../../config';
-import { TIncubator, TScene, TSmallReactor } from '../../services/Server/types';
+import { TIncubator, TReactor, TScene } from '../../services/Server/types';
 import Canvas from '../../services/Canvas/Canvas';
 import useCanvas from '../../services/Canvas/useCanvas';
 import useSprites from '../Hooks/useSprite';
@@ -36,12 +36,23 @@ const GameCanvas: React.FC = () => {
 
     const tw = INITIAL_WINDOW_WIDTH / MAP_SIZE;
 
+    // Рисует спрайт в 1×1 клетку
     const drawTile = (spriteId: number, col: number, row: number) => {
         if (!canvas) return;
         const [sx, sy, sSize] = getSprite(spriteId);
         const px = canvas.xs(col * tw);
         const py = canvas.ys(row * tw);
         const size = canvas.dec(tw);
+        canvas.contextV.drawImage(spritesImage, sx, sy, sSize, sSize, px, py, size, size);
+    };
+
+    // Рисует спрайт в tileSize×tileSize клеток (для зданий крупнее 1×1)
+    const drawTileSized = (spriteId: number, col: number, row: number, tileSize: number) => {
+        if (!canvas) return;
+        const [sx, sy, sSize] = getSprite(spriteId);
+        const px = canvas.xs(col * tw);
+        const py = canvas.ys(row * tw);
+        const size = canvas.dec(tw * tileSize);
         canvas.contextV.drawImage(spritesImage, sx, sy, sSize, sSize, px, py, size, size);
     };
 
@@ -59,20 +70,33 @@ const GameCanvas: React.FC = () => {
         for (const m of scene.buildings.mycelium)
             drawTile(getMushroomSprite(m.level), m.x, m.y);
 
-        // small reactors
-        for (const sr of scene.buildings.smallReactors as TSmallReactor[]) {
-            drawTile(SPRITE.SMALL_REACTOR, sr.x, sr.y);
-            if (sr.consumed)
-                drawTile(SPRITE.REACTOR_CONSUMED_ANIM, sr.x, sr.y - 7 / tw);
+        // reactors — малый (size=1) и большой (size=2) в одном массиве,
+        // используют один спрайт, но рисуются в разный размер
+        for (const r of scene.buildings.reactors as TReactor[]) {
+            const tileSize = r.size ?? 1;
+            drawTileSized(SPRITE.REACTOR, r.x, r.y, tileSize);
+            if (r.consumed)
+                drawTileSized(SPRITE.REACTOR_CONSUMED_ANIM, r.x, r.y - 7 / tw, tileSize);
         }
 
         // incubators
         for (const i of scene.buildings.incubators as TIncubator[])
             drawTile(SPRITE.INCUBATOR, i.x, i.y);
 
+        // mines
+        for (const m of scene.buildings.mines ?? [])
+            drawTile(SPRITE.MINE, m.x, m.y);
+
         // larvae
         for (const l of scene.units.larvae)
             drawTile(SPRITE.LARVA, l.x, l.y);
+
+        // geodezists
+        for (const g of scene.units.geodezists ?? [])
+            drawTile(SPRITE.GEODEZIST, g.x, g.y);
+
+        for (const enemy of scene.enemyBuildings)
+            drawTile(SPRITE.ENEMY_BUILDING, enemy.x, enemy.y);
     };
 
     function render(FPS: number) {

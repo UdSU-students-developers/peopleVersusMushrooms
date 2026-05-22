@@ -6,6 +6,10 @@ import eblekarSrc from '../../../assets/units/Eblekar.png';
 import pizdoglyadIdleSrc from '../../../assets/units/Pizdoglyad2.png';
 import pizdoglyadWalkSrc from '../../../assets/units/Pizdoglyad1.png';
 
+import peopleSoldierSrc from '../../../assets/people/soldier.png';
+import peopleBmpSrc from '../../../assets/people/bmp.png';
+import peopleSniperSrc from '../../../assets/people/sniper.png';
+
 import vzryvomorFrame0 from '../../../assets/buildings/vzryvomor/frame_0.png';
 import vzryvomorFrame1 from '../../../assets/buildings/vzryvomor/frame_1.png';
 import vzryvomorFrame2 from '../../../assets/buildings/vzryvomor/frame_2.png';
@@ -27,6 +31,12 @@ import champignebExplFrame1 from '../../../assets/units/champigneb_explosion/fra
 import champignebExplFrame2 from '../../../assets/units/champigneb_explosion/frame_2.png';
 import champignebExplFrame3 from '../../../assets/units/champigneb_explosion/frame_3.png';
 import champignebExplFrame4 from '../../../assets/units/champigneb_explosion/frame_4.png';
+
+import vzryvomorExplFrame0 from '../../../assets/buildings/vzryvomor_explosion/frame_0.png';
+import vzryvomorExplFrame1 from '../../../assets/buildings/vzryvomor_explosion/frame_1.png';
+import vzryvomorExplFrame2 from '../../../assets/buildings/vzryvomor_explosion/frame_2.png';
+import vzryvomorExplFrame3 from '../../../assets/buildings/vzryvomor_explosion/frame_3.png';
+import vzryvomorExplFrame4 from '../../../assets/buildings/vzryvomor_explosion/frame_4.png';
 
 import grassTextureSrc1 from '../../../assets/map/grass/grass1.webp';
 import grassTextureSrc2 from '../../../assets/map/grass/grass2.webp';
@@ -79,12 +89,22 @@ import funnyTrusovFlower from '../../../assets/map/decoration/TrusovFlower2.webp
 import cleanScullSrc from '../../../assets/map/decoration/clean-scull.webp';
 import scullWithSwordSrc from '../../../assets/map/decoration/scull-with-sword.webp';
 import scullSrc from '../../../assets/map/decoration/scull.webp';
+import economySpritesSrc from '../../../assets/economy_sprites.png';
+
+export { economySpritesSrc };
 
 export const UNIT_SRCS: Record<string, string> = {
   sporomet: sporometSrc,
   champigneb: champignebSrc,
   eblekar: eblekarSrc,
   pizdoglyad: pizdoglyadIdleSrc,
+};
+
+export const PEOPLE_UNIT_SRCS: Record<string, string> = {
+  soldier: peopleSoldierSrc,
+  bmp: peopleBmpSrc,
+  sniper: peopleSniperSrc,
+  partizan: peopleSoldierSrc,
 };
 
 export const CHAMPIGNEB_EXPL_FRAME_SRCS: string[] = [
@@ -96,6 +116,20 @@ export const CHAMPIGNEB_EXPL_FRAME_SRCS: string[] = [
 ];
 
 export const champignebExplImages: HTMLImageElement[] = CHAMPIGNEB_EXPL_FRAME_SRCS.map(src => {
+  const img = new Image();
+  img.src = src;
+  return img;
+});
+
+export const VZRYVOMOR_EXPL_FRAME_SRCS: string[] = [
+  vzryvomorExplFrame0,
+  vzryvomorExplFrame1,
+  vzryvomorExplFrame2,
+  vzryvomorExplFrame3,
+  vzryvomorExplFrame4,
+];
+
+export const vzryvomorExplImages: HTMLImageElement[] = VZRYVOMOR_EXPL_FRAME_SRCS.map(src => {
   const img = new Image();
   img.src = src;
   return img;

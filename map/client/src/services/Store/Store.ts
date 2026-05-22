@@ -35,8 +35,6 @@ class Store {
         this.mediator.set(MEDIATOR.TRIGGERS.GET_LOBBIES, () => this.getLobbies());
         this.mediator.set(EMESSAGES.GET_CURRENT_LOBBY, () => this.getCurrentLobby());
         this.mediator.set(EMESSAGES.GET_USER, () => this.getUser());
-        this.mediator.set(MEDIATOR.TRIGGERS.SET_GENERATED_MAP, (data) => this.setGeneratedMap(data));
-        this.mediator.set(MEDIATOR.TRIGGERS.GET_GENERATED_MAP, () => this.getGeneratedMap());
     }
 
     handleLogin(data: TUser): void {
@@ -159,14 +157,6 @@ class Store {
         return this.isUserLobbyCreator() &&
             this.currentLobby !== null &&
             Object.values(this.currentLobby.playersGuids).filter(g => g !== null).length === 5
-    }
-
-    setGeneratedMap(mapData: TMap): void {
-        this.generatedMap = mapData;
-    }
-
-    getGeneratedMap(): TMap | null {
-        return this.generatedMap;
     }
 }
 

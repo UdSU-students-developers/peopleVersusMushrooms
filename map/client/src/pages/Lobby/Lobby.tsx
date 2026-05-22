@@ -49,7 +49,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
 
     const startGameHandler = () => {
         server.startGame(server.user.guid);
-        setPage(PAGES.MAP);
     }
 
     const setReadyHandler = () => {
@@ -72,7 +71,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
             LOBBY_UPDATED,
             LOBBIES_LIST_UPDATED,
             START_GAME,
-            GENERATE_MAP,
             SET_READY,
             DROP_FROM_LOBBY
         } = mediator.getEventTypes();
@@ -89,10 +87,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
         const createLobbyHandler = (data: any) => {
             setCurrentLobby(data);
             setIsReady(false);
-        };
-
-        const mapHandler = (data: TMap) => {
-            console.log('Получена карта: ', data);
         };
 
         const joinToLobbyHandler = (data: any) => {
@@ -133,6 +127,10 @@ const Lobby: React.FC<IBasePage> = (props) => {
 
         const startGameHandler = (data: any) => {
             console.log('Игра началась:', data);
+            const mapGuid = currentLobby?.lobbyGuid;
+            if (mapGuid && server.user) {
+                server.getRelief(mapGuid, server.user?.guid);
+            }
             setPage(PAGES.MAP);
         };
 
@@ -156,7 +154,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
         mediator.subscribe(LOBBY_UPDATED, lobbyUpdatedHandler);
         mediator.subscribe(LOBBIES_LIST_UPDATED, lobbiesListUpdatedHandler);
         mediator.subscribe(START_GAME, startGameHandler);
-        mediator.subscribe(GENERATE_MAP, mapHandler);
         mediator.subscribe(SET_READY, setReadyHandler);
         mediator.subscribe(DROP_FROM_LOBBY, dropFromLobbyHandler);
 
@@ -169,7 +166,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
             mediator.unsubscribe(LOBBY_UPDATED, lobbyUpdatedHandler);
             mediator.unsubscribe(LOBBIES_LIST_UPDATED, lobbiesListUpdatedHandler);
             mediator.unsubscribe(START_GAME, startGameHandler);
-            mediator.unsubscribe(GENERATE_MAP, mapHandler);
             mediator.unsubscribe(SET_READY, setReadyHandler);
             mediator.unsubscribe(DROP_FROM_LOBBY, dropFromLobbyHandler);
         };

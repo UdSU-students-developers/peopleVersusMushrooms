@@ -1,26 +1,32 @@
 const Building = require("./Building");
 const CONFIG = require("../../../../config");
 
-const { HP, SIZE, CONSUMPTION, PRODUCTION, CAPACITY, TYPE, VISIBILITY } = CONFIG.ECONOMY.BIO_REACTOR_SMALL;
+const { HP, SIZE, CONSUMPTION, PRODUCTION, CAPACITY, TYPE, VISIBILITY, CONSUME_RADIUS } = CONFIG.ECONOMY.BIO_REACTOR_SMALL;
 
 class SmallReactor extends Building {
-    constructor({ guid, x, y, callbacks = {} }) {
+    constructor({ guid, x, y, callbacks = {}, 
+        type = TYPE, 
+        hp = HP, 
+        size = SIZE, 
+        consumption = CONSUMPTION, 
+        production = PRODUCTION, 
+        capacity = CAPACITY, 
+        visibility = VISIBILITY }) {
         super({ 
-            type: TYPE, 
-            guid: guid, 
-            x: x, 
-            y: y, 
-            callbacks: callbacks, 
-            hp: HP, 
-            size: SIZE, 
-            consumption: CONSUMPTION, 
-            production: PRODUCTION, 
-            capacity: CAPACITY,
-            visibility: VISIBILITY,
+            guid, x, y, callbacks,
+            type,
+            hp,
+            size,
+            consumption,
+            production,
+            capacity,
+            visibility,
         });
-
+        
+        this.consumeRadius = CONSUME_RADIUS;
         this.energy = 0;
         this.consumed = false;
+
     }
 
     get() {
@@ -31,11 +37,12 @@ class SmallReactor extends Building {
         };
     }
 
-    // возвращает мицелии рядом с реактором, готовые к потреблению
     getConsumable(mycelium) {
+        const r = this.consumeRadius;
         const result = [];
-        for (let dx = -1; dx <= this.size; dx++) {
-            for (let dy = -1; dy <= this.size; dy++) {
+        for (let dx = -r; dx < this.size + r; dx++) {
+            for (let dy = -r; dy < this.size + r; dy++) {
+                // пропуск клеток самого реактора
                 if (dx >= 0 && dx < this.size && dy >= 0 && dy < this.size) continue;
                 const nx = this.x + dx;
                 const ny = this.y + dy;

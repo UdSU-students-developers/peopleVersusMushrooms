@@ -28,6 +28,7 @@ class UserManager extends BaseManager {
         if (user) {
             console.log('Отключение клиента c guid', user.get().guid);
             const guid = user.guid;
+            this.mediator.call(this.EVENTS.DELETE_USER, guid);
             await user.logout();
             delete this.users[guid];
         }

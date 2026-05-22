@@ -34,6 +34,11 @@ jest.mock('../../../../config', () => ({
             LARVA_COOLDOWN_MS: 5000,
             VISIBILITY: 3,
         },
+        DIRECTIONS: [
+            { dx: -1, dy: -1 }, { dx: -1, dy: 0 }, { dx: -1, dy: 1 },
+            { dx: 0, dy: -1 },                     { dx: 0, dy: 1 },
+            { dx: 1, dy: -1 }, { dx: 1, dy: 0 }, { dx: 1, dy: 1 }
+        ],
     },
 }));
 
@@ -43,6 +48,7 @@ describe('Incubator', () => {
     beforeEach(() => {
         callbacks = {
             getMap: jest.fn(),
+            getBuildings: jest.fn(() => []), // добавляем для чистоты теста
             addLarva: jest.fn(),
         };
         incubator = new Incubator({ guid: 'inc1', x: 2, y: 2, callbacks });
@@ -80,7 +86,7 @@ describe('Incubator', () => {
         expect(incubator.isCooldownReady(5999)).toBe(false);
     });
 
-    it('getFreeCellsAround возвращает только свободные клетки', () => {
+    it('getFreeCellsAround возвращает только свободные клетки (без зданий)', () => {
         callbacks.getMap.mockReturnValue([
             [1, 1, 1, 1, 1],
             [1, 0, 0, 0, 1],
@@ -88,6 +94,7 @@ describe('Incubator', () => {
             [1, 0, 0, 0, 1],
             [1, 1, 1, 1, 1],
         ]);
+        callbacks.getBuildings.mockReturnValue([]); // зданий нет
 
         const free = incubator.getFreeCellsAround();
         const result = free.map(p => `${p.x},${p.y}`).sort();

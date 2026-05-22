@@ -24,6 +24,10 @@ export type Unit = {
   isHealing?: boolean;          
 };
 
+export type EnemyUnit = Omit<Unit, 'type'> & {
+  type: string;
+};
+
 /**
  * Здание (цель для армии грибов)
  */
@@ -33,6 +37,7 @@ export type Building = {
   x: number;
   y: number;
   hp: number;
+  level?: number;
   visibility?: number;
   sizeX?: number;
   sizeY?: number;
@@ -61,12 +66,25 @@ export type Projectile = {
 };
 
 /**
+ * Юнит экономики грибов (личинка, геодезист)
+ */
+export type EconomyUnit = {
+  guid: string;
+  x: number;
+  y: number;
+  type: string;
+  hp: number;
+};
+
+/**
  * Полное состояние игры
  */
 export type GameState = {
   map: MapTile[][];
   units: Unit[];
+  enemyUnits?: EnemyUnit[];
   buildings: Building[];
+  economyUnits?: EconomyUnit[];
   slimePuddles: SlimePuddle[]; 
   projectiles: Projectile[];
 };

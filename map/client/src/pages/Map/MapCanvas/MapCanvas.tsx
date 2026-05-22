@@ -1,9 +1,9 @@
 import React, { useContext, useEffect } from "react";
 import { MediatorContext, ServerContext } from "../../../App";
-import CONFIG from "../../../config";
+import CONFIG, { EMESSAGES } from "../../../config";
 import { Canvas, useCanvas } from "../../../services/canvas";
 import Map from "../../../services/Map/Map";
-import { TMap } from "../../../services/server/types";
+import { TMap, TSource } from "../../../services/server/types";
 
 const mapField = 'map-field';
 
@@ -15,6 +15,106 @@ const MapCanvas: React.FC = () => {
     const Canvas = useCanvas(render);
     const { WINDOW } = CONFIG;
 
+    let canMove = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+
+    useEffect(() => {
+        const { GET_RELIEF } = mediator.getEventTypes();
+
+        const renderMap = (mapData: TMap) => {
+            console.log('Наша карта', mapData);
+            const cells = mapData.map.flatMap((row, y: number) =>
+                row.map((type, x) => ({
+                    x,
+                    y,
+                    type,
+                    color: type === 1 ? 'blue'
+                        : type === 2 ? 'gray'
+                            : 'green',
+                    isResource: false,
+                    resourceColor: null as string | null
+                }))
+            );
+
+
+            if (mapData.sources) {
+                mapData.sources.forEach((source: TSource) => {
+                    const cell = cells.find(c => c.x === source.x && c.y === source.y);
+
+                    if (cell) {
+                        cell.isResource = true;
+                        cell.resourceColor = source.type === 'IRON' ? 'white' : 'black';
+                    }
+                });
+            }
+            map?.setCells(cells);
+        };
+
+        mediator.subscribe(GET_RELIEF, renderMap);
+
+        return () => {
+            mediator.unsubscribe(GET_RELIEF, renderMap);
+        };
+    }, []);
+
+    const cellSize = WINDOW.WIDTH / CONFIG.WIDTH;
+
+    function render(): void {
+        canvas.clear();
+
+        if (canvas && map) {
+            map.cells.forEach((cell) => {
+                canvas.rect(cell.x * cellSize, cell.y * cellSize, cellSize, cell.color);
+
+                if (cell.isResource) {
+                    const centerX = cell.x * cellSize + cellSize / 2;
+                    const centerY = cell.y * cellSize + cellSize / 2;
+                    const radius = cellSize / 4;
+
+                    canvas.circle(centerX, centerY, radius, cell.resourceColor);
+                }
+            });
+
+            canvas.render();
+        }
+    }
+
+    const mouseWheel = (delta: number, x: number, y: number) => {
+        if (!canvas) return;
+        const ZOOM = 0.2;
+        const zoomAmount = delta > 0 ? 1 + ZOOM : 1 - ZOOM;
+        let newWidth = WINDOW.WIDTH * zoomAmount;
+        let newHeight = WINDOW.HEIGHT * zoomAmount;
+        const MIN_ZOOM = 100;
+        const MAX_ZOOM = 2000;
+        if (newHeight < MIN_ZOOM || newHeight > MAX_ZOOM) return;
+
+        WINDOW.LEFT = x - (x - WINDOW.LEFT) * zoomAmount;
+        WINDOW.TOP = y - (y - WINDOW.TOP) * zoomAmount;
+        WINDOW.WIDTH = newWidth;
+        WINDOW.HEIGHT = newHeight;
+    };
+
+    const mouseMove = (x: number, y: number) => {
+        if (!canMove) return;
+        WINDOW.LEFT -= (x - dragStartX);
+        WINDOW.TOP -= (y - dragStartY);
+    };
+
+    const mouseDown = (x: number, y: number) => {
+        canMove = true;
+        dragStartX = x;
+        dragStartY = y;
+    };
+
+    const mouseUp = () => {
+        canMove = false;
+    };
+    const mouseLeave = () => {
+        canMove = false;
+    };
+
     useEffect(() => {
         map = new Map(CONFIG.WINDOW.WIDTH, CONFIG.WINDOW.HEIGHT);
         canvas = Canvas({
@@ -23,7 +123,10 @@ const MapCanvas: React.FC = () => {
             HEIGHT: WINDOW.HEIGHT,
             WINDOW,
             callbacks: {
-                mouseMove: () => { },
+                mouseWheel,
+                mouseMove, mouseDown,
+                mouseUp,
+                mouseLeave,
                 mouseClick: () => { },
                 mouseRightClick: () => { },
             },
@@ -32,39 +135,10 @@ const MapCanvas: React.FC = () => {
         return () => {
             canvas?.destructor();
         };
-    });
-
-    useEffect(() => {
-        const renderMap = (mapData: TMap) => {
-            const cells = mapData.map.flatMap((row: any[], y: number) =>
-                row.map((type, x) => ({
-                    x,
-                    y,
-                    type,
-                    color: type === 1 ? 'blue'
-                        : type === 2 ? 'gray'
-                            : 'green',
-                }))
-            );
-            map?.setCells(cells);
-        };
-        renderMap(server.getGeneratedMap()!);
-        
-        return () => {
-            map?.destructor();
-        };
     }, []);
 
-    function render(fps: number): void {
-        if (canvas && map) {
-            canvas.clear();
-            map.cells.forEach((cell) => {
-                canvas.rect(cell.x * 8, cell.y * 8, 100, cell.color);
-            });
-            canvas.text(WINDOW.LEFT + 20, WINDOW.TOP + 50, String(fps), 'red');
-            canvas.render();
-        }
-    }
+    // выстреливает только при уничтожении компоненты
+    useEffect(() => () => map?.destructor());
 
     return (<div id={mapField} className={mapField}></div>);
 };

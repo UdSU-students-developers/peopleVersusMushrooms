@@ -3,7 +3,9 @@ import { TPoint } from "../../config";
 enum enitityTypes {
     MYCELIUM = 'mycelium',
     SMALL_REACTOR = "small_reactor",
+    REACTOR = 'reactor',
     INCUBATOR = 'incubator',
+    MINE = 'mine',
 };
 
 export type TResponse<T> = {
@@ -62,11 +64,12 @@ export type TBuilding = {
     guid: string;
     x: number;
     y: number;
+    size: number;
     visibility: number;
 }
 
-export type TSmallReactor = TBuilding & {
-    type: enitityTypes.SMALL_REACTOR;
+export type TReactor = TBuilding & {
+    type: enitityTypes.SMALL_REACTOR | enitityTypes.REACTOR;
     consumed: boolean;
     energy?: number;
 }
@@ -80,10 +83,16 @@ export type TMushroom = TBuilding & {
     level: number;
 }
 
+export type TMine = TBuilding & {
+    type: enitityTypes.MINE;
+    hp: number;
+}
+
 export type TEconomyBuildings = {
-    smallReactors: TSmallReactor[];
+    reactors: TReactor[];
     incubators: TIncubator[];
     mycelium: TMushroom[];
+    mines: TMine[];
 }
 
 // ============= ЮНИТЫ ============
@@ -107,9 +116,17 @@ export type TLarva = TUnit & {
     growthScale: number;
 }
 
+export type TGeodesist = TUnit & {
+    hp: number;
+    speed: number;
+    mode: 'wander' | 'goToIron';
+    targetResource: TPoint | null;
+}
+
 export type TEconomyUnits = {
     workers: TWorker[];
     larvae: TLarva[];
+    geodezists: TGeodesist[];
 }
 
 
@@ -130,7 +147,8 @@ export type TMap = {
 
 export type TScene = {
     guid: string;
-    buildings: TEconomyBuildings
+    buildings: TEconomyBuildings;
+    enemyBuildings: TBuilding[];
     map: TMap;
     units: TEconomyUnits;
 }

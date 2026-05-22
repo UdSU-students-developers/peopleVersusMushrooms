@@ -220,7 +220,7 @@
     cursor: inherit;
     display: block;
     flex-shrink: 0;
-    image-rendering: pixelated;
+    image-rendering: auto;
     border: 1px solid #1a2332;
     border-radius: 4px;
 }

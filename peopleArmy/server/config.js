@@ -2,6 +2,7 @@ const CONFIG = {
     NAME: 'PeopleArmy',
     PORT: 3007, //Порт соостветсвующий серверу вашего сервиса
     ROLE: 'peopleArmy',
+    START_POINT: {x: 4, y: 4},
     CORS: {
         origin: "*",
         middleware: (_, res, next) => {
@@ -26,7 +27,6 @@ const CONFIG = {
 
             CREATE_UNIT: "CREATE_UNIT",           // создать юнита (см. ArmyManager)
             UNIT_TAKE_DAMAGE: "UNIT_TAKE_DAMAGE", // нанести урон юниту (см. ArmyManager)
-            MOVE_UNIT: "MOVE_UNIT", // переместить юнита (см. ArmyManager) 
         },
     },
 
@@ -39,10 +39,6 @@ const CONFIG = {
 
         UPDATE_ARMY: 'UPDATE_ARMY',
     },
-
-    ARMY: {
-        INTERVAL: 100, //ms
-    }
 }
 
 module.exports = CONFIG;

@@ -1,8 +1,10 @@
 const GLOBAL_CONFIG = require('../../../../../../global/globalConfig');
 
+const Resource = require('./Resource');
+
 class Map {
     constructor() {
-        this.resources = null;
+        this.resources = this._initEmptyMap();
         this.relief = this._initEmptyMap();
 
         this.myceliumGrid = null;
@@ -17,13 +19,21 @@ class Map {
     }
 
     setResources(resources) {
-        this.resources = resources;
+        for(const res of resources) {
+            if (this.resources[res.y][res.x] != null) continue;
+            this.resources[res.y][res.x] = new Resource(
+                res.x,
+                res.y,
+                res.type,
+                res.saturation,
+            );
+        }
+        //console.log(resources);
     }
 
     setRelief(relief) {
         this.relief = relief;
     }
-
 
     updateLarvaGrid(buildings) {
         if (!this.relief?.length) return;
@@ -32,22 +42,41 @@ class Map {
         const cols = this.relief[0].length;
 
         if (!this.larvaGrid) {
-            this.larvaGrid = Array.from({ length: rows }, () => Array(cols).fill(0));
+            this.larvaGrid = Array.from(
+                { length: rows },
+                () => Array(cols).fill(1)
+            );
         } else {
             for (let y = 0; y < rows; y++) {
-                this.larvaGrid[y].fill(0);
+                this.larvaGrid[y].fill(1);
+            }
+        }
+
+        for (const mc of buildings.mycelium || []) {
+            const { x, y } = mc;
+
+            if (x >= 0 && x < cols && y >= 0 && y < rows) {
+                this.larvaGrid[y][x] = 0;
             }
         }
 
         const blockingBuildings = [
-            ...(buildings.smallReactors || []),
+            ...(buildings.reactors || []),
             ...(buildings.incubators || []),
         ];
 
         for (const building of blockingBuildings) {
-            const { x, y } = building;
-            if (x >= 0 && x < cols && y >= 0 && y < rows) {
-                this.larvaGrid[y][x] = 1;
+            const size = building.size ?? 1;
+
+            for (let dy = 0; dy < size; dy++) {
+                for (let dx = 0; dx < size; dx++) {
+                    const bx = building.x + dx;
+                    const by = building.y + dy;
+
+                    if (bx >= 0 && bx < cols && by >= 0 && by < rows) {
+                        this.larvaGrid[by][bx] = 1;
+                    }
+                }
             }
         }
     }

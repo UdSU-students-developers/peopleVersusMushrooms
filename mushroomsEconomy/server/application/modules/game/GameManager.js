@@ -20,7 +20,7 @@ class GameManager extends BaseManager {
 		// mediator events subscribers
 		this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
 		this.mediator.subscribe(this.EVENTS.LOAD_GAME, (data) => this.eventLoadGame(data));
-		this.mediator.subscribe(this.EVENTS.APPLY_DAMAGE, (data) => this.eventApplyDamage(data));
+		this.mediator.subscribe(this.EVENTS.DAMAGE, (data) => this.eventApplyDamage(data));
 		// mediator triggers setters
 		//...
 	}
@@ -43,8 +43,9 @@ class GameManager extends BaseManager {
 		// формате отдавать в сервис карты
 		// получить ответ
 		// запросить рельеф
-		this.getRelief(data.map, guid, mapGuid);
+		//this.getRelief(data.map, guid, mapGuid);
 		// запросить видимость
+		this.getVisibility(data.map, guid, mapGuid);
 		// запросить ресурсы под жопками рабочих
 		this.getResources(data.map, guid, mapGuid);
 		// обновить рельеф и видимость у себя в Экномике
@@ -90,6 +91,7 @@ class GameManager extends BaseManager {
 				);
 				//this.getResources(guid, mapGuid);
 				console.log("Экономика создана");
+				this.getRelief(this.economies[guid].map, guid, this.economies[guid].guids.mapGuid);
 				return sceneData;
 			}
 			return this.answer.bad(1001)
@@ -98,14 +100,14 @@ class GameManager extends BaseManager {
 	}
 	
 	eventApplyDamage(data = {}) {
-		const { guid, damage, economyGuid } = data;
-		const economy = this.economies[economyGuid];
+		const { entityGuid, damage, userGuid } = data;
+		const economy = this.economies[userGuid];
 		
 		if (!economy) {
 			return false;
 		}
 		
-		return economy.applyDamage(guid, damage);
+		return economy.applyDamage(entityGuid, damage);
 	}
 	
 	async getRelief(map, guid, mapGuid) {
@@ -121,7 +123,6 @@ class GameManager extends BaseManager {
 	}
 
 	async getResources(map, guid, mapGuid) {
-		if (typeof(map.resources[0][0]) !== "object") return;
 		const resources = await this.sendToMap(
 			GLOBAL_CONFIG.URLS.GET_RESOURSE_VISIBILITY,
 			{ mapGuid, userGuid: guid }
@@ -129,7 +130,17 @@ class GameManager extends BaseManager {
 
 		if (resources) {
 			if (this.economies[guid]) {
-				this.economies[guid].setResources(resources);
+				this.economies[guid].setResources(resources.sources);
+			}
+		}
+	}
+
+	async getVisibility(map, guid, mapGuid) {
+		const visibility = await this.sendToMap(GLOBAL_CONFIG.URLS.GET_VISIBILITY, { mapGuid, userGuid: guid });
+		
+		if (visibility && visibility.data) {
+			if (this.economies[guid]) {
+				this.economies[guid].setVisibility(visibility.data);
 			}
 		}
 	}
@@ -140,15 +151,6 @@ class GameManager extends BaseManager {
 			mapGuid: guids.mapGuid,
 			userGuid: guids.mushroomsEconomy,
 			entities: buildings,
-		})
-	}
-
-	updateUnits(guids, units = []) {
-		if (units.length === 0) return;
-		this.sendToMap(GLOBAL_CONFIG.URLS.UPDATE_UNITS, {
-			mapGuid: guids.mapGuid,
-			userGuid: guids.mushroomsEconomy,
-			entities: units,
 		})
 	}
 

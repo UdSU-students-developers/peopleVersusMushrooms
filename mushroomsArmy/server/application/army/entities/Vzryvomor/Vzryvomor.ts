@@ -60,6 +60,7 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
     public attackDamage: number = 35;
     public isAlive: boolean;
     public respawn: Respawn = { inProgress: false, respawnIn: 0};
+    private willRespawn: boolean = true;
     private elapsedFromLastDecision: number = 0;
     private DECISION_INTERVAL = 0.5; // seconds
 
@@ -79,11 +80,12 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
             this.elapsedFromLastDecision = 0;
 
             if (this.respawn.respawnIn <= 0) {
-                // Респаун завершён — восстанавливаем здание
                 this.respawn.inProgress = false;
                 this.respawn.respawnIn = 0;
-                this.isAlive = true;
-                this.hp = 70;
+                if (this.willRespawn) {
+                    this.isAlive = true;
+                    this.hp = 70;
+                }
             }
             return;
         }
@@ -132,6 +134,7 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
     }
 
     private blow() {
+        this.willRespawn = true;
         this.isAlive = false;
         this.respawn = { inProgress: true, respawnIn: 5};
     }
@@ -149,7 +152,9 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
     }
 
     die(): void {
+        this.willRespawn = false;
         this.isAlive = false;
+        this.respawn = { inProgress: true, respawnIn: 1 };
     }
     
     getState(): VzryvomorState {

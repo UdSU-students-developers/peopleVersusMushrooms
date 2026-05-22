@@ -18,6 +18,7 @@ export type TBuildingInput = {
     x: number;
     y: number;
     hp?: number;
+    level?: number;
     attackRange?: number;
     sizeX?: number;
     sizeY?: number;
@@ -60,7 +61,9 @@ export type TArmyOptions = {
 export type TArmyState = {
     map: TMap;
     units: TUnitState[];
+    enemyUnits: TUnitState[];
     buildings: TBuildingState[];
+    economyUnits: TBuildingInput[];
     slimePuddles: TSlimePuddle[];
     projectiles: TProjectile[];
     formation: TFormationState | null;
@@ -75,6 +78,8 @@ export class Army {
     public enemyUnits: Unit[] = [];
     public enemyBuildings: TBuildingInput[] = [];
     public economyBuildings: TBuildingInput[] = [];
+    public economyUnits: TBuildingInput[] = [];
+    public sentBuildingGuids: Set<string> = new Set();
     public projectiles: TProjectile[] = [];
     public callbacks: { 
         update: (guid: string, data: TArmyState) => void; 
@@ -146,10 +151,6 @@ export class Army {
         // Вражеские здания (house, barracks, tower) — в прокси-цели для юнитов
         this.enemyBuildings = initialBuildings.filter(b => b.type !== 'sporovaya_bashnya' && b.type !== 'vzryvomor');
         this.updateEnemyEntities(this.enemyBuildings);
-    }
-
-    public setEconomyBuildings(buildings: TBuildingInput[]): void {
-        this.economyBuildings = [...buildings];
     }
 
     /** Синхронизирует урон по proxy-цели с локальным списком зданий врага */
@@ -332,8 +333,11 @@ export class Army {
         });
 
         this.units = this.units.filter(unit => {
-            if (unit.type === 'champigneb' && !unit.isAlive) {
-                return (unit as unknown as Champigneb).slimePuddle.ttl > 0;
+            if (!unit.isAlive) {
+                if (unit.type === 'champigneb') {
+                    return (unit as unknown as Champigneb).slimePuddle.ttl > 0;
+                }
+                return false;
             }
             return true;
         });
@@ -345,11 +349,13 @@ export class Army {
         return {
             map: this.map,
             units: this.units.map(u => u.getState()),
+            enemyUnits: this.enemyUnits.map(u => u.getState()),
             buildings: [
                 ...this.buildings.map(b => b.getState()),
                 ...this.enemyBuildings.map(b => ({ ...b, hp: b.hp ?? 0 })),
                 ...this.economyBuildings.map(b => ({ ...b, hp: b.hp ?? 0 })),
             ],
+            economyUnits: this.economyUnits,
             slimePuddles: this.units
                 .filter(u => u.type === 'champigneb' && !u.isAlive)
                 .map(u => (u as unknown as Champigneb).slimePuddle),

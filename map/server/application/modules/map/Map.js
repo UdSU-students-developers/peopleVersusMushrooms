@@ -39,7 +39,7 @@ class Map {
     get() {
         return {
             buildings: this.buildings.map(building => building),
-            units: this.buildings.map(unit => unit),
+            units: this.units.map(unit => unit),
         };
     }
 
@@ -50,15 +50,15 @@ class Map {
         }
     }
 
-    getSelf() {
-        return {
-            ...this.get(),
-            sources: this.sources.map(source => source)
-        };
-    }
-
     getRelief() {
         return this.map.map(row => row.map(tile => tile));
+    }
+
+    getSelf() {
+        return {
+            map: this.getRelief(),
+            sources: this.sources.map(source => source)
+        };
     }
 
     getGen() {
@@ -73,20 +73,20 @@ class Map {
 
     // ============ ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ============
 
-    getVisibleEntities(searchedEntities, searchingEntities) {
+    getVisibleEntities(searchedEntities, searchingEntities, method) {
         const visibleEntities = [];
         for (const entity of searchedEntities) {
             const pos = entity.getPos();
-            for (const searchingEntity in searchingEntities) {
-                const vis = searchingEntity.getVisibleRange();
+            for (const searchingEntity of searchingEntities) {
+                const vis = searchingEntity[method]();
                 if ((
                     vis.x[0] <= pos.x[0] && pos.x[0] <= vis.x[1] ||
                     vis.x[0] <= pos.x[1] && pos.x[1] <= vis.x[1]
                 ) && (
                         vis.y[0] <= pos.y[0] && pos.y[0] <= vis.y[1] ||
                         vis.y[0] <= pos.y[1] && pos.y[1] <= vis.y[1]
-                    ));
-                {
+                    )
+                ) {
                     visibleEntities.push(entity);
                     break;
                 }
@@ -109,12 +109,16 @@ class Map {
                 notRoleEntities.push(entity);
             }
         });
-        const visibleEntities = this.getVisibleEntities(notRoleEntities, roleEntities);
+        const visibleEntities = this.getVisibleEntities(
+            notRoleEntities,
+            roleEntities,
+            'getVisibleRange'
+        );
         visibleEntities.forEach(entity => {
-            if (entity instanceof Unit) {
-                units.push(entity.get());
-            } else {
+            if (entity instanceof Building) {
                 buildings.push(entity.get());
+            } else {
+                units.push(entity.get());
             }
         });
         return { units, buildings };
@@ -122,12 +126,17 @@ class Map {
 
     getVisbileSourcesByRole(role) {
         const roleEntities = [];
-        [...this.units, ...this.buildings].forEach(entity => {
-            if (entity.role === role) {
-                roleEntities.push(entity);
+        this.units.forEach(unit => {
+            if (unit.role === role) {
+                //if (unit.role === role && ['mushroomWorker', 'humanWorker'].includes(unit.type)) {
+                roleEntities.push(unit);
             }
         });
-        const sources = this.getVisibleEntities(this.sources, roleEntities).map(source => source.get());
+        const sources = this.getVisibleEntities(
+            this.sources,
+            roleEntities,
+            'getVisibleSoursesRange'
+        ).map(source => source.get());
         return { sources };
     }
 

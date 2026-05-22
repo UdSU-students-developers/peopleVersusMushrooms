@@ -116,11 +116,11 @@ class Server {
             }
         });
 
-        this.socket.on(MEDIATOR.EVENTS.GENERATE_MAP, (data: TAnswer<TMap>) => {
+        this.socket.on(MEDIATOR.EVENTS.GET_RELIEF, (data: TAnswer<TMap>) => {
             const result = this._validate(data);
             if (result) {
-                const { GENERATE_MAP } = this.mediator.getEventTypes();
-                this.mediator.call(GENERATE_MAP, result);
+                const { GET_RELIEF } = this.mediator.getEventTypes();
+                this.mediator.call(GET_RELIEF, result);
             }
         });
     }
@@ -205,16 +205,8 @@ class Server {
         return this.mediator.get<ILobby[]>(MEDIATOR.TRIGGERS.GET_LOBBIES);
     }
 
-    generateMap(guid: string): void {
-        this.socket.emit(MEDIATOR.EVENTS.GENERATE_MAP, { guid, width: CONFIG.WIDTH, height: CONFIG.HEIGHT });
-    }
-
-    setGeneratedMap(data: TMap): void {
-        this.mediator.get(MEDIATOR.TRIGGERS.SET_GENERATED_MAP, data);
-    }
-
-    getGeneratedMap(): TMap | null {
-        return this.mediator.get(MEDIATOR.TRIGGERS.GET_GENERATED_MAP);
+    getRelief(mapGuid: string, userGuid: string): void {
+        this.socket.emit(MEDIATOR.EVENTS.GET_RELIEF, { mapGuid, userGuid });
     }
 }
 

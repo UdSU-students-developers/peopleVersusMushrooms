@@ -5,6 +5,7 @@ class Unit {
         this.guid = guid;
         this.type = type;
         this.visibility = visibility;
+        this.units = [];
 
         this.x = x;
         this.y = y;
@@ -146,8 +147,24 @@ class Unit {
         this.easyStar.calculate();
     }
 
+    setUnits(units) {
+        this.units = units;
+    }
+
     _isCellWalkable(x, y) {
-        return this.grid?.[y]?.[x] === 0;
+        if (this.grid?.[y]?.[x] !== 0) {
+            return false;
+        }
+
+        for (const unit of this.units) {
+            if (unit.guid === this.guid) continue;
+
+            if (unit.x === x && unit.y === y) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 

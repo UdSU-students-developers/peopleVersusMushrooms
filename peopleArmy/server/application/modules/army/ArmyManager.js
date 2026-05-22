@@ -25,7 +25,6 @@ class ArmyManager extends BaseManager {
         // mediator trigger setters
         this.mediator.set(this.TRIGGERS.CREATE_UNIT, (data) => this.createUnit(data));
         this.mediator.set(this.TRIGGERS.UNIT_TAKE_DAMAGE, (data) => this.unitTakeDamage(data));
-        this.mediator.set(this.TRIGGERS.MOVE_UNIT, (data) => this.unitMove(data));
     }
 
     async loadUnitTypes() {
@@ -43,25 +42,30 @@ class ArmyManager extends BaseManager {
     }
 
     /* PRIVATE */
-    async updateArmyCallback(guid, data) {
+    async updateArmyCallback(guid) {
         const army = this.army[guid];
         if (!army?.mapGuid) {
             return;
         }
-        // послать в карту И в экономику изменение положения юнитов (просто послать юниты)
-        //...
+
+        // отправить позиции наших юнитов на карту
+        const entities = army.units
+            .filter(u => typeof u.get === 'function')
+            .map(u => {
+                const s = u.get();
+                return { guid: s.guid, x: s.x, y: s.y, type: s.type, visibility: s.visible };
+            });
+        await this.sendToMap(URLS.UPDATE_UNITS, { mapGuid: army.mapGuid, userGuid: guid, entities });
+
         // запросить видимость
-        const visibility = await this.sendToMap(`${URLS.GET_VISIBILITY}`, { mapGuid: army.mapGuid, userGuid: guid });
+        const visibility = await this.sendToMap(URLS.GET_VISIBILITY, { mapGuid: army.mapGuid, userGuid: guid });
         if (visibility) {
             army.setVisibility(visibility);
         }
 
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
         if (user) {
-            this.io.to(user.socketId).emit(
-                UPDATE_ARMY,
-                this.answer.good(army.get())
-            );
+            this.io.to(user.socketId).emit(UPDATE_ARMY, this.answer.good(army.get()));
         }
     }
 
@@ -139,38 +143,44 @@ class ArmyManager extends BaseManager {
         return this.answer.good(result.data);
     }
 
-    unitMove(data) {
-        const userGuid = data?.userGuid;
-        const unitGuid = data?.unitGuid;
-        const x = Number(data?.x);
-        const y = Number(data?.y);
-        if (!userGuid || !unitGuid || !Number.isFinite(x) || !Number.isFinite(y)) {
-            return this.answer.bad(400);
-        }
-        const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, userGuid);
-        if (!user || !user?.isLogin()) {
-            return this.answer.bad(11);
-        }
-        const army = this.army[userGuid];
-        if (!army) {
-            return this.answer.bad(400);
-        }
-        const unit = army.units.find(unit => unit.guid === unitGuid);
-        if (!unit) {
-            return this.answer.bad(400);
-        }
-        unit.setTarget(x, y);
-        return this.answer.good(true);
-    }
-
-    async damageMushroomsUnit({ armyGuid="123efthgfrds", unitGuid, amount }) {
-        if (!armyGuid || !unitGuid || !Number.isFinite(Number(amount))) {
+    async damageMushroomsUnit({ armyGuid, economyGuid, unitGuid, amount, targetKind, type }) {
+        if (!unitGuid || !Number.isFinite(Number(amount))) {
             return null;
         }
+
+        const sanitizedAmount = Number(amount);
+
+        if (targetKind === 'building') {
+            const buildingType = String(type || '').toLowerCase();
+            // башня и взрывомор — здания mushroomsArmy, не economy
+            if (buildingType === 'sporovaya_bashnya' || buildingType === 'vzryvomor') {
+                if (!armyGuid) {
+                    return null;
+                }
+                return this.sendToMushroomsArmy('/takeDamage', {
+                    armyGuid,
+                    unitGuid,
+                    amount: sanitizedAmount,
+                });
+            }
+            if (!economyGuid) {
+                return null;
+            }
+            return this.sendToMushroomsEconomy(URLS.APPLY_DAMAGE, {
+                economyGuid,
+                guid: unitGuid,
+                damage: sanitizedAmount,
+            });
+        }
+
+        if (!armyGuid) {
+            return null;
+        }
+
         return this.sendToMushroomsArmy('/takeDamage', {
             armyGuid,
             unitGuid,
-            amount: Number(amount),
+            amount: sanitizedAmount,
         });
     }
 
@@ -197,7 +207,7 @@ class ArmyManager extends BaseManager {
             }
             this.army[guid] = new Army({ guids, mapGuid, map, buildings: [], unitTypes: this.unitTypes, common: this.common, guid,
                 callbacks: {
-                    update: (guid, data) => this.updateArmyCallback(guid, data),
+                    update: (guid) => this.updateArmyCallback(guid),
                     takeDamage: (payload) => this.damageMushroomsUnit(payload),
                 }
             });
@@ -205,6 +215,7 @@ class ArmyManager extends BaseManager {
                 this.SOCKET.START_GAME,
                 this.answer.good({ map })
             );
+            await this.updateArmyCallback(guid);
         }
     }
 
@@ -214,7 +225,6 @@ class ArmyManager extends BaseManager {
         }
         this.army[guid].destructor();
         delete this.army[guid];
-        this.updateArmyCallback(guid, { units: [] });
         console.log(`армия с guid: ${guid} уничтожена`);
     }
 

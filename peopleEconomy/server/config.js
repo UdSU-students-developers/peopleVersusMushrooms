@@ -49,6 +49,18 @@ const CONFIG = {
             VISIBILITY: 3,
         },
 
+        //статусы поведения воркера
+        WORKER_STATUS: {
+            SEARCH: 0,   // брожение
+            BUILD: 1,    // строительство
+            FLEE: 2      // бегство
+        },
+
+        //параметры бегства (мб еще что додумать)
+        FLEE: {
+            DETECTION_RATIO: 1/3 // 1/3 от визибилити для обнаружения врага
+        },
+
         BUILDINGS: {
             PIPE: 'PIPE',
             BARRACKS: 'BARRACKS',

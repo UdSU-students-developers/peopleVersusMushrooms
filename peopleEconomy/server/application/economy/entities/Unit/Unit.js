@@ -140,10 +140,15 @@ class Unit {
         this.calcPath({ x: walkableTarget.x, y: walkableTarget.y });
     }
 
+    _hasReachedTarget() {
+        return this.target && this.x === this.target.x && this.y === this.target.y;
+    }
+
     
     move() {
-        //если нет цели - выходим
-        if (!this.target) return;
+        if (this._hasReachedTarget()) {
+            return;
+        }
         
         //если путь пустой - пробуем построить
         if (this.path.length === 0 && !this.pathRequested) {

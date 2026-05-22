@@ -6,7 +6,7 @@ const CONFIG = {
         EVENTS: {
             LOBBY_UPDATED: 'LOBBY_UPDATED',
             START_GAME: 'START_GAME',
-            APPLY_DAMAGE: 'APPLY_DAMAGE',
+            DAMAGE: 'DAMAGE',
             MOVE_UNIT: 'MOVE_UNIT',
         },
         TRIGGERS: {
@@ -55,7 +55,7 @@ const CONFIG = {
             CAPACITY: 0, // ничего в себе хранить не умеет
             POWER: 1,
             SIZE: 1,
-            VISIBILITY: 3, //Сколько клеток вокруг видит
+            VISIBILITY: 1, //Сколько клеток вокруг видит
         },
         // грибница вырастает за 12 секунд
         // 2*2*3 = 12 sec
@@ -70,10 +70,17 @@ const CONFIG = {
             CAPACITY: 60, // сколько железа доступно для производства личинок
             LARVA_ENERGY_COST: 20,
             LARVA_COOLDOWN_MS: 3000,
-            VISIBILITY: 5,
+            VISIBILITY: 1,
         },
         BIO_REACTOR: {
-
+            TYPE: 'reactor',
+            HP: 60,
+            SIZE: 2,           
+            CONSUMPTION: 2,    
+            PRODUCTION: 2,
+            CAPACITY: 180,
+            VISIBILITY: 1,
+            CONSUME_RADIUS: 2, 
         },
         BIO_REACTOR_SMALL: {
             TYPE: "small_reactor",
@@ -83,9 +90,16 @@ const CONFIG = {
             PRODUCTION: 1,  // сколько производит за единицу времени
             CAPACITY: 60, // емкость. Сколько грибочков может лежать на переработке в реакторе, чтобы он работал непрерывно
             VISIBILITY: 5,
+            CONSUME_RADIUS: 1,
         },
         MINE: {
-
+            TYPE: "mine",
+            HP: 80,
+            SIZE: 1,
+            CONSUMPTION: 1,
+            PRODUCTION: 1,
+            CAPACITY: 500,
+            VISIBILITY: 1,
         },
         STORAGE_IRON: {
 
@@ -96,19 +110,22 @@ const CONFIG = {
         UNIT: {
             RADIUS: 10, //максимальный радиус расчета ближайшей точки от центра стремления(больше 20 не ставить)
         },
-        WORKER: {
-            HP: 100,
-            SPEED: 1,
-            TYPE: "worker",
-            VISIBILITY: 3,
-        },
+
         LARVA: {
             HP: 40,
             SPEED: 0.05,
-            WANDER_RADIUS: 4, //радиус блуждания личинки
+            WANDER_RADIUS: 8, //радиус блуждания личинки
             TYPE: "larva",
             VISIBILITY: 2,
-        }
+        },
+
+        GEODEZIST: {
+            TYPE: "geodezist",
+            HP: 60,
+            SPEED: 0.08,
+            WANDER_RADIUS: 8,
+            VISIBILITY: 4,
+        },
     }
 };
 

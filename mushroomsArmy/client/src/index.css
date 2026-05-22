@@ -1,7 +1,7 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Handjet:wght,ELSH@100..900,2&family=Press+Start+2P&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&display=swap');
 
 :root {
-  --font-main: 'Handjet', monospace;
+  --font-main: 'Pixelify Sans';
 }
 
 html,

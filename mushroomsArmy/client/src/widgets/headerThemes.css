@@ -1,6 +1,7 @@
 /* ================= AUTH ================= */
 
 .header--theme-auth {
+  letter-spacing: 2px;
   background-color: rgb(48, 66, 35);
   border-bottom: 1px solid #dad8b2;
 }
@@ -11,6 +12,7 @@
 }
 
 .header--theme-auth .header__menu-button {
+  letter-spacing: 2px;
   background-color: #2d2e0c;
   color: #dad8b2;
   border: 2px solid #423c08;
@@ -26,6 +28,7 @@
 .header--theme-lobby .header__nickname,
 .header--theme-lobby .header__title {
   letter-spacing: 2px;
+
   color: rgb(217, 144, 54);
 
   text-shadow: 
@@ -54,6 +57,7 @@
 /* ================= HUD ================= */
 
 .header--theme-hud {
+  letter-spacing: 2px;
   background-color: rgb(48, 66, 35); 
   border-bottom: 2px solid #423c08;
 }
@@ -69,7 +73,8 @@
 }
 
 .header--theme-hud .header__menu-button {
- background-color: rgb(48, 66, 35);
+  letter-spacing: 2px;
+  background-color: rgb(48, 66, 35);
   color: #dad8b2;
   text-shadow: 
     -0.5px -0.5px 0 rgb(113, 22, 22),  

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Handjet:wght@100..900&family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 .header {
   position: fixed;
@@ -11,7 +11,7 @@
 
   height: var(--header-height);
 
-  font-family: 'Handjet', monospace;
+  font-family: 'Pixelify Sans', sans-serif, monospace;
 
   transition:
     background-color 120ms ease,
@@ -52,19 +52,14 @@
 
 .header__title {
   margin: 0;
-
   font-size: var(--title-font-size);
 }
 
 .header__menu-button {
+  font-family: var(--font-main);
   cursor: pointer;
 
   font-size: var(--font-base);
-
-  padding:
-    calc(var(--spacing) * 0.5)
-    calc(var(--spacing) * 2);
-
   border: none;
 
   transition:

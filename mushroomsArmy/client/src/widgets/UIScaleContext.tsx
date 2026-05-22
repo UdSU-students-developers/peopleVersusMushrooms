@@ -36,7 +36,6 @@ export const UIScaleProvider: React.FC<UIScaleProviderProps> = ({ children }) =>
     root.style.setProperty('--title-font-size', `${values.titleFont}px`);
     root.style.setProperty('--font-base', `${values.baseFont}px`);
     root.style.setProperty('--font-small', `${values.smallFont}px`);
-    root.style.setProperty('--spacing', `${values.spacing}px`);
   }, [scale]);
 
   const handleSetScale = (newScale: HeaderScale) => {

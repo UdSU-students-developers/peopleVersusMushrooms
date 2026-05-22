@@ -24,7 +24,7 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   const mediator = useContext(MediatorContext);
   const server = useContext(ServerContext);
 
-  const [isGameOver, setIsGameOver] = useState(true);
+  const [isGameOver, setIsGameOver] = useState(false);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 

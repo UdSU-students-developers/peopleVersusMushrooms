@@ -19,6 +19,9 @@
     padding-top: 150px;     
     
 }
+.lobby button {
+    font-family: var(--font-main);
+}
 .lobby::before {
     content: '';
     position: absolute;

@@ -26,7 +26,6 @@ const Header: React.FC<HeaderProps> = ({
     '--title-font-size': `${currentScale.titleFont}px`,
     '--font-base': `${currentScale.baseFont}px`,
     '--font-small': `${currentScale.smallFont}px`,
-    '--spacing': `${currentScale.spacing}px`,
   } as React.CSSProperties;
 
   return (

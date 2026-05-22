@@ -1,41 +1,42 @@
+// titleFont: 8,  название игры
+// baseFont: 12,   ник
+// smallFont: 10,   текст на кнопках/мелкие детали
+
 export const UI_SCALES = {
   S: {
     headerHeight: 24,
-    titleFont: 8,
+    titleFont: 14,
     baseFont: 12,
-    smallFont: 10,
-    spacing: 4,
+    smallFont: 15,
   },
 
   SM: {
     headerHeight: 28,
-    titleFont: 9,
+
+    titleFont: 17,
     baseFont: 14,
-    smallFont: 13,
-    spacing: 5,
+    smallFont: 18,
   },
 
   M: {//по умолчанию
     headerHeight: 32,
+
     titleFont: 21,
     baseFont: 18,
     smallFont: 20,
-    spacing: 6,
   },
 
   ML: {
     headerHeight: 40,
-    titleFont: 15,
-    baseFont: 16,
-    smallFont: 15,
-    spacing: 7,
+    titleFont: 27,
+    baseFont: 20,
+    smallFont: 25,
   },
 
   L: {
     headerHeight: 48,
-    titleFont: 17,
-    baseFont: 18,
-    smallFont: 16,
-    spacing: 8,
+    titleFont: 28,
+    baseFont: 20,
+    smallFont: 27,
   },
 } as const;

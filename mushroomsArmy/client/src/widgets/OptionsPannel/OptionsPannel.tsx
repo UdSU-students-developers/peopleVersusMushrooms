@@ -34,12 +34,12 @@ const OptionsPannel: React.FC<OptionsPannelProps> = ({ variant, isOpen, onClose,
       } as React.CSSProperties}
     >
       <button type="button" className="options-close-button" onClick={onClose}>
-        x
+        ×
       </button>
 
       <div className="options-controls">
-        <div className="options-settings-title">НАСТРОЙКИ</div>
-        <div className="options-title">РАЗМЕР ИНТЕРФЕЙСА</div>
+        <div className="options-settings-title">•настройки•</div>
+        <div className="options-title">размер интерфейса</div>
 
         <input
           type="range"
@@ -68,7 +68,7 @@ const OptionsPannel: React.FC<OptionsPannelProps> = ({ variant, isOpen, onClose,
       )}
       {variant === 'hud' && onSurrender && (
         <button type="button" className="options-surrender-button" onClick={onSurrender}>
-          СДАТЬСЯ
+          сдаться
         </button>
       )}
     </div>

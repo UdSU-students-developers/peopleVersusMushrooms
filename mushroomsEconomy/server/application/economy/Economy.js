@@ -318,13 +318,20 @@ class Economy {
         const grid = this.map.larvaGrid;
         if (!grid) return;
 
+        const allUnits = [
+            ...this.units.larvae,
+            ...this.units.geodezists,
+        ];
+
         for (const larva of this.units.larvae) {
             larva.setGrid(grid);
+            larva.setUnits(allUnits);
             larva.update();
         }
 
         for (const geodezist of this.units.geodezists) {
             geodezist.setGrid(grid);
+            geodezist.setUnits(allUnits);
             geodezist.update();
         }
     }

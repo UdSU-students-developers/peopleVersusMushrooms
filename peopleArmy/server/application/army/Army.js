@@ -37,6 +37,7 @@ class Army {
         this.updated = false;
     }
 
+    /** Остановить игровой цикл (clearInterval). */
     destructor() {
         if (this.interval) {
             clearInterval(this.interval);
@@ -44,6 +45,10 @@ class Army {
         }
     }
 
+    /**
+     * Снимок состояния для клиента (UPDATE_ARMY).
+     * @returns {{ units, enemyUnits, enemyBuildings, destroyedEnemyBuildingGuids }}
+     */
     get() {
         return {
             units: this.units.map((u) => (typeof u.get === 'function' ? u.get() : u)),
@@ -53,6 +58,7 @@ class Army {
         };
     }
 
+    /** Живо ли здание-цель (guid, isAlive, hp). */
     static _isBuildingAlive(b) {
         if (!b || typeof b.guid !== 'string') return false;
         if (b.isAlive === false) return false;
@@ -60,35 +66,23 @@ class Army {
         return true;
     }
 
+    /** Инициализировать карту проходимости (массив 50×50 по умолчанию). */
     _initMap(map = null) {
         if (Array.isArray(map)) {
             this.map = map;
             return;
         }
-
-        this.map = Array.from({ length: 50 }, () => Array.from({ length: 50 }, () => null));
     }
 
+    /** Сбросить список вражеских юнитов при старте армии. */
     _initUnits() {
         this.enemyUnits = [];
     }
 
     /**
-     * Обновляет врагов по ответу map GET_VISIBILITY (ArmyManager → updateArmyCallback).
-     *
-     * units — видимые вражеские юниты (грибы). Список каждый тик полностью заменяем:
-     * юниты двигаются, состав видимости меняется.
-     *
-     * buildings — видимые вражеские здания (башня, взрывомор, постройки economy).
-     * После фикса карты (instanceof Building) они приходят в buildings, а не в units.
-     *
-     * destroyedEnemyBuildingGuids — guid зданий, которые мы уже «убили» локально
-     * (_markBuildingDamaged). Карта может ещё отдавать их в buildings, т.к. при смерти
-     * здание не удаляется из map.buildings (UPDATE_BUILDINGS шлёт только живых).
-     * Такие guid отфильтровываем, чтобы клиент не рисовал труп.
-     *
-     * hp — с карты не приходит; если здание уже было в enemyBuildings, подставляем
-     * накопленный hp с прошлого тика (учёт урона от shotUnits).
+     * Обновить врагов по ответу map GET_VISIBILITY (ArmyManager.updateArmyCallback).
+     * units — полная замена каждый тик. buildings — без guid из destroyedEnemyBuildingGuids; hp с карты нет.
+     * @param {{ units?: object[], buildings?: object[] }} params
      */
     setVisibility({ units = [], buildings = [] } = {}) {
         this.enemyUnits = Array.isArray(units) ? units : [];
@@ -110,6 +104,13 @@ class Army {
         this.updated = true;
     }
 
+    /**
+     * Учесть урон по зданию (локальный hp; карта hp не отдаёт).
+     * При hp <= 0 — guid в destroyedEnemyBuildingGuids, здание убираем из enemyBuildings.
+     * @param {string} guid
+     * @param {string} type
+     * @param {number} amount
+     */
     _markBuildingDamaged(guid, type, amount) {
         const index = this.enemyBuildings.findIndex((b) => b.guid === guid);
         if (index < 0) {
@@ -129,7 +130,10 @@ class Army {
         this.enemyBuildings[index] = { ...building, hp };
     }
 
-    // Возвращает все цели: здания и юниты, помеченные targetKind
+    /**
+     * Собрать цели для стрельбы: юниты и здания с полем targetKind.
+     * @returns {{ units: object[], buildings: object[] }}
+     */
     getShootableTargets() {
         const buildings = this.enemyBuildings
             .filter((b) => Army._isBuildingAlive(b))
@@ -143,8 +147,7 @@ class Army {
     }
 
     /**
-     * Создать юнита в этой армии.
-     * guid юнита генерируется внутри через Common.
+     * Создать юнит в армии (guid через Common).
      * @param {{ x: number, y: number, type?: string }} data
      * @returns {{ ok: true, data: object } | { ok: false, error: string }}
      */
@@ -186,8 +189,9 @@ class Army {
     }
 
     /**
-     * Нанести урон юниту по его guid.
-     * Если hp <= 0 — юнит удаляется из армии.
+     * Нанести урон своему юниту по guid; при смерти — удалить из units.
+     * @param {{ guid: string, damage: number }} params
+     * @returns {{ ok: true, data: object } | { ok: false, error: string }}
      */
     unitTakeDamage({ guid, damage }) {
         const unit = this.units.find((u) => u.guid === guid);
@@ -209,7 +213,11 @@ class Army {
         return { ok: true, data: { guid: unit.guid, hp: unit.hp } };
     }
 
-    // 1. выстрелить юнитами по врагам
+    /**
+     * Выбрать клетку-цель для марша (свободная клетка, приоритет по диагонали и дистанции).
+     * @param {object} unit
+     * @returns {{ x: number, y: number } | null}
+     */
     getTarget(unit) {
         const height = this.map.length;
         const width = this.map[0]?.length || 0;
@@ -271,6 +279,7 @@ class Army {
         return targetCells.sort(compareByDistance)[0];
     }
 
+    /** Назначить цель марша юнитам без targetX/targetY. */
     setUnitsTarget() {
         this.units.forEach((unit) => {
             if (unit.targetX != null && unit.targetY != null) {
@@ -287,6 +296,12 @@ class Army {
         });
     }
 
+    /**
+     * Квадрат дистанции от юнита до цели (для зданий учитывается size).
+     * @param {object} unit
+     * @param {object} target
+     * @returns {number}
+     */
     getTargetDistanceSquared(unit, target) {
         const unitX = Number(unit.x);
         const unitY = Number(unit.y);
@@ -302,6 +317,12 @@ class Army {
         return (dx * dx) + (dy * dy);
     }
 
+    /**
+     * Отфильтровать цели в радиусе атаки юнита.
+     * @param {object} unit
+     * @param {object[]} units
+     * @returns {object[]}
+     */
     getUnitsInRange(unit, units = this.enemyUnits) {
         if (!unit || !Array.isArray(units)) {
             return [];
@@ -312,7 +333,6 @@ class Army {
             if (!enemy || enemy.isAlive === false) {
                 return false;
             }
-            // hp может отсутствовать если цель пришла с карты (карта не хранит hp)
             if (typeof enemy.hp === 'number' && enemy.hp <= 0) {
                 return false;
             }
@@ -320,6 +340,10 @@ class Army {
         });
     }
 
+    /**
+     * Выстрелить всеми юнитами: приоритет целей по типу (bmp/partizan → здания),
+     * в пуле — наислабейший; урон через callbacks.takeDamage.
+     */
     async shotUnits() {
         if (!this.units.length || typeof this.callbacks?.takeDamage !== 'function') {
             return;
@@ -338,7 +362,6 @@ class Army {
             const unitsInRange = this.getUnitsInRange(unit, enemyUnits);
             const buildingsInRange = this.getUnitsInRange(unit, enemyBuildings);
 
-            // primary/secondary priority зависит от типа юнита
             const [primary, secondary] = prefersBuildings(unit.type)
                 ? [buildingsInRange, unitsInRange]
                 : [unitsInRange, buildingsInRange];
@@ -348,7 +371,6 @@ class Army {
                 continue;
             }
 
-            // бьём наислабейшего; если hp не известен — считаем его бесконечным
             const target = pool.reduce((weakest, t) => (t.hp ?? Infinity) < (weakest.hp ?? Infinity) ? t : weakest);
             const amount = Number(unit.damage) || 1;
             await this.callbacks.takeDamage({
@@ -366,7 +388,9 @@ class Army {
         }
     }
 
-    // 2. сходить юнитами (если в радиусе есть враги или вражеские здания — стоим и стреляем)
+    /**
+     * Сдвинуть юнитов по карте; при враге в радиусе — стоять (path сбрасывается).
+     */
     moveUnits() {
         const { units: enemyUnits, buildings: enemyBuildings } = this.getShootableTargets();
         this.units.forEach((unit) => {
@@ -384,15 +408,15 @@ class Army {
         });
     }
 
+    /**
+     * Тик игры: shotUnits → setUnitsTarget → moveUnits → callbacks.update (видимость и сокет).
+     */
     async update() {
         console.log(this.guids.mushroomsArmy, this.guids.mushroomsEconomy);
-        // 1. выстрелить юнитами по врагам
         await this.shotUnits();
         this.setUnitsTarget();
-        // 2. сходить юнитами
         this.moveUnits();
         this.updated = false;
-        // 3. обновить видимость и отправить состояние клиенту каждый такт
         this.callbacks.update(this.guid);
     }
 }

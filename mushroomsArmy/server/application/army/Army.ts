@@ -6,8 +6,7 @@ import Sporomet from "./entities/Sporomet/Sporomet";
 import SporovayaBashnya from "./entities/SporovayaBashnya/SporovayaBashnya";
 import Unit, { TProjectile, TUnitState } from "./entities/Units";
 import { IBuilding, Vzryvomor } from "./entities/Vzryvomor/Vzryvomor";
-import { ArmyStateManager, ArmyMode, ArmyMetrics, ScoutTracker, TFormationState } from './ArmyStateManager';
-import { EconomyRequest, EconomyResponse } from './ArmyStateManager';
+import type { TFormationState } from './ArmyStateManager';
 
 
 export type TMap = (number | null)[][];
@@ -48,14 +47,10 @@ export type TArmyOptions = {
     buildings: TBuildingInput[];
     guid: string;
     common: Common;
-    callbacks: { 
-        update: (guid: string, data: TArmyState) => void; 
+    callbacks: {
+        update: (guid: string, data: TArmyState) => void;
         takeDamage?: (unitGuid: string, amount: number) => void;
-        onModeChange?: (mode: ArmyMode) => void;
-        onDistanceMilestone?: (distance: number) => void;
-        onScoutRespawn?: (scoutGuid: string) => void;
     };
-    economyRequestCallback?: (request: EconomyRequest) => Promise<EconomyResponse | null>;
 };
 
 export type TArmyState = {
@@ -81,16 +76,11 @@ export class Army {
     public economyUnits: TBuildingInput[] = [];
     public sentBuildingGuids: Set<string> = new Set();
     public projectiles: TProjectile[] = [];
-    public callbacks: { 
-        update: (guid: string, data: TArmyState) => void; 
+    public callbacks: {
+        update: (guid: string, data: TArmyState) => void;
         takeDamage?: (unitGuid: string, amount: number) => void;
-        onModeChange?: (mode: ArmyMode) => void;
-        onDistanceMilestone?: (distance: number) => void;
-        onScoutRespawn?: (scoutGuid: string) => void;
     };
     private intervalId: NodeJS.Timeout;
-    
-    private stateManager: ArmyStateManager;
 
     constructor(options: TArmyOptions) {
         this.map = options.map;
@@ -98,34 +88,11 @@ export class Army {
         this.guid = options.guid;
         this.callbacks = options.callbacks;
         this.create(options.common, options.buildings);
-        
-        this.stateManager = new ArmyStateManager({
-            army: this,
-            common: options.common,
-            onModeChange: options.callbacks.onModeChange,
-            onDistanceMilestone: options.callbacks.onDistanceMilestone,
-            onScoutRespawn: options.callbacks.onScoutRespawn,
-            economyRequestCallback: options.economyRequestCallback,
-        });
-        
         this.intervalId = setInterval(() => this.update(), 200);
     }
 
     public destructor(): void {
         clearInterval(this.intervalId);
-        this.stateManager.destroy(); 
-    }
-
-    public getMetrics(): Readonly<ArmyMetrics> {
-        return this.stateManager.getMetrics();
-    }
-
-    public getScouts(): ScoutTracker[] {
-        return this.stateManager.getScouts();
-    }
-
-    public async requestEconomy(request: Omit<EconomyRequest, 'armyGuid'>): Promise<EconomyResponse | null> {
-        return this.stateManager.requestEconomy(request);
     }
 
     private create(common: Common, initialBuildings: TBuildingInput[] = []) {
@@ -360,21 +327,12 @@ export class Army {
                 .filter(u => u.type === 'champigneb' && !u.isAlive)
                 .map(u => (u as unknown as Champigneb).slimePuddle),
             projectiles: this.projectiles,
-            formation: this.stateManager.getFormationState(),
+            formation: null,
         };
     }
 
     public getAliveUnits(): Unit[] {
         return this.units.filter(u => u.isAlive);
-    }
-
-    private isOutsideMap(y: number, x: number) {
-        // Проверяем границы карты
-        return y < 0 || y >= this.map.length || x < 0 || x >= (this.map[0]?.length ?? 0);
-    }
-
-    private isInsideMap(y: number, x: number){
-        return !this.isOutsideMap(y, x);
     }
 
     public spawnUnit(type: 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad', x: number, y: number, common: Common): { guid: string } | null {
@@ -399,43 +357,29 @@ export class Army {
         } else if (type === 'pizdoglyad') {
             this.units.push(new Pizdoglyad({ guid, type, x, y, speed: 7, attackRange: 0 }));
         }
-        
-        this.stateManager.registerUnitSpawn(type, guid);
-        
 
         return { guid };
     }
 
 
-    public spawnBuilding(type: 'vzryvomor' | 'sporovaya_bashnya', x: number, y: number, common: Common){
-        const isValid = (y1: number, x1: number) => {
-            // Тайл должен быть 0 (только равнина — не вода, не горы, не туман)
-            return this.map[y1][x1] === 0;
-        }
+    public spawnBuilding(type: 'vzryvomor' | 'sporovaya_bashnya', x: number, y: number, common: Common): { guid: string } | null {
+        const rows = this.map.length;
+        const cols = this.map[0]?.length ?? 0;
+        const isValid = (y1: number, x1: number): boolean =>
+            y1 >= 0 && y1 < rows && x1 >= 0 && x1 < cols && this.map[y1][x1] === 0;
 
-        let coords = null; 
-        if (type === 'sporovaya_bashnya'){
-            coords = [[y,x], [y + 1, x], [y, x + 1], [y+1, x + 1]];
+        const coords: [number, number][] = type === 'sporovaya_bashnya'
+            ? [[y, x], [y + 1, x], [y, x + 1], [y + 1, x + 1]]
+            : [[y, x]];
+
+        if (!coords.every(([cy, cx]) => isValid(cy, cx))) return null;
+
+        const guid = common.guid();
+        if (type === 'vzryvomor') {
+            this.buildings.push(new Vzryvomor({ guid, x, y, attackRange: 12 }));
+        } else {
+            this.buildings.push(new SporovayaBashnya({ guid, x, y, projectiles: this.projectiles }));
         }
-        else if (type === 'vzryvomor'){
-            coords = [[y,x]];
-        }
-        
-        let isOk = 
-            coords?.every(c => {
-                const [y, x] = c;
-                return isValid(y, x) && this.isInsideMap(y, x)
-            })
-        
-        if (isOk) {
-            const guid = common.guid();
-            if (type === 'vzryvomor') {
-                this.buildings.push(new Vzryvomor({ guid, x, y, attackRange: 12 }));
-            } else {
-                this.buildings.push(new SporovayaBashnya({ guid, x, y, projectiles: this.projectiles }));
-            }
-            return { guid };
-        }
-        return null;
+        return { guid };
     }
 }

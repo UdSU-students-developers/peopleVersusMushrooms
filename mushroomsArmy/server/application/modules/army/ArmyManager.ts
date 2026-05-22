@@ -106,8 +106,8 @@ class ArmyManager extends BaseManager {
         const unit = army.units.find(u => u.guid === unitGuid);
         if (!unit) return false;
 
-        (unit as any).targetX = x;
-        (unit as any).targetY = y;
+        unit.targetX = x;
+        unit.targetY = y;
 
         return true;
     }
@@ -141,16 +141,6 @@ class ArmyManager extends BaseManager {
         if (!army) return null;
 
         return army.spawnBuilding(type, x, y, this.common);
-    }
-
-    private triggerGetArmyMetrics(armyGuid: string): object | null {
-        const stateManager = this.armyStateManagers[armyGuid];
-        if (!stateManager) return null;
-
-        return {
-            metrics: stateManager.getMetrics(),
-            scouts: stateManager.getScouts(),
-        };
     }
 
     private buildFogMap(armyState: TArmyState, fullMap: TMap, visionRadius: number = 8): TMap {
@@ -198,18 +188,6 @@ class ArmyManager extends BaseManager {
 
         const army = this.army[guid];
         if (!army) return;
-
-        // if (army.getAliveUnits().length === 0) {
-        //     this.io.to(user.socketId).emit(GAME_OVER, this.answer.good({ message: 'Все юниты погибли' }));
-        //     this.destroyArmy(guid);
-        //     return;
-        // }
-        
-        // if (army.buildings.length === 0) {
-        //     this.io.to(user.socketId).emit(GAME_OVER, this.answer.good({ message: 'Все здания разрушены' }));
-        //     this.destroyArmy(guid);
-        //     return;
-        // }
 
         const { units } = armyState;
         const ownBuildings = army.buildings.map(building => building.getState());
@@ -273,7 +251,8 @@ class ArmyManager extends BaseManager {
 
         const fogMap = this.buildFogMap(updatedState, army.map);
         const stateManager = this.armyStateManagers[guid];
-        const metrics = stateManager ? stateManager.getMetrics() : null;
+        const metrics = stateManager?.getMetrics() ?? null;
+        const formation = stateManager?.getFormationState() ?? null;
 
         this.io.to(user.socketId).emit(GAME_STATE, this.answer.good({
             ...updatedState,
@@ -282,6 +261,7 @@ class ArmyManager extends BaseManager {
             buildings: [...clientBuildingsByGuid.values()],
             economyUnits: updatedState.economyUnits,
             metrics,
+            formation,
         }));
     }
 
@@ -310,22 +290,9 @@ class ArmyManager extends BaseManager {
         delete this.armyGuids[guid];
     }
 
-    private async handleEconomyRequest(request: EconomyRequest): Promise<EconomyResponse | null> {
-        try {
-            const response = await this.send<EconomyRequest, { success: boolean; data?: unknown }>(
-                `${GLOBAL_CONFIG.ECONOMY.URL}${GLOBAL_CONFIG.URLS.ECONOMY_REQUEST}`,
-                request
-            );
-
-            if (!response) return null;
-
-            return {
-                success: response.success,
-                data: response.data as EconomyResponse['data'],
-            };
-        } catch (error) {
-            return null;
-        }
+    private async handleEconomyRequest(_request: EconomyRequest): Promise<EconomyResponse | null> {
+        // Интеграция с сервисом экономики не реализована
+        return null;
     }
 
     private handleModeChange(armyGuid: string, newMode: ArmyMode): void {

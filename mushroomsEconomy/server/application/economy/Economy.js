@@ -14,6 +14,8 @@ const Mine = require('./entities/Buildings/Mine');
 const Larva = require('./entities/Unit/Larva');
 const Map = require('./entities/Map/Map');
 
+const Autopilot = require("./Autopilot");
+
 const { INTERVAL } = GLOBAL_CONFIG;
 
 class Economy {
@@ -77,6 +79,7 @@ class Economy {
         this.spawnArmyUnit({ armyGuid: guids.mushroomsArmy, type: GLOBAL_CONFIG.UNIT_TYPES.MUSHROOMS_ARMY.CHAMPIGNEB, x: 4, y: 4 });
 
         this.updated = false;
+        this.autopilot = new Autopilot();
         this.interval = setInterval(() => this.update(), INTERVAL);
     }
 
@@ -145,7 +148,7 @@ class Economy {
     mutateLarvaToWorker(lar) {
         this.units.larvae = this.units.larvae.filter(l => l.guid !== lar.guid);
 
-        this.addWorker(wor.x, wor.y);
+        this.addWorker(lar.x, lar.y);
     }
     
     addWorker(x, y) {
@@ -182,6 +185,7 @@ class Economy {
 
         this.addSmallReactor(wor.x, wor.y);
     }
+
 
     addMine(x, y) {
         const guid = this.common.guid();
@@ -338,7 +342,7 @@ class Economy {
 
         const allUnits = [
             ...this.units.larvae,
-            ...this.units.geodezists,
+            ...this.units.workers,
         ];
 
         for (const larva of this.units.larvae) {
@@ -421,6 +425,8 @@ class Economy {
 
         // 4. шахты добывают железо
         this.updateMines();
+
+        this.autopilot.update(this);
 
         // отбросить апдейт, если он случился
         if (this.updated) {

@@ -8,6 +8,7 @@ const CONFIG = {
             START_GAME: 'START_GAME',
             DAMAGE: 'DAMAGE',
             MOVE_UNIT: 'MOVE_UNIT',
+            REQUEST_UNITS: 'REQUEST_UNITS',
         },
         TRIGGERS: {
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',

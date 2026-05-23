@@ -123,6 +123,14 @@ class Server {
                 this.mediator.call(GET_RELIEF, result);
             }
         });
+
+        this.socket.on(MEDIATOR.EVENTS.UPDATE_MAP, (data: TAnswer<TMap>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { UPDATE_MAP } = this.mediator.getEventTypes();
+                this.mediator.call(UPDATE_MAP, result);
+            }
+        });
     }
 
     private _validate(data: any) {
@@ -207,6 +215,10 @@ class Server {
 
     getRelief(mapGuid: string, userGuid: string): void {
         this.socket.emit(MEDIATOR.EVENTS.GET_RELIEF, { mapGuid, userGuid });
+    }
+
+    updateMap(mapGuid: string, userGuid: string): void {
+        this.socket.emit(MEDIATOR.EVENTS.UPDATE_MAP, { mapGuid, userGuid });
     }
 }
 

@@ -1,7 +1,7 @@
 const Unit = require('./Unit');
 const CONFIG = require('../../../../config');
 
-const { HP, SPEED, WANDER_RADIUS, TYPE, VISIBILITY, SOURCES_VISIBILITY } = CONFIG.ECONOMY.LARVA;
+const { HP, SPEED, WANDER_RADIUS, TYPE, VISIBILITY, SOURCES_VISIBILITY, GROWTH_LIMIT } = CONFIG.ECONOMY.LARVA;
 
 class Larva extends Unit {
     constructor(options) {
@@ -19,6 +19,7 @@ class Larva extends Unit {
         this.hp = HP;
         this.growthScale = 0;
         this.wanderRadius = WANDER_RADIUS;
+        this.callbacks = options.callbacks || {};
     }
 
     get() {
@@ -30,6 +31,13 @@ class Larva extends Unit {
     }
 
     update() {
+        this.growthScale += 1;
+
+        if (this.growthScale >= GROWTH_LIMIT) {
+            this.callbacks.mutateToWorker(this);
+            return;
+        }
+
         if (this._hasReachedTarget()) {
             this._wanderAroundHome();
         }

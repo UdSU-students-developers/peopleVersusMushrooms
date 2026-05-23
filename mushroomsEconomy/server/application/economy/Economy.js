@@ -140,12 +140,16 @@ class Economy {
             homeY,
             guid: this.common.guid(),
             map: this.map.larvaGrid,
+            callbacks: {
+                mutateToWorker: (lar) => this.mutateLarvaToWorker(lar),
+            },
         });
         this.units.larvae.push(larva);
         this.updatedUnits.push(larva.get());
     }
 
     mutateLarvaToWorker(lar) {
+        this.updatedUnits.push(lar.get());
         this.units.larvae = this.units.larvae.filter(l => l.guid !== lar.guid);
 
         this.addWorker(lar.x, lar.y);
@@ -169,18 +173,21 @@ class Economy {
     }
 
     mutateWorkerToMine(wor) {
+        this.updatedUnits.push(wor.get());
         this.units.workers = this.units.workers.filter(w => w.guid !== wor.guid);
 
         this.addMine(wor.x, wor.y);
     }
 
     mutateWorkerToReactor(wor) {
+        this.updatedUnits.push(wor.get());
         this.units.workers = this.units.workers.filter(w => w.guid !== wor.guid);
 
         this.addReactor(wor.x, wor.y);
     }
 
     mutateWorkerToSmallReactor(wor) {
+        this.updatedUnits.push(wor.get());
         this.units.workers = this.units.workers.filter(w => w.guid !== wor.guid);
 
         this.addSmallReactor(wor.x, wor.y);

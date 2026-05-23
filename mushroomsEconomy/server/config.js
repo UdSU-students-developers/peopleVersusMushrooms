@@ -120,6 +120,7 @@ const CONFIG = {
             TYPE: "larva",
             VISIBILITY: 2,
             SOURCES_VISIBILITY: 100,
+            GROWTH_LIMIT: 100, //сколько тиков нужно личинке чтобы превратиться в рабочего
         },
 
         WORKER: {

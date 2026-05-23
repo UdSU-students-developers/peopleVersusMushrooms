@@ -72,10 +72,7 @@ class Autopilot {
                 });
             }
         } else {
-            // личинки мутируют в рабочих
-            for (const larva of [...economy.units.larvae]) {
-                economy.mutateLarvaToWorker(larva);
-            }
+            // economy: личинки растут сами, автопилот не вмешивается
         }
     }
 
@@ -91,24 +88,20 @@ class Autopilot {
                     case 'small_reactor':
                         economy.mutateWorkerToSmallReactor(worker);
                         break;
-                    case 'mine':
-                        economy.mutateWorkerToMine(worker);
-                        break;
+                    // mine не обрабатывается здесь — Worker сам дойдёт до железа на мицелии и мутирует через callback
                     default:
                         break;
                 }
             }
         } else {
-            // рабочие мутируют в то, чего больше всего не хватает
+            // economy: рабочие мутируют в то, чего больше всего не хватает
             for (const worker of [...economy.units.workers]) {
                 const neededType = this._getNeededBuildingType(economy);
                 switch (neededType) {
                     case 'reactor':
                         economy.mutateWorkerToReactor(worker);
                         break;
-                    case 'mine':
-                        economy.mutateWorkerToMine(worker);
-                        break;
+                    // mine не обрабатывается здесь — Worker сам дойдёт до железа на мицелии и мутирует через callback
                     case 'incubator':
                         economy.mutateWorkerToSmallReactor(worker);
                         break;

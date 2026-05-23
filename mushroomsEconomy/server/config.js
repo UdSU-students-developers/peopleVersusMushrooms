@@ -9,6 +9,7 @@ const CONFIG = {
             DAMAGE: 'DAMAGE',
             MOVE_UNIT: 'MOVE_UNIT',
             REQUEST_UNITS: 'REQUEST_UNITS',
+            REQUEST_BUILDINGS: 'REQUEST_BUILDINGS',
         },
         TRIGGERS: {
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',

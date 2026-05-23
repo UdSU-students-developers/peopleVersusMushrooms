@@ -14,7 +14,6 @@ type TMoveUnit = { armyGuid: string; unitGuid: string; x: number; y: number };
 type TGetArmy = string;
 type TSpawnUnit = { armyGuid: string; type: 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad'; x: number; y: number };
 type TSpawnBuildingUnit = { armyGuid: string; type: 'vzryvomor' | 'sporovaya_bashnya'; x: number; y: number };
-type TUpdateEconomyBuildings = { armyGuid: string; buildings: TBuildingInput[] };
 type TUser = { guid: string; token: string; socketId: string; name: string };
 
 type TVisibleEntity = {
@@ -68,10 +67,6 @@ class ArmyManager extends BaseManager {
             this.triggerSpawnBuildingUnit(data as TSpawnBuildingUnit)
         );
 
-        this.mediator.set(CONFIG.MEDIATOR.TRIGGERS.UPDATE_ECONOMY_BUILDINGS, (data: unknown) =>
-            this.triggerUpdateEconomyBuildings(data as TUpdateEconomyBuildings)
-        );
-
         if (!this.io) return;
         this.io.on('connection', (socket: Socket) => {
             socket.on(LOBBY_START, (data: { guid?: string; token?: string }) => this.socketLobbyStart(data, socket));
@@ -111,8 +106,8 @@ class ArmyManager extends BaseManager {
         const unit = army.units.find(u => u.guid === unitGuid);
         if (!unit) return false;
 
-        (unit as any).targetX = x;
-        (unit as any).targetY = y;
+        unit.targetX = x;
+        unit.targetY = y;
 
         return true;
     }
@@ -146,24 +141,6 @@ class ArmyManager extends BaseManager {
         if (!army) return null;
 
         return army.spawnBuilding(type, x, y, this.common);
-    }
-
-    private triggerUpdateEconomyBuildings({ armyGuid, buildings }: TUpdateEconomyBuildings): boolean {
-        const army = this.army[armyGuid];
-        if (!army) return false;
-
-        army.setEconomyBuildings(buildings);
-        return true;
-    }
-
-    private triggerGetArmyMetrics(armyGuid: string): object | null {
-        const stateManager = this.armyStateManagers[armyGuid];
-        if (!stateManager) return null;
-
-        return {
-            metrics: stateManager.getMetrics(),
-            scouts: stateManager.getScouts(),
-        };
     }
 
     private buildFogMap(armyState: TArmyState, fullMap: TMap, visionRadius: number = 8): TMap {
@@ -212,18 +189,6 @@ class ArmyManager extends BaseManager {
         const army = this.army[guid];
         if (!army) return;
 
-        // if (army.getAliveUnits().length === 0) {
-        //     this.io.to(user.socketId).emit(GAME_OVER, this.answer.good({ message: 'Все юниты погибли' }));
-        //     this.destroyArmy(guid);
-        //     return;
-        // }
-        
-        // if (army.buildings.length === 0) {
-        //     this.io.to(user.socketId).emit(GAME_OVER, this.answer.good({ message: 'Все здания разрушены' }));
-        //     this.destroyArmy(guid);
-        //     return;
-        // }
-
         const { units } = armyState;
         const ownBuildings = army.buildings.map(building => building.getState());
 
@@ -234,10 +199,15 @@ class ArmyManager extends BaseManager {
             { mapGuid: army.mapGuid, userGuid: army.guid, entities: units }
         );
 
-        await this.send<{ mapGuid: string; userGuid: string; entities: TArmyState['buildings'] }>(
-            `${GLOBAL_CONFIG.MAP.URL}${GLOBAL_CONFIG.URLS.UPDATE_BUILDINGS}`,
-            { mapGuid: army.mapGuid, userGuid: army.guid, entities: ownBuildings }
-        );
+        // Здания отправляем только новые (map использует toggle: повторная отправка удаляет с карты)
+        const newBuildings = ownBuildings.filter(b => !army.sentBuildingGuids.has(b.guid));
+        if (newBuildings.length > 0) {
+            await this.send<{ mapGuid: string; userGuid: string; entities: TArmyState['buildings'] }>(
+                `${GLOBAL_CONFIG.MAP.URL}${GLOBAL_CONFIG.URLS.UPDATE_BUILDINGS}`,
+                { mapGuid: army.mapGuid, userGuid: army.guid, entities: newBuildings }
+            );
+            newBuildings.forEach(b => army.sentBuildingGuids.add(b.guid));
+        }
 
         // Получаем видимых врагов
         const visibility = await this.sendToMap<TVisibilityResponse>(
@@ -246,9 +216,20 @@ class ArmyManager extends BaseManager {
 
         const visibleEnemyUnits = visibility?.units ?? [];
         const visibleEnemyBuildings = visibility?.buildings ?? [];
+
+        // Типы союзной экономики грибов — отображаем отдельно, не атакуем
+        const ALLIED_ECONOMY_BUILDING_TYPES = new Set([
+            'mycelium', 'incubator', 'reactor', 'small_reactor', 'mine',
+        ]);
+        const ALLIED_ECONOMY_UNIT_TYPES = new Set(['larva', 'geodezist']);
+
+        // Извлекаем здания/юниты экономики из видимости (они на карте рядом с армией)
+        army.economyBuildings = visibleEnemyBuildings.filter(b => ALLIED_ECONOMY_BUILDING_TYPES.has(b.type));
+        army.economyUnits     = visibleEnemyUnits.filter(u => ALLIED_ECONOMY_UNIT_TYPES.has(u.type));
+
         const visibleEnemies: TVisibleEntity[] = [
-            ...visibleEnemyUnits,
-            ...visibleEnemyBuildings,
+            ...visibleEnemyUnits.filter(e => !ALLIED_ECONOMY_UNIT_TYPES.has(e.type)),
+            ...visibleEnemyBuildings.filter(e => !ALLIED_ECONOMY_BUILDING_TYPES.has(e.type)),
         ];
 
         const enemyEntities: TBuildingInput[] = visibleEnemies.map(entity => ({
@@ -264,20 +245,23 @@ class ArmyManager extends BaseManager {
         const clientBuildingsByGuid = new Map(
             updatedState.buildings.map(building => [building.guid, building] as const)
         );
-        for (const building of visibleEnemyBuildings) {
+        for (const building of visibleEnemyBuildings.filter(e => !ALLIED_ECONOMY_BUILDING_TYPES.has(e.type))) {
             clientBuildingsByGuid.set(building.guid, building);
         }
 
         const fogMap = this.buildFogMap(updatedState, army.map);
         const stateManager = this.armyStateManagers[guid];
-        const metrics = stateManager ? stateManager.getMetrics() : null;
+        const metrics = stateManager?.getMetrics() ?? null;
+        const formation = stateManager?.getFormationState() ?? null;
 
         this.io.to(user.socketId).emit(GAME_STATE, this.answer.good({
             ...updatedState,
             map: fogMap,
             enemyUnits: visibleEnemyUnits,
             buildings: [...clientBuildingsByGuid.values()],
+            economyUnits: updatedState.economyUnits,
             metrics,
+            formation,
         }));
     }
 
@@ -306,22 +290,9 @@ class ArmyManager extends BaseManager {
         delete this.armyGuids[guid];
     }
 
-    private async handleEconomyRequest(request: EconomyRequest): Promise<EconomyResponse | null> {
-        try {
-            const response = await this.send<EconomyRequest, { success: boolean; data?: unknown }>(
-                `${GLOBAL_CONFIG.ECONOMY.URL}${GLOBAL_CONFIG.URLS.ECONOMY_REQUEST}`,
-                request
-            );
-
-            if (!response) return null;
-
-            return {
-                success: response.success,
-                data: response.data as EconomyResponse['data'],
-            };
-        } catch (error) {
-            return null;
-        }
+    private async handleEconomyRequest(_request: EconomyRequest): Promise<EconomyResponse | null> {
+        // Интеграция с сервисом экономики не реализована
+        return null;
     }
 
     private handleModeChange(armyGuid: string, newMode: ArmyMode): void {

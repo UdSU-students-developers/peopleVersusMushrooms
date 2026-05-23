@@ -11,9 +11,8 @@ class Eblekar extends Unit {
     private aimStartTime: number = 0;
     private lastHealTime: number = -3;
     private currentAllyTarget: Unit | null = null;
-    //изначально поля назывались decisionAccumulator и DECISION_INTERVAL,
-    //но эти имена уже заняты приватными полями базового Unit, а private-поля нельзя переопределять в наследнике,
-    //поэтому переимновываю
+    // Поля для таймера решений союзников названы с префиксом ally, чтобы не конфликтовать
+    // с приватными полями базового Unit (decisionAccumulator, DECISION_INTERVAL).
     private allyDecisionAccumulator: number = 0;
     private readonly ALLY_DECISION_INTERVAL: number = 0.5;
 

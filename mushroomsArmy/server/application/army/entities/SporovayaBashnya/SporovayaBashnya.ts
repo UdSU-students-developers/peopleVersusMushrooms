@@ -109,18 +109,18 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
     }
 
     public getState(): TSporovayaBashnyaState {
-    return {
-        guid: this.guid,
-        type: this.type,
-        x: this.x,
-        y: this.y,
-        hp: this.hp,
-        sizeX: this.sizeX,
-        sizeY: this.sizeY,
-        isAlive: this.isAlive,
-        isAttacking: this.isAttacking,
-    };
-}
+        return {
+            guid: this.guid,
+            type: this.type,
+            x: this.x,
+            y: this.y,
+            hp: this.hp,
+            sizeX: this.sizeX,
+            sizeY: this.sizeY,
+            isAlive: this.isAlive,
+            isAttacking: this.isAttacking,
+        };
+    }
 }
 
 export default SporovayaBashnya;

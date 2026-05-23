@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useContext } from 'react';
 import { MediatorContext, ServerContext } from '../../App';
 import CONFIG from '../../config';
-import { drawGame, preloadFogWarTextures } from './renderer/renderer';
+import { drawGame, preloadFogWarTextures, setupCameraListeners } from './renderer/renderer';
 import { GameState } from './types';
 import { PAGES } from '../PageManager';
 import { TUser } from '../../services/server/types';
@@ -17,8 +17,7 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   const gameStateRef = useRef<GameState | null>(null);
   const mediator = useContext(MediatorContext);
   const server = useContext(ServerContext);
-  const [isGameOver, setIsGameOver] = useState(true);
-  const [aliveUnitsCount, setAliveUnitsCount] = useState(0);
+  const [isGameOver, setIsGameOver] = useState(false);
 
   const keysPressed = useRef<{ [key: string]: boolean }>({});
 
@@ -37,12 +36,9 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     const ctx = canvas.getContext('2d');
     if (!ctx || !gameStateRef.current) return;
 
-    const widthCSS = canvas.clientWidth;
-    const heightCSS = canvas.clientHeight;
-    if (widthCSS === 0 || heightCSS === 0) return;
+    if (canvas.clientWidth === 0 || canvas.clientHeight === 0) return;
 
-    // Рисуем текущее состояние с учётом позиции камеры
-    drawGame(ctx, gameStateRef.current, widthCSS, heightCSS, camera);
+    drawGame(ctx, gameStateRef.current, camera);
   };
 
   useEffect(() => {
@@ -106,15 +102,13 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     if (!ctx) return;
 
     const resizeCanvas = () => {
-      const dpr = window.devicePixelRatio || 1;
       const displayWidth = canvas.clientWidth;
       const displayHeight = canvas.clientHeight;
       if (displayWidth === 0 || displayHeight === 0) return;
 
-      if (canvas.width !== displayWidth * dpr || canvas.height !== displayHeight * dpr) {
-        canvas.width = displayWidth * dpr;
-        canvas.height = displayHeight * dpr;
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+        canvas.width = displayWidth;
+        canvas.height = displayHeight;
         redrawCanvas();
       }
     };
@@ -138,19 +132,21 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   }, []);
 
   useEffect(() => {
-  if (!mediator) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    return setupCameraListeners(canvas);
+  }, []);
 
-  const EVENT_NAME = CONFIG.MEDIATOR.EVENTS.GAME_STATE_UPDATED;
-  const handler = (newState: GameState) => {
-    gameStateRef.current = newState;
-    
-    // Считаем живых юнитов при получении нового состояния, а не в цикле отрисовки
-    const aliveCount = newState.units.filter((unit) => unit.hp > 0).length ?? 0;
-    setAliveUnitsCount(aliveCount);
-  };
+  useEffect(() => {
+    if (!mediator) return;
 
-  mediator.subscribe(EVENT_NAME, handler);
-  return () => mediator.unsubscribe(EVENT_NAME, handler);
+    const EVENT_NAME = CONFIG.MEDIATOR.EVENTS.GAME_STATE_UPDATED;
+    const handler = (newState: GameState) => {
+      gameStateRef.current = newState;
+    };
+
+    mediator.subscribe(EVENT_NAME, handler);
+    return () => mediator.unsubscribe(EVENT_NAME, handler);
   }, [mediator]);
 
   useEffect(() => {

@@ -32,10 +32,16 @@ import champignebExplFrame2 from '../../../assets/units/champigneb_explosion/fra
 import champignebExplFrame3 from '../../../assets/units/champigneb_explosion/frame_3.png';
 import champignebExplFrame4 from '../../../assets/units/champigneb_explosion/frame_4.png';
 
+import vzryvomorExplFrame0 from '../../../assets/buildings/vzryvomor_explosion/frame_0.png';
+import vzryvomorExplFrame1 from '../../../assets/buildings/vzryvomor_explosion/frame_1.png';
+import vzryvomorExplFrame2 from '../../../assets/buildings/vzryvomor_explosion/frame_2.png';
+import vzryvomorExplFrame3 from '../../../assets/buildings/vzryvomor_explosion/frame_3.png';
+import vzryvomorExplFrame4 from '../../../assets/buildings/vzryvomor_explosion/frame_4.png';
+
 import grassTextureSrc1 from '../../../assets/map/grass/grass1.webp';
 import grassTextureSrc2 from '../../../assets/map/grass/grass2.webp';
 import grassTextureSrc3 from '../../../assets/map/grass/grass3.webp';
-import grassWithFrlowersTextureSrc from '../../../assets/map/grass/grass_with_flowers.webp';
+import grassWithFlowersTextureSrc from '../../../assets/map/grass/grass_with_flowers.webp';
 import grassWithFlowersTextureSrc2 from '../../../assets/map/grass/grass_with_flowers2.webp';
 import grass1TextureSrc22 from '../../../assets/map/grass/grass_with_flowers22.webp';
 import grassWithOneFlowerTextureSrc from '../../../assets/map/grass/grass_with_one_flower.webp';
@@ -67,6 +73,9 @@ import waterInnerCornerBottomLeft from '../../../assets/map/water-edges/innerCor
 import waterInnerCornerBottomRight from '../../../assets/map/water-edges/innerCorner-br.webp';
 
 import bushImgSrc from '../../../assets/map/decoration/bushbush.webp';
+import economySpritesSrc from '../../../assets/economy_sprites.png';
+
+export { economySpritesSrc };
 
 export const UNIT_SRCS: Record<string, string> = {
   sporomet: sporometSrc,
@@ -82,7 +91,7 @@ export const PEOPLE_UNIT_SRCS: Record<string, string> = {
   partizan: peopleSoldierSrc,
 };
 
-export const CHAMPIGNEB_EXPL_FRAME_SRCS: string[] = [
+const CHAMPIGNEB_EXPL_FRAME_SRCS: string[] = [
   champignebExplFrame0,
   champignebExplFrame1,
   champignebExplFrame2,
@@ -91,6 +100,20 @@ export const CHAMPIGNEB_EXPL_FRAME_SRCS: string[] = [
 ];
 
 export const champignebExplImages: HTMLImageElement[] = CHAMPIGNEB_EXPL_FRAME_SRCS.map(src => {
+  const img = new Image();
+  img.src = src;
+  return img;
+});
+
+const VZRYVOMOR_EXPL_FRAME_SRCS: string[] = [
+  vzryvomorExplFrame0,
+  vzryvomorExplFrame1,
+  vzryvomorExplFrame2,
+  vzryvomorExplFrame3,
+  vzryvomorExplFrame4,
+];
+
+export const vzryvomorExplImages: HTMLImageElement[] = VZRYVOMOR_EXPL_FRAME_SRCS.map(src => {
   const img = new Image();
   img.src = src;
   return img;
@@ -116,7 +139,7 @@ export const SPOROVAYA_BASHNYA_SRCS = {
 const grass1Img = Object.assign(new Image(), { src: grassTextureSrc1 });
 const grass2Img = Object.assign(new Image(), { src: grassTextureSrc2 });
 const grass3Img = Object.assign(new Image(), { src: grassTextureSrc3 });
-const flower1Img = Object.assign(new Image(), { src: grassWithFrlowersTextureSrc });
+const flower1Img = Object.assign(new Image(), { src: grassWithFlowersTextureSrc });
 const flower2Img = Object.assign(new Image(), { src: grassWithFlowersTextureSrc2 });
 const flower3Img = Object.assign(new Image(), { src: grass1TextureSrc22 });
 const flower4Img = Object.assign(new Image(), { src: grassWithOneFlowerTextureSrc });

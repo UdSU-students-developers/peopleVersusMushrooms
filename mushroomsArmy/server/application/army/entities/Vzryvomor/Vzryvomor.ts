@@ -60,6 +60,7 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
     public attackDamage: number = 35;
     public isAlive: boolean;
     public respawn: Respawn = { inProgress: false, respawnIn: 0};
+    private willRespawn: boolean = true;
     private elapsedFromLastDecision: number = 0;
     private DECISION_INTERVAL = 0.5; // seconds
 
@@ -79,11 +80,12 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
             this.elapsedFromLastDecision = 0;
 
             if (this.respawn.respawnIn <= 0) {
-                // Респаун завершён — восстанавливаем здание
                 this.respawn.inProgress = false;
                 this.respawn.respawnIn = 0;
-                this.isAlive = true;
-                this.hp = 70;
+                if (this.willRespawn) {
+                    this.isAlive = true;
+                    this.hp = 70;
+                }
             }
             return;
         }
@@ -98,40 +100,26 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
         }
     }
 
-    private makeDecision(enemies: Unit []) {
-        const isNearToMe = (e: Unit) => {
-            const p: Point = { x: e.x, y: e.y};
-            const myPos = {x: this.x, y: this.y};
-            return distance (p, myPos) < this.attackRange;
-        }
-        const isAlive = (e: Unit) => e.isAlive
-        const isNotAlive = (e: Unit) => !e.isAlive
-        const makeDamage = (e: Unit) => {
-            e.takeDamage(this.attackDamage)
-            return e
+    private makeDecision(enemies: Unit[]): void {
+        const nearbyEnemies = enemies.filter(e => e.isAlive && distance({ x: e.x, y: e.y }, { x: this.x, y: this.y }) < this.attackRange);
+
+        if (nearbyEnemies.length === 0) return;
+
+        let killedAny = false;
+        for (const enemy of nearbyEnemies) {
+            enemy.takeDamage(this.attackDamage);
+            if (!enemy.isAlive) killedAny = true;
         }
 
-        const enemiesNearToMe = 
-            enemies
-                .filter(isAlive)
-                .filter(isNearToMe)
-
-        const myFrags = 
-            enemiesNearToMe
-                .map(makeDamage)
-                .filter(isNotAlive);
-        
-        if(enemiesNearToMe.length > 0) {
-            if (myFrags.length > 0) {
-                this.blow()
-            }
-            else {
-                this.die()
-            }
+        if (killedAny) {
+            this.blow();
+        } else {
+            this.die();
         }
     }
 
     private blow() {
+        this.willRespawn = true;
         this.isAlive = false;
         this.respawn = { inProgress: true, respawnIn: 5};
     }
@@ -149,21 +137,23 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
     }
 
     die(): void {
+        this.willRespawn = false;
         this.isAlive = false;
+        this.respawn = { inProgress: true, respawnIn: 1 };
     }
     
     getState(): VzryvomorState {
-    return {
-        guid: this.guid,
-        type: this.type,
-        x: this.x,
-        y: this.y,
-        hp: this.hp,
-        elapsedFromLastDecision: this.elapsedFromLastDecision,
-        attackRange: this.attackRange,
-        isAlive: this.isAlive,
-        isExploding: this.respawn.inProgress,
-        respawn: this.respawn
-    };
-}
+        return {
+            guid: this.guid,
+            type: this.type,
+            x: this.x,
+            y: this.y,
+            hp: this.hp,
+            elapsedFromLastDecision: this.elapsedFromLastDecision,
+            attackRange: this.attackRange,
+            isAlive: this.isAlive,
+            isExploding: this.respawn.inProgress,
+            respawn: this.respawn,
+        };
+    }
 }

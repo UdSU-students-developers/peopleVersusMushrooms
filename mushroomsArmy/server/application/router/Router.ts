@@ -13,7 +13,6 @@ import {
     useStartGameHandler,
     useGetLobbiesHandler,
     useSpawnBuildingHandler,
-    useUpdateEconomyBuildingsHandler,
 } from './handlers';
 import { IAnswer, IMediator } from '../types/global';
 
@@ -33,7 +32,6 @@ function Router({ answer, mediator }: TRouterOptions): ExpressRouter {
     router.post('/startGame',              useStartGameHandler(mediator, answer));
     router.post('/getLobbies',             useGetLobbiesHandler(answer));
     router.post('/spawnBuilding',          useSpawnBuildingHandler(mediator, answer));
-    router.post('/updateEconomyBuildings', useUpdateEconomyBuildingsHandler(mediator, answer));
 
     router.all('/*path', notFoundHandler);
     return router;

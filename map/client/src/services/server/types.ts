@@ -54,3 +54,28 @@ export type TSource = {
     type: 'IRON' | 'OIL';
     saturation: number;
 }
+
+export type TBuilding = {
+    guid: string;
+    role: string;
+    size: number;
+    type: string;
+    visibility: number;
+    x: number;
+    y: number;
+}
+
+export type TUnit = {
+    guid: string;
+    role: string;
+    size: number;
+    type: string;
+    visibility: number;
+    x: number;
+    y: number;
+}
+
+export type TEntities = {
+    buildings: TBuilding[] | TBuilding[][];
+    units: TUnit[] | TUnit[][];
+}

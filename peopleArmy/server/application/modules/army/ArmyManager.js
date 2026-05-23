@@ -53,7 +53,7 @@ class ArmyManager extends BaseManager {
             .filter(u => typeof u.get === 'function')
             .map(u => {
                 const s = u.get();
-                return { guid: s.guid, x: s.x, y: s.y, type: s.type, visibility: s.visible, hp: s.hp };
+                return { guid: s.guid, x: s.x, y: s.y, type: s.type, visibility: s.visible };
             });
         await this.sendToMap(URLS.UPDATE_UNITS, { mapGuid: army.mapGuid, userGuid: guid, entities });
 
@@ -211,17 +211,6 @@ class ArmyManager extends BaseManager {
                     takeDamage: (payload) => this.damageMushroomsUnit(payload),
                 }
             });
-            // Хардкод: спавн 20 юнитов людям при старте игры
-            const spawnTypes = ['soldier', 'bmp', 'sniper', 'partizan'];
-            for (let i = 0; i < 20; i++) {
-                const type = spawnTypes[i % spawnTypes.length];
-                // Координаты спавна: вокруг стартовой точки
-                const baseX = (this.lobbyData[guid]?.guids?.startPoint?.x ?? 4) || 4;
-                const baseY = (this.lobbyData[guid]?.guids?.startPoint?.y ?? 4) || 4;
-                const x = baseX + (i % 5);
-                const y = baseY + Math.floor(i / 5);
-                this.army[guid].createUnit({ x, y, type });
-            }
             this.io.to(user.socketId).emit(
                 this.SOCKET.START_GAME,
                 this.answer.good({ map })

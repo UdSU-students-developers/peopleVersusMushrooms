@@ -53,7 +53,7 @@ class ArmyManager extends BaseManager {
             .filter(u => typeof u.get === 'function')
             .map(u => {
                 const s = u.get();
-                return { guid: s.guid, x: s.x, y: s.y, type: s.type, visibility: s.visible };
+                return { guid: s.guid, x: s.x, y: s.y, type: s.type, visibility: s.visible, hp: s.hp };
             });
         await this.sendToMap(URLS.UPDATE_UNITS, { mapGuid: army.mapGuid, userGuid: guid, entities });
 

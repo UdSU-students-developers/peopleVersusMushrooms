@@ -40,6 +40,14 @@
   transform: translate(-50%, -50%);
 }
 
+.minimap-dot-enemy {
+  width: clamp(5px, 0.65vw, 7px);
+  height: clamp(5px, 0.65vw, 7px);
+  background-color: #e53935;
+  border-color: rgba(255, 200, 200, 0.85);
+  box-shadow: 0 0 8px #e53935, 0 0 4px rgba(0, 0, 0, 0.85);
+}
+
 .minimap-camera-rect {
   z-index: 100;
   background-color: rgba(255, 255, 255, 0.1); /* полупрозрачный фон внутри рамки */

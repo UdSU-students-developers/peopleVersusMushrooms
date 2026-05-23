@@ -31,6 +31,23 @@ type TVisibilityResponse = {
 
 type TReliefResponse = TMap;
 
+const ALLIED_ECONOMY_UNIT_TYPES = new Set(['larva', 'geodezist']);
+const PEOPLE_ARMY_UNIT_TYPES = new Set(['soldier', 'bmp', 'sniper', 'partizan']);
+const PEOPLE_ARMY_DEFAULT_HP: Record<string, number> = {
+    soldier: 20,
+    bmp: 130,
+    sniper: 18,
+    partizan: 72,
+};
+
+function normalizeMapUnitHp(unit: TVisibleEntity): TVisibleEntity {
+    const parsed = Number(unit.hp);
+    if (Number.isFinite(parsed) && parsed > 0) {
+        return { ...unit, hp: parsed };
+    }
+    return { ...unit, hp: PEOPLE_ARMY_DEFAULT_HP[unit.type] ?? 1 };
+}
+
 class ArmyManager extends BaseManager {
     private army: { [guid: string]: Army };
     private armyStateManagers: { [guid: string]: ArmyStateManager };
@@ -221,8 +238,6 @@ class ArmyManager extends BaseManager {
         const ALLIED_ECONOMY_BUILDING_TYPES = new Set([
             'mycelium', 'incubator', 'reactor', 'small_reactor', 'mine',
         ]);
-        const ALLIED_ECONOMY_UNIT_TYPES = new Set(['larva', 'geodezist']);
-
         // Извлекаем здания/юниты экономики из видимости (они на карте рядом с армией)
         army.economyBuildings = visibleEnemyBuildings.filter(b => ALLIED_ECONOMY_BUILDING_TYPES.has(b.type));
         army.economyUnits     = visibleEnemyUnits.filter(u => ALLIED_ECONOMY_UNIT_TYPES.has(u.type));
@@ -249,6 +264,10 @@ class ArmyManager extends BaseManager {
             clientBuildingsByGuid.set(building.guid, building);
         }
 
+        const clientEnemyUnits = visibleEnemyUnits
+            .filter((unit) => PEOPLE_ARMY_UNIT_TYPES.has(unit.type))
+            .map(normalizeMapUnitHp);
+
         const fogMap = this.buildFogMap(updatedState, army.map);
         const stateManager = this.armyStateManagers[guid];
         const metrics = stateManager?.getMetrics() ?? null;
@@ -257,7 +276,7 @@ class ArmyManager extends BaseManager {
         this.io.to(user.socketId).emit(GAME_STATE, this.answer.good({
             ...updatedState,
             map: fogMap,
-            enemyUnits: visibleEnemyUnits,
+            enemyUnits: clientEnemyUnits,
             buildings: [...clientBuildingsByGuid.values()],
             economyUnits: updatedState.economyUnits,
             metrics,

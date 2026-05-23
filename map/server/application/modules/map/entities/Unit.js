@@ -1,12 +1,12 @@
 const Entity = require("./Entity");
 
 class Unit extends Entity {
-    constructor({ x, y, type, guid, role, visibility = 1, sourсesVisibility = null }) {
+    constructor({ x, y, type, guid, role, visibility = 1, sourcesVisibility = null }) {
         super({ x, y, type });
         this.guid = guid;
         this.role = role;
         this.visibility = visibility;
-        this.sourсesVisibility = sourсesVisibility;
+        this.sourcesVisibility = sourcesVisibility;
     }
 
     get() {
@@ -36,7 +36,7 @@ class Unit extends Entity {
     }
 
     getVisibleSoursesRange() {
-        return this.getRange(this.sourсesVisibility);
+        return this.getRange(this.sourcesVisibility);
     }
 }
 

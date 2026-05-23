@@ -39,7 +39,7 @@ class Building extends Unit {
     }
 
     getVisibleSoursesRange() {
-        return this.getRange(this.sourсesVisibility);
+        return this.getRange(this.sourcesVisibility);
     }
 }
 

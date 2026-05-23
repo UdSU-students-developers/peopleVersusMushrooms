@@ -119,14 +119,16 @@ const CONFIG = {
             WANDER_RADIUS: 8, //радиус блуждания личинки
             TYPE: "larva",
             VISIBILITY: 2,
+            SOURCES_VISIBILITY: 100,
         },
 
-        GEODEZIST: {
-            TYPE: "geodezist",
+        WORKER: {
+            TYPE: "worker",
             HP: 60,
             SPEED: 0.08,
             WANDER_RADIUS: 8,
             VISIBILITY: 4,
+            SOURCES_VISIBILITY: 3,
         },
     }
 };

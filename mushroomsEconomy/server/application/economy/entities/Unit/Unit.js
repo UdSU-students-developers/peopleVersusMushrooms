@@ -1,10 +1,11 @@
 const EasyStar = require('easystarjs');
 
 class Unit {
-    constructor({ x, y, guid, map, type, visibility, speed = 0.3 }) {
+    constructor({ x, y, guid, map, type, visibility, speed = 0.3, sourcesVisibility }) {
         this.guid = guid;
         this.type = type;
         this.visibility = visibility;
+        this.sourcesVisibility = sourcesVisibility;
         this.units = [];
 
         this.x = x;
@@ -39,6 +40,7 @@ class Unit {
             y: this.y,
             type: this.type,
             visibility: this.visibility,
+            sourcesVisibility: this.sourcesVisibility,
         };
     }
 

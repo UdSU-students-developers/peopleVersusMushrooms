@@ -29,6 +29,13 @@ type TVisibilityResponse = {
     buildings: TVisibleEntity[];
 };
 
+type TLastSentUnit = {
+    x: number;
+    y: number;
+    hp: number;
+    type: string;
+};
+
 type TReliefResponse = TMap;
 
 const ALLIED_ECONOMY_UNIT_TYPES = new Set(['larva', 'geodezist']);
@@ -52,6 +59,7 @@ class ArmyManager extends BaseManager {
     private army: { [guid: string]: Army };
     private armyStateManagers: { [guid: string]: ArmyStateManager };
     private armyGuids: Record<string, { peopleArmyGuid: string | null }>;
+    private lastSentUnitsToMap: Record<string, Map<string, TLastSentUnit>>;
 
     constructor(options: TManagerOptions) {
         super(options);
@@ -59,6 +67,7 @@ class ArmyManager extends BaseManager {
         this.army = {};
         this.armyStateManagers = {};
         this.armyGuids = {};
+        this.lastSentUnitsToMap = {};
 
         this.mediator.subscribe(this.EVENTS.START_GAME, (data: unknown) => this.eventStartGame(data as TStartGame));
 
@@ -199,6 +208,59 @@ class ArmyManager extends BaseManager {
         );
     }
 
+    /**
+     * Карта удаляет юнита при повторной отправке тех же координат.
+     * Поэтому отправляем только изменения и tombstone для пропавших юнитов.
+     */
+    private buildMapUnitsDelta(armyGuid: string, units: TArmyState['units']): TArmyState['units'] {
+        const previous = this.lastSentUnitsToMap[armyGuid] ?? new Map<string, TLastSentUnit>();
+        const next = new Map<string, TLastSentUnit>();
+        const entitiesToSend: TArmyState['units'] = [];
+
+        const aliveGuids = new Set<string>();
+
+        for (const unit of units) {
+            const hp = Number.isFinite(Number(unit.hp)) ? Number(unit.hp) : 0;
+            const prev = previous.get(unit.guid);
+            const isDead = hp <= 0;
+
+            if (!isDead) {
+                aliveGuids.add(unit.guid);
+                next.set(unit.guid, {
+                    x: unit.x,
+                    y: unit.y,
+                    hp,
+                    type: unit.type,
+                });
+            }
+
+            if (!prev) {
+                entitiesToSend.push(unit);
+                continue;
+            }
+
+            const moved = prev.x !== unit.x || prev.y !== unit.y;
+            if (moved || isDead) {
+                entitiesToSend.push(unit);
+            }
+        }
+
+        // Если юнит исчез из состояния без явного hp=0, отправляем tombstone на последнюю точку.
+        for (const [guid, prev] of previous.entries()) {
+            if (aliveGuids.has(guid)) continue;
+            entitiesToSend.push({
+                guid,
+                type: prev.type as 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad',
+                x: prev.x,
+                y: prev.y,
+                hp: 0,
+            });
+        }
+
+        this.lastSentUnitsToMap[armyGuid] = next;
+        return entitiesToSend;
+    }
+
     private async updateArmyCallback(guid: string, armyState: TArmyState) {
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid) as { socketId: string } | null;
         if (!user) return;
@@ -207,14 +269,17 @@ class ArmyManager extends BaseManager {
         if (!army) return;
 
         const { units } = armyState;
+        const unitsDeltaForMap = this.buildMapUnitsDelta(guid, units);
         const ownBuildings = army.buildings.map(building => building.getState());
 
         // Отправляем юниты и здания на карту
         // карта читает поля units / buildings (см. useUpdateUnitsHandler.js / useUpdateBuildingsHandler.js)
-        await this.send<{ mapGuid: string; userGuid: string; entities: TArmyState['units'] }>(
-            `${GLOBAL_CONFIG.MAP.URL}${GLOBAL_CONFIG.URLS.UPDATE_UNITS}`,
-            { mapGuid: army.mapGuid, userGuid: army.guid, entities: units }
-        );
+        if (unitsDeltaForMap.length > 0) {
+            await this.send<{ mapGuid: string; userGuid: string; entities: TArmyState['units'] }>(
+                `${GLOBAL_CONFIG.MAP.URL}${GLOBAL_CONFIG.URLS.UPDATE_UNITS}`,
+                { mapGuid: army.mapGuid, userGuid: army.guid, entities: unitsDeltaForMap }
+            );
+        }
 
         // Здания отправляем только новые (map использует toggle: повторная отправка удаляет с карты)
         const newBuildings = ownBuildings.filter(b => !army.sentBuildingGuids.has(b.guid));
@@ -307,6 +372,7 @@ class ArmyManager extends BaseManager {
         delete this.army[guid];
         delete this.armyStateManagers[guid];
         delete this.armyGuids[guid];
+        delete this.lastSentUnitsToMap[guid];
     }
 
     private async handleEconomyRequest(_request: EconomyRequest): Promise<EconomyResponse | null> {

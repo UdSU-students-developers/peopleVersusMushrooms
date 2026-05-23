@@ -6,7 +6,6 @@ import { ILobby, TUser } from "../../services/server/types";
 import Header from '../../widgets/Header/Header';
 import OptionsPannel from '../../widgets/OptionsPannel/OptionsPannel'; 
 import { useUIScale } from '../../widgets/UIScaleContext';
-import {LOBBY_LAYOUT} from '../../widgets/lobbyLayout';
 import './Lobby.css';
 
 
@@ -21,10 +20,15 @@ const ROLE_LABELS: Record<TLobbyRole, string> = {
 };
 
 const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
-    const { scale } = useUIScale();  
-    const lobbyConfig = LOBBY_LAYOUT[scale];
+    const { scale, getScaleValue } = useUIScale();  
     const server = useContext(ServerContext);
     const mediator = useContext(MediatorContext);
+
+    const currentScaleValues = getScaleValue();
+    const lobbyScale = currentScaleValues.headerHeight / 32;
+    const lobbyPageStyle = {
+        '--lobby-scale': lobbyScale.toString(),
+    } as React.CSSProperties;
 
     const GET_STORE = mediator.getTriggerTypes().GET_STORE;
     const {
@@ -244,12 +248,6 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
         server.logout();
     };
 
-    const lobbyPageStyle = {
-        '--lobby-padding-top': `${lobbyConfig.paddingTop}px`,
-        '--lobby-modal-width': `${lobbyConfig.modalWidth}px`,
-        '--lobby-input-height': `${lobbyConfig.inputHeight}px`,
-        '--lobby-actions-margin-top': `${lobbyConfig.actionsMarginTop}px`,
-    } as React.CSSProperties;
 
 
     if (currentLobby) {
@@ -267,7 +265,7 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
                 onMenuClick={handleMenuClick}
                 isMenuOpen={isMenuOpen}
             />
-            <div className="lobby">
+            <div className="lobby" style={lobbyPageStyle}>
                 <div className="lobby__container">
                     <div className="lobby__inner-border">
                         {errorMsg && <div className="lobby__errorToast">{errorMsg}</div>}
@@ -335,9 +333,16 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
                     </div>
                 </div>
             </div>
+            <OptionsPannel
+                variant="lobby"
+                isOpen={isMenuOpen}
+                onClose={handleCloseMenu}
+                onExit={handleLogout}
+            />
             </div>
         );
     }
+
 
     return (
         <>

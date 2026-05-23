@@ -2,20 +2,30 @@
 
 .header--theme-auth {
   letter-spacing: 2px;
-  background-color: rgb(48, 66, 35);
-  border-bottom: 1px solid #dad8b2;
+  background-color: rgb(52, 152, 219);
+  border-bottom: 1px solid rgb(23, 32, 129);
+  text-shadow: 
+    -0.9px -0.9px 0 rgb(23, 32, 129),  
+    0.9px -0.9px 0 rgb(23, 32, 129),
+    -0.9px  0.9px 0 rgb(23, 32, 129),
+    0.9px  0.9px 0 rgb(23, 32, 129);
 }
 
 .header--theme-auth .header__nickname,
 .header--theme-auth .header__title {
-  color: #dad8b2;
+  color: #f0f0f0;
 }
 
 .header--theme-auth .header__menu-button {
   letter-spacing: 2px;
-  background-color: #2d2e0c;
-  color: #dad8b2;
-  border: 2px solid #423c08;
+  background-color: transparent;
+  color: #f0f0f0;
+  /* border: 2px solid #423c08; */
+  text-shadow: 
+    -0.9px -0.9px 0 rgb(23, 32, 129),  
+    0.9px -0.9px 0 rgb(23, 32, 129),
+    -0.9px  0.9px 0 rgb(23, 32, 129),
+    0.9px  0.9px 0 rgb(23, 32, 129);
 }
 
 /* ================= LOBBY ================= */

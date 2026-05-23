@@ -200,6 +200,13 @@ class Economy {
         this.addSmallReactor(wor.x, wor.y);
     }
 
+    mutateWorkerToIncubator(wor) {
+        this.updatedUnits.push(wor.get());
+        this.units.workers = this.units.workers.filter(w => w.guid !== wor.guid);
+
+        this.addIncubator(wor.x, wor.y);
+    }
+
 
     addMine(x, y) {
         const guid = this.common.guid();
@@ -411,8 +418,8 @@ class Economy {
         this.addSmallReactor(startPoint.x + 1, startPoint.y + 1);
         // создать грибничку
         this.addMycelium(startPoint.x - 1, startPoint.y - 1);
-        this.addReactor(startPoint.x + 3, startPoint.y + 3);
-        this.addWorker(startPoint.x-10, startPoint.y)
+        //this.addReactor(startPoint.x + 3, startPoint.y + 3);
+        //this.addWorker(startPoint.x-10, startPoint.y)
         this.updated = true;
     }
 

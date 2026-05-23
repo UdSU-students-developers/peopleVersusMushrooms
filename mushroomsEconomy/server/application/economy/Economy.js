@@ -34,8 +34,8 @@ class Economy {
         this.lastUpdateTime = Date.now();
 
         this.resources = {
-            iron: 0,
-            fat: 0,
+            iron: 110,
+            energy: 0,
         };
 
         //Здания
@@ -149,6 +149,10 @@ class Economy {
     }
 
     mutateLarvaToWorker(lar) {
+        const { MUTATION_ENERGY_COST } = CONFIG.ECONOMY.LARVA;
+        if (this.resources.energy < MUTATION_ENERGY_COST) return;
+
+        this.resources.energy -= MUTATION_ENERGY_COST;
         this.updatedUnits.push(lar.get());
         this.units.larvae = this.units.larvae.filter(l => l.guid !== lar.guid);
 
@@ -173,6 +177,9 @@ class Economy {
     }
 
     mutateWorkerToMine(wor) {
+        const mineCost = CONFIG.ECONOMY.MINE.IRON_COST;
+        if (this.resources.iron < mineCost) return;
+        this.resources.iron -= mineCost;
         this.updatedUnits.push(wor.get());
         this.units.workers = this.units.workers.filter(w => w.guid !== wor.guid);
 
@@ -306,7 +313,10 @@ class Economy {
     reactorsConsume() {
         this.buildings.reactors.forEach(reactor => {
             const consumed = reactor.consumeMycelium(this.buildings.mycelium);
-            if (consumed > 0) this.updated = true;
+            if (consumed > 0) {
+                this.resources.energy += consumed;
+                this.updated = true;
+            }
         });
     }
 
@@ -314,10 +324,9 @@ class Economy {
     incubatorProduce() {
         const now = Date.now();
         for (const incubator of this.buildings.incubators) {
-            const availableEnergy = this.getAvailableEnergy();
-            const result = incubator.createLarvae({ availableEnergy, now });
+            const result = incubator.createLarvae({ availableEnergy: this.resources.energy, now });
             if (!result) continue;
-            this.consumeEnergyFromReactors(result.energySpent);
+            this.resources.energy -= result.energySpent;
             this.updated = true;
         }
     }

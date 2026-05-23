@@ -1,3 +1,5 @@
+const CONFIG = require('../../config');
+
 class Autopilot {
 
     constructor() {
@@ -34,7 +36,7 @@ class Autopilot {
         const mineCount = economy.buildings.mines.length;
         const incubatorCount = economy.buildings.incubators.length;
 
-        const energy = economy.getAvailableEnergy();
+        const energy = economy.resources.energy;
         const iron = economy.resources.iron;
         const larvaeCount = economy.units.larvae.length;
 
@@ -59,10 +61,17 @@ class Autopilot {
     }
 
     _mutateLarvae(economy) {
+        const { MUTATION_IRON_COST, MUTATION_ENERGY_COST } = CONFIG.ECONOMY.LARVA;
+
         if (this.prioritet === "army") {
             for (const larva of [...economy.units.larvae]) {
                 if (this.requestsFromArmy.units.length === 0) break;
+                if (economy.resources.iron < MUTATION_IRON_COST) break;
+                if (economy.resources.energy < MUTATION_ENERGY_COST) break;
+
                 const unitType = this.requestsFromArmy.units.shift();
+                economy.resources.iron -= MUTATION_IRON_COST;
+                economy.resources.energy -= MUTATION_ENERGY_COST;
                 economy.units.larvae = economy.units.larvae.filter(l => l.guid !== larva.guid);
                 economy.spawnArmyUnit({
                     armyGuid: economy.guids.mushroomsArmy,
@@ -72,15 +81,27 @@ class Autopilot {
                 });
             }
         } else {
-            // economy: личинки растут сами, автопилот не вмешивается
         }
     }
 
     _mutateWorkers(economy) {
+        const ironCosts = {
+            reactor: CONFIG.ECONOMY.BIO_REACTOR.IRON_COST,
+            small_reactor: CONFIG.ECONOMY.BIO_REACTOR_SMALL.IRON_COST,
+            mine: CONFIG.ECONOMY.MINE.IRON_COST,
+            incubator: CONFIG.ECONOMY.INCUBATOR.IRON_COST,
+        };
+
         if (this.prioritet === "army") {
             for (const worker of [...economy.units.workers]) {
                 if (this.requestsFromArmy.buildings.length === 0) break;
-                const buildingType = this.requestsFromArmy.buildings.shift();
+                const buildingType = this.requestsFromArmy.buildings[0];
+                const cost = ironCosts[buildingType] ?? 0;
+                if (economy.resources.iron < cost) break;
+
+                this.requestsFromArmy.buildings.shift();
+                economy.resources.iron -= cost;
+
                 switch (buildingType) {
                     case 'reactor':
                         economy.mutateWorkerToReactor(worker);
@@ -88,24 +109,27 @@ class Autopilot {
                     case 'small_reactor':
                         economy.mutateWorkerToSmallReactor(worker);
                         break;
-                    // mine не обрабатывается здесь — Worker сам дойдёт до железа на мицелии и мутирует через callback
                     default:
                         break;
                 }
             }
         } else {
-            // economy: рабочие мутируют в то, чего больше всего не хватает
             for (const worker of [...economy.units.workers]) {
                 const neededType = this._getNeededBuildingType(economy);
+                const cost = ironCosts[neededType] ?? 0;
+                if (economy.resources.iron < cost) break;
+
+                economy.resources.iron -= cost;
+
                 switch (neededType) {
                     case 'reactor':
                         economy.mutateWorkerToReactor(worker);
                         break;
-                    // mine не обрабатывается здесь — Worker сам дойдёт до железа на мицелии и мутирует через callback
                     case 'incubator':
                         economy.mutateWorkerToSmallReactor(worker);
                         break;
                     default:
+                        economy.resources.iron += cost; // не потратили — вернуть
                         break;
                 }
             }

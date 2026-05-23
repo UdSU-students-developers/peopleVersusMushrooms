@@ -95,6 +95,10 @@ const GLOBAL_CONFIG = {
         APPLY_DAMAGE: '/applyDamage', // НЕ ИСПОЛЬЗОВАТЬ
         DAMAGE: '/damage',
         MOVE: '/move',
+
+        //mushroomsEconomy
+        REQUEST_UNITS: '/requestUnits',
+        REQUEST_BUILDINGS: '/requestBuildings',
     },
 
     ROLES: {

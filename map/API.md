@@ -420,7 +420,7 @@ Answer<
             type: string,
             guid: string,
             visibility: number,
-            soursesVisibility: number  - опциональный параметр для получения видмости ресурсов
+            sourcesVisibility: number  - опциональный параметр для получения видмости ресурсов
         }
     ]
 }

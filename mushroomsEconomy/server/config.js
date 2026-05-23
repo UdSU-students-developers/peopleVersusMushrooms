@@ -8,6 +8,8 @@ const CONFIG = {
             START_GAME: 'START_GAME',
             DAMAGE: 'DAMAGE',
             MOVE_UNIT: 'MOVE_UNIT',
+            REQUEST_UNITS: 'REQUEST_UNITS',
+            REQUEST_BUILDINGS: 'REQUEST_BUILDINGS',
         },
         TRIGGERS: {
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',
@@ -117,14 +119,16 @@ const CONFIG = {
             WANDER_RADIUS: 8, //радиус блуждания личинки
             TYPE: "larva",
             VISIBILITY: 2,
+            SOURCES_VISIBILITY: 100,
         },
 
-        GEODEZIST: {
-            TYPE: "geodezist",
+        WORKER: {
+            TYPE: "worker",
             HP: 60,
             SPEED: 0.08,
             WANDER_RADIUS: 8,
             VISIBILITY: 4,
+            SOURCES_VISIBILITY: 3,
         },
     }
 };

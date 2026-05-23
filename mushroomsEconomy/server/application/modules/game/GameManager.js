@@ -21,6 +21,8 @@ class GameManager extends BaseManager {
 		this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
 		this.mediator.subscribe(this.EVENTS.LOAD_GAME, (data) => this.eventLoadGame(data));
 		this.mediator.subscribe(this.EVENTS.DAMAGE, (data) => this.eventApplyDamage(data));
+		this.mediator.subscribe(this.REQUEST_UNITS, (data) => this.eventRequestUnits(data));
+		this.mediator.subscribe(this.REQUEST_BUILDINGS, (data) => this.eventRequestBuildings(data));
 		// mediator triggers setters
 		//...
 	}
@@ -108,6 +110,30 @@ class GameManager extends BaseManager {
 		}
 		
 		return economy.applyDamage(entityGuid, damage);
+	}
+
+	eventRequestUnits(data = {}) {
+		const { userGuid, unitsType, unitsAmount } = data;
+		const economy = this.economies[userGuid];
+
+		if (!economy) {
+			return { error: 4001 };
+		}
+
+		economy.autopilot.addUnitRequests(unitsType, unitsAmount);
+		return { success: true };
+	}
+
+	eventRequestBuildings(data = {}) {
+		const { userGuid, buildingType, buildingAmount } = data;
+		const economy = this.economies[userGuid];
+
+		if (!economy) {
+			return { error: 4001 };
+		}
+
+		economy.autopilot.addBuildingRequests(buildingType, buildingAmount);
+		return { success: true };
 	}
 	
 	async getRelief(map, guid, mapGuid) {

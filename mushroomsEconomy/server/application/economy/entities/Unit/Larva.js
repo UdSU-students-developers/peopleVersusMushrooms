@@ -1,7 +1,7 @@
 const Unit = require('./Unit');
 const CONFIG = require('../../../../config');
 
-const { HP, SPEED, WANDER_RADIUS, TYPE, VISIBILITY } = CONFIG.ECONOMY.LARVA;
+const { HP, SPEED, WANDER_RADIUS, TYPE, VISIBILITY, SOURCES_VISIBILITY } = CONFIG.ECONOMY.LARVA;
 
 class Larva extends Unit {
     constructor(options) {
@@ -10,6 +10,7 @@ class Larva extends Unit {
             type: TYPE,
             visibility: VISIBILITY,
             speed: SPEED,
+            sourcesVisibility: SOURCES_VISIBILITY,
         });
 
         this.homeX = options.homeX ?? options.x;

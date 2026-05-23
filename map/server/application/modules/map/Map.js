@@ -152,9 +152,6 @@ class Map {
                 // если нашелся и изменился - передвинулся
                 unitInArray.x = unit.x;
                 unitInArray.y = unit.y;
-                if (unit.hp !== undefined && Number.isFinite(Number(unit.hp))) {
-                    unitInArray.hp = Number(unit.hp);
-                }
             }
         } else {
             // не нашли - добавляем

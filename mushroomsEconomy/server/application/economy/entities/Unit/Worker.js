@@ -1,11 +1,11 @@
 const Unit = require('./Unit');
 const CONFIG = require('../../../../config');
 
-const { HP, SPEED, TYPE, VISIBILITY, WANDER_RADIUS } = CONFIG.ECONOMY.GEODEZIST;
+const { HP, SPEED, TYPE, VISIBILITY, WANDER_RADIUS, SOURCES_VISIBILITY } = CONFIG.ECONOMY.WORKER;
 
-class Geodezist extends Unit {
+class Worker extends Unit {
     constructor(options) {
-        super({ ...options, type: TYPE, visibility: VISIBILITY, speed: SPEED });
+        super({ ...options, type: TYPE, visibility: VISIBILITY, speed: SPEED, sourcesVisibility: SOURCES_VISIBILITY});
         this.hp = HP;
         this.wanderRadius = WANDER_RADIUS;
         this.targetResource = null;
@@ -105,4 +105,4 @@ class Geodezist extends Unit {
     }
 }
 
-module.exports = Geodezist;
+module.exports = Worker;

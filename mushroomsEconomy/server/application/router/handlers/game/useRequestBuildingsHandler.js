@@ -9,7 +9,7 @@ module.exports = (mediator, answer) => {
             buildingsAmount,
         } = req.body;
 
-        if (!options.userGuid | !options.buildingsType | !options.buildingsAmount) {
+        if (!options.userGuid || !options.buildingsType || !options.buildingsAmount) {
             return res.send(answer.bad(242));
         }
 

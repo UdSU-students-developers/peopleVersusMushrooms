@@ -125,14 +125,14 @@ class GameManager extends BaseManager {
 	}
 
 	eventRequestBuildings(data = {}) {
-		const { userGuid, buildingType, buildingAmount } = data;
+		const { userGuid, buildingsType, buildingsAmount } = data;
 		const economy = this.economies[userGuid];
 
 		if (!economy) {
 			return { error: 4001 };
 		}
 
-		economy.autopilot.addBuildingRequests(buildingType, buildingAmount);
+		economy.autopilot.addBuildingRequests(buildingsType, buildingsAmount);
 		return { success: true };
 	}
 	

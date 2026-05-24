@@ -5,7 +5,6 @@ module.exports = (mediator, answer) => {
 
         const options = {
             armyGuid,
-            mapGuid,
             unitsType,
             unitsAmount,
         } = req.body;

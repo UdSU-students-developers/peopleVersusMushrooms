@@ -137,12 +137,18 @@ export type TMap = {
 
 }
 
+export type TResources = {
+    iron: number;
+    energy: number;
+}
+
 export type TScene = {
     guid: string;
     buildings: TEconomyBuildings;
     enemyBuildings: TBuilding[];
     map: TMap;
     units: TEconomyUnits;
+    resources: TResources;
 }
 
 export type TLobby = {

@@ -31,20 +31,39 @@ class Autopilot {
         }
     }
 
+    _getIronProductionPerTick(economy) {
+        return economy.buildings.mines.length * CONFIG.ECONOMY.MINE.PRODUCTION;
+    }
+
+    _getEnergyProductionPerTick(economy) {
+        return economy.buildings.reactors.reduce((sum, r) => {
+            const prod = r.type === CONFIG.ECONOMY.BIO_REACTOR_SMALL.TYPE
+                ? CONFIG.ECONOMY.BIO_REACTOR_SMALL.PRODUCTION
+                : CONFIG.ECONOMY.BIO_REACTOR.PRODUCTION;
+            return sum + prod;
+        }, 0);
+    }
+
+    _getLarvaeProductionPerTick(economy) {
+        return economy.buildings.incubators.length * CONFIG.ECONOMY.INCUBATOR.PRODUCTION;
+    }
+
     _getNeededBuildingType(economy) {
-        const reactorCount = economy.buildings.reactors.length;
         const mineCount = economy.buildings.mines.length;
+        const reactorCount = economy.buildings.reactors.length;
         const incubatorCount = economy.buildings.incubators.length;
 
-        const energy = economy.resources.energy;
-        const iron = economy.resources.iron;
-        const larvaeCount = economy.units.larvae.length;
+        if (mineCount === 0) return 'mine';
+        if (reactorCount === 0) return 'reactor';
 
-        // чем меньше значение — тем больше нехватка
+        const ironPerTick = this._getIronProductionPerTick(economy);
+        const energyPerTick = this._getEnergyProductionPerTick(economy);
+        const larvaePerTick = this._getLarvaeProductionPerTick(economy);
+
         const scores = {
-            reactor: energy,
-            mine: iron,
-            incubator: larvaeCount,
+            mine:      ironPerTick   / CONFIG.ECONOMY.MINE.IRON_COST,
+            reactor:   energyPerTick / CONFIG.ECONOMY.BIO_REACTOR_SMALL.IRON_COST,
+            incubator: larvaePerTick / CONFIG.ECONOMY.INCUBATOR.IRON_COST,
         };
 
         let neededType = null;
@@ -86,8 +105,7 @@ class Autopilot {
 
     _mutateWorkers(economy) {
         const ironCosts = {
-            reactor: CONFIG.ECONOMY.BIO_REACTOR.IRON_COST,
-            small_reactor: CONFIG.ECONOMY.BIO_REACTOR_SMALL.IRON_COST,
+            reactor: CONFIG.ECONOMY.BIO_REACTOR_SMALL.IRON_COST,
             mine: CONFIG.ECONOMY.MINE.IRON_COST,
             incubator: CONFIG.ECONOMY.INCUBATOR.IRON_COST,
         };
@@ -123,10 +141,10 @@ class Autopilot {
 
                 switch (neededType) {
                     case 'reactor':
-                        economy.mutateWorkerToReactor(worker);
+                        economy.mutateWorkerToSmallReactor(worker);
                         break;
                     case 'incubator':
-                        economy.mutateWorkerToSmallReactor(worker);
+                        economy.mutateWorkerToIncubator(worker);
                         break;
                     default:
                         economy.resources.iron += cost; // не потратили — вернуть

@@ -5,11 +5,11 @@ module.exports = (mediator, answer) => {
 
         const options = {
             userGuid,
-            buildingType,
-            buildingAmount,
+            buildingsType,
+            buildingsAmount,
         } = req.body;
 
-        if (!options.userGuid | !options.buildingType | !options.buildingAmount) {
+        if (!options.userGuid | !options.buildingsType | !options.buildingsAmount) {
             return res.send(answer.bad(242));
         }
 

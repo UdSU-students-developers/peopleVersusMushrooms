@@ -24,11 +24,7 @@ class Autopilot {
 
     _updatePriority() {
         const totalRequests = this.requestsFromArmy.units.length + this.requestsFromArmy.buildings.length;
-        if (totalRequests > 10) {
-            this.prioritet = "army";
-        } else {
-            this.prioritet = "economy";
-        }
+        this.prioritet = totalRequests > 10 ? "army" : "economy";
     }
 
     _getIronProductionPerTick(economy) {
@@ -49,34 +45,21 @@ class Autopilot {
     }
 
     _getNeededBuildingType(economy) {
-        const mineCount = economy.buildings.mines.length;
-        const reactorCount = economy.buildings.reactors.length;
-        const incubatorCount = economy.buildings.incubators.length;
+        const { mines, reactors, incubators } = economy.buildings;
 
-        if (mineCount === 0) return 'mine';
-        if (reactorCount === 0) return 'reactor';
-
-        const ironPerTick = this._getIronProductionPerTick(economy);
-        const energyPerTick = this._getEnergyProductionPerTick(economy);
-        const larvaePerTick = this._getLarvaeProductionPerTick(economy);
+        if (mines.length === 0) return 'mine';
+        if (reactors.length === 0) return 'reactor';
 
         const scores = {
-            mine:      ironPerTick   / CONFIG.ECONOMY.MINE.IRON_COST,
-            reactor:   energyPerTick / CONFIG.ECONOMY.BIO_REACTOR_SMALL.IRON_COST,
-            incubator: larvaePerTick / CONFIG.ECONOMY.INCUBATOR.IRON_COST,
+            mine:      this._getIronProductionPerTick(economy)   / CONFIG.ECONOMY.MINE.IRON_COST,
+            reactor:   this._getEnergyProductionPerTick(economy) / CONFIG.ECONOMY.BIO_REACTOR_SMALL.IRON_COST,
+            incubator: this._getLarvaeProductionPerTick(economy) / CONFIG.ECONOMY.INCUBATOR.IRON_COST,
         };
 
-        let neededType = null;
-        let minScore = Infinity;
-
-        for (const [type, score] of Object.entries(scores)) {
-            if (score < minScore) {
-                minScore = score;
-                neededType = type;
-            }
-        }
-
-        return neededType;
+        return Object.entries(scores).reduce(
+            (min, [type, score]) => score < min.score ? { type, score } : min,
+            { type: null, score: Infinity }
+        ).type;
     }
 
     _mutateLarvae(economy) {
@@ -105,14 +88,15 @@ class Autopilot {
 
     _mutateWorkers(economy) {
         const ironCosts = {
-            reactor: CONFIG.ECONOMY.BIO_REACTOR_SMALL.IRON_COST,
-            mine: CONFIG.ECONOMY.MINE.IRON_COST,
+            reactor:   CONFIG.ECONOMY.BIO_REACTOR_SMALL.IRON_COST,
+            mine:      CONFIG.ECONOMY.MINE.IRON_COST,
             incubator: CONFIG.ECONOMY.INCUBATOR.IRON_COST,
         };
 
         if (this.prioritet === "army") {
             for (const worker of [...economy.units.workers]) {
                 if (this.requestsFromArmy.buildings.length === 0) break;
+
                 const buildingType = this.requestsFromArmy.buildings[0];
                 const cost = ironCosts[buildingType] ?? 0;
                 if (economy.resources.iron < cost) break;

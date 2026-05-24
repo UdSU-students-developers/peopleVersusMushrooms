@@ -47,19 +47,18 @@ class Mycelium extends Building {
     }
 
     update() {
-        if (!this.canGrow) {
-            return false;
-        }
+        if (!this.canGrow) return false;
+
         this.grow += GROW_SPEED;
-        if (this.grow >= GROW_LEVEL_UP) {
-            this.grow = 0;
-            if (this.level < MAX_LEVEL) {
-                this.level += 1;
-                return true;
-            } else {
-                this.canGrow = false;
-            }
+        if (this.grow < GROW_LEVEL_UP) return false;
+
+        this.grow = 0;
+        if (this.level < MAX_LEVEL) {
+            this.level += 1;
+            return true;
         }
+
+        this.canGrow = false;
         return false;
     }
 
@@ -75,7 +74,7 @@ class Mycelium extends Building {
     }
 
     _getFreeCells(relief, mycelium, buildings, enemyBuildings) {
-        if (!relief[0].length) return [];
+        if (!relief[0]?.length) return [];
 
         const rows = relief.length;
         const cols = relief[0].length;

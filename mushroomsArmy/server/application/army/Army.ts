@@ -327,14 +327,17 @@ export class Army {
     public spawnBuilding(type: 'vzryvomor' | 'sporovaya_bashnya', x: number, y: number, common: Common): { guid: string } | null {
         const rows = this.map.length;
         const cols = this.map[0]?.length ?? 0;
-        const isValid = (y1: number, x1: number): boolean =>
-            y1 >= 0 && y1 < rows && x1 >= 0 && x1 < cols && this.map[y1][x1] === 0;
+        const isTilePlaceable = (tx: number, ty: number): boolean => {
+            if (ty < 0 || ty >= rows || tx < 0 || tx >= cols) return false;
+            // Только равнина (0) — не вода, не горы, не туман
+            if (this.map[ty][tx] !== 0) return false;
+            // Нельзя поверх существующих зданий (свои + враги + экономика)
+            if (this.isTileOccupiedByBuilding(tx, ty)) return false;
+            return true;
+        };
 
-        const coords: [number, number][] = type === 'sporovaya_bashnya'
-            ? [[y, x], [y + 1, x], [y, x + 1], [y + 1, x + 1]]
-            : [[y, x]];
-
-        if (!coords.every(([cy, cx]) => isValid(cy, cx))) return null;
+        const footprint = this.buildingFootprint(type, x, y);
+        if (!footprint.every(([tx, ty]) => isTilePlaceable(tx, ty))) return null;
 
         const guid = common.guid();
         if (type === 'vzryvomor') {
@@ -343,5 +346,36 @@ export class Army {
             this.buildings.push(new SporovayaBashnya({ guid, x, y, projectiles: this.projectiles }));
         }
         return { guid };
+    }
+
+    /** Тайлы, занимаемые зданием с левым-верхним углом (x,y). 2×2 у споровой башни, 1×1 у остальных. */
+    private buildingFootprint(type: string, x: number, y: number, declaredSizeX?: number, declaredSizeY?: number): ReadonlyArray<readonly [number, number]> {
+        const defaultSize = type === 'sporovaya_bashnya' ? 2 : 1;
+        const sx = declaredSizeX ?? defaultSize;
+        const sy = declaredSizeY ?? defaultSize;
+        const tiles: [number, number][] = [];
+        for (let dy = 0; dy < sy; dy++) {
+            for (let dx = 0; dx < sx; dx++) {
+                tiles.push([x + dx, y + dy]);
+            }
+        }
+        return tiles;
+    }
+
+    /** Проверяет, занят ли тайл футпринтом любого существующего здания (свои/враги/экономика). */
+    private isTileOccupiedByBuilding(tx: number, ty: number): boolean {
+        const hit = (tiles: ReadonlyArray<readonly [number, number]>): boolean =>
+            tiles.some(([bx, by]) => bx === tx && by === ty);
+
+        for (const b of this.buildings) {
+            if (hit(this.buildingFootprint(b.type, b.x, b.y))) return true;
+        }
+        for (const b of this.enemyBuildings) {
+            if (hit(this.buildingFootprint(b.type, b.x, b.y, b.sizeX, b.sizeY))) return true;
+        }
+        for (const b of this.economyBuildings) {
+            if (hit(this.buildingFootprint(b.type, b.x, b.y, b.sizeX, b.sizeY))) return true;
+        }
+        return false;
     }
 }

@@ -98,12 +98,16 @@ export class FormationPlanner {
         // Расширение: немедленно, пока юниты не помещаются ИЛИ inner L не вмещает
         // всех лекарей при шаге EBLEKAR_SLOT_STRIDE (иначе один лекарь оказался бы
         // без слота и убежал бы лечить раненых на 1-й линии).
+        // Жёсткий потолок: формация не уходит дальше текущей линии обороны +
+        // буфер до следующего тригера стены — армия держится у стены.
+        const maxDefenseD = this.lastWallRingIdx * L_STEP + WALL_TRIGGER_RINGS * L_STEP;
         const eblekarStrideCapacity = (d: number): number =>
             Math.ceil(this.lShellCells(d).length / EBLEKAR_SLOT_STRIDE);
         while (
             (capacityAt(this.currentDStart) < total
              || eblekarStrideCapacity(this.currentDStart) < remaining.eblekar)
-            && this.currentDStart + 2 * L_STEP < maxD
+            && this.currentDStart + L_STEP < maxD
+            && this.currentDStart + L_STEP <= maxDefenseD
         ) {
             this.currentDStart += L_STEP;
         }

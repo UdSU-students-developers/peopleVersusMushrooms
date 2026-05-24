@@ -219,6 +219,53 @@ export class Army {
             }
         }
 
+        // ── Споровые башни вдоль линий обороны, каждые 10 клеток ──────────────
+        // Могут ставиться на равнине (0) и горах (2).
+        // Строятся за стеной (со стороны базы), чтобы стена их прикрывала.
+
+        // Множество уже занятых тайлов для предотвращения наложений
+        const occupied = new Set<string>();
+        for (const b of result) {
+            const sx = b.type === 'sporovaya_bashnya' ? 2 : 1;
+            const sy = b.type === 'sporovaya_bashnya' ? 2 : 1;
+            for (let dy = 0; dy < sy; dy++)
+                for (let dx = 0; dx < sx; dx++)
+                    occupied.add(`${b.x + dx},${b.y + dy}`);
+        }
+
+        // Проверка блока 2×2: равнина или гора, не занято
+        const isFreeForTower = (topY: number, leftX: number): boolean => {
+            for (let dy = 0; dy <= 1; dy++) {
+                for (let dx = 0; dx <= 1; dx++) {
+                    const ty = topY + dy, tx = leftX + dx;
+                    if (ty < 0 || ty >= mapRows || tx < 0 || tx >= mapCols) return false;
+                    const tile = map[ty][tx];
+                    if (tile !== 0 && tile !== 2) return false;
+                    if (occupied.has(`${tx},${ty}`)) return false;
+                }
+            }
+            return true;
+        };
+
+        const addTower = (topY: number, leftX: number): void => {
+            if (!isFreeForTower(topY, leftX)) return;
+            const b: TBuildingInput = { guid: common.guid(), type: 'sporovaya_bashnya', x: leftX, y: topY };
+            result.push(b);
+            for (let dy = 0; dy <= 1; dy++)
+                for (let dx = 0; dx <= 1; dx++)
+                    occupied.add(`${leftX + dx},${topY + dy}`);
+        };
+
+        // За левой стеной (x=zoneX0) — башня сдвинута вправо на 1, каждые 7 клеток по Y
+        for (let y = zoneY0; y <= zoneY1 - 1; y += 7) {
+            addTower(y, zoneX0 + 1);
+        }
+
+        // За верхней стеной (y=zoneY0) — башня сдвинута вниз на 1, каждые 7 клеток по X
+        for (let x = zoneX0 + 1; x <= zoneX1 - 1; x += 7) {
+            addTower(zoneY0 + 1, x);
+        }
+
         return result;
     }
 
@@ -374,8 +421,14 @@ export class Army {
         const cols = this.map[0]?.length ?? 0;
         const isTilePlaceable = (tx: number, ty: number): boolean => {
             if (ty < 0 || ty >= rows || tx < 0 || tx >= cols) return false;
-            // Только равнина (0) — не вода, не горы, не туман
-            if (this.map[ty][tx] !== 0) return false;
+            const tile = this.map[ty][tx];
+            // Споровая башня может стоять на равнине (0) и горах (2);
+            // взрывомор — только на равнине (0)
+            if (type === 'sporovaya_bashnya') {
+                if (tile !== 0 && tile !== 2) return false;
+            } else {
+                if (tile !== 0) return false;
+            }
             // Нельзя поверх существующих зданий (свои + враги + экономика)
             if (this.isTileOccupiedByBuilding(tx, ty)) return false;
             return true;

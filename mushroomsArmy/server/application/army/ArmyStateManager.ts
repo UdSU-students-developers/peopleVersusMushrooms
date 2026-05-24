@@ -274,6 +274,7 @@ export class ArmyStateManager {
             for (const pos of newWallPositions) {
                 this.army.spawnBuilding('vzryvomor', pos.x, pos.y, this.common);
             }
+            this.spawnTowersBehindDefenseLine(newWallPositions);
         }
     }
 
@@ -579,6 +580,51 @@ private buildMarchSemicircle(
                     requestType: 'resources',
                     data: { action: 'spend', buildingType: type },
                 });
+            }
+        }
+    }
+
+    /**
+     * Спавнит споровые башни каждые 10 клеток за L-линией обороны взрывоморов.
+     * Горизонтальное плечо (y=topY) — башни при y=topY+1.
+     * Вертикальное плечо (x=leftX) — башни при x=leftX+1.
+     * Башни могут ставиться на горах (разрешено в spawnBuilding для sporovaya_bashnya).
+     */
+    private spawnTowersBehindDefenseLine(wallPositions: ReadonlyArray<{ x: number; y: number }>): void {
+        if (wallPositions.length === 0) return;
+
+        const map = this.army.map;
+        const rows = map.length;
+        const cols = map[0]?.length ?? 0;
+
+        // Апекс L-линии: минимальные topY и leftX
+        let topY = Infinity, leftX = Infinity;
+        for (const p of wallPositions) {
+            if (p.y < topY) topY = p.y;
+            if (p.x < leftX) leftX = p.x;
+        }
+
+        // Горизонтальное плечо (y === topY): башни за ним — y = topY + 1
+        const topWall = wallPositions
+            .filter(p => p.y === topY)
+            .sort((a, b) => a.x - b.x);
+        for (let i = 0; i < topWall.length; i += 7) {
+            const tx = topWall[i].x;
+            const ty = topY + 1;
+            if (ty + 1 < rows) {
+                this.army.spawnBuilding('sporovaya_bashnya', tx, ty, this.common);
+            }
+        }
+
+        // Вертикальное плечо (x === leftX, y > topY): башни за ним — x = leftX + 1
+        const leftWall = wallPositions
+            .filter(p => p.x === leftX && p.y > topY)
+            .sort((a, b) => a.y - b.y);
+        for (let i = 0; i < leftWall.length; i += 7) {
+            const tx = leftX + 1;
+            const ty = leftWall[i].y;
+            if (tx + 1 < cols) {
+                this.army.spawnBuilding('sporovaya_bashnya', tx, ty, this.common);
             }
         }
     }

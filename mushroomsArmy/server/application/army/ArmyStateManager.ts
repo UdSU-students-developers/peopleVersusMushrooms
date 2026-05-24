@@ -246,14 +246,17 @@ export class ArmyStateManager {
             return;
         }
 
-        // Обычный режим
+        // Обычный/оборонительный режим
+        const isDefense = this.metrics.currentMode === 'defense';
         for (const u of aliveUnits) {
             u.currentSpeed = u.speed;
             u.formationHold = false;
-            u.leashRadius = Infinity;
+            // В режиме обороны — ограничиваем поводок: юниты атакуют врагов,
+            // подошедших близко, но не уходят далеко от своего слота в строю.
+            u.leashRadius = isDefense ? 10 : Infinity;
         }
 
-        const slots = planner.updateForCounts(counts);
+        const slots = planner.updateForCounts(counts, { defenseHold: isDefense });
         this.assignFormationTargets(slots);
 
         // Settle-detection (spec §5): юниты в transit и без слота не считаются —

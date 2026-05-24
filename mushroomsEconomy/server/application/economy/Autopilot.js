@@ -44,6 +44,23 @@ class Autopilot {
         return economy.buildings.incubators.length * CONFIG.ECONOMY.INCUBATOR.PRODUCTION;
     }
 
+    _getIronProductionPerTick(economy) {
+        return economy.buildings.mines.length * CONFIG.ECONOMY.MINE.PRODUCTION;
+    }
+
+    _getEnergyProductionPerTick(economy) {
+        return economy.buildings.reactors.reduce((sum, r) => {
+            const prod = r.type === CONFIG.ECONOMY.BIO_REACTOR_SMALL.TYPE
+                ? CONFIG.ECONOMY.BIO_REACTOR_SMALL.PRODUCTION
+                : CONFIG.ECONOMY.BIO_REACTOR.PRODUCTION;
+            return sum + prod;
+        }, 0);
+    }
+
+    _getLarvaeProductionPerTick(economy) {
+        return economy.buildings.incubators.length * CONFIG.ECONOMY.INCUBATOR.PRODUCTION;
+    }
+
     _getNeededBuildingType(economy) {
         const { mines, reactors, incubators } = economy.buildings;
 

@@ -29,6 +29,13 @@ class Eblekar extends Unit {
     public update(enemies: Unit[], map: TMap, deltaTime: number, allies: Unit[] = []): void {
         if (!this.isAlive) return;
 
+        if (this.formationHold && this.formationTarget) {
+            this.targetX = this.formationTarget.x;
+            this.targetY = this.formationTarget.y;
+            this.moveTo(this.targetX, this.targetY, map, deltaTime);
+            return;
+        }
+
         this.enemies = enemies;
         this.allyDecisionAccumulator += deltaTime;
 

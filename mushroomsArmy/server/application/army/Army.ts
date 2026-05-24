@@ -1,5 +1,5 @@
 import Common from "../modules/common/Common";
-import Champigneb, { TSlimePuddle } from "./entities/Champigneb/Champigneb";
+import Champigneb from "./entities/Champigneb/Champigneb";
 import Eblekar from "./entities/Eblekar/Eblekar";
 import Pizdoglyad from "./entities/Pizdoglyad/Pizdoglyad";
 import Sporomet from "./entities/Sporomet/Sporomet";
@@ -59,7 +59,6 @@ export type TArmyState = {
     enemyUnits: TUnitState[];
     buildings: TBuildingState[];
     economyUnits: TBuildingInput[];
-    slimePuddles: TSlimePuddle[];
     projectiles: TProjectile[];
     formation: TFormationState | null;
 }
@@ -242,29 +241,6 @@ export class Army {
         
     }
 
-    /** Наносит урон вражеским юнитам, находящимся в лужах слизи (5 damage/sec) */
-    private applySlimePuddleDamage(deltaTime: number): void {
-        const SLIME_DAMAGE_PER_SECOND = 5;
-        const activePuddles = this.units
-            .filter(u => u.type === 'champigneb' && !u.isAlive && (u as unknown as Champigneb).slimePuddle.ttl > 0)
-            .map(u => (u as unknown as Champigneb).slimePuddle);
-
-        if (activePuddles.length === 0) return;
-
-        for (const enemy of this.enemyUnits) {
-            if (!enemy.isAlive) continue;
-            for (const puddle of activePuddles) {
-                const dx = enemy.x - puddle.x;
-                const dy = enemy.y - puddle.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                if (distance <= puddle.radius) {
-                    enemy.takeDamage(SLIME_DAMAGE_PER_SECOND * deltaTime);
-                    break; // Не стакаем урон от нескольких луж за один тик
-                }
-            }
-        }
-    }
-
     private update(): void {
         const deltaTime = 0.2;
         this.projectiles.length = 0;
@@ -278,13 +254,8 @@ export class Army {
                 } else {
                     unit.update(this.enemyUnits, this.map, deltaTime);
                 }
-            } else if (unit.type === 'champigneb') {
-                (unit as unknown as Champigneb).slimePuddle.ttl -= deltaTime;
             }
         }
-
-        // Урон от луж слизи по вражеским юнитам
-        this.applySlimePuddleDamage(deltaTime);
 
         // Тикаем все здания — включая мёртвые взрывоморы, ожидающие respawn
         for (const building of this.buildings) {
@@ -300,13 +271,7 @@ export class Army {
         });
 
         this.units = this.units.filter(unit => {
-            if (!unit.isAlive) {
-                if (unit.type === 'champigneb') {
-                    return (unit as unknown as Champigneb).slimePuddle.ttl > 0;
-                }
-                return false;
-            }
-            return true;
+            return unit.isAlive;
         });
 
         this.callbacks.update(this.guid!, this.getState());
@@ -323,9 +288,6 @@ export class Army {
                 ...this.economyBuildings.map(b => ({ ...b, hp: b.hp ?? 0 })),
             ],
             economyUnits: this.economyUnits,
-            slimePuddles: this.units
-                .filter(u => u.type === 'champigneb' && !u.isAlive)
-                .map(u => (u as unknown as Champigneb).slimePuddle),
             projectiles: this.projectiles,
             formation: null,
         };

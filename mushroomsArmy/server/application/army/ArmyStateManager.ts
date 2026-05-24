@@ -8,8 +8,8 @@ export type TFormationState = {
     center: { x: number; y: number };
     slots: {
         champigneb: { x: number; y: number }[];
-        sporomet:   { x: number; y: number }[];
-        eblekar:    { x: number; y: number }[];
+        sporomet: { x: number; y: number }[];
+        eblekar: { x: number; y: number }[];
     };
 };
 
@@ -63,7 +63,7 @@ export interface BuildQueueItem {
 export class ArmyStateManager {
     private army: Army;
     private common: Common;
-    
+
     // Метрики
     private metrics: ArmyMetrics = {
         aliveUnitsCount: 0,
@@ -105,6 +105,8 @@ export class ArmyStateManager {
     private updateInterval?: NodeJS.Timeout;
     private readonly UPDATE_RATE = 200; // мс
 
+    private knownUnitGuids: Set<string> = new Set();
+
     constructor(options: ArmyStateManagerOptions) {
         this.army = options.army;
         this.common = options.common;
@@ -127,9 +129,31 @@ export class ArmyStateManager {
         this.updateBuildingMetrics();
         this.updateMode();
         this.updateFormationAndWalls();
+        this.assignNewUnitsToFormation();
         this.updateScouts();
         this.updateDistanceTraveled();
         this.processAutoBuild();
+    }
+
+    private assignNewUnitsToFormation(): void {
+        for (const guid of this.knownUnitGuids) {
+            const unit = this.army.units.find(u => u.guid === guid);
+            if (!unit || !unit.isAlive) this.knownUnitGuids.delete(guid);
+        }
+        for (const u of this.army.units) {
+            if (u.isAlive) this.knownUnitGuids.add(u.guid);
+        }
+
+        if (this.metrics.currentMode === 'attack') return;
+
+        const planner = this.ensureFormationPlanner();
+        if (!planner) return;
+
+        for (const u of this.army.units) {
+            if (!u.isAlive) continue;
+            if (u.type !== 'sporomet' && u.type !== 'eblekar' && u.type !== 'champigneb') continue;
+            if (u.formationTarget) continue;
+        }
     }
 
     // Тик-логика формации: counts → планнер → stable assign → wall trigger.
@@ -138,12 +162,95 @@ export class ArmyStateManager {
         const planner = this.ensureFormationPlanner();
         if (!planner) return;
 
+        const aliveUnits = this.army.units.filter(u => u.isAlive);
         const counts = { sporomet: 0, eblekar: 0, champigneb: 0 };
         for (const u of this.army.units) {
             if (!u.isAlive) continue;
-            if (u.type === 'sporomet')       counts.sporomet++;
-            else if (u.type === 'eblekar')   counts.eblekar++;
+            if (u.type === 'sporomet') counts.sporomet++;
+            else if (u.type === 'eblekar') counts.eblekar++;
             else if (u.type === 'champigneb') counts.champigneb++;
+        }
+
+        // Режим Атаки
+        if (this.metrics.currentMode === 'attack') {
+            const allCombat = aliveUnits.filter(
+                u => u.type === 'sporomet' || u.type === 'eblekar' || u.type === 'champigneb'
+            );
+
+            if (allCombat.length === 0) return;
+
+            // Синхронизируем скорость сразу 
+            this.syncGroupSpeed(allCombat);
+
+            const avgX = allCombat.reduce((s, u) => s + u.x, 0) / allCombat.length;
+            const avgY = allCombat.reduce((s, u) => s + u.y, 0) / allCombat.length;
+
+            // Ближайший враг
+            const nearestEnemy = this.findNearestEnemy(avgX, avgY);
+
+            // Направление марша: к врагу если есть, иначе к (0,0)
+            const marchDirX = nearestEnemy ? nearestEnemy.x - avgX : 0 - avgX;
+            const marchDirY = nearestEnemy ? nearestEnemy.y - avgY : 0 - avgY;
+            const marchNorm = Math.sqrt(marchDirX * marchDirX + marchDirY * marchDirY) || 1;
+            const enemyNear = nearestEnemy
+                ? Math.sqrt((nearestEnemy.x - avgX) ** 2 + (nearestEnemy.y - avgY) ** 2) <= 25
+                : false;
+
+            // Строим полукруг вокруг центра масс группы лицом в сторону марша
+            const slots = this.buildMarchSemicircle(
+                allCombat,
+                avgX, avgY,
+                marchDirX / marchNorm, marchDirY / marchNorm,
+                counts,
+            );
+            
+            this.assignFormationTargets(slots);
+
+            const formationReady = allCombat.every(u => {
+                if (!u.formationTarget) return false;
+                const dx = u.x - u.formationTarget.x;
+                const dy = u.y - u.formationTarget.y;
+                return Math.sqrt(dx * dx + dy * dy) <= 1.5;
+            });
+
+            for (const u of aliveUnits) {
+                if (u.type === 'pizdoglyad') {
+                    u.formationHold = false;
+                    continue;
+                }
+
+                u.formationHold = !formationReady && !enemyNear;
+            }
+            for (const u of allCombat) {
+                u.leashRadius = enemyNear ? 18 : formationReady ? 12 : Infinity;
+            }
+
+            if (!nearestEnemy) {
+                for (const u of allCombat) {
+                    if (u.formationTarget) {
+                        const slotOffsetX = u.formationTarget.x - avgX;
+                        const slotOffsetY = u.formationTarget.y - avgY;
+                        u.formationTarget = {
+                            x: Math.max(0, Math.round(slotOffsetX)), // слоты не уходят за карту
+                            y: Math.max(0, Math.round(slotOffsetY)),
+                        };
+                    } else {
+                        u.formationTarget = { x: 0, y: 0 };
+                    }
+                    (u as any).hasReachedFormation = false;
+                    (u as any).reachedTarget = false;
+                    (u as any).isAtFormationTarget = false;
+                }
+                return;
+            }
+            return;
+        }
+
+        // Обычный режим
+        for (const u of aliveUnits) {
+            u.currentSpeed = u.speed;
+            u.formationHold = false;
+            u.leashRadius = Infinity;
         }
 
         const slots = planner.updateForCounts(counts);
@@ -167,6 +274,94 @@ export class ArmyStateManager {
             for (const pos of newWallPositions) {
                 this.army.spawnBuilding('vzryvomor', pos.x, pos.y, this.common);
             }
+        }
+    }
+
+private buildMarchSemicircle(
+    units: { type: string }[],
+    cx: number, cy: number,
+    dirX: number, dirY: number,
+    counts: { sporomet: number; eblekar: number; champigneb: number },
+): Record<'sporomet' | 'eblekar' | 'champigneb', { x: number; y: number }[]> {
+    const map = this.army.map;
+    const rows = map?.length ?? 0;
+    const cols = map?.[0]?.length ?? 0;
+
+    const isWalkable = (x: number, y: number): boolean => {
+        if (x < 0 || y < 0 || x >= cols || y >= rows) return false;
+        const tile = map[y]?.[x];
+        return tile === 0 || tile === 2;
+    };
+
+    const angle = Math.atan2(dirY, dirX);
+    const arcSlots = (
+        r: number, n: number, spreadRad: number, offsetAngle = 0,
+    ): { x: number; y: number }[] => {
+        if (n === 0) return [];
+        const slots: { x: number; y: number }[] = [];
+        for (let i = 0; i < n; i++) {
+            const t = n > 1 ? (i / (n - 1) - 0.5) * spreadRad : 0;
+            const a = angle + offsetAngle + t;
+            const sx = Math.round(cx + r * Math.cos(a));
+            const sy = Math.round(cy + r * Math.sin(a));
+            // Пробуем слот и ближайших соседей если непроходимо
+            let placed = false;
+            for (let dr = 0; dr <= 2 && !placed; dr++) {
+                for (const [ox, oy] of [[0,0],[1,0],[-1,0],[0,1],[0,-1]]) {
+                    const nx = sx + ox * dr, ny = sy + oy * dr;
+                    if (isWalkable(nx, ny)) {
+                        slots.push({ x: nx, y: ny });
+                        placed = true;
+                        break;
+                    }
+                }
+            }
+            if (!placed) slots.push({ x: Math.max(0, sx), y: Math.max(0, sy) });
+        }
+        return slots;
+    };
+    
+    const champSlots = arcSlots(8, counts.champigneb, Math.PI * 0.8);
+    const sporSlots = arcSlots(4, counts.sporomet, Math.PI * 0.7);
+    const eblSlots = arcSlots(4, counts.eblekar, Math.PI * 0.7, Math.PI);
+
+    return { champigneb: champSlots, sporomet: sporSlots, eblekar: eblSlots };
+}
+
+    private findNearestEnemy(fromX: number, fromY: number,): { x: number; y: number } | null {
+        const targets: { x: number; y: number }[] = [
+            ...this.army.enemyUnits.filter(u => u.isAlive),
+            ...this.army.enemyBuildings.filter(b => (b.hp ?? 1) > 0),
+        ];
+
+        if (targets.length === 0) return null;
+
+        let nearest: { x: number; y: number } | null = null;
+        let nearestDist = Infinity;
+
+        for (const t of targets) {
+            const dx = t.x - fromX;
+            const dy = t.y - fromY;
+            const dist = dx * dx + dy * dy;
+            if (dist < nearestDist) {
+                nearestDist = dist;
+                nearest = { x: t.x, y: t.y };
+            }
+        }
+
+        return nearest;
+    }
+
+    private syncGroupSpeed(units: { type: string; isAlive: boolean; speed: number; currentSpeed: number }[]): void {
+        const combat = units.filter(
+            u => u.isAlive &&
+                (u.type === 'sporomet' || u.type === 'eblekar' || u.type === 'champigneb')
+        );
+        if (combat.length === 0) return;
+
+        const minSpeed = combat.reduce((m, u) => Math.min(m, u.speed), Infinity);
+        for (const u of combat) {
+             u.currentSpeed = minSpeed;
         }
     }
 
@@ -237,10 +432,10 @@ export class ArmyStateManager {
 
     private updateScouts(): void {
         const aliveScouts = this.army.units.filter(u => u.type === 'pizdoglyad' && u.isAlive);
-        
+
         // Обновляем список активных разведчиков
         const currentScoutGuids = new Set(aliveScouts.map(s => s.guid));
-        
+
         // Удаляем мертвых разведчиков 
         for (const [guid, scout] of this.scouts.entries()) {
             if (!currentScoutGuids.has(guid)) {
@@ -440,8 +635,8 @@ export class ArmyStateManager {
             center: { x: c.x, y: c.y },
             slots: {
                 champigneb: p.getSlots('champigneb').map(s => ({ x: s.x, y: s.y })),
-                sporomet:   p.getSlots('sporomet').map(s   => ({ x: s.x, y: s.y })),
-                eblekar:    p.getSlots('eblekar').map(s    => ({ x: s.x, y: s.y })),
+                sporomet: p.getSlots('sporomet').map(s => ({ x: s.x, y: s.y })),
+                eblekar: p.getSlots('eblekar').map(s => ({ x: s.x, y: s.y })),
             },
         };
     }
@@ -456,7 +651,7 @@ export class ArmyStateManager {
         // Вычисляем из текущей карты, не хардкодим — на случай других размеров.
         const rows = map.length;
         const cols = map[0].length;
-        const baseWallTopY  = rows - 15;
+        const baseWallTopY = rows - 15;
         const baseWallLeftX = cols - 15;
 
         // Центр базы = среднее по координатам своих башен (если есть), иначе

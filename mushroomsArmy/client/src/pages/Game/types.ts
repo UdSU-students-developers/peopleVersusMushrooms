@@ -46,15 +46,6 @@ export type Building = {
   isAttacking?: boolean;
 };
 
-/**
- * Лужа слизи
- */
-export type SlimePuddle = {
-  x: number;               
-  y: number;                
-  radius: number;          
-};
-
 export type Projectile = {
   guid: string;
   type: 'sporomet' | 'sporovaya_bashnya' | 'eblekar';
@@ -85,7 +76,6 @@ export type GameState = {
   enemyUnits?: EnemyUnit[];
   buildings: Building[];
   economyUnits?: EconomyUnit[];
-  slimePuddles: SlimePuddle[]; 
   projectiles: Projectile[];
 };
 

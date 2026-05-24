@@ -12,9 +12,8 @@
    * 2.2. Lobby
    * 2.3. Unit
    * 2.4. Building
-   * 2.5. SlimePuddle
-   * 2.6. Projectile
-   * 2.7. ArmyState
+    * 2.5. Projectile
+    * 2.6. ArmyState
 3. Список запросов
    * 3.1. Общие ошибки
 4. Подробно (входящие)
@@ -134,20 +133,7 @@ Answer<T>: {
 
 > HP по типу (хардкод на сервере): vzryvomor — 70, sporovaya_bashnya — 160.
 
-### 2.5 SlimePuddle
-
-Лужа слизи, оставленная погибшим `champigneb`. Наносит урон вражеским юнитам в радиусе.
-
-```
-{
-    x: number,      - координата X центра лужи
-    y: number,      - координата Y центра лужи
-    radius: number, - радиус лужи
-    ttl: number,    - оставшееся время жизни (в тиках)
-}
-```
-
-### 2.6 Projectile
+### 2.5 Projectile
 
 Снаряд, выпущенный юнитом или зданием.
 
@@ -163,7 +149,7 @@ Answer<T>: {
 }
 ```
 
-### 2.7 ArmyState
+### 2.6 ArmyState
 
 Полное состояние армии, возвращаемое запросом `GET_ARMY` и рассылаемое клиенту через Socket.IO.
 
@@ -172,7 +158,6 @@ Answer<T>: {
     map: (number | null)[][], - карта проходимости (с туманом войны: невидимые клетки = null)
     units: Unit[],            - юниты армии
     buildings: Building[],    - здания армии (свои + видимые вражеские)
-    slimePuddles: SlimePuddle[], - активные лужи слизи
     projectiles: Projectile[],   - снаряды в текущем тике
 }
 ```

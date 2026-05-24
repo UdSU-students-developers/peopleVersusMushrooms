@@ -24,7 +24,7 @@ class Autopilot {
 
     _updatePriority() {
         const totalRequests = this.requestsFromArmy.units.length + this.requestsFromArmy.buildings.length;
-        this.prioritet = totalRequests > 10 ? "army" : "economy";
+        this.prioritet = totalRequests > 3 ? "army" : "economy";
     }
 
     _getIronProductionPerTick(economy) {

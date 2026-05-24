@@ -17,5 +17,5 @@ export const useTakeDamageHandler = (mediator: IMediator, answer: IAnswer) =>
         }
 
         const result = mediator.get(CONFIG.MEDIATOR.TRIGGERS.TAKE_DAMAGE_HANDLER, { armyGuid, unitGuid, amount });
-        res.json(result ? answer.good(true) : answer.bad(242));
+        res.json(result ? answer.good(true) : answer.bad(404));
     };

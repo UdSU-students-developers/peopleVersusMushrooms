@@ -1,5 +1,9 @@
 const EasyStar = require('easystarjs');
 
+const DIRECTIONS = [
+    [0, 1], [0, -1], [1, 0], [-1, 0]
+];
+
 class Unit {
     constructor({ x, y, guid, map, type, visibility, speed = 0.3, sourcesVisibility }) {
         this.guid = guid;
@@ -32,7 +36,6 @@ class Unit {
         }
     }
 
-
     get() {
         return {
             guid: this.guid,
@@ -53,7 +56,6 @@ class Unit {
     setGrid(grid) {
         this.grid = grid;
         this.easyStar.setGrid(grid);
-
     }
 
     takeDamage(amount) {
@@ -63,39 +65,25 @@ class Unit {
     }
 
     findNearestCell() {
-        const cells = [];
         const currentX = Math.floor(this.x);
         const currentY = Math.floor(this.y);
 
-        const directions = [
-            [0, 1], [0, -1], [1, 0], [-1, 0]
-        ];
+        const occupiedCells = new Set();
 
-        const occupiedCells = [];
-
-        if (this.visibility.buildings) {
-            for (let i = 0; i < this.visibility.length; i++) {
-                const building = this.visibility.building[i];
-                const x = Math.floor(building.x);
-                const y = Math.floor(building.y);
-                occupiedCells.push({ x: x, y: y});
+        if (this.visibility.buildings.length) {
+            for (const building of this.visibility.buildings) {
+                occupiedCells.add(`${Math.floor(building.x)},${Math.floor(building.y)}`);
             }
         }
 
-        for (const [dx, dy] of directions) {
-            const newX = currentX + dx;
-            const newY = currentY + dy;
+        const cells = [];
 
-            if (this.grid[newY] && this.grid[newY][newX] !== undefined) {
-                let isOccupied = false;
-                for (let i = 0; i < occupiedCells.length; i++) {
-                    if (occupiedCells[i].x === newX && occupiedCells[i].y) {
-                       isOccupied = true;
-                       break; 
-                    }
-                }
+        for (const [dx, dy] of DIRECTIONS) {
+            const nx = currentX + dx;
+            const ny = currentY + dy;
 
-                if (!isOccupied) cells.push({ x: newX, y: newY });
+            if (this.grid[ny]?.[nx] !== undefined && !occupiedCells.has(`${nx},${ny}`)) {
+                cells.push({ x: nx, y: ny });
             }
         }
 
@@ -112,7 +100,6 @@ class Unit {
             this._tryStep();
         }
     }
-
 
     _hasReachedTarget() {
         return this.x === this.targetX && this.y === this.targetY;
@@ -154,16 +141,10 @@ class Unit {
     }
 
     _isCellWalkable(x, y) {
-        if (this.grid?.[y]?.[x] !== 0) {
-            return false;
-        }
+        if (this.grid?.[y]?.[x] !== 0) return false;
 
         for (const unit of this.units) {
-            if (unit.guid === this.guid) continue;
-
-            if (unit.x === x && unit.y === y) {
-                return false;
-            }
+            if (unit.guid !== this.guid && unit.x === x && unit.y === y) return false;
         }
 
         return true;

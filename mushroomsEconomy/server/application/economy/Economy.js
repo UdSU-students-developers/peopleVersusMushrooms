@@ -46,14 +46,12 @@ class Economy {
             mines: [], // шахты
         };
 
-
         this.updatedBuildings = []; //ПРИ добавлении или удалении здания добавить в этот массив его гуид
 
         //Юниты всякие
         this.units = {
             workers: [], // рабочие
             larvae: [],  // личинки
-            workers: [], // рабочие
         };
 
         this.updatedUnits = [];
@@ -129,9 +127,9 @@ class Economy {
             }
         }
     }
-    
+
     // Методы добавления объектов
-    
+
     addLarva(x, y, homeX, homeY) {
         const larva = new Larva({
             x,
@@ -158,7 +156,7 @@ class Economy {
 
         this.addWorker(lar.x, lar.y);
     }
-    
+
     addWorker(x, y) {
         const worker = new Worker({
             x,
@@ -173,55 +171,55 @@ class Economy {
         });
         this.units.workers.push(worker);
         this.updatedUnits.push(worker.get());
-        
     }
 
     mutateWorkerToMine(wor) {
         const mineCost = CONFIG.ECONOMY.MINE.IRON_COST;
         if (this.resources.iron < mineCost) return;
-        this.resources.iron -= mineCost;
-        this.updatedUnits.push(wor.get());
-        this.units.workers = this.units.workers.filter(w => w.guid !== wor.guid);
 
+        this.resources.iron -= mineCost;
+        this._removeWorker(wor);
         this.addMine(wor.x, wor.y);
     }
 
     mutateWorkerToReactor(wor) {
-        this.updatedUnits.push(wor.get());
-        this.units.workers = this.units.workers.filter(w => w.guid !== wor.guid);
-
+        this._removeWorker(wor);
         this.addReactor(wor.x, wor.y);
     }
 
     mutateWorkerToSmallReactor(wor) {
-        this.updatedUnits.push(wor.get());
-        this.units.workers = this.units.workers.filter(w => w.guid !== wor.guid);
-
+        this._removeWorker(wor);
         this.addSmallReactor(wor.x, wor.y);
     }
 
     mutateWorkerToIncubator(wor) {
-        this.updatedUnits.push(wor.get());
-        this.units.workers = this.units.workers.filter(w => w.guid !== wor.guid);
-
+        this._removeWorker(wor);
         this.addIncubator(wor.x, wor.y);
     }
 
+    _removeWorker(wor) {
+        this.updatedUnits.push(wor.get());
+        this.units.workers = this.units.workers.filter(w => w.guid !== wor.guid);
+    }
+
+    _pushUpdatedBuilding(guid) {
+        this.updatedBuildings.push(this.findEntityByGuid(guid).get());
+        this.updated = true;
+    }
 
     addMine(x, y) {
         const guid = this.common.guid();
         this.buildings.mines.push(new Mine({
             guid,
-            x: x,
-            y: y,
+            x,
+            y,
             callbacks: {
                 getResources: () => this.map.resources,
             },
         }));
-        this.updatedBuildings.push(this.findEntityByGuid(guid).get());
-        this.updated = true;
-    }    
-    
+        this._pushUpdatedBuilding(guid);
+    }
+
     addSmallReactor(x, y) {
         const guid = this.common.guid();
         this.buildings.reactors.push(new SmallReactor({
@@ -230,15 +228,13 @@ class Economy {
             x,
             y,
         }));
-        this.updatedBuildings.push(this.findEntityByGuid(guid).get());
-        this.updated = true;
+        this._pushUpdatedBuilding(guid);
     }
 
     addReactor(x, y) {
         const guid = this.common.guid();
         this.buildings.reactors.push(new Reactor({ guid, x, y }));
-        this.updatedBuildings.push(this.findEntityByGuid(guid).get());
-        this.updated = true;
+        this._pushUpdatedBuilding(guid);
     }
 
     addIncubator(x, y) {
@@ -256,8 +252,7 @@ class Economy {
                 ],
             },
         }));
-        this.updatedBuildings.push(this.findEntityByGuid(guid).get());
-        this.updated = true;
+        this._pushUpdatedBuilding(guid);
     }
 
     addMycelium(x, y) {
@@ -268,8 +263,7 @@ class Economy {
             guid,
             callbacks: {},
         }));
-        this.updatedBuildings.push(this.findEntityByGuid(guid).get());
-        this.updated = true;
+        this._pushUpdatedBuilding(guid);
     }
 
     getUpdatedBuildings() {
@@ -403,10 +397,46 @@ class Economy {
         return null;
     }
 
+    _destroyEntity(guid) {
+        for (const [key, group] of Object.entries(this.units)) {
+            const idx = group.findIndex(u => u.guid === guid);
+            if (idx !== -1) {
+                this.updatedUnits.push({ ...group[idx].get(), destroyed: true });
+                this.units[key].splice(idx, 1);
+                return;
+            }
+        }
+        for (const [key, group] of Object.entries(this.buildings)) {
+            const idx = group.findIndex(b => b.guid === guid);
+            if (idx !== -1) {
+                this.updatedBuildings.push({ ...group[idx].get(), destroyed: true });
+                this.buildings[key].splice(idx, 1);
+                return;
+            }
+        }
+    }
+
     applyDamage(guid, damage) {
         const entity = this.findEntityByGuid(guid);
         if (!entity) return false;
-        entity.takeDamage(damage);
+        const isDead = entity.takeDamage(damage);
+        this.updated = true;
+        if (isDead) {
+            this._destroyEntity(guid);
+        }
+        return true;
+    }
+
+    moveUnitToNearestCell(guid) {
+        const unit = [...this.units.larvae, ...this.units.workers].find(u => u.guid === guid);
+        if (!unit) return false;
+        if (!unit.grid) return false;
+
+        const cells = unit.findNearestCell();
+        if (!cells.length) return false;
+
+        const target = cells[Math.floor(Math.random() * cells.length)];
+        unit.setTarget(target.x, target.y);
         this.updated = true;
         return true;
     }

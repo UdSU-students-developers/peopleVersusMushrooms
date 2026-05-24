@@ -4,12 +4,12 @@ module.exports = (mediator, answer) => {
     return (req, res) => {
 
         const options = {
-            userGuid,
+            mushroomsEconomy,
             unitsType,
             unitsAmount,
         } = req.body;
 
-        if (!options.userGuid || !options.unitsType || !options.unitsAmount) {
+        if (!options.mushroomsEconomy || !options.unitsType || !options.unitsAmount) {
             return res.send(answer.bad(242));
         }
         

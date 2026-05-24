@@ -21,6 +21,7 @@ class GameManager extends BaseManager {
 		this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
 		this.mediator.subscribe(this.EVENTS.LOAD_GAME, (data) => this.eventLoadGame(data));
 		this.mediator.subscribe(this.EVENTS.DAMAGE, (data) => this.eventApplyDamage(data));
+		this.mediator.subscribe(this.EVENTS.MOVE_UNIT, (data) => this.eventMoveUnit(data));
 		this.mediator.subscribe(this.REQUEST_UNITS, (data) => this.eventRequestUnits(data));
 		this.mediator.subscribe(this.REQUEST_BUILDINGS, (data) => this.eventRequestBuildings(data));
 		// mediator triggers setters
@@ -102,8 +103,8 @@ class GameManager extends BaseManager {
 	}
 	
 	eventApplyDamage(data = {}) {
-		const { entityGuid, damage, userGuid } = data;
-		const economy = this.economies[userGuid];
+		const { entityGuid, damage, mushroomsEconomy } = data;
+		const economy = this.economies[mushroomsEconomy];
 		
 		if (!economy) {
 			return false;
@@ -112,9 +113,20 @@ class GameManager extends BaseManager {
 		return economy.applyDamage(entityGuid, damage);
 	}
 
+	eventMoveUnit(data = {}) {
+		const { guid, mushroomsEconomy } = data;
+		const economy = this.economies[mushroomsEconomy];
+
+		if (!economy) {
+			return false;
+		}
+
+		return economy.moveUnitToNearestCell(guid);
+	}
+
 	eventRequestUnits(data = {}) {
-		const { userGuid, unitsType, unitsAmount } = data;
-		const economy = this.economies[userGuid];
+		const { mushroomsEconomy, unitsType, unitsAmount } = data;
+		const economy = this.economies[mushroomsEconomy];
 
 		if (!economy) {
 			return { error: 4001 };
@@ -125,8 +137,8 @@ class GameManager extends BaseManager {
 	}
 
 	eventRequestBuildings(data = {}) {
-		const { userGuid, buildingsType, buildingsAmount } = data;
-		const economy = this.economies[userGuid];
+		const { mushroomsEconomy, buildingsType, buildingsAmount } = data;
+		const economy = this.economies[mushroomsEconomy];
 
 		if (!economy) {
 			return { error: 4001 };

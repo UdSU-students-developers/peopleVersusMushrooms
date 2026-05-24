@@ -397,10 +397,46 @@ class Economy {
         return null;
     }
 
+    _destroyEntity(guid) {
+        for (const [key, group] of Object.entries(this.units)) {
+            const idx = group.findIndex(u => u.guid === guid);
+            if (idx !== -1) {
+                this.updatedUnits.push({ ...group[idx].get(), destroyed: true });
+                this.units[key].splice(idx, 1);
+                return;
+            }
+        }
+        for (const [key, group] of Object.entries(this.buildings)) {
+            const idx = group.findIndex(b => b.guid === guid);
+            if (idx !== -1) {
+                this.updatedBuildings.push({ ...group[idx].get(), destroyed: true });
+                this.buildings[key].splice(idx, 1);
+                return;
+            }
+        }
+    }
+
     applyDamage(guid, damage) {
         const entity = this.findEntityByGuid(guid);
         if (!entity) return false;
-        entity.takeDamage(damage);
+        const isDead = entity.takeDamage(damage);
+        this.updated = true;
+        if (isDead) {
+            this._destroyEntity(guid);
+        }
+        return true;
+    }
+
+    moveUnitToNearestCell(guid) {
+        const unit = [...this.units.larvae, ...this.units.workers].find(u => u.guid === guid);
+        if (!unit) return false;
+        if (!unit.grid) return false;
+
+        const cells = unit.findNearestCell();
+        if (!cells.length) return false;
+
+        const target = cells[Math.floor(Math.random() * cells.length)];
+        unit.setTarget(target.x, target.y);
         this.updated = true;
         return true;
     }

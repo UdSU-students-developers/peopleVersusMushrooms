@@ -45,7 +45,7 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
         this.guid = options.guid;
         this.x = options.x;
         this.y = options.y;
-        this.hp = options.hp ?? 160;
+        this.hp = options.hp ?? 200;
         this.projectiles = options.projectiles ?? [];
     }
 

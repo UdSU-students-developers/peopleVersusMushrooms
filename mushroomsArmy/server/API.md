@@ -104,7 +104,7 @@ Answer<T>: {
 }
 ```
 
-> HP по типу (хардкод на сервере): sporomet — 8, champigneb — 35, eblekar — 40.
+> HP по типу (хардкод на сервере): sporomet — 20, champigneb — 35, eblekar — 20.
 
 ### 2.4 Building
 
@@ -131,7 +131,7 @@ Answer<T>: {
 }
 ```
 
-> HP по типу (хардкод на сервере): vzryvomor — 70, sporovaya_bashnya — 160.
+> HP по типу (хардкод на сервере): vzryvomor — 70, sporovaya_bashnya — 200.
 
 ### 2.5 Projectile
 

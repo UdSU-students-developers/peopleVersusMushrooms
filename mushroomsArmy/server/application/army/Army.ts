@@ -311,11 +311,11 @@ export class Army {
         const guid = common.guid();
 
         if (type === 'sporomet') {
-            this.units.push(new Sporomet({ guid, type, x, y, speed: 1, attackRange: 12, projectiles: this.projectiles }));
+            this.units.push(new Sporomet({ guid, type, x, y, speed: 2, attackRange: 10, projectiles: this.projectiles }));
         } else if (type === 'champigneb') {
             this.units.push(new Champigneb({ guid, type, x, y, speed: 3, attackRange: 6 }));
         } else if (type === 'eblekar') {
-            this.units.push(new Eblekar({ guid, type, x, y, speed: 1, attackRange: 1, projectiles: this.projectiles }));
+            this.units.push(new Eblekar({ guid, type, x, y, speed: 1, attackRange: 0, projectiles: this.projectiles }));
         } else if (type === 'pizdoglyad') {
             this.units.push(new Pizdoglyad({ guid, type, x, y, speed: 7, attackRange: 0 }));
         }

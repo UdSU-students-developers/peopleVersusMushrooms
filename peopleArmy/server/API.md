@@ -94,6 +94,7 @@ Answer<T>: {
     units: Unit[];
     enemyUnits: EnemyUnit[];              // видимые юниты грибов (с карты)
     enemyBuildings: EnemyBuilding[];      // видимые вражеские здания (живые)
+    alliedBuildings: EnemyBuilding[];     // здания peopleEconomy в видимости (не атакуются)
     destroyedEnemyBuildingGuids: string[]; // guid зданий, уничтоженных нашей армией локально
 }
 ```

@@ -59,9 +59,8 @@ class Unit {
     }
 
     takeDamage(amount) {
-        if (amount <= 0) return false;
         this.hp = Math.max(0, this.hp - amount);
-        return this.hp === 0;
+        return this.hp <= 0;
     }
 
     findNearestCell() {

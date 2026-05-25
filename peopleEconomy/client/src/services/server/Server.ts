@@ -65,7 +65,7 @@ class Server {
             const result = this._validate(data);
             if (result) {
                 const { CREATE_LOBBY } = this.mediator.getEventTypes();
-                this.mediator.call(CREATE_LOBBY, result.data);
+                this.mediator.call(CREATE_LOBBY, result);
             }
         });
 

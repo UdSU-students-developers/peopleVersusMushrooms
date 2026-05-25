@@ -46,6 +46,10 @@ const PEOPLE_ECONOMY_BUILDING_TYPES = new Set([
     'small_generator',
 ]);
 
+const MUSHROOMS_ECONOMY_BUILDING_TYPES = new Set([
+    'mycelium', 'incubator', 'reactor', 'small_reactor', 'mine',
+]);
+
 class Army {
     constructor({ guids = {}, startPoint = null, map = null, buildings = [], unitTypes = {}, mapGuid = null, common, callbacks = {}, guid }) {
         this.guids = {};
@@ -129,6 +133,18 @@ class Army {
 
     static _isPeopleEconomyBuildingType(type) {
         return PEOPLE_ECONOMY_BUILDING_TYPES.has(String(type || '').toLowerCase());
+    }
+
+    /** Здание обслуживается mushroomsEconomy (POST /damage), не mushroomsArmy. */
+    static _isMushroomsEconomyBuilding(entity) {
+        const role = normalizeMapRole(entity?.role);
+        if (role === GLOBAL_CONFIG.MUSHROOMS_ECONOMY.ROLE) {
+            return true;
+        }
+        if (role === GLOBAL_CONFIG.MUSHROOMS_ARMY.ROLE) {
+            return false;
+        }
+        return MUSHROOMS_ECONOMY_BUILDING_TYPES.has(String(entity?.type || '').toLowerCase());
     }
 
     static _isBuildingAlive(b) {
@@ -261,6 +277,19 @@ class Army {
         }
 
         this.enemyBuildings[index] = { ...building, hp };
+    }
+
+    /**
+     * Economy не знает guid (4003) — призрак на карте; перестаём стрелять и скрываем у клиента.
+     * @param {string} guid
+     */
+    _discardGhostEconomyBuilding(guid) {
+        this.destroyedEnemyBuildingGuids.add(guid);
+        const index = this.enemyBuildings.findIndex((b) => b.guid === guid);
+        if (index >= 0) {
+            this.enemyBuildings.splice(index, 1);
+        }
+        this.updated = true;
     }
 
     /**
@@ -505,17 +534,24 @@ class Army {
 
             const target = pool.reduce((weakest, t) => (t.hp ?? Infinity) < (weakest.hp ?? Infinity) ? t : weakest);
             const amount = Number(unit.damage) || 1;
-            await this.callbacks.takeDamage({
+            const damageApplied = await this.callbacks.takeDamage({
                 armyGuid,
                 economyGuid,
                 unitGuid: target.guid,
                 amount,
                 targetKind: target.targetKind,
                 type: target.type,
+                role: target.role,
             });
 
-            if (target.targetKind === 'building') {
+            if (target.targetKind === 'building' && damageApplied) {
                 this._markBuildingDamaged(target.guid, target.type, amount);
+            } else if (
+                target.targetKind === 'building'
+                && !damageApplied
+                && Army._isMushroomsEconomyBuilding(target)
+            ) {
+                this._discardGhostEconomyBuilding(target.guid);
             }
         }
     }

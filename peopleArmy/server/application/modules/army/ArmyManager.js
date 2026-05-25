@@ -1,6 +1,7 @@
 const CONFIG = require('../../../config');
 const BaseManager = require('../../../../../global/modules/BaseManager');
-const { URLS, MAP } = require('../../../../../global/globalConfig');
+const GLOBAL_CONFIG = require('../../../../../global/globalConfig');
+const { URLS } = GLOBAL_CONFIG;
 const Army = require('../../army/Army');
 const { UPDATE_ARMY } = CONFIG.SOCKETS;
 
@@ -140,7 +141,7 @@ class ArmyManager extends BaseManager {
         return this.answer.good(result.data);
     }
 
-    async damageMushroomsUnit({ armyGuid, economyGuid, unitGuid, amount, targetKind, type }) {
+    async damageMushroomsUnit({ armyGuid, economyGuid, unitGuid, amount, targetKind, type, role }) {
         if (!unitGuid || !Number.isFinite(Number(amount))) {
             return null;
         }
@@ -149,24 +150,37 @@ class ArmyManager extends BaseManager {
 
         if (targetKind === 'building') {
             const buildingType = String(type || '').toLowerCase();
-            // башня и взрывомор — здания mushroomsArmy, не economy
-            if (buildingType === 'sporovaya_bashnya' || buildingType === 'vzryvomor') {
-                if (!armyGuid) {
+            const entityRole = role;
+
+            const MUSHROOMS_ECONOMY_BUILDING_TYPES = new Set([
+                'mycelium', 'incubator', 'reactor', 'small_reactor', 'mine',
+            ]);
+            const normalizedRole = entityRole === 'mushroomEconomy'
+                ? GLOBAL_CONFIG.MUSHROOMS_ECONOMY.ROLE
+                : (entityRole === 'mushroomArmy' ? GLOBAL_CONFIG.MUSHROOMS_ARMY.ROLE : entityRole);
+
+            const routeToEconomy =
+                normalizedRole === GLOBAL_CONFIG.MUSHROOMS_ECONOMY.ROLE
+                || (normalizedRole !== GLOBAL_CONFIG.MUSHROOMS_ARMY.ROLE
+                    && MUSHROOMS_ECONOMY_BUILDING_TYPES.has(buildingType));
+
+            if (routeToEconomy) {
+                if (!economyGuid) {
                     return null;
                 }
-                return this.sendToMushroomsArmy('/takeDamage', {
-                    armyGuid,
-                    unitGuid,
-                    amount: sanitizedAmount,
+                return this.sendToMushroomsEconomy(URLS.DAMAGE, {
+                    mushroomsEconomy: economyGuid,
+                    entityGuid: unitGuid,
+                    damage: sanitizedAmount,
                 });
             }
-            if (!economyGuid) {
+            if (!armyGuid) {
                 return null;
             }
-            return this.sendToMushroomsEconomy(URLS.APPLY_DAMAGE, {
-                economyGuid,
-                guid: unitGuid,
-                damage: sanitizedAmount,
+            return this.sendToMushroomsArmy('/takeDamage', {
+                armyGuid,
+                unitGuid,
+                amount: sanitizedAmount,
             });
         }
 

@@ -7,9 +7,15 @@ module.exports = (mediator, answer) => (req, res) => {
         return res.send(answer.bad(242));
     }
 
-    const success = mediator.call(DAMAGE, { entityGuid, damage, mushroomsEconomy });
+    const result = mediator.call(DAMAGE, { entityGuid, damage, mushroomsEconomy });
 
-    if (!success) {
+    if (result === 4001) {
+        return res.send(answer.bad(4001));
+    }
+    if (result === 4003) {
+        return res.send(answer.bad(4003));
+    }
+    if (!result) {
         return res.send(answer.bad(4002));
     }
 

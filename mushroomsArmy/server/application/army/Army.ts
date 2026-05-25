@@ -74,10 +74,9 @@ export class Army {
     public enemyBuildings: TBuildingInput[] = [];
     public economyBuildings: TBuildingInput[] = [];
     public economyUnits: TBuildingInput[] = [];
+    public sentBuildingGuids: Set<string> = new Set();
     /** Последнее состояние юнитов, отданное карте (протокол UPDATE_UNITS). */
     public mapSyncedUnits = new Map<string, { x: number; y: number; type: string; visibility: number }>();
-    /** Здания, уже добавленные на карту (протокол UPDATE_BUILDINGS: повтор guid → удаление). */
-    public mapSyncedBuildings = new Map<string, { guid: string; x: number; y: number; type: string; visibility: number; size: number }>();
     public projectiles: TProjectile[] = [];
     public callbacks: {
         update: (guid: string, data: TArmyState) => void;
@@ -143,53 +142,6 @@ export class Army {
                 });
             } else {
                 this.mapSyncedUnits.delete(entity.guid);
-            }
-        }
-
-        return entities;
-    }
-
-    private buildingStateToMapEntity(state: TBuildingState): { guid: string; x: number; y: number; type: string; visibility: number; size: number } {
-        const sizeX = state.sizeX ?? 1;
-        const sizeY = state.sizeY ?? 1;
-        return {
-            guid: state.guid,
-            x: state.x,
-            y: state.y,
-            type: state.type,
-            visibility: state.visibility ?? 1,
-            size: Math.max(sizeX, sizeY, 1),
-        };
-    }
-
-    /**
-     * Дельта для map UPDATE_BUILDINGS (см. map/API.md §4.2.5):
-     * — новый guid → добавление;
-     * — guid был на карте, здания в армии нет → повтор (toggle) → удаление.
-     */
-    public buildMapBuildingUpdateEntities(): Array<{ guid: string; x: number; y: number; type: string; visibility: number; size: number }> {
-        const entities: Array<{ guid: string; x: number; y: number; type: string; visibility: number; size: number }> = [];
-        const aliveGuids = new Set<string>();
-
-        for (const building of this.buildings) {
-            const snapshot = this.buildingStateToMapEntity(building.getState());
-            aliveGuids.add(snapshot.guid);
-            if (!this.mapSyncedBuildings.has(snapshot.guid)) {
-                entities.push(snapshot);
-            }
-        }
-
-        for (const [guid, prev] of this.mapSyncedBuildings) {
-            if (!aliveGuids.has(guid)) {
-                entities.push(prev);
-            }
-        }
-
-        for (const entity of entities) {
-            if (aliveGuids.has(entity.guid)) {
-                this.mapSyncedBuildings.set(entity.guid, entity);
-            } else {
-                this.mapSyncedBuildings.delete(entity.guid);
             }
         }
 

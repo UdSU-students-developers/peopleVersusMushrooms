@@ -187,6 +187,8 @@ class ArmyManager extends BaseManager {
         const army = this.army[guid];
         if (!army) return;
 
+        const ownBuildings = army.buildings.map(building => building.getState());
+
         const unitEntities = army.buildMapUnitUpdateEntities();
         if (unitEntities.length > 0) {
             await this.send<{ mapGuid: string; userGuid: string; entities: typeof unitEntities }>(
@@ -195,12 +197,14 @@ class ArmyManager extends BaseManager {
             );
         }
 
-        const buildingEntities = army.buildMapBuildingUpdateEntities();
-        if (buildingEntities.length > 0) {
-            await this.send<{ mapGuid: string; userGuid: string; entities: typeof buildingEntities }>(
+        // Здания отправляем только новые (map использует toggle: повторная отправка удаляет с карты)
+        const newBuildings = ownBuildings.filter(b => !army.sentBuildingGuids.has(b.guid));
+        if (newBuildings.length > 0) {
+            await this.send<{ mapGuid: string; userGuid: string; entities: TArmyState['buildings'] }>(
                 `${GLOBAL_CONFIG.MAP.URL}${GLOBAL_CONFIG.URLS.UPDATE_BUILDINGS}`,
-                { mapGuid: army.mapGuid, userGuid: army.guid, entities: buildingEntities }
+                { mapGuid: army.mapGuid, userGuid: army.guid, entities: newBuildings }
             );
+            newBuildings.forEach(b => army.sentBuildingGuids.add(b.guid));
         }
 
         // Получаем видимых врагов

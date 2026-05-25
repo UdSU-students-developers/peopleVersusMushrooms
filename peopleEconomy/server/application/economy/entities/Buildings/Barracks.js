@@ -28,6 +28,7 @@ class Barracks extends Building {
             });
             this.inertia = 0;
         }
+        this.is_working = false;
         return;
     }
 

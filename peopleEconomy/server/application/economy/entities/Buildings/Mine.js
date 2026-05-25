@@ -1,22 +1,32 @@
-const Building = require('./Building');
+const CONFIG = require('../../../../config');
+const Building = require('../Building');
 
 class Mine extends Building {
-    constructor({ guid, x, y, callbacks = {} }) {
+    constructor({ 
+        guid, x, y, callbacks = {}
+    })  {
         super({
-            type: 'mine',
             guid,
             x,
             y,
             callbacks,
-            hp: 100,
-            size: 2,
+            ...CONFIG.ECONOMY.BUILDINGS.MINE
         });
     }
 
-    get() {
-        return {
-            ...super.get()
-        };
+    consume() {
+        super.consume(CONFIG.ECONOMY.RESOURSES.ENERGY);
+    }
+
+    produce() {
+        super.produce(CONFIG.ECONOMY.RESOURSES.IRON);
+    }
+
+    update() {
+        // Потратить энергию
+        this.consume();
+        // Произвести железо
+        this.produce();
     }
 }
 

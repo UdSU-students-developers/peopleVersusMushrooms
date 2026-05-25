@@ -163,9 +163,9 @@ class ArmyManager extends BaseManager {
             if (!economyGuid) {
                 return null;
             }
-            return this.sendToMushroomsEconomy(URLS.APPLY_DAMAGE, {
-                economyGuid,
-                guid: unitGuid,
+            return this.sendToMushroomsEconomy(URLS.DAMAGE, {
+                mushroomsEconomy: economyGuid,
+                entityGuid: unitGuid,
                 damage: sanitizedAmount,
             });
         }

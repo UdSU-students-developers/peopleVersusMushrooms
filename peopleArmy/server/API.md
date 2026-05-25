@@ -135,7 +135,7 @@ Answer<T>: {
 }
 ```
 
-Урон по зданиям с сервера peopleArmy маршрутизируется: `sporovaya_bashnya` и `vzryvomor` → `mushroomsArmy` `/takeDamage`, остальные здания → `mushroomsEconomy` `APPLY_DAMAGE` (нужны `mushroomsArmy` и `mushroomsEconomy` в `guids` при старте).
+Урон по зданиям с сервера peopleArmy маршрутизируется: `sporovaya_bashnya` и `vzryvomor` → `mushroomsArmy` `/takeDamage`, остальные здания → `mushroomsEconomy` `POST /damage` с `{ mushroomsEconomy, entityGuid, damage }` (нужны `mushroomsArmy` и `mushroomsEconomy` в `guids` при старте).
 
 ## 3. HTTP — юниты
 

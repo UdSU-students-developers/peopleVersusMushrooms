@@ -42,8 +42,6 @@ const mockEconomyInstance = {
     setRelief: jest.fn(),
     setResources: jest.fn(),
     applyDamage: jest.fn().mockReturnValue(true),
-    getUpdatedBuildings: jest.fn(() => []),
-    getUpdatedUnits: jest.fn(() => []),
     destructor: jest.fn()
 };
 
@@ -77,8 +75,6 @@ describe('GameManager', () => {
         mockEconomyInstance.setRelief.mockClear();
         mockEconomyInstance.setResources.mockClear();
         mockEconomyInstance.applyDamage.mockClear();
-        mockEconomyInstance.getUpdatedBuildings.mockClear();
-        mockEconomyInstance.getUpdatedUnits.mockClear();
         mockEconomyInstance.destructor.mockClear();
         
         MockEconomy.mockClear();
@@ -133,8 +129,8 @@ describe('GameManager', () => {
             expect(mockMediator.subscribe).toHaveBeenCalledWith('LOAD_GAME', expect.any(Function));
         });
 
-        test('должен подписаться на событие DAMAGE', () => {
-            expect(mockMediator.subscribe).toHaveBeenCalledWith('DAMAGE', expect.any(Function));
+        test('должен подписаться на событие APPLY_DAMAGE', () => {
+            expect(mockMediator.subscribe).toHaveBeenCalledWith('APPLY_DAMAGE', expect.any(Function));
         });
 
         test('не должен создавать обработчики сокетов если io отсутствует', () => {
@@ -221,34 +217,14 @@ describe('GameManager', () => {
     describe('eventApplyDamage', () => {
         test('успешный сценарий: вызывает economy.applyDamage и возвращает true', () => {
             gameManager.economies[testGuid] = mockEconomyInstance;
-            mockEconomyInstance.applyDamage.mockReturnValue(true);
-            const result = gameManager.eventApplyDamage({
-                entityGuid: 'unit-123',
-                damage: 25,
-                mushroomsEconomy: testGuid,
-            });
+            const result = gameManager.eventApplyDamage({ guid: 'unit-123', damage: 25, economyGuid: testGuid });
             expect(mockEconomyInstance.applyDamage).toHaveBeenCalledWith('unit-123', 25);
             expect(result).toBe(true);
         });
 
-        test('экономика не существует - возвращает 4001', () => {
-            const result = gameManager.eventApplyDamage({
-                entityGuid: 'unit-123',
-                damage: 25,
-                mushroomsEconomy: 'non-existent',
-            });
-            expect(result).toBe(4001);
-        });
-
-        test('цель не найдена - возвращает 4003', () => {
-            gameManager.economies[testGuid] = mockEconomyInstance;
-            mockEconomyInstance.applyDamage.mockReturnValue(false);
-            const result = gameManager.eventApplyDamage({
-                entityGuid: 'unit-123',
-                damage: 25,
-                mushroomsEconomy: testGuid,
-            });
-            expect(result).toBe(4003);
+        test('экономика не существует - возвращает false', () => {
+            const result = gameManager.eventApplyDamage({ guid: 'unit-123', damage: 25, economyGuid: 'non-existent' });
+            expect(result).toBe(false);
         });
     });
 
@@ -264,19 +240,17 @@ describe('GameManager', () => {
             gameManager.getRelief = jest.fn().mockResolvedValue(undefined);
         });
 
-        test('успешный сценарий: синхронизирует карту и отправляет клиенту', async () => {
+        test('успешный сценарий: получает рельеф, отправляет клиенту', () => {
             mockMediator.get.mockReturnValue(mockUser);
-            gameManager.getVisibility = jest.fn().mockResolvedValue(undefined);
-            gameManager.getResources = jest.fn().mockResolvedValue(undefined);
-            await gameManager.callbackUpdate(testData);
-            expect(mockEconomyInstance.getUpdatedBuildings).toHaveBeenCalled();
+            gameManager.callbackUpdate(testData);
+            expect(gameManager.getRelief).toHaveBeenCalledWith(testGuid, testMapGuid);
             expect(mockIo.emit).toHaveBeenCalledWith(CONFIG.SOCKET.UPDATE_SCENE, expect.objectContaining({ result: 'ok' }));
         });
 
-        test('пользователь не найден - выводит лог и возвращается', async () => {
+        test('пользователь не найден - выводит лог и возвращается', () => {
             const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
             mockMediator.get.mockReturnValue(null);
-            await expect(gameManager.callbackUpdate(testData)).resolves.toBeUndefined();
+            expect(() => gameManager.callbackUpdate(testData)).not.toThrow();
             expect(consoleLogSpy).toHaveBeenCalled();
             consoleLogSpy.mockRestore();
         });
@@ -359,13 +333,13 @@ describe('GameManager', () => {
     });
 
     describe('updateBuildings', () => {
-        test('вызывает sendToMap с правильными параметрами', async () => {
-            const guids = { mapGuid: testMapGuid, mushroomsEconomy: testGuid };
+        test('вызывает sendToMap с правильными параметрами', () => {
+            const guids = { spectator: 'spectator-guid', mushroomsEconomy: testGuid };
             const buildings = [{ x: 1, y: 1, type: 'mycelium', guid: 'bld-1' }];
-            await gameManager.updateBuildings(guids, buildings);
+            gameManager.updateBuildings(guids, buildings);
             expect(gameManager.sendToMap).toHaveBeenCalledWith(
                 GLOBAL_CONFIG.URLS.UPDATE_BUILDINGS,
-                { mapGuid: testMapGuid, userGuid: testGuid, entities: buildings }
+                { mapGuid: guids.spectator, userGuid: guids.mushroomsEconomy, buidings: buildings }
             );
         });
     });

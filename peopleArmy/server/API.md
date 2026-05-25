@@ -135,7 +135,7 @@ Answer<T>: {
 }
 ```
 
-Урон по зданиям маршрутизируется по `role` (приоритет) и `type`: `role: mushroomsArmy` или `sporovaya_bashnya` / `vzryvomor` → `mushroomsArmy` `/takeDamage`; `role: mushroomsEconomy` или типы economy (`mycelium`, `incubator`, `reactor`, `small_reactor`, `mine`) → `mushroomsEconomy` `POST /damage` с `{ mushroomsEconomy, entityGuid, damage }`. В `guids` при старте нужны оба guid лобби — для юнитов/башен используется `mushroomsArmy`, для зданий economy — `mushroomsEconomy`. Ошибка `4003` — сущности нет в economy (часто призрак на карте); `4001` — инстанс economy не запущен.
+Урон по зданиям с сервера peopleArmy маршрутизируется: `sporovaya_bashnya` и `vzryvomor` → `mushroomsArmy` `/takeDamage`, остальные здания → `mushroomsEconomy` `APPLY_DAMAGE` (нужны `mushroomsArmy` и `mushroomsEconomy` в `guids` при старте).
 
 ## 3. HTTP — юниты
 

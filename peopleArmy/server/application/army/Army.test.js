@@ -443,22 +443,6 @@ describe('уничтоженные здания', () => {
         expect(army.get().destroyedEnemyBuildingGuids).toEqual(['tower-1']);
     });
 
-    test('economy 4003 (takeDamage null) — mycelium убирается как призрак с карты', async () => {
-        takeDamage.mockResolvedValue(null);
-        army.units = [makeUnit({ type: 'soldier', x: 0, y: 0, range: 5, damage: 20 })];
-        army.enemyBuildings = [makeBuilding({
-            guid: 'ghost-mycelium',
-            type: 'mycelium',
-            role: 'mushroomsEconomy',
-            x: 1,
-            y: 0,
-        })];
-
-        await army.shotUnits();
-
-        expect(army.get().enemyBuildings).toHaveLength(0);
-        expect(army.destroyedEnemyBuildingGuids.has('ghost-mycelium')).toBe(true);
-    });
 });
 
 describe('shotUnits — параметры takeDamage', () => {
@@ -481,17 +465,14 @@ describe('shotUnits — параметры takeDamage', () => {
 
     test('передаёт economyGuid для здания economy (не army)', async () => {
         army.units = [makeUnit({ type: 'partizan', x: 0, y: 0, range: 5, damage: 7 })];
-        army.enemyBuildings = [makeBuilding({
-            guid: 'b1', type: 'mycelium', role: 'mushroomsEconomy', x: 1, y: 0, hp: 20,
-        })];
+        army.enemyBuildings = [makeBuilding({ guid: 'b1', type: 'reactor', x: 1, y: 0, hp: 20 })];
 
         await army.shotUnits();
 
         expect(takeDamage).toHaveBeenCalledWith(expect.objectContaining({
             economyGuid: 'eco-guid',
             targetKind: 'building',
-            type: 'mycelium',
-            role: 'mushroomsEconomy',
+            type: 'reactor',
         }));
     });
 

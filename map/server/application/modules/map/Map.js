@@ -12,14 +12,12 @@ class Map {
     constructor({ guid, playerGuids, width = 100, height = 100 }) {
         this.guid = guid; // guid создателя лобби
         this.map = [];
-        this.playerGuids = { // guid-ы игроков (ключи как в lobby + legacy)
+        this.playerGuids = { // guid-ы игроков
             spectator: playerGuids.spectator,
             peopleArmy: playerGuids.peopleArmy,
             peopleEconomy: playerGuids.peopleEconomy,
-            mushroomsArmy: playerGuids.mushroomsArmy ?? playerGuids.mushroomArmy,
-            mushroomsEconomy: playerGuids.mushroomsEconomy ?? playerGuids.mushroomEconomy,
-            mushroomArmy: playerGuids.mushroomArmy ?? playerGuids.mushroomsArmy,
-            mushroomEconomy: playerGuids.mushroomEconomy ?? playerGuids.mushroomsEconomy,
+            mushroomArmy: playerGuids.mushroomArmy,
+            mushroomEconomy: playerGuids.mushroomEconomy,
         }
         this.width = width;
         this.height = height;
@@ -164,18 +162,16 @@ class Map {
     }
 
     updateBuilding(building) {
-        const buildingIndex = this.buildings.findIndex((elem) => building.guid === elem.guid);
-        // Уничтожение из economy: только снять с карты, не добавлять призрак (toggle «не нашли → add»)
-        if (building.destroyed) {
-            if (buildingIndex >= 0) {
-                this.buildings.splice(buildingIndex, 1);
-            }
-            return;
-        }
-        if (buildingIndex >= 0) {
+        // ищем юнита по гуиду
+        const buildingIndex = this.buildings.findIndex(elem => building.guid === elem.guid);
+        if (buildingIndex + 1) {
+            // если нашлось - удаляем
             this.buildings.splice(buildingIndex, 1);
         } else {
-            this.buildings.push(new Building(building));
+            // не нашли - добавляем
+            this.buildings.push(
+                new Building(building)
+            );
         }
     }
 

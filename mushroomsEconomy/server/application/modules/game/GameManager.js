@@ -29,7 +29,7 @@ class GameManager extends BaseManager {
 	}
 
 	/* PRIVATE */
-	async callbackUpdate(data) {
+	callbackUpdate(data) {
 
 		const { mapGuid } = data.guids;
 		const guid = data.guids.mushroomsEconomy;
@@ -39,9 +39,10 @@ class GameManager extends BaseManager {
 			return;
 		}
 
-		// Сначала синхронизируем карту, затем видимость (иначе призраки после destroyed)
-		await this.updateBuildings(data.guids, this.economies[guid].getUpdatedBuildings());
-		await this.updateUnits(data.guids, this.economies[guid].getUpdatedUnits());
+		// выплюнуть сообщение в карту
+		this.updateBuildings(data.guids, this.economies[guid].getUpdatedBuildings());
+		// выплюнуть сообщение в карту
+		this.updateUnits(data.guids, this.economies[guid].getUpdatedUnits());
 		// формате отдавать в сервис карты
 		// получить ответ
 		// запросить рельеф
@@ -104,16 +105,12 @@ class GameManager extends BaseManager {
 	eventApplyDamage(data = {}) {
 		const { entityGuid, damage, mushroomsEconomy } = data;
 		const economy = this.economies[mushroomsEconomy];
-
+		
 		if (!economy) {
-			return 4001;
+			return false;
 		}
-
-		if (!economy.applyDamage(entityGuid, damage)) {
-			return 4003;
-		}
-
-		return true;
+		
+		return economy.applyDamage(entityGuid, damage);
 	}
 
 	eventMoveUnit(data = {}) {
@@ -186,22 +183,22 @@ class GameManager extends BaseManager {
 		}
 	}
 
-	async updateBuildings(guids, buildings = []) {
+	updateBuildings(guids, buildings = []) {
 		if (buildings.length === 0) return;
-		return this.sendToMap(GLOBAL_CONFIG.URLS.UPDATE_BUILDINGS, {
+		this.sendToMap(GLOBAL_CONFIG.URLS.UPDATE_BUILDINGS, {
 			mapGuid: guids.mapGuid,
 			userGuid: guids.mushroomsEconomy,
 			entities: buildings,
-		});
+		})
 	}
 
-	async updateUnits(guids, units = []) {
+	updateUnits(guids, units = []) {
 		if (units.length === 0) return;
-		return this.sendToMap(GLOBAL_CONFIG.URLS.UPDATE_UNITS, {
+		this.sendToMap(GLOBAL_CONFIG.URLS.UPDATE_UNITS, {
 			mapGuid: guids.mapGuid,
 			userGuid: guids.mushroomsEconomy,
 			entities: units,
-		});
+		})
 	}
 
 	spawnArmyUnit(data) { //data = {unitType, x, y, armyGuid}

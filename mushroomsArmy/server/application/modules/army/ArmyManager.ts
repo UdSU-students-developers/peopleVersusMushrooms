@@ -97,14 +97,12 @@ class ArmyManager extends BaseManager {
 
         const sanitizedAmount = Math.max(0, amount);
 
-        // Ищем цель среди юнитов
         const unit = army.units.find(u => u.guid === unitGuid);
         if (unit) {
             unit.takeDamage(sanitizedAmount);
             return true;
         }
 
-        // Ищем цель среди зданий
         const building = army.buildings.find(b => b.guid === unitGuid);
         if (building) {
             if ('takeDamage' in building && typeof building.takeDamage === 'function') {

@@ -1,18 +1,17 @@
-const CONFIG = require('../../../../config');
+const CONFIG = require('../../../../../config');
 const Building = require('../Building');
 
-class Pipe extends Building {
+class OilBarrel extends Building {
     constructor({ guid, x, y, callbacks = {} }) {
         super({
             guid,
             x,
             y,
             callbacks,
-            ...CONFIG.ECONOMY.BUILDINGS.PIPE
+            ...CONFIG.ECONOMY.BUILDINGS.IRON_BARREL
         });
-        this.is_walkable = true;
     }
     
 }
 
-module.exports = Pipe;
+module.exports = OilBarrel;

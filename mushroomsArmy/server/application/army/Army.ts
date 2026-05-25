@@ -74,6 +74,8 @@ export class Army {
     public economyBuildings: TBuildingInput[] = [];
     public economyUnits: TBuildingInput[] = [];
     public sentBuildingGuids: Set<string> = new Set();
+    /** Последнее состояние юнитов, отданное карте (протокол UPDATE_UNITS). */
+    public mapSyncedUnits = new Map<string, { x: number; y: number; type: string; visibility: number }>();
     public projectiles: TProjectile[] = [];
     private mapSyncedUnits: Map<string, { x: number; y: number; type: string; visibility: number }> = new Map();
     public callbacks: {
@@ -93,6 +95,57 @@ export class Army {
 
     public destructor(): void {
         clearInterval(this.intervalId);
+    }
+
+    /**
+     * Дельта для map UPDATE_UNITS: движение/спавн/смерть (см. map/API.md §4.2.4).
+     */
+    public buildMapUnitUpdateEntities(): Array<{ guid: string; x: number; y: number; type: string; visibility: number }> {
+        const entities: Array<{ guid: string; x: number; y: number; type: string; visibility: number }> = [];
+        const aliveGuids = new Set<string>();
+
+        for (const unit of this.units) {
+            const s = unit.getState();
+            aliveGuids.add(s.guid);
+            const snapshot = {
+                guid: s.guid,
+                x: s.x,
+                y: s.y,
+                type: s.type,
+                visibility: s.visibility ?? 1,
+            };
+            const prev = this.mapSyncedUnits.get(s.guid);
+            if (!prev || prev.x !== snapshot.x || prev.y !== snapshot.y) {
+                entities.push(snapshot);
+            }
+        }
+
+        for (const [guid, prev] of this.mapSyncedUnits) {
+            if (!aliveGuids.has(guid)) {
+                entities.push({
+                    guid,
+                    x: prev.x,
+                    y: prev.y,
+                    type: prev.type,
+                    visibility: prev.visibility,
+                });
+            }
+        }
+
+        for (const entity of entities) {
+            if (aliveGuids.has(entity.guid)) {
+                this.mapSyncedUnits.set(entity.guid, {
+                    x: entity.x,
+                    y: entity.y,
+                    type: entity.type,
+                    visibility: entity.visibility,
+                });
+            } else {
+                this.mapSyncedUnits.delete(entity.guid);
+            }
+        }
+
+        return entities;
     }
 
     private create(common: Common, initialBuildings: TBuildingInput[] = []) {

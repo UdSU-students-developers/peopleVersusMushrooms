@@ -62,10 +62,116 @@ const CONFIG = {
         },
 
         BUILDINGS: {
-            PIPE: 'PIPE',
-            BARRACKS: 'BARRACKS',
-            SMALL_GENERATOR: 'SMALL_GENERATOR',
-            DRILLER: 'DRILLER',
+            PIPE: {
+                type: 'PIPE',
+                priority: 4, 
+                size: 1,
+                hp: 1,
+                visibility: 1,
+                consumption: 0,
+                production: 0,
+                capacity: {
+                    OIL: 0,
+                    IRON: 0
+                },
+            },
+            OIL_BARREL: {
+                type: 'OIL_BARREL',
+                priority: 4, 
+                size: 1,
+                hp: 40,
+                visibility: 1,
+                consumption: 0,
+                production: 0,
+                capacity: {
+                    OIL: 12,
+                    IRON: 0
+                },
+            },
+            IRON_BARREL: {
+                type: 'IRON_BARREL',
+                priority: 4, 
+                size: 1,
+                hp: 40,
+                visibility: 1,
+                consumption: 0,
+                production: 0,
+                capacity: {
+                    OIL: 0,
+                    IRON: 12
+                },
+            },
+            BARRACKS: {
+                type: 'BARRACKS', 
+                priority: 3,
+                size: 2,
+                hp: 300,
+                visibility: 4,
+                consumption: 4,
+                production: 0,
+                capacity: {
+                    OIL: 0,
+                    IRON: 10
+                },
+            },
+            SMALL_REACTOR: {
+                type: 'SMALL_REACTOR',
+                priority: 1, 
+                size: 1,
+                hp: 20,
+                visibility: 2,
+                consumption: 2,
+                production: 8,
+                capacity: {
+                    OIL: 4,
+                    IRON: 0
+                },
+            },
+            LARGE_REACTOR: {
+                type: 'LARGE_REACTOR', 
+                priority: 1,
+                size: 2,
+                hp: 60,
+                visibility: 4,
+                consumption: 4,
+                production: 20,
+                capacity: {
+                    OIL: 8,
+                    IRON: 0
+                },
+            },
+            DRILLER: {
+                type: 'DRILLER', 
+                priority: 2,
+                size: 1,
+                hp: 30,
+                visibility: 3,
+                consumption: 2,
+                production: 1,
+                capacity: {
+                    OIL: 6,
+                    IRON: 0
+                },
+            },
+            MINE: {
+                type: 'MINE', 
+                priority: 2,
+                size: 1,
+                hp: 30,
+                visibility: 3,
+                consumption: 2,
+                production: 1,
+                capacity: {
+                    OIL: 0,
+                    IRON: 6
+                },
+            }
+        },
+
+        RESOURSES: {
+            IRON: 'IRON',
+            OIL: 'OIL',
+            ENERGY: 'ENERGY'
         }
     }
 };

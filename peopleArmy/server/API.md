@@ -94,6 +94,7 @@ Answer<T>: {
     units: Unit[];
     enemyUnits: EnemyUnit[];              // видимые юниты грибов (с карты)
     enemyBuildings: EnemyBuilding[];      // видимые вражеские здания (живые)
+    alliedBuildings: EnemyBuilding[];     // здания peopleEconomy в видимости (не атакуются)
     destroyedEnemyBuildingGuids: string[]; // guid зданий, уничтоженных нашей армией локально
 }
 ```
@@ -134,7 +135,7 @@ Answer<T>: {
 }
 ```
 
-Урон по зданиям с сервера peopleArmy маршрутизируется: `sporovaya_bashnya` и `vzryvomor` → `mushroomsArmy` `/takeDamage`, остальные здания → `mushroomsEconomy` `APPLY_DAMAGE` (нужны `mushroomsArmy` и `mushroomsEconomy` в `guids` при старте).
+Урон по зданиям с сервера peopleArmy маршрутизируется: `sporovaya_bashnya` и `vzryvomor` → `mushroomsArmy` `/takeDamage`, остальные здания → `mushroomsEconomy` `POST /damage` с `{ mushroomsEconomy, entityGuid, damage }` (нужны `mushroomsArmy` и `mushroomsEconomy` в `guids` при старте).
 
 ## 3. HTTP — юниты
 

@@ -1,12 +1,14 @@
-class Unit {
-    constructor({ guid, x, y, map, easystar, type, visibility }) {
+const Entity = require("./Entity");
+
+class Unit extends Entity {
+    constructor({ guid, x, y, map, easystar, callbacks = {} }) {
         this.guid = guid;
         this.x = x;
         this.y = y;
         this.hp = 1;
         this.speed = 1;
-        this.type = type; 
-        this.visibility = visibility;
+        this.type = null; 
+        this.visibility = 1;
 
         this.easystar = easystar;
         this.map = map;    
@@ -24,13 +26,8 @@ class Unit {
 
     get() {
         return {
-            guid: this.guid,
-            x: this.x,
-            y: this.y,
-            hp: this.hp,
+            ...super.get(),
             speed: this.speed,
-            type: this.type, 
-            visibility: this.visibility,
         };
     }
 

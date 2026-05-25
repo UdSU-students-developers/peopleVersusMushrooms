@@ -48,14 +48,11 @@ class ArmyManager extends BaseManager {
             return;
         }
 
-        // отправить позиции наших юнитов на карту
-        const entities = army.units
-            .filter(u => typeof u.get === 'function')
-            .map(u => {
-                const s = u.get();
-                return { guid: s.guid, x: s.x, y: s.y, type: s.type, visibility: s.visible };
-            });
-        await this.sendToMap(URLS.UPDATE_UNITS, { mapGuid: army.mapGuid, userGuid: guid, entities });
+        // дельта на карту: движение / спавн / смерть (не полный список каждый тик)
+        const entities = army.buildMapUnitUpdateEntities();
+        if (entities.length > 0) {
+            await this.sendToMap(URLS.UPDATE_UNITS, { mapGuid: army.mapGuid, userGuid: guid, entities });
+        }
 
         // запросить видимость
         const visibility = await this.sendToMap(URLS.GET_VISIBILITY, { mapGuid: army.mapGuid, userGuid: guid });

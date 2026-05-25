@@ -58,6 +58,67 @@ afterEach(() => {
     jest.restoreAllMocks();
 });
 
+// ─── buildMapUnitUpdateEntities ───────────────────────────────────────────────
+
+describe('buildMapUnitUpdateEntities', () => {
+    let army;
+
+    const mockUnit = (overrides = {}) => ({
+        get: () => ({
+            guid: 'u1',
+            x: 5,
+            y: 5,
+            type: 'soldier',
+            visible: 3,
+            ...overrides,
+        }),
+    });
+
+    beforeEach(() => {
+        army = makeArmy();
+    });
+
+    test('новый юнит → одна запись (добавление на карту)', () => {
+        army.units = [mockUnit()];
+
+        const entities = army.buildMapUnitUpdateEntities();
+
+        expect(entities).toHaveLength(1);
+        expect(entities[0]).toMatchObject({ guid: 'u1', x: 5, y: 5, visibility: 3 });
+    });
+
+    test('юнит стоит на месте → пустая дельта', () => {
+        army.units = [mockUnit()];
+        army.buildMapUnitUpdateEntities();
+
+        army.units = [mockUnit()];
+        expect(army.buildMapUnitUpdateEntities()).toEqual([]);
+    });
+
+    test('юнит сдвинулся → одна запись с новыми координатами', () => {
+        army.units = [mockUnit()];
+        army.buildMapUnitUpdateEntities();
+
+        army.units = [mockUnit({ x: 6, y: 5 })];
+        const entities = army.buildMapUnitUpdateEntities();
+
+        expect(entities).toHaveLength(1);
+        expect(entities[0]).toMatchObject({ guid: 'u1', x: 6, y: 5 });
+    });
+
+    test('юнит умер → удаление (те же coords, что были на карте)', () => {
+        army.units = [mockUnit({ x: 10, y: 10 })];
+        army.buildMapUnitUpdateEntities();
+
+        army.units = [];
+        const entities = army.buildMapUnitUpdateEntities();
+
+        expect(entities).toHaveLength(1);
+        expect(entities[0]).toMatchObject({ guid: 'u1', x: 10, y: 10 });
+        expect(army.mapSyncedUnits.has('u1')).toBe(false);
+    });
+});
+
 // ─── getTargetDistanceSquared ─────────────────────────────────────────────────
 
 describe('getTargetDistanceSquared', () => {

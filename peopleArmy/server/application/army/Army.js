@@ -27,6 +27,8 @@ class Army {
         this.enemyUnits = []; // юниты-враги
         this.enemyBuildings = []; // здания-враги
         this.destroyedEnemyBuildingGuids = new Set(); // уничтожены нами — не показывать даже если карта ещё отдаёт
+        /** @type {Map<string, { x: number, y: number, type: string, visibility: number }>} */
+        this.mapSyncedUnits = new Map(); // последнее состояние, отданное карте (протокол UPDATE_UNITS)
 
         this.unitTypes = unitTypes;
 
@@ -80,6 +82,64 @@ class Army {
     }
 
     /**
+     * Дельта для map UPDATE_UNITS (см. map/API.md §4.2.4):
+     * — новый guid или смена (x, y) → добавление / перемещение;
+     * — guid был на карте, юнита в армии нет → те же coords → удаление.
+     * Стоящий живой юнит повторно не отправляется.
+     * @returns {{ guid: string, x: number, y: number, type: string, visibility: number }[]}
+     */
+    buildMapUnitUpdateEntities() {
+        const entities = [];
+        const aliveGuids = new Set();
+
+        for (const unit of this.units) {
+            if (typeof unit.get !== 'function') {
+                continue;
+            }
+            const s = unit.get();
+            aliveGuids.add(s.guid);
+            const snapshot = {
+                guid: s.guid,
+                x: s.x,
+                y: s.y,
+                type: s.type,
+                visibility: s.visible,
+            };
+            const prev = this.mapSyncedUnits.get(s.guid);
+            if (!prev || prev.x !== snapshot.x || prev.y !== snapshot.y) {
+                entities.push(snapshot);
+            }
+        }
+
+        for (const [guid, prev] of this.mapSyncedUnits) {
+            if (!aliveGuids.has(guid)) {
+                entities.push({
+                    guid,
+                    x: prev.x,
+                    y: prev.y,
+                    type: prev.type,
+                    visibility: prev.visibility,
+                });
+            }
+        }
+
+        for (const entity of entities) {
+            if (aliveGuids.has(entity.guid)) {
+                this.mapSyncedUnits.set(entity.guid, {
+                    x: entity.x,
+                    y: entity.y,
+                    type: entity.type,
+                    visibility: entity.visibility,
+                });
+            } else {
+                this.mapSyncedUnits.delete(entity.guid);
+            }
+        }
+
+        return entities;
+    }
+
+    /**
      * Обновить врагов по ответу map GET_VISIBILITY (ArmyManager.updateArmyCallback).
      * units — полная замена каждый тик. buildings — без guid из destroyedEnemyBuildingGuids; hp с карты нет.
      * @param {{ units?: object[], buildings?: object[] }} params
@@ -90,8 +150,8 @@ class Army {
         const prevHpByGuid = new Map(
             this.enemyBuildings.map((b) => [b.guid, b.hp]),
         );
-        const incoming = Array.isArray(buildings) ? buildings : [];
-        this.enemyBuildings = incoming
+        const incomingBuildings = Array.isArray(buildings) ? buildings : [];
+        this.enemyBuildings = incomingBuildings
             .filter((b) => b?.guid && !this.destroyedEnemyBuildingGuids.has(b.guid))
             .map((b) => {
                 const trackedHp = prevHpByGuid.get(b.guid);

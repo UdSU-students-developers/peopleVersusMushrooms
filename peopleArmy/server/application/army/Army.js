@@ -537,7 +537,7 @@ class Army {
                 unit.walkPoints = 0;
                 return;
             }
-            if (unit.move(this.map, this.buildings, this.units, hostileUnits, hostileBuildings)) {
+            if (unit.move(this.map, this.alliedBuildings)) {
                 this.updated = true;
             }
         });

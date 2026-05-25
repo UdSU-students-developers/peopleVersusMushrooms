@@ -27,7 +27,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
 
     const confirmCreateLobby = () => {
         if (lobbyName.trim()) {
-            console.log(server.user.guid)
             server.createLobby(server.user.guid, lobbyName.trim(), 'peopleEconomy');
             setLobbyName('');
             setShowCreateModal(false);

@@ -509,6 +509,26 @@ describe('shotUnits — параметры takeDamage', () => {
 
         expect(takeDamage).toHaveBeenCalledTimes(2);
     });
+
+    test('update вызывает shotUnits раз в 2 секунды (10 тиков)', async () => {
+        const shotSpy = jest.spyOn(army, 'shotUnits').mockResolvedValue(undefined);
+
+        for (let i = 0; i < 9; i++) {
+            await army.update();
+        }
+        expect(shotSpy).toHaveBeenCalledTimes(1);
+
+        await army.update();
+        expect(shotSpy).toHaveBeenCalledTimes(1);
+
+        for (let i = 0; i < 9; i++) {
+            await army.update();
+        }
+        expect(shotSpy).toHaveBeenCalledTimes(2);
+
+        shotSpy.mockRestore();
+        army.destructor();
+    });
 });
 
 // ─── shotUnits: граничные случаи ──────────────────────────────────────────────

@@ -5,6 +5,8 @@ const Sniper = require("./entities/Sniper");
 const Partizan = require("./entities/Partizan");
 
 const { INTERVAL } = GLOBAL_CONFIG;
+/** Как часто вызывать shotUnits из update (раз в 2 с при INTERVAL 200 мс) */
+const SHOT_INTERVAL_TICKS = Math.round(2000 / INTERVAL);
 
 const BUILDING_MAX_HP = {
     sporovaya_bashnya: 160,
@@ -72,6 +74,7 @@ class Army {
         this._initUnits();
 
         this.interval = setInterval(() => this.update(), INTERVAL); // интервал обновления игры
+        this.shotTick = 0;
         this.updated = false;
     }
 
@@ -541,10 +544,13 @@ class Army {
     }
 
     /**
-     * Тик игры: shotUnits → setUnitsTarget → moveUnits → callbacks.update (видимость и сокет).
+     * Тик игры: shotUnits (раз в 2 с) → setUnitsTarget → moveUnits → callbacks.update.
      */
     async update() {
-        await this.shotUnits();
+        if (this.shotTick === 0) {
+            await this.shotUnits();
+        }
+        this.shotTick = (this.shotTick + 1) % SHOT_INTERVAL_TICKS;
         this.setUnitsTarget();
         this.moveUnits();
         this.updated = false;

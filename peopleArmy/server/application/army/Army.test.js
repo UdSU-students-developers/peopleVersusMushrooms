@@ -399,6 +399,37 @@ describe('уничтоженные здания', () => {
         expect(army.enemyBuildings).toHaveLength(0);
     });
 
+    test('setVisibility отфильтровывает здания peopleEconomy по role', () => {
+        army.setVisibility({
+            units: [],
+            buildings: [
+                makeBuilding({ guid: 'ally-1', type: 'BARRACKS', role: 'peopleEconomy' }),
+                makeBuilding({ guid: 'enemy-1', type: 'sporovaya_bashnya', role: 'mushroomsArmy' }),
+            ],
+        });
+        expect(army.enemyBuildings).toHaveLength(1);
+        expect(army.enemyBuildings[0].guid).toBe('enemy-1');
+        expect(army.alliedBuildings).toHaveLength(1);
+        expect(army.alliedBuildings[0].guid).toBe('ally-1');
+    });
+
+    test('get() отдаёт alliedBuildings для клиента', () => {
+        army.alliedBuildings = [makeBuilding({ guid: 'ally-1', type: 'DRILLER', role: 'peopleEconomy' })];
+        expect(army.get().alliedBuildings).toHaveLength(1);
+    });
+
+    test('setVisibility отфильтровывает воркеров peopleEconomy из enemyUnits', () => {
+        army.setVisibility({
+            units: [
+                makeEnemy({ guid: 'worker-1', type: 'worker', role: 'peopleEconomy' }),
+                makeEnemy({ guid: 'shroom-1', type: 'pizdoglyad', role: 'mushroomsArmy' }),
+            ],
+            buildings: [],
+        });
+        expect(army.enemyUnits).toHaveLength(1);
+        expect(army.enemyUnits[0].guid).toBe('shroom-1');
+    });
+
     test('get() отдаёт destroyedEnemyBuildingGuids для клиента', async () => {
         army.units = [makeUnit({ type: 'partizan', x: 0, y: 0, range: 5, damage: 200 })];
         army.enemyBuildings = [makeBuilding({
@@ -411,6 +442,7 @@ describe('уничтоженные здания', () => {
         await army.shotUnits();
         expect(army.get().destroyedEnemyBuildingGuids).toEqual(['tower-1']);
     });
+
 });
 
 describe('shotUnits — параметры takeDamage', () => {
@@ -566,17 +598,59 @@ describe('moveUnits — остановка при целях в радиусе',
         expect(unit.move).not.toHaveBeenCalled();
     });
 
-    test('юнит останавливается при здании в радиусе', () => {
+    test('юнит останавливается при вражеском здании в радиусе', () => {
         const unit = makeUnit({ x: 0, y: 0, range: 5, path: [{ x: 1, y: 0 }], walkPoints: 3 });
         unit.move = jest.fn();
         army.units = [unit];
-        army.enemyBuildings = [makeBuilding({ guid: 'b1', x: 2, y: 0, hp: 50 })];
+        army.enemyBuildings = [makeBuilding({
+            guid: 'b1', x: 2, y: 0, hp: 50, role: 'mushroomsArmy', type: 'sporovaya_bashnya',
+        })];
 
         army.moveUnits();
 
         expect(unit.path).toEqual([]);
         expect(unit.walkPoints).toBe(0);
         expect(unit.move).not.toHaveBeenCalled();
+    });
+
+    test('юнит не останавливается у здания peopleEconomy в радиусе', () => {
+        const unit = makeUnit({ x: 0, y: 0, range: 5, path: [{ x: 1, y: 0 }], walkPoints: 3 });
+        unit.move = jest.fn().mockReturnValue(false);
+        army.units = [unit];
+        army.enemyBuildings = [makeBuilding({
+            guid: 'ally-b', x: 1, y: 0, hp: 300, role: 'peopleEconomy', type: 'BARRACKS', size: 2,
+        })];
+
+        army.moveUnits();
+
+        expect(unit.path).toEqual([{ x: 1, y: 0 }]);
+        expect(unit.walkPoints).toBe(3);
+        expect(unit.move).toHaveBeenCalled();
+    });
+
+    test('bmp не стреляет по зданию peopleEconomy', async () => {
+        const takeDamage = jest.fn().mockResolvedValue(null);
+        army = makeArmy({ callbacks: { update: jest.fn(), takeDamage } });
+        army.units = [makeUnit({ type: 'bmp', x: 0, y: 0, range: 5, damage: 20 })];
+        army.enemyBuildings = [makeBuilding({
+            guid: 'ally-b', x: 1, y: 0, hp: 300, role: 'peopleEconomy', type: 'BARRACKS', size: 2,
+        })];
+
+        await army.shotUnits();
+
+        expect(takeDamage).not.toHaveBeenCalled();
+    });
+
+    test('юнит не останавливается у воркера peopleEconomy в радиусе', () => {
+        const unit = makeUnit({ x: 0, y: 0, range: 5, path: [{ x: 1, y: 0 }], walkPoints: 3 });
+        unit.move = jest.fn().mockReturnValue(false);
+        army.units = [unit];
+        army.enemyUnits = [makeEnemy({ guid: 'w1', x: 1, y: 0, hp: 150, role: 'peopleEconomy', type: 'worker' })];
+
+        army.moveUnits();
+
+        expect(unit.path).toEqual([{ x: 1, y: 0 }]);
+        expect(unit.move).toHaveBeenCalled();
     });
 
     test('юнит продолжает движение если нет целей в радиусе', () => {

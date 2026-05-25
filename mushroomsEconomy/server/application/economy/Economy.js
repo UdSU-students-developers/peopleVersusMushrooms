@@ -117,7 +117,8 @@ class Economy {
         this.map.setResources(resources);
     }
 
-    setVisibility({ units = [], buildings = [] } = {}) {
+    setVisibility({ units = [], buildings = [] }) {
+        console.log("\n\n\n\n\n\n\n", buildings)
         for (const building of buildings) {
             const existingIndex = this.enemyBuildings.findIndex(b => b.guid === building.guid);
             if (existingIndex !== -1) {
@@ -448,6 +449,7 @@ class Economy {
         this.addSmallReactor(startPoint.x + 1, startPoint.y + 1);
         // создать грибничку
         this.addMycelium(startPoint.x - 1, startPoint.y - 1);
+        this.addMycelium(1, 1);
         //this.addReactor(startPoint.x + 3, startPoint.y + 3);
         //this.addWorker(startPoint.x-10, startPoint.y)
         this.updated = true;

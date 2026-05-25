@@ -175,10 +175,10 @@ class GameManager extends BaseManager {
 
 	async getVisibility(map, guid, mapGuid) {
 		const visibility = await this.sendToMap(GLOBAL_CONFIG.URLS.GET_VISIBILITY, { mapGuid, userGuid: guid });
-		
-		if (visibility && visibility.data) {
+		console.log(visibility);
+		if (visibility) {
 			if (this.economies[guid]) {
-				this.economies[guid].setVisibility(visibility.data);
+				this.economies[guid].setVisibility(visibility);
 			}
 		}
 	}

@@ -186,9 +186,31 @@
 /*-------------------------------AUFTORISATION-------------------------------------------*/
 
 .options-pannel-container--auth {
-  
-  background: rgba(255, 255, 255, 0.08);   
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(52, 152, 219, 0.374);
+  border: 1px solid rgb(23, 32, 129);
+  border-top: none;
+}
+.options-pannel-container--auth .options-title {
+ color: rgb(238, 223, 218);
+ text-shadow: 
+    -0.9px -0.9px 0 rgb(23, 32, 129), 
+    0.9px -0.9px 0 rgb(23, 32, 129),
+    -0.9px  0.9px 0 rgb(23, 32, 129),
+    0.9px  0.9px 0 rgb(23, 32, 129);
+}
+.options-pannel-container--lobby .options-settings-title {
+  color: rgb(217, 144, 54);
+  /* text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); */
+  text-shadow: 
+    -0.9px -0.9px 0 rgb(113, 22, 22),  
+    0.9px -0.9px 0 rgb(113, 22, 22),
+    -0.9px  0.9px 0 rgb(113, 22, 22),
+    0.9px  0.9px 0 rgb(113, 22, 22);
+}
+.options-pannel-container--auth .options-settings-title {
+  color: rgb(29, 25, 95);
+  /* text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); */
+  text-shadow: 10px rgb(255, 255, 255);
 }
 /*----------------------------END--OF--AUFTORISATION-------------------------------------*/
 

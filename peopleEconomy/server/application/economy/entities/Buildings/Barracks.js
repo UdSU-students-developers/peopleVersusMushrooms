@@ -10,16 +10,25 @@ class Barracks extends Building {
             callbacks,
             ...CONFIG.ECONOMY.BUILDINGS.BARRACKS
         });
+        this.inertia = 0;
         this.priority = 3;
     }
- 
+
     consume() {
         super.consume(CONFIG.ECONOMY.RESOURSES.ENERGY);
+        this.inertia++;
     }
 
     produce(units) {
-
-        // СДЕЛАТЬ ХОТЬ КАКУЮ-ТО ЛОГИКУ НАДО
+        if (this.inertia > 1000) {
+            this.callbacks.createUnit({
+                x: this.x + this.size,
+                y: this.y + this.size,
+                type: 'soldier'
+            });
+            this.inertia = 0;
+        }
+        this.is_working = false;
         return;
     }
 

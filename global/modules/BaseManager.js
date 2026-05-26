@@ -42,7 +42,7 @@ class BaseManager {
 			
             const answer = await res.json();
 			
-			console.log('\nanswer', this._log(answer));
+			//console.log('\nanswer', this._log(answer));
             console.log('========================================');
 			
             if (answer && answer.result === 'ok') {

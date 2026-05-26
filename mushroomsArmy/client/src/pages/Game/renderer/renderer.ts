@@ -76,10 +76,13 @@ export function drawGame(
       const terrain = currentlyVisible ? serverTerrain : wasExplored ? rememberedTerrain : null;
       const terrainSourceMap = currentlyVisible ? state.map : (exploredTerrainMap ?? state.map);
 
+      // drawTerrainCell рисует туман, когда terrain === null.
+      // В этом случае внутри terrainRenderer.drawTerrainCell вызывается drawFogOfWarCell.
       drawTerrainCell(ctx, x, y, cellW, cellH, terrain, terrainSourceMap, fogNow, currentlyVisible, wasExplored);
     }
   }
 
+  // drawGridFogAware рисует границы клеток, которые разделяют туман и видимую территорию.
   drawGridFogAware(ctx, cols * cellW, rows * cellH, cellW, cellH, rows, cols, state.map);
 
   drawBuildings(ctx, state, cellW, cellH, circularVisibilityMask);

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { GameState, TCamera, MapTile } from '../../pages/Game/types';
 import {
   buildCircularVisibilityMask,
@@ -14,12 +14,24 @@ interface MinimapProps {
   camera: TCamera;
 }
 
+type MinimapDot = {
+  guid: string;
+  color: string;
+  x: number;
+  y: number;
+  isEnemy?: boolean;
+};
+
 const getTerrainColor = (tile: MapTile): string => {
   switch (tile) {
-    case 0: return '#2ecc71';
-    case 1: return '#7fd3ff';
-    case 2: return '#8b5a2b';
-    default: return '#1f2d24';
+    case 0:
+      return '#2ecc71';
+    case 1:
+      return '#7fd3ff';
+    case 2:
+      return '#8b5a2b';
+    default:
+      return '#1f2d24';
   }
 };
 
@@ -49,15 +61,33 @@ const economyBuildingTypes = [
   'mine',
 ];
 
+const PEOPLE_ARMY_UNIT_TYPES = new Set(['soldier', 'bmp', 'sniper', 'partizan']);
+const ENEMY_DOT_COLOR = '#e53935';
+
+const isAliveEntity = (hp?: number) => (hp ?? 1) > 0;
+
 const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const map = gameState?.map;
 
-  // Точки юнитов и зданий для отображения поверх ландшафта
-  const dots = useMemo(() => {
-    if (!gameState) return [];
-    const rows = gameState.map?.length || 100;
-    const cols = gameState.map?.[0]?.length || 100;
+  // 1. Твой расчет точек юнитов (оставляем без изменений)
+  const dots = useMemo<MinimapDot[]>(() => {
+    if (!gameState?.map?.length) return [];
+    const map = gameState.map;
+    const rows = map.length;
+    const cols = map[0]?.length || 100;
     const clamp = (v: number) => Math.max(0, Math.min(100, v));
+
+    syncExplorationMemory(map);
+    const visibilityMask = buildCircularVisibilityMask(gameState, rows, cols);
+
+    /** Клетка сейчас в тумане войны (как на основной карте), а не только «разведана». */
+    const isCurrentlyVisible = (x: number, y: number): boolean => {
+      const tx = Math.floor(x);
+      const ty = Math.floor(y);
+      if (visibilityMask[ty]?.[tx] !== true) return false;
+      return coerceTerrainCell(map[ty]?.[tx]) !== null;
+    };
 
     const unitDots = gameState.units
       .filter((u) => u.hp > 0)
@@ -69,16 +99,30 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
       }));
 
     const enemyUnitDots = (gameState.enemyUnits ?? [])
-      .filter((u) => u.hp > 0)
+      .filter(
+        (u) =>
+          PEOPLE_ARMY_UNIT_TYPES.has(u.type) &&
+          isAliveEntity(u.hp) &&
+          isCurrentlyVisible(u.x, u.y),
+      )
       .map((u) => ({
-        guid: u.guid,
-        color: '#e53935',
+        guid: `enemy-unit-${u.guid}`,
+        color: ENEMY_DOT_COLOR,
+        isEnemy: true,
         x: clamp(((u.x + 0.5) / cols) * 100),
         y: clamp(((u.y + 0.5) / rows) * 100),
       }));
 
     const buildingDots = gameState.buildings
-      .filter((b) => b.hp > 0 && b.isAlive !== false)
+      .filter((b) => {
+        if (b.hp <= 0 || b.isAlive === false) return false;
+        const centerX = b.x + (b.sizeX ?? 1) / 2;
+        const centerY = b.y + (b.sizeY ?? 1) / 2;
+        const isOwn = ownBuildingTypes.includes(b.type);
+        const isEconomy = economyBuildingTypes.includes(b.type);
+        if (isOwn || isEconomy) return true;
+        return isCurrentlyVisible(centerX, centerY);
+      })
       .map((b) => ({
         guid: b.guid,
         color: ownBuildingTypes.includes(b.type)
@@ -95,10 +139,10 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
 
   // Позиция и размер рамки камеры на миникарте (в процентах от размера карты)
   const cameraRectStyle = useMemo(() => {
-    if (!gameState?.map?.[0]) return { display: 'none' };
+    if (!map?.[0]) return { display: 'none' };
 
-    const rows = gameState.map.length;
-    const cols = gameState.map[0].length;
+    const rows = map.length;
+    const cols = map[0].length;
 
     // Размер одного тайла на экране с учётом зума
     const currentTileSize = (window.innerWidth / cols) * camera.scale;
@@ -129,14 +173,15 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
       boxSizing: 'border-box' as const,
       pointerEvents: 'none' as const,
       zIndex: 100,
-      backgroundColor: 'rgba(255, 255, 255, 0.1)'
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
     };
-  }, [gameState, camera.offsetX, camera.offsetY, camera.scale]);
+  }, [map, camera.offsetX, camera.offsetY, camera.scale]);
 
   // Рисуем ландшафт на canvas при изменении карты
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !gameState || !gameState.map) return;
+    if (!canvas || !map) return;
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -146,7 +191,6 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
     canvas.height = height * dpr;
     ctx.scale(dpr, dpr);
 
-    const map = gameState.map;
     const rows = map.length;
     const cols = map[0]?.length ?? 0;
 
@@ -156,6 +200,7 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
       const cellW = width / cols;
       const cellH = height / rows;
       ctx.clearRect(0, 0, width, height);
+
       for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
           const terrain = resolveMinimapTerrain(map, visibilityMask, x, y);
@@ -168,18 +213,18 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
 
   return (
     <div className="game-minimap">
-      <div className="minimap-field" style={{ position: 'relative' }}>
+      <div className="minimap-field">
         <canvas ref={canvasRef} className="minimap-canvas" />
 
         {dots.map((dot) => (
           <div
-            className="minimap-dot"
+            className={dot.isEnemy ? 'minimap-dot minimap-dot-enemy' : 'minimap-dot'}
             key={dot.guid}
             style={{
               backgroundColor: dot.color,
               left: `${dot.x}%`,
               top: `${dot.y}%`,
-              position: 'absolute'
+              position: 'absolute',
             }}
           />
         ))}

@@ -19,8 +19,8 @@ class Eblekar extends Unit {
     constructor(options: TUnitOptions) {
         super(options);
         this.visibility = options.visibility ?? 12;
-        this.hp = 40;
-        this.baseHp = 40;
+        this.hp = 20;
+        this.baseHp = 20;
         this.speed = options.speed ?? 1;
         this.attackRange = options.attackRange ?? 0;
         this.lastHealTime = -this.healCooldown;
@@ -28,6 +28,13 @@ class Eblekar extends Unit {
 
     public update(enemies: Unit[], map: TMap, deltaTime: number, allies: Unit[] = []): void {
         if (!this.isAlive) return;
+
+        if (this.formationHold && this.formationTarget) {
+            this.targetX = this.formationTarget.x;
+            this.targetY = this.formationTarget.y;
+            this.moveTo(this.targetX, this.targetY, map, deltaTime);
+            return;
+        }
 
         this.enemies = enemies;
         this.allyDecisionAccumulator += deltaTime;

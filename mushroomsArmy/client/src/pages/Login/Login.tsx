@@ -3,6 +3,9 @@ import { MediatorContext, ServerContext } from '../../App';
 import { PAGES } from '../PageManager';
 import { validateLogin, validatePassword } from '../../utils/validation';
 import { TError } from '../../services';
+import Header from '../../widgets/Header/Header';
+import OptionsPannel from '../../widgets/OptionsPannel/OptionsPannel'; 
+import { useUIScale } from '../../widgets/UIScaleContext';
 import './Login.css';
 
 const LOGIN_SERVER_ERRORS: Record<number, string> = {
@@ -15,16 +18,19 @@ const mapLoginError = (error?: TError | null): string => {
     if (!error || typeof error.code !== 'number') {
         return 'Не удалось выполнить вход. Попробуйте снова.';
     }
-    return LOGIN_SERVER_ERRORS[error.code] ?? error.message ?? 'Не удалось выполнить вход.';
+    return LOGIN_SERVER_ERRORS[error.code] ?? error.message ?? 'е удалось выполнить вход.';
 };
 
 const Login: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
+    
     const server = useContext(ServerContext);
     const mediator = useContext(MediatorContext);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [serverError, setServerError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const loginCheck = validateLogin(username);
     const passwordCheck = validatePassword(password);
@@ -69,9 +75,29 @@ const Login: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
         setIsLoading(true);
         server.login(username, password);
     };
+    // ← Обработчики для меню
+    const handleMenuClick = () => {
+        setIsMenuOpen(!isMenuOpen);
+    };
+    
+    const handleCloseMenu = () => {
+        setIsMenuOpen(false);
+    };
+
 
     return (
+        <>
+        <Header
+            theme="auth"
+            scale="M"  // из контекста
+            showNickname={false}
+            showMenuButton={true}
+            onMenuClick={handleMenuClick}
+            isMenuOpen={isMenuOpen}
+        />
+
         <div className="login">
+            
             <h1>Вход</h1>
             <div className="login-form">
                 <div className="form-group">
@@ -116,19 +142,21 @@ const Login: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
                 </button>
             </div>
             <p className="register-link">
-                Нет аккаунта?{' '}
-                <a
-                    href="#"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        setPage(PAGES.REGISTRATION);
-                    }}
-                >
-                    Зарегистрироваться
-                </a>
+                Нет, аккаунта?{' '}
+                <button type="button" className="text-link-button" onClick={() => setPage(PAGES.REGISTRATION)}>
+                    Зарегестрироваться
+                </button>
             </p>
         </div>
+        <OptionsPannel
+            variant="auth"
+            isOpen={isMenuOpen}
+            onClose={handleCloseMenu}
+        />
+
+        </>    
     );
 };
 
 export default Login;
+

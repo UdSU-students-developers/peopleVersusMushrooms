@@ -11,7 +11,17 @@ const SHOT_INTERVAL_TICKS = Math.round(2000 / INTERVAL);
 const BUILDING_MAX_HP = {
     sporovaya_bashnya: 160,
     vzryvomor: 70,
+    mycelium: 1,
+    incubator: 100,
+    reactor: 60,
+    small_reactor: 20,
+    mine: 80,
 };
+
+/** Здания mushroomsEconomy (урон через POST /damage), не mushroomsArmy */
+const MUSHROOMS_ECONOMY_BUILDING_TYPES = new Set([
+    'mycelium', 'incubator', 'reactor', 'small_reactor', 'mine',
+]);
 
 /** Роли союзников — не цели peopleArmy (юниты и здания с карты) */
 const ALLIED_MAP_ROLES = new Set([
@@ -134,6 +144,35 @@ class Army {
         return PEOPLE_ECONOMY_BUILDING_TYPES.has(String(type || '').toLowerCase());
     }
 
+    static _buildingMaxHp(type) {
+        return BUILDING_MAX_HP[String(type || '').toLowerCase()] ?? 100;
+    }
+
+    /** HP для выбора цели, если с карты hp не пришёл (неизвестный тип — 1). */
+    static _buildingDefaultTargetHp(type) {
+        const key = String(type || '').toLowerCase();
+        if (Object.prototype.hasOwnProperty.call(BUILDING_MAX_HP, key)) {
+            return BUILDING_MAX_HP[key];
+        }
+        return 1;
+    }
+
+    /** Здание обслуживается mushroomsEconomy (POST /damage), не mushroomsArmy. */
+    static _isMushroomsEconomyBuilding(entity) {
+        const role = normalizeMapRole(entity?.role);
+        if (role === GLOBAL_CONFIG.MUSHROOMS_ECONOMY.ROLE) {
+            return true;
+        }
+        if (role === GLOBAL_CONFIG.MUSHROOMS_ARMY.ROLE) {
+            return false;
+        }
+        return MUSHROOMS_ECONOMY_BUILDING_TYPES.has(String(entity?.type || '').toLowerCase());
+    }
+
+    static _isDamageApplied(result) {
+        return result != null && result !== false;
+    }
+
     static _isBuildingAlive(b) {
         if (!b || typeof b.guid !== 'string') return false;
         if (b.isAlive === false) return false;
@@ -253,7 +292,7 @@ class Army {
             return;
         }
         const building = this.enemyBuildings[index];
-        const maxHp = BUILDING_MAX_HP[String(type || '').toLowerCase()] ?? 100;
+        const maxHp = Army._buildingMaxHp(type);
         let hp = Number.isFinite(Number(building.hp)) ? Number(building.hp) : maxHp;
         hp -= Number(amount) || 0;
 
@@ -267,6 +306,19 @@ class Army {
     }
 
     /**
+     * Economy не знает guid — призрак на карте; перестаём стрелять и скрываем у клиента.
+     * @param {string} guid
+     */
+    _discardGhostEconomyBuilding(guid) {
+        this.destroyedEnemyBuildingGuids.add(guid);
+        const index = this.enemyBuildings.findIndex((b) => b.guid === guid);
+        if (index >= 0) {
+            this.enemyBuildings.splice(index, 1);
+        }
+        this.updated = true;
+    }
+
+    /**
      * Собрать цели для стрельбы: юниты и здания с полем targetKind.
      * @returns {{ units: object[], buildings: object[] }}
      */
@@ -276,7 +328,7 @@ class Army {
             .filter((b) => Army._isBuildingAlive(b))
             .map((b) => ({
                 ...b,
-                hp: Number.isFinite(Number(b.hp)) ? Number(b.hp) : 1,
+                hp: Number.isFinite(Number(b.hp)) ? Number(b.hp) : Army._buildingDefaultTargetHp(b.type),
                 targetKind: 'building',
             }));
         const units = this.enemyUnits
@@ -508,17 +560,24 @@ class Army {
 
             const target = pool.reduce((weakest, t) => (t.hp ?? Infinity) < (weakest.hp ?? Infinity) ? t : weakest);
             const amount = Number(unit.damage) || 1;
-            await this.callbacks.takeDamage({
+            const damageApplied = await this.callbacks.takeDamage({
                 armyGuid,
                 economyGuid,
                 unitGuid: target.guid,
                 amount,
                 targetKind: target.targetKind,
                 type: target.type,
+                role: target.role,
             });
 
-            if (target.targetKind === 'building') {
+            if (target.targetKind === 'building' && Army._isDamageApplied(damageApplied)) {
                 this._markBuildingDamaged(target.guid, target.type, amount);
+            } else if (
+                target.targetKind === 'building'
+                && !Army._isDamageApplied(damageApplied)
+                && Army._isMushroomsEconomyBuilding(target)
+            ) {
+                this._discardGhostEconomyBuilding(target.guid);
             }
         }
     }

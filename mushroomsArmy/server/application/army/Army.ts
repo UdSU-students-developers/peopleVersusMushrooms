@@ -75,7 +75,6 @@ export class Army {
     public economyUnits: TBuildingInput[] = [];
     public sentBuildingGuids: Set<string> = new Set();
     /** Последнее состояние юнитов, отданное карте (протокол UPDATE_UNITS). */
-    public mapSyncedUnits = new Map<string, { x: number; y: number; type: string; visibility: number }>();
     public projectiles: TProjectile[] = [];
     private mapSyncedUnits: Map<string, { x: number; y: number; type: string; visibility: number }> = new Map();
     public callbacks: {
@@ -378,49 +377,7 @@ export class Army {
         this.callbacks.update(this.guid!, this.getState());
     }
 
-    /**
-     * Дельта для мар UPDATE_UNITS: движение/спавн/смерть.
-     * Новый guid → добавить; координаты изменились → переместить;
-     * guid исчез из units → tombstone (те же координаты → карта удаляет).
-     */
-    public buildMapUnitUpdateEntities(): Array<{ guid: string; x: number; y: number; type: string; visibility: number }> {
-        const entities: Array<{ guid: string; x: number; y: number; type: string; visibility: number }> = [];
-        const aliveGuids = new Set<string>();
 
-        for (const unit of this.units) {
-            const s = unit.getState();
-            aliveGuids.add(s.guid);
-            const snapshot = {
-                guid: s.guid,
-                x: s.x,
-                y: s.y,
-                type: s.type,
-                visibility: s.visibility ?? 1,
-            };
-            const prev = this.mapSyncedUnits.get(s.guid);
-            if (!prev || prev.x !== snapshot.x || prev.y !== snapshot.y) {
-                entities.push(snapshot);
-            }
-        }
-
-        // Tombstone для юнитов, исчезнувших из army.units (умерли)
-        for (const [guid, prev] of this.mapSyncedUnits) {
-            if (!aliveGuids.has(guid)) {
-                entities.push({ guid, x: prev.x, y: prev.y, type: prev.type, visibility: prev.visibility });
-            }
-        }
-
-        // Обновляем внутреннее состояние синхронизации
-        for (const entity of entities) {
-            if (aliveGuids.has(entity.guid)) {
-                this.mapSyncedUnits.set(entity.guid, { x: entity.x, y: entity.y, type: entity.type, visibility: entity.visibility });
-            } else {
-                this.mapSyncedUnits.delete(entity.guid);
-            }
-        }
-
-        return entities;
-    }
 
     public getState(): TArmyState {
         return {

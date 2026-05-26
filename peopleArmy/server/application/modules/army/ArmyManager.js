@@ -19,7 +19,7 @@ class ArmyManager extends BaseManager {
 
         // sockets
         if (!this.io) return;
-        this.io.on('connection', (socket) => {});
+        this.io.on('connection', (socket) => { });
         // mediator event subscribers
         this.mediator.subscribe(this.EVENTS.START_GAME, (data) => this.eventStartGame(data));
         this.mediator.subscribe(this.EVENTS.DELETE_USER, (data) => this.eventUserDisconnect(data));
@@ -214,12 +214,34 @@ class ArmyManager extends BaseManager {
                 this.army[guid].destructor();
                 delete this.army[guid];
             }
-            this.army[guid] = new Army({ guids, mapGuid, map, buildings: [], unitTypes: this.unitTypes, common: this.common, guid,
+            this.army[guid] = new Army({
+                guids, mapGuid, map, buildings: [], unitTypes: this.unitTypes, common: this.common, guid,
                 callbacks: {
                     update: (guid) => this.updateArmyCallback(guid),
                     takeDamage: (payload) => this.damageMushroomsUnit(payload),
                 }
             });
+
+            const army = this.army[guid];
+            const height = map.length;
+            const width = map[0]?.length || 0;
+            const unitTypes = ['bmp', 'sniper', 'partizan', 'soldier'];
+            const unitsPerType = 250;
+            let spawnedCount = 0;
+
+            for (const type of unitTypes) {
+                for (let y = 0; y < height && spawnedCount < unitsPerType; y++) {
+                    for (let x = 0; x < width && spawnedCount < unitsPerType; x++) {
+                        if (map[y][x] === 0) {
+                            const result = army.createUnit({ x, y, type });
+                            if (result?.ok) {
+                                spawnedCount++;
+                            }
+                        }
+                    }
+                }
+                spawnedCount = 0;
+            }
             this.io.to(user.socketId).emit(
                 this.SOCKET.START_GAME,
                 this.answer.good({ map })

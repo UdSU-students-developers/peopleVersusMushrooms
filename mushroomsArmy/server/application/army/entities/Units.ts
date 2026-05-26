@@ -172,7 +172,7 @@ class Unit {
     }
 
     /** Проверяет прямую видимость между двумя точками (Bresenham) */
-    protected hasLineOfSight(
+    public hasLineOfSight(
         fromX: number, fromY: number,
         toX: number, toY: number,
         map: TMap

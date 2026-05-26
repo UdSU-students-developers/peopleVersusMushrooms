@@ -31,7 +31,6 @@ jest.mock("../../../../config", () => ({
             PRODUCTION: 0,
             CAPACITY: 500,
             VISIBILITY: 2,
-            CONSUME_RADIUS: 1,          
         },
         MYCELIUM: {
             MAX_LEVEL: 3,

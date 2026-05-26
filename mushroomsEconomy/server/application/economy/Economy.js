@@ -58,6 +58,7 @@ class Economy {
 
         // данные про врагов
         this.enemyBuildings = [];
+        this.enemyUnits = [];
 
         // данные про игроков
         this.guids = {
@@ -103,6 +104,7 @@ class Economy {
                 mines: this.buildings.mines.map(m => m.get()),
             },
             enemyBuildings: this.enemyBuildings,
+            enemyUnits: this.enemyUnits,
             map: this.map.get(),
             //updatedBuildings: this.getUpdatedBuildings(),
         };
@@ -118,15 +120,9 @@ class Economy {
     }
 
     setVisibility({ units = [], buildings = [] }) {
-        console.log("\n\n\n\n\n\n\n", buildings)
-        for (const building of buildings) {
-            const existingIndex = this.enemyBuildings.findIndex(b => b.guid === building.guid);
-            if (existingIndex !== -1) {
-                this.enemyBuildings[existingIndex] = building;
-            } else {
-                this.enemyBuildings.push(building);
-            }
-        }
+        //console.log("\n\n\n\n\n\n\n", buildings)
+        this.enemyBuildings = buildings;
+        this.enemyUnits = units;
     }
 
     // Методы добавления объектов

@@ -20,8 +20,9 @@ export const SPRITE = {
     FALLBACK: 7,
     WORKER: 12,
     MINE: 14,
-    ENEMY_BUILDING: 13
-} as const;
+    ENEMY_BUILDING: 13,
+    ENEMY_UNIT: 15,
+};
 
 export const getTerrainSprite = (type: number | null): number =>
     TERRAIN_SPRITES[type ?? 'null'] ?? SPRITE.FALLBACK;

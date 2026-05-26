@@ -1,7 +1,7 @@
 const CONFIG = require('../../../../../config');
-const Building = require('../Building');
+const Building = require('../../Building');
 
-class OilBarrel extends Building {
+class IronBarrel extends Building {
     constructor({ guid, x, y, callbacks = {} }) {
         super({
             guid,
@@ -11,7 +11,6 @@ class OilBarrel extends Building {
             ...CONFIG.ECONOMY.BUILDINGS.IRON_BARREL
         });
     }
-    
 }
 
-module.exports = OilBarrel;
+module.exports = IronBarrel;

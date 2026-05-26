@@ -21,8 +21,7 @@ function Router({ mediator, answer, common }) {
 
     // ============ GAME ROUTES ============
     router.post(URLS.START_GAME, useStartGameHandler(mediator, answer, common));
-
-    router.post('/damage', useDamageHandler(mediator, answer, common));
+    router.post(URLS.DAMAGE, useDamageHandler(mediator, answer));
 
     // ============ NOT FOUND ============
     router.all('/*path', notFoundHandler);

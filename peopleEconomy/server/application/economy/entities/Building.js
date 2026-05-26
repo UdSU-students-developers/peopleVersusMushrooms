@@ -5,7 +5,7 @@ class Building extends Entity {
         guid, x, y, type, hp, visibility, priority, callbacks = {},
         size = null, consumption = null, production = null, capacity = null 
     }) {
-        super({ guid, x, y, callbacks: {}, type, hp, visibility })
+        super({ guid, x, y, callbacks, type, hp, visibility })
 
         this.size = size;
         this.is_walkable = false;

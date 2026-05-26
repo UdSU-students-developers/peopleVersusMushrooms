@@ -6,6 +6,7 @@ import {
     UNIT_FRAME_SRCS,
     VZRYVOMOR_BUILDING_SRCS,
     SPOROVAYA_BASHNYA_SRCS,
+    PEOPLE_ECONOMY_BUILDING_SRCS,
     BUILDING_DEFAULT_SIZE,
 } from './assets';
 
@@ -386,6 +387,19 @@ function drawAlliedBuilding(ctx: CanvasRenderingContext2D, b: EnemyBuildingData,
     const py = b.y * cell;
     const pw = size * cell;
     const ph = size * cell;
+    const type = String(b.type || '').toLowerCase();
+
+    const frames = PEOPLE_ECONOMY_BUILDING_SRCS[type];
+    const frame = Array.isArray(frames) && frames.length > 0
+        ? frames[Math.floor(Date.now() / WALK_FRAME_MS) % frames.length]
+        : undefined;
+
+    if (frame) {
+        const img = getBuildingImage(`people-econ:${type}:${frame}`, frame);
+        if (isImageDrawable(img) && tryDrawImageScaled(ctx, img, px, py, pw, ph)) {
+            return;
+        }
+    }
 
     ctx.fillStyle = '#1e4d6b';
     ctx.strokeStyle = COLOR.soldierBorder;

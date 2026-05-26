@@ -47,6 +47,27 @@ import vzryvomorB8Src from '../../assets/buildings/vzryvomor/frame_8.png';
 import vzryvomorB9Src from '../../assets/buildings/vzryvomor/frame_9.png';
 import vzryvomorB10Src from '../../assets/buildings/vzryvomor/frame_10.png';
 
+// peopleEconomy buildings (paths assume русские папки переименованы в латиницу)
+import pipe1Src from '../../assets/buildings/pipe/pipe1.png';
+import pipe2Src from '../../assets/buildings/pipe/pipe2.png';
+import oilBarrel1Src from '../../assets/buildings/oil_barrel/oil_barrel1.png';
+import oilBarrel2Src from '../../assets/buildings/oil_barrel/oil_barrel2.png';
+import ironBarrel1Src from '../../assets/buildings/iron_barrel/iron_barrel1.png';
+import ironBarrel2Src from '../../assets/buildings/iron_barrel/iron_barrel2.png';
+import barracks1Src from '../../assets/buildings/barracks/barracks1.png';
+import barracks2Src from '../../assets/buildings/barracks/barracks2.png';
+import barracks3Src from '../../assets/buildings/barracks/barracks3.png';
+import barracks4Src from '../../assets/buildings/barracks/barracks4.png';
+import smallReactor1Src from '../../assets/buildings/small_reactor/small_reactor1.png';
+import smallReactor2Src from '../../assets/buildings/small_reactor/small_reactor2.png';
+import largeReactor1Src from '../../assets/buildings/large_reactor/large_reactor1.png';
+import largeReactor2Src from '../../assets/buildings/large_reactor/large_reactor2.png';
+import largeReactor3Src from '../../assets/buildings/large_reactor/large_reactor3.png';
+import driller1Src from '../../assets/buildings/driller/driller1.png';
+import driller2Src from '../../assets/buildings/driller/driller2.png';
+import mine1Src from '../../assets/buildings/mine/mine1.png';
+import mine2Src from '../../assets/buildings/mine/mine2.png';
+
 export const UNIT_FRAME_SRCS: Record<string, string[]> = {
     soldier:    [soldier1Src, soldier2Src, soldier3Src, soldier4Src],
     bmp:        [bmp1Src, bmp2Src, bmp3Src, bmp4Src, bmp5Src, bmp6Src, bmp7Src, bmp8Src],
@@ -71,7 +92,26 @@ export const SPOROVAYA_BASHNYA_SRCS = {
     destroyed: bashnyaDestroyedSrc,
 };
 
+export const PEOPLE_ECONOMY_BUILDING_SRCS: Record<string, string[]> = {
+    pipe: [pipe1Src, pipe2Src],
+    oil_barrel: [oilBarrel1Src, oilBarrel2Src],
+    iron_barrel: [ironBarrel1Src, ironBarrel2Src],
+    barracks: [barracks1Src, barracks2Src, barracks3Src, barracks4Src],
+    small_reactor: [smallReactor1Src, smallReactor2Src],
+    large_reactor: [largeReactor1Src, largeReactor2Src, largeReactor3Src],
+    driller: [driller1Src, driller2Src],
+    mine: [mine1Src, mine2Src],
+};
+
 export const BUILDING_DEFAULT_SIZE: Record<string, number> = {
     sporovaya_bashnya: 2,
     vzryvomor: 1,
+    pipe: 1,
+    oil_barrel: 1,
+    iron_barrel: 1,
+    barracks: 2,
+    small_reactor: 1,
+    large_reactor: 2,
+    driller: 1,
+    mine: 1,
 };

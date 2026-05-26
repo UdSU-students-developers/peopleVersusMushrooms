@@ -50,11 +50,10 @@
   align-items: baseline;
 }
 
-/* ===================== АРМИЯ ===================== */
+/* ================= АРМИЯ ГРИБОВ ==================== */
 .game-army-box {
-  flex: 1 1 auto;
-  min-width: calc(320px * var(--scale));
-  max-width: calc(380px * var(--scale));
+  flex: 0 0 calc(440px * var(--scale));
+  width: calc(440px * var(--scale));
   height: calc(var(--footer-height) - (28px * var(--scale)));
   display: flex;
   flex-direction: column;
@@ -62,6 +61,39 @@
   gap: calc(6px * var(--scale));
   box-sizing: border-box;
   padding: calc(1px * var(--scale)) 20px;
+}
+
+
+/* ================= АРМИЯ ЛЮДЕЙ ==================== */ 
+.game-army-enemy-box {
+  flex: 1 1 auto;
+  min-width: calc(280px * var(--scale));
+  max-width: calc(300px * var(--scale));
+  height: calc(var(--footer-height) - (28px * var(--scale)));
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: calc(6px * var(--scale));
+  box-sizing: border-box;
+  padding: calc(1px * var(--scale)) 20px;
+}
+
+.game-subsection-title {
+  font-size: calc(17px * var(--scale));
+  font-weight: 400;
+  color: rgb(235, 201, 120);
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.45);
+  letter-spacing: 1px;
+}
+
+.unit-icon--building {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  font-size: calc(18px * var(--scale));
+  font-weight: 700;
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
 /* ===================== Общие ===================== */

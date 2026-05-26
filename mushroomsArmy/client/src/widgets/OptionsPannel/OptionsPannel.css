@@ -1,5 +1,5 @@
 .options-pannel-container {
-  position: absolute;
+  position: fixed;
   padding: 14px 10px 10px;
   display: flex;
   flex-direction: column;

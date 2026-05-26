@@ -14,6 +14,14 @@ interface MinimapProps {
   camera: TCamera;
 }
 
+type MinimapDot = {
+  guid: string;
+  color: string;
+  x: number;
+  y: number;
+  isEnemy?: boolean;
+};
+
 const getTerrainColor = (tile: MapTile): string => {
   switch (tile) {
     case 0:
@@ -63,7 +71,7 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
   const map = gameState?.map;
 
   // 1. Твой расчет точек юнитов (оставляем без изменений)
-  const dots = useMemo(() => {
+  const dots = useMemo<MinimapDot[]>(() => {
     if (!gameState?.map?.length) return [];
     const map = gameState.map;
     const rows = map.length;

@@ -90,7 +90,7 @@ class GameManager extends BaseManager {
 				
 				this.io.to(user.socketId).emit(
 					GLOBAL_CONFIG.SOCKET.START_GAME,
-					sceneData
+					this.answer.good(sceneData)
 				);
 				//this.getResources(guid, mapGuid);
 				console.log("Экономика создана");

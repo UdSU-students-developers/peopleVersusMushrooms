@@ -20,6 +20,7 @@ class Reactor extends Building {
             production,
             priority
         });
+        this.store.OIL = this.capacity.OIL;
     }
 
     consume() {

@@ -1,5 +1,5 @@
 module.exports = (mediator, answer) => {
-    const { REQUEST_BUILDINGS } = mediator.getEventTypes();
+    const { REQUEST_BUILDINGS } = mediator.getTriggerTypes();
 
     return (req, res) => {
 

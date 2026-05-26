@@ -8,7 +8,7 @@ const GLOBAL_CONFIG = require('../../../../../global/globalConfig');
 
 const { GAME_STATE, LOBBY_START, GAME_STARTED } = CONFIG.SOCKET;
 
-type TStartGame = { guid: string; map?: TMap; buildings: TBuildingInput[]; mapGuid: string; peopleArmyGuid?: string | null };
+type TStartGame = { guid: string; map?: TMap; buildings: TBuildingInput[]; mapGuid: string; peopleArmyGuid?: string | null; mushroomsEconomyGuid?: string | null };
 type TTakeDamage = { armyGuid: string; unitGuid: string; amount: number };
 type TMoveUnit = { armyGuid: string; unitGuid: string; x: number; y: number };
 type TGetArmy = string;
@@ -51,7 +51,8 @@ function normalizeMapUnitHp(unit: TVisibleEntity): TVisibleEntity {
 class ArmyManager extends BaseManager {
     private army: { [guid: string]: Army };
     private armyStateManagers: { [guid: string]: ArmyStateManager };
-    private armyGuids: Record<string, { peopleArmyGuid: string | null }>;
+    private armyGuids: Record<string, { peopleArmyGuid: string | null; mushroomsEconomyGuid: string | null }>;
+    private economyRequestIntervals: Record<string, NodeJS.Timeout> = {};
 
     constructor(options: TManagerOptions) {
         super(options);
@@ -300,15 +301,94 @@ class ArmyManager extends BaseManager {
         if (army) {
             army.destructor();
         }
-        
+
         const stateManager = this.armyStateManagers[guid];
         if (stateManager) {
             stateManager.destroy();
         }
-        
+
+        // Останавливаем таймер запросов в экономику
+        const interval = this.economyRequestIntervals[guid];
+        if (interval) {
+            clearInterval(interval);
+            delete this.economyRequestIntervals[guid];
+        }
+
         delete this.army[guid];
         delete this.armyStateManagers[guid];
         delete this.armyGuids[guid];
+    }
+
+    private startEconomyRequests(armyGuid: string, mushroomsEconomyGuid: string): void {
+        const url = `${GLOBAL_CONFIG.MUSHROOMS_ECONOMY.URL}${GLOBAL_CONFIG.URLS.REQUEST_UNITS}`;
+        
+        // Целевое соотношение: 40% champigneb, 40% sporomet, 10% eblekar, 10% pizdoglyad
+        const TARGET_RATIOS = {
+            champigneb: 0.40,
+            sporomet: 0.40,
+            eblekar: 0.10,
+            pizdoglyad: 0.10
+        };
+
+        const getUnitTypeToSpawn = (): 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad' => {
+            const army = this.army[armyGuid];
+            if (!army) return 'sporomet';
+
+            const units = army.units;
+            const totalUnits = units.length;
+            
+            if (totalUnits === 0) {
+                // Если нет юнитов, начинаем с champigneb
+                return 'champigneb';
+            }
+
+            // Считаем текущее количество каждого типа
+            const counts = {
+                champigneb: 0,
+                sporomet: 0,
+                eblekar: 0,
+                pizdoglyad: 0
+            };
+
+            for (const unit of units) {
+                if (unit.type in counts) {
+                    counts[unit.type as keyof typeof counts]++;
+                }
+            }
+
+            // Находим тип с наибольшим отклонением от целевого соотношения
+            let maxDeviation = -1;
+            let typeToSpawn: 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad' = 'sporomet';
+
+            for (const [type, targetRatio] of Object.entries(TARGET_RATIOS)) {
+                const currentRatio = counts[type as keyof typeof counts] / totalUnits;
+                const deviation = targetRatio - currentRatio;
+                
+                if (deviation > maxDeviation) {
+                    maxDeviation = deviation;
+                    typeToSpawn = type as 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad';
+                }
+            }
+
+            return typeToSpawn;
+        };
+
+        // Каждую секунду отправляем запрос на создание одного юнита
+        this.economyRequestIntervals[armyGuid] = setInterval(async () => {
+            try {
+                const unitType = getUnitTypeToSpawn();
+                await this.send(
+                    url,
+                    {
+                        mushroomsEconomy: mushroomsEconomyGuid,
+                        unitsType: unitType,
+                        unitsAmount: 1
+                    }
+                );
+            } catch (error) {
+                console.error('[ArmyManager] Error requesting unit from economy:', error);
+            }
+        }, 1000);
     }
 
     private async handleEconomyRequest(_request: EconomyRequest): Promise<EconomyResponse | null> {
@@ -337,9 +417,10 @@ class ArmyManager extends BaseManager {
         this.io.to(user.socketId).emit('scout_respawned', this.answer.good({ scoutGuid }));
     }
 
-    private async eventStartGame({ guid, map, buildings, mapGuid, peopleArmyGuid }: TStartGame): Promise<void> {
-        const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
-        if (!user) return;
+    private async eventStartGame({ guid, map, buildings, mapGuid, peopleArmyGuid, mushroomsEconomyGuid }: TStartGame): Promise<void> {
+        try {
+            const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
+            if (!user) return;
 
         if (this.army[guid]) {
             this.destroyArmy(guid);
@@ -364,7 +445,7 @@ class ArmyManager extends BaseManager {
             finalBuildings = Army.generateDefensiveLayout(resolvedMap, this.common);
         }
 
-        this.armyGuids[guid] = { peopleArmyGuid: peopleArmyGuid ?? null };
+        this.armyGuids[guid] = { peopleArmyGuid: peopleArmyGuid ?? null, mushroomsEconomyGuid: mushroomsEconomyGuid ?? null };
         this.army[guid] = new Army({
             mapGuid,
             map: resolvedMap,
@@ -386,9 +467,17 @@ class ArmyManager extends BaseManager {
             economyRequestCallback: (request) => this.handleEconomyRequest(request),
         });
 
+        // Запускаем таймер автоматических запросов в экономику на создание юнитов
+        if (mushroomsEconomyGuid) {
+            this.startEconomyRequests(guid, mushroomsEconomyGuid);
+        }
+
         const userObj = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid) as TUser | null;
         if (userObj?.socketId) {
             this.io.to(userObj.socketId).emit(GAME_STARTED, this.answer.good(true));
+        }
+        } catch (error) {
+            console.error('[ArmyManager] Error in eventStartGame:', error);
         }
     }
 

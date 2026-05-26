@@ -218,8 +218,14 @@ describe('getShootableTargets', () => {
         expect(buildings).toHaveLength(0);
     });
 
-    test('hp здания нормализуется: не-число заменяется на 1', () => {
+    test('hp здания нормализуется: не-число заменяется на 1 без типа', () => {
         army.enemyBuildings = [makeBuilding({ guid: 'b1', hp: 'bad' })];
+        const { buildings } = army.getShootableTargets();
+        expect(buildings[0].hp).toBe(1);
+    });
+
+    test('hp здания нормализуется: не-число заменяется на maxHp типа', () => {
+        army.enemyBuildings = [makeBuilding({ guid: 'b1', type: 'mycelium', hp: 'bad' })];
         const { buildings } = army.getShootableTargets();
         expect(buildings[0].hp).toBe(1);
     });
@@ -441,6 +447,40 @@ describe('уничтоженные здания', () => {
         })];
         await army.shotUnits();
         expect(army.get().destroyedEnemyBuildingGuids).toEqual(['tower-1']);
+    });
+
+    test('мицелий исчезает после одного успешного выстрела (HP=1)', async () => {
+        army.units = [makeUnit({ type: 'soldier', x: 0, y: 0, range: 5, damage: 10 })];
+        army.enemyBuildings = [makeBuilding({
+            guid: 'mc-1',
+            type: 'mycelium',
+            role: 'mushroomsEconomy',
+            x: 1,
+            y: 0,
+            hp: 1,
+        })];
+
+        await army.shotUnits();
+
+        expect(army.get().enemyBuildings).toHaveLength(0);
+        expect(army.destroyedEnemyBuildingGuids.has('mc-1')).toBe(true);
+    });
+
+    test('при провале урона по economy-зданию guid уходит в destroyedEnemyBuildingGuids', async () => {
+        takeDamage.mockResolvedValue(null);
+        army.units = [makeUnit({ type: 'soldier', x: 0, y: 0, range: 5, damage: 10 })];
+        army.enemyBuildings = [makeBuilding({
+            guid: 'mc-ghost',
+            type: 'mycelium',
+            role: 'mushroomsEconomy',
+            x: 1,
+            y: 0,
+        })];
+
+        await army.shotUnits();
+
+        expect(army.get().enemyBuildings).toHaveLength(0);
+        expect(army.destroyedEnemyBuildingGuids.has('mc-ghost')).toBe(true);
     });
 
 });

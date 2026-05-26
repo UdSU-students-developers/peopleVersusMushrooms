@@ -5,10 +5,9 @@ const CONFIG = {
     MEDIATOR: {
         EVENTS: {
             DELETE_USER: "DELETE_USER",
-
             LOBBY_UPDATED: 'LOBBY_UPDATED',
             START_GAME: 'START_GAME',
-
+            DAMAGE: 'DAMAGE'
             
         },
         TRIGGERS: {

@@ -93,8 +93,8 @@ class GameManager extends BaseManager {
 	}
 	
 	eventApplyDamage(data = {}) {
-		const { guid, damage, economyGuid } = data;
-		const economy = this.economies[economyGuid];
+		const { guid, damage, peopleEconomy } = data;
+		const economy = this.economies[peopleEconomy];
 
 		if (!economy) {
 			return false;

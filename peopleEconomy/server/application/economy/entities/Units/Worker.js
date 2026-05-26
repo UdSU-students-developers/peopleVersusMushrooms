@@ -1,4 +1,4 @@
-const Unit = require("./Unit");
+const Unit = require("../Unit");
 const CONFIG = require("../../config");
 
 const { HP, SPEED, TYPE, VISIBILITY } = CONFIG.ECONOMY.WORKER;

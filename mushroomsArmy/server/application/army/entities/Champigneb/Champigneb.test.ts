@@ -51,11 +51,9 @@ describe('Champigneb', () => {
     it('константы взрыва установлены верно', () => {
         expect(champigneb.explosionRadius).toBe(6);
         expect(champigneb.explosionDamage).toBe(60);
-        expect(champigneb.slimeDuration).toBe(10);
     });
 
-    it('начальное состояние слизи и флага взрыва', () => {
-        expect(champigneb.slimePuddle).toEqual({ x: 0, y: 0, radius: 0, ttl: 0 });
+    it('начальное состояние флага взрыва', () => {
         expect(champigneb.hasExploded).toBe(false);
         expect(champigneb.isAlive).toBe(true);
     });
@@ -81,10 +79,6 @@ describe('Champigneb', () => {
         expect(champigneb.hp).toBe(0);
         expect(champigneb.isAlive).toBe(false);
         expect(champigneb.hasExploded).toBe(true);
-        expect(champigneb.slimePuddle.radius).toBe(6);
-        expect(champigneb.slimePuddle.ttl).toBe(10);
-        expect(champigneb.slimePuddle.x).toBe(20);
-        expect(champigneb.slimePuddle.y).toBe(20);
     });
 
     it('takeDamage с отрицательным уроном не изменяет hp', () => {
@@ -116,7 +110,6 @@ describe('Champigneb', () => {
         expect(far.takeDamage).not.toHaveBeenCalled();
         expect(champigneb.hasExploded).toBe(true);
         expect(champigneb.isAlive).toBe(false);
-        expect(champigneb.slimePuddle).toEqual({ x: 20, y: 20, radius: 6, ttl: 10 });
     });
 
     it('onEnemyFound при дистанции >= 6 не вызывает взрыв, но обновляет цель', () => {
@@ -149,12 +142,10 @@ describe('Champigneb', () => {
         (champigneb as unknown as ITChampignebTestable).explode();
 
         expect(enemy.takeDamage).toHaveBeenCalledTimes(1);
-        const slimeAfterFirst = { ...champigneb.slimePuddle };
 
         (champigneb as unknown as ITChampignebTestable).explode();
 
         expect(enemy.takeDamage).toHaveBeenCalledTimes(1);
-        expect(champigneb.slimePuddle).toEqual(slimeAfterFirst);
     });
 
     it('взрыв не наносит урон врагам за пределами explosionRadius', () => {

@@ -37,7 +37,6 @@ CREATE TABLE IF NOT EXISTS errors (
 - `TUnit` / `TUnitState`
 - `TBuilding`
 - `TMap` / `TPoint` (целочисленные координаты)
-- `TSlimePuddle`
 
 ---
 
@@ -55,7 +54,7 @@ CREATE TABLE IF NOT EXISTS errors (
 
 | Откуда | Куда | Метод + путь | Payload |
 |--------|------|-------------|---------|
-| mushroomsArmy | map | `POST /updateMushroomArmy/:mapGuid/:armyGuid` | `{ units, slimePuddles }` |
+| mushroomsArmy | map | `POST /updateMushroomArmy/:mapGuid/:armyGuid` | `{ units }` |
 | mushroomsArmy | map | `GET /getVisibility/:mapGuid/:armyGuid` | — → `{ entities: TVisibleEntity[] }` |
 | peopleArmy | mushroomsArmy | `POST /takeDamage/:armyGuid` | `{ unitGuid, amount, type }` |
 | map | mushroomsArmy | `POST /startGame/:armyGuid` | `{ mapGuid, map, buildings }` |

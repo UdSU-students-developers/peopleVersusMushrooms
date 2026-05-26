@@ -6,6 +6,7 @@ import {
     UNIT_FRAME_SRCS,
     VZRYVOMOR_BUILDING_SRCS,
     SPOROVAYA_BASHNYA_SRCS,
+    PEOPLE_ECONOMY_BUILDING_SRCS,
     BUILDING_DEFAULT_SIZE,
 } from './assets';
 
@@ -156,6 +157,8 @@ interface ArmyData {
     units: UnitData[];
     enemyUnits?: EnemyUnitData[];
     enemyBuildings?: EnemyBuildingData[];
+    /** здания peopleEconomy в зоне видимости — не враги, только отрисовка */
+    alliedBuildings?: EnemyBuildingData[];
     /** guid зданий, уничтоженных нашей армией — клиент убирает с карты */
     destroyedEnemyBuildingGuids?: string[];
 }
@@ -377,6 +380,34 @@ function drawEnemyBuilding(ctx: CanvasRenderingContext2D, b: EnemyBuildingData, 
     ctx.strokeRect(px, py, pw, ph);
 }
 
+/** Союзные здания economy (казарма, бур и т.д.) */
+function drawAlliedBuilding(ctx: CanvasRenderingContext2D, b: EnemyBuildingData, cell: number) {
+    const size = getBuildingSize(b);
+    const px = b.x * cell;
+    const py = b.y * cell;
+    const pw = size * cell;
+    const ph = size * cell;
+    const type = String(b.type || '').toLowerCase();
+
+    const frames = PEOPLE_ECONOMY_BUILDING_SRCS[type];
+    const frame = Array.isArray(frames) && frames.length > 0
+        ? frames[Math.floor(Date.now() / WALK_FRAME_MS) % frames.length]
+        : undefined;
+
+    if (frame) {
+        const img = getBuildingImage(`people-econ:${type}:${frame}`, frame);
+        if (isImageDrawable(img) && tryDrawImageScaled(ctx, img, px, py, pw, ph)) {
+            return;
+        }
+    }
+
+    ctx.fillStyle = '#1e4d6b';
+    ctx.strokeStyle = COLOR.soldierBorder;
+    ctx.lineWidth = Math.max(1, cell * 0.06);
+    ctx.fillRect(px, py, pw, ph);
+    ctx.strokeRect(px, py, pw, ph);
+}
+
 function isValidMap(map: unknown): map is number[][] {
     return Array.isArray(map) &&
         map.length > 0 &&
@@ -410,6 +441,7 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
     const unitsRef = useRef<UnitData[]>([]);
     const enemyUnitsRef = useRef<EnemyUnitData[]>([]);
     const enemyBuildingsRef = useRef<Map<string, EnemyBuildingData>>(new Map());
+    const alliedBuildingsRef = useRef<Map<string, EnemyBuildingData>>(new Map());
     const animFrameRef = useRef<number>(0);
     const [unitCount, setUnitCount] = useState(0);
     const [hasMap, setHasMap] = useState(false);
@@ -549,6 +581,7 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
                 canvas.height = h;
             }
             drawMap(ctx, map, cell);
+            alliedBuildingsRef.current.forEach((b) => drawAlliedBuilding(ctx, b, cell));
             enemyBuildingsRef.current.forEach((b) => drawEnemyBuilding(ctx, b, cell));
             enemyUnitsRef.current.forEach((eu) => drawEnemyUnit(ctx, eu, cell));
             unitsRef.current.forEach((unit) => drawUnit(ctx, unit, cell));
@@ -590,6 +623,19 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage, server: _server }) => {
             if (Array.isArray(data.destroyedEnemyBuildingGuids)) {
                 data.destroyedEnemyBuildingGuids.forEach((guid) => {
                     if (guid) enemyBuildingsRef.current.delete(guid);
+                });
+            }
+            if (Array.isArray(data.alliedBuildings)) {
+                const seenAllied = new Set<string>();
+                data.alliedBuildings.forEach((b: EnemyBuildingData) => {
+                    if (!b?.guid) return;
+                    seenAllied.add(b.guid);
+                    alliedBuildingsRef.current.set(b.guid, b);
+                });
+                alliedBuildingsRef.current.forEach((_, guid) => {
+                    if (!seenAllied.has(guid)) {
+                        alliedBuildingsRef.current.delete(guid);
+                    }
                 });
             }
             if (Array.isArray(data.enemyBuildings)) {

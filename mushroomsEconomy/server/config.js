@@ -8,6 +8,8 @@ const CONFIG = {
             START_GAME: 'START_GAME',
             DAMAGE: 'DAMAGE',
             MOVE_UNIT: 'MOVE_UNIT',
+            REQUEST_UNITS: 'REQUEST_UNITS',
+            REQUEST_BUILDINGS: 'REQUEST_BUILDINGS',
         },
         TRIGGERS: {
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',
@@ -47,7 +49,7 @@ const CONFIG = {
         MYCELIUM: {
             TYPE: 'mycelium',
             HP: 1,
-            GROW_SPEED: 200,
+            GROW_SPEED: 50,
             GROW_LEVEL_UP: 2000,
             MAX_LEVEL: 3,
             CONSUMPTION: 0, // не потребляет энергию (растёт от Солнышка)
@@ -56,6 +58,7 @@ const CONFIG = {
             POWER: 1,
             SIZE: 1,
             VISIBILITY: 1, //Сколько клеток вокруг видит
+            IRON_COST: 0,
         },
         // грибница вырастает за 12 секунд
         // 2*2*3 = 12 sec
@@ -71,6 +74,7 @@ const CONFIG = {
             LARVA_ENERGY_COST: 20,
             LARVA_COOLDOWN_MS: 3000,
             VISIBILITY: 1,
+            IRON_COST: 40,
         },
         BIO_REACTOR: {
             TYPE: 'reactor',
@@ -80,7 +84,8 @@ const CONFIG = {
             PRODUCTION: 2,
             CAPACITY: 180,
             VISIBILITY: 1,
-            CONSUME_RADIUS: 2, 
+            CONSUME_RADIUS: 2,
+            IRON_COST: 60,
         },
         BIO_REACTOR_SMALL: {
             TYPE: "small_reactor",
@@ -91,6 +96,7 @@ const CONFIG = {
             CAPACITY: 60, // емкость. Сколько грибочков может лежать на переработке в реакторе, чтобы он работал непрерывно
             VISIBILITY: 5,
             CONSUME_RADIUS: 1,
+            IRON_COST: 30,
         },
         MINE: {
             TYPE: "mine",
@@ -100,6 +106,7 @@ const CONFIG = {
             PRODUCTION: 1,
             CAPACITY: 500,
             VISIBILITY: 1,
+            IRON_COST: 20,
         },
         STORAGE_IRON: {
 
@@ -117,14 +124,18 @@ const CONFIG = {
             WANDER_RADIUS: 8, //радиус блуждания личинки
             TYPE: "larva",
             VISIBILITY: 2,
+            SOURCES_VISIBILITY: 100,
+            GROWTH_LIMIT: 100, //сколько тиков нужно личинке чтобы превратиться в рабочего
+            MUTATION_ENERGY_COST: 15, // энергия для мутации личинки в рабочего
         },
 
-        GEODEZIST: {
-            TYPE: "geodezist",
+        WORKER: {
+            TYPE: "worker",
             HP: 60,
             SPEED: 0.08,
             WANDER_RADIUS: 8,
             VISIBILITY: 4,
+            SOURCES_VISIBILITY: 3,
         },
     }
 };

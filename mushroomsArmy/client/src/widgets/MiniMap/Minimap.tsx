@@ -53,18 +53,33 @@ const economyBuildingTypes = [
   'mine',
 ];
 
+const PEOPLE_ARMY_UNIT_TYPES = new Set(['soldier', 'bmp', 'sniper', 'partizan']);
+const ENEMY_DOT_COLOR = '#e53935';
+
+const isAliveEntity = (hp?: number) => (hp ?? 1) > 0;
+
 const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const map = gameState?.map;
 
   // 1. Твой расчет точек юнитов (оставляем без изменений)
   const dots = useMemo(() => {
-    if (!gameState) return [];
-
-    const rows = gameState.map?.length || 100;
-    const cols = gameState.map?.[0]?.length || 100;
-    const ownBuildingTypes = ['vzryvomor', 'sporovaya_bashnya'];
+    if (!gameState?.map?.length) return [];
+    const map = gameState.map;
+    const rows = map.length;
+    const cols = map[0]?.length || 100;
     const clamp = (v: number) => Math.max(0, Math.min(100, v));
+
+    syncExplorationMemory(map);
+    const visibilityMask = buildCircularVisibilityMask(gameState, rows, cols);
+
+    /** Клетка сейчас в тумане войны (как на основной карте), а не только «разведана». */
+    const isCurrentlyVisible = (x: number, y: number): boolean => {
+      const tx = Math.floor(x);
+      const ty = Math.floor(y);
+      if (visibilityMask[ty]?.[tx] !== true) return false;
+      return coerceTerrainCell(map[ty]?.[tx]) !== null;
+    };
 
     const unitDots = gameState.units
       .filter((u) => u.hp > 0)
@@ -76,16 +91,30 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
       }));
 
     const enemyUnitDots = (gameState.enemyUnits ?? [])
-      .filter((u) => u.hp > 0)
+      .filter(
+        (u) =>
+          PEOPLE_ARMY_UNIT_TYPES.has(u.type) &&
+          isAliveEntity(u.hp) &&
+          isCurrentlyVisible(u.x, u.y),
+      )
       .map((u) => ({
-        guid: u.guid,
-        color: '#e53935',
+        guid: `enemy-unit-${u.guid}`,
+        color: ENEMY_DOT_COLOR,
+        isEnemy: true,
         x: clamp(((u.x + 0.5) / cols) * 100),
         y: clamp(((u.y + 0.5) / rows) * 100),
       }));
 
     const buildingDots = gameState.buildings
-      .filter((b) => b.hp > 0 && b.isAlive !== false)
+      .filter((b) => {
+        if (b.hp <= 0 || b.isAlive === false) return false;
+        const centerX = b.x + (b.sizeX ?? 1) / 2;
+        const centerY = b.y + (b.sizeY ?? 1) / 2;
+        const isOwn = ownBuildingTypes.includes(b.type);
+        const isEconomy = economyBuildingTypes.includes(b.type);
+        if (isOwn || isEconomy) return true;
+        return isCurrentlyVisible(centerX, centerY);
+      })
       .map((b) => ({
         guid: b.guid,
         color: ownBuildingTypes.includes(b.type)
@@ -181,7 +210,7 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
 
         {dots.map((dot) => (
           <div
-            className="minimap-dot"
+            className={dot.isEnemy ? 'minimap-dot minimap-dot-enemy' : 'minimap-dot'}
             key={dot.guid}
             style={{
               backgroundColor: dot.color,

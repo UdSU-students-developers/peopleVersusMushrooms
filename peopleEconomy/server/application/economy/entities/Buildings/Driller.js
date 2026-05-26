@@ -1,22 +1,32 @@
-const Building = require('./Building');
+const CONFIG = require('../../../../config');
+const Building = require('../Building');
 
 class Driller extends Building {
-    constructor({ guid, x, y, callbacks = {} }) {
+    constructor({ 
+        guid, x, y, callbacks = {}
+    })  {
         super({
-            type: 'driller',
             guid,
             x,
             y,
             callbacks,
-            hp: 100,
-            size: 1,
+            ...CONFIG.ECONOMY.BUILDINGS.DRILLER
         });
     }
 
-    get() {
-        return {
-            ...super.get()
-        };
+    consume() {
+        super.consume(CONFIG.ECONOMY.RESOURSES.ENERGY);
+    }
+
+    produce() {
+        super.produce(CONFIG.ECONOMY.RESOURSES.OIL);
+    }
+
+    update() {
+        // Потратить энергию
+        this.consume();
+        // Произвести нефть
+        this.produce();
     }
 }
 

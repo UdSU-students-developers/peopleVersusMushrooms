@@ -11,17 +11,16 @@ class Eblekar extends Unit {
     private aimStartTime: number = 0;
     private lastHealTime: number = -3;
     private currentAllyTarget: Unit | null = null;
-    //изначально поля назывались decisionAccumulator и DECISION_INTERVAL,
-    //но эти имена уже заняты приватными полями базового Unit, а private-поля нельзя переопределять в наследнике,
-    //поэтому переимновываю
+    // Поля для таймера решений союзников названы с префиксом ally, чтобы не конфликтовать
+    // с приватными полями базового Unit (decisionAccumulator, DECISION_INTERVAL).
     private allyDecisionAccumulator: number = 0;
     private readonly ALLY_DECISION_INTERVAL: number = 0.5;
 
     constructor(options: TUnitOptions) {
         super(options);
         this.visibility = options.visibility ?? 12;
-        this.hp = 40;
-        this.baseHp = 40;
+        this.hp = 20;
+        this.baseHp = 20;
         this.speed = options.speed ?? 1;
         this.attackRange = options.attackRange ?? 0;
         this.lastHealTime = -this.healCooldown;
@@ -29,6 +28,13 @@ class Eblekar extends Unit {
 
     public update(enemies: Unit[], map: TMap, deltaTime: number, allies: Unit[] = []): void {
         if (!this.isAlive) return;
+
+        if (this.formationHold && this.formationTarget) {
+            this.targetX = this.formationTarget.x;
+            this.targetY = this.formationTarget.y;
+            this.moveTo(this.targetX, this.targetY, map, deltaTime);
+            return;
+        }
 
         this.enemies = enemies;
         this.allyDecisionAccumulator += deltaTime;

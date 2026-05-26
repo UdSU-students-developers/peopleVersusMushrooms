@@ -41,7 +41,7 @@ import vzryvomorExplFrame4 from '../../../assets/buildings/vzryvomor_explosion/f
 import grassTextureSrc1 from '../../../assets/map/grass/grass1.webp';
 import grassTextureSrc2 from '../../../assets/map/grass/grass2.webp';
 import grassTextureSrc3 from '../../../assets/map/grass/grass3.webp';
-import grassWithFrlowersTextureSrc from '../../../assets/map/grass/grass_with_flowers.webp';
+import grassWithFlowersTextureSrc from '../../../assets/map/grass/grass_with_flowers.webp';
 import grassWithFlowersTextureSrc2 from '../../../assets/map/grass/grass_with_flowers2.webp';
 import grass1TextureSrc22 from '../../../assets/map/grass/grass_with_flowers22.webp';
 import grassWithOneFlowerTextureSrc from '../../../assets/map/grass/grass_with_one_flower.webp';
@@ -107,7 +107,7 @@ export const PEOPLE_UNIT_SRCS: Record<string, string> = {
   partizan: peopleSoldierSrc,
 };
 
-export const CHAMPIGNEB_EXPL_FRAME_SRCS: string[] = [
+const CHAMPIGNEB_EXPL_FRAME_SRCS: string[] = [
   champignebExplFrame0,
   champignebExplFrame1,
   champignebExplFrame2,
@@ -121,7 +121,7 @@ export const champignebExplImages: HTMLImageElement[] = CHAMPIGNEB_EXPL_FRAME_SR
   return img;
 });
 
-export const VZRYVOMOR_EXPL_FRAME_SRCS: string[] = [
+const VZRYVOMOR_EXPL_FRAME_SRCS: string[] = [
   vzryvomorExplFrame0,
   vzryvomorExplFrame1,
   vzryvomorExplFrame2,
@@ -155,7 +155,7 @@ export const SPOROVAYA_BASHNYA_SRCS = {
 const grass1Img = Object.assign(new Image(), { src: grassTextureSrc1 });
 const grass2Img = Object.assign(new Image(), { src: grassTextureSrc2 });
 const grass3Img = Object.assign(new Image(), { src: grassTextureSrc3 });
-const flower1Img = Object.assign(new Image(), { src: grassWithFrlowersTextureSrc });
+const flower1Img = Object.assign(new Image(), { src: grassWithFlowersTextureSrc });
 const flower2Img = Object.assign(new Image(), { src: grassWithFlowersTextureSrc2 });
 const flower3Img = Object.assign(new Image(), { src: grass1TextureSrc22 });
 const flower4Img = Object.assign(new Image(), { src: grassWithOneFlowerTextureSrc });

@@ -1,6 +1,7 @@
 const CONFIG = require('../../../config');
 const BaseManager = require('../../../../../global/modules/BaseManager');
-const { URLS, MAP } = require('../../../../../global/globalConfig');
+const GLOBAL_CONFIG = require('../../../../../global/globalConfig');
+const { URLS } = GLOBAL_CONFIG;
 const Army = require('../../army/Army');
 const { UPDATE_ARMY } = CONFIG.SOCKETS;
 
@@ -48,14 +49,11 @@ class ArmyManager extends BaseManager {
             return;
         }
 
-        // отправить позиции наших юнитов на карту
-        const entities = army.units
-            .filter(u => typeof u.get === 'function')
-            .map(u => {
-                const s = u.get();
-                return { guid: s.guid, x: s.x, y: s.y, type: s.type, visibility: s.visible };
-            });
-        await this.sendToMap(URLS.UPDATE_UNITS, { mapGuid: army.mapGuid, userGuid: guid, entities });
+        // дельта на карту: движение / спавн / смерть (не полный список каждый тик)
+        const entities = army.buildMapUnitUpdateEntities();
+        if (entities.length > 0) {
+            await this.sendToMap(URLS.UPDATE_UNITS, { mapGuid: army.mapGuid, userGuid: guid, entities });
+        }
 
         // запросить видимость
         const visibility = await this.sendToMap(URLS.GET_VISIBILITY, { mapGuid: army.mapGuid, userGuid: guid });
@@ -143,7 +141,7 @@ class ArmyManager extends BaseManager {
         return this.answer.good(result.data);
     }
 
-    async damageMushroomsUnit({ armyGuid, economyGuid, unitGuid, amount, targetKind, type }) {
+    async damageMushroomsUnit({ armyGuid, economyGuid, unitGuid, amount, targetKind, type, role }) {
         if (!unitGuid || !Number.isFinite(Number(amount))) {
             return null;
         }
@@ -152,24 +150,35 @@ class ArmyManager extends BaseManager {
 
         if (targetKind === 'building') {
             const buildingType = String(type || '').toLowerCase();
-            // башня и взрывомор — здания mushroomsArmy, не economy
-            if (buildingType === 'sporovaya_bashnya' || buildingType === 'vzryvomor') {
-                if (!armyGuid) {
+            const MUSHROOMS_ECONOMY_BUILDING_TYPES = new Set([
+                'mycelium', 'incubator', 'reactor', 'small_reactor', 'mine',
+            ]);
+            const normalizedRole = role === 'mushroomEconomy'
+                ? GLOBAL_CONFIG.MUSHROOMS_ECONOMY.ROLE
+                : (role === 'mushroomArmy' ? GLOBAL_CONFIG.MUSHROOMS_ARMY.ROLE : role);
+
+            const routeToEconomy =
+                normalizedRole === GLOBAL_CONFIG.MUSHROOMS_ECONOMY.ROLE
+                || (normalizedRole !== GLOBAL_CONFIG.MUSHROOMS_ARMY.ROLE
+                    && MUSHROOMS_ECONOMY_BUILDING_TYPES.has(buildingType));
+
+            if (routeToEconomy) {
+                if (!economyGuid) {
                     return null;
                 }
-                return this.sendToMushroomsArmy('/takeDamage', {
-                    armyGuid,
-                    unitGuid,
-                    amount: sanitizedAmount,
+                return this.sendToMushroomsEconomy(URLS.DAMAGE, {
+                    mushroomsEconomy: economyGuid,
+                    entityGuid: unitGuid,
+                    damage: sanitizedAmount,
                 });
             }
-            if (!economyGuid) {
+            if (!armyGuid) {
                 return null;
             }
-            return this.sendToMushroomsEconomy(URLS.APPLY_DAMAGE, {
-                economyGuid,
-                guid: unitGuid,
-                damage: sanitizedAmount,
+            return this.sendToMushroomsArmy('/takeDamage', {
+                armyGuid,
+                unitGuid,
+                amount: sanitizedAmount,
             });
         }
 

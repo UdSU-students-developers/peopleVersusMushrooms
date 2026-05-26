@@ -5,7 +5,7 @@ class Sporomet extends Unit {
     public retreatRange: number = 8;
     public cooldown: number = 2;
     public aimTime: number = 0.5;
-    public attackDamage: number = 5;
+    public attackDamage: number = 9;
     public poisonDuration: number = 10;
     public poisonDamagePerSecond: number = 10;
     
@@ -16,11 +16,11 @@ class Sporomet extends Unit {
 
     constructor(options: TUnitOptions) {
         super(options);
-        this.visibility = options.visibility ?? 15;
-        this.hp = 8;
-        this.baseHp = 8;
-        this.speed = options.speed ?? 1;
-        this.attackRange = options.attackRange ?? 12;
+        this.visibility = options.visibility ?? 9;
+        this.hp = 20;
+        this.baseHp = 20;
+        this.speed = options.speed ?? 2;
+        this.attackRange = options.attackRange ?? 10;
         this.lastShotTime = -this.cooldown;
     }
 

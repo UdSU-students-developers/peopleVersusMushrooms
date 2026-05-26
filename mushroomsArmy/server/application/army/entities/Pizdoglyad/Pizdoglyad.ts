@@ -83,6 +83,22 @@ class Pizdoglyad extends Unit {
         this.lastAllies = allies;
         this.lastDeltaTime = deltaTime;
 
+        if (this.formationHold) {
+            const safePoint = this.findSafePoint();
+            if (safePoint) {
+                this.targetX = safePoint.x;
+                this.targetY = safePoint.y;
+            } else if (this.formationTarget) {
+                this.targetX = this.formationTarget.x;
+                this.targetY = this.formationTarget.y;
+            } else {
+                this.targetX = this.x;
+                this.targetY = this.y;
+            }
+            this.pizdoglyadMoveOnly(map, deltaTime);
+            return;
+        }
+
         const nearestEnemy = this.findNearestEnemy(enemies);
 
         if (nearestEnemy) {

@@ -1,11 +1,11 @@
 const Unit = require('./Unit');
 const CONFIG = require('../../../../config');
 
-const { HP, SPEED, TYPE, VISIBILITY, WANDER_RADIUS } = CONFIG.ECONOMY.GEODEZIST;
+const { HP, SPEED, TYPE, VISIBILITY, WANDER_RADIUS, SOURCES_VISIBILITY } = CONFIG.ECONOMY.WORKER;
 
-class Geodezist extends Unit {
+class Worker extends Unit {
     constructor(options) {
-        super({ ...options, type: TYPE, visibility: VISIBILITY, speed: SPEED });
+        super({ ...options, type: TYPE, visibility: VISIBILITY, speed: SPEED, sourcesVisibility: SOURCES_VISIBILITY});
         this.hp = HP;
         this.wanderRadius = WANDER_RADIUS;
         this.targetResource = null;
@@ -35,12 +35,20 @@ class Geodezist extends Unit {
     }
 
     _scanForIron() {
+        if (this.mode === 'goToIron' && this.targetResource) return;
+
         const resources = this.callbacks.getResources?.();
         const buildings = this.callbacks.getBuildings?.();
         if (!resources || !buildings) return;
 
-        let closestIron = null;
-        let minDistanceSq = Infinity;
+        const takenTargets = new Set();
+        for (const unit of this.units) {
+            if (unit.guid !== this.guid && unit.targetResource) {
+                takenTargets.add(`${unit.targetResource.x},${unit.targetResource.y}`);
+            }
+        }
+
+        const ironCells = [];
 
         resources.forEach((row, y) => {
             if (!row) return;
@@ -49,29 +57,24 @@ class Geodezist extends Unit {
 
                 const occupied = buildings.some(b => {
                     if (b.type === 'mycelium') return false;
-                    
                     const size = b.size ?? 1;
                     return x >= b.x && x < b.x + size && y >= b.y && y < b.y + size;
                 });
 
                 if (!occupied) {
-                    const distSq = (this.x - x) ** 2 + (this.y - y) ** 2;
-                    if (distSq < minDistanceSq) {
-                        minDistanceSq = distSq;
-                        closestIron = { x, y };
-                    }
+                    ironCells.push({ x, y, distSq: (this.x - x) ** 2 + (this.y - y) ** 2 });
                 }
             });
         });
 
+        ironCells.sort((a, b) => a.distSq - b.distSq);
+
+        const closestIron = ironCells.find(cell => !takenTargets.has(`${cell.x},${cell.y}`)) ?? null;
+
         if (closestIron) {
-            if (!this.targetResource || this.targetResource.x !== closestIron.x || this.targetResource.y !== closestIron.y) {
-                this.targetResource = closestIron;
-                this.mode = 'goToIron';
-                this.setTarget(closestIron.x, closestIron.y);
-            }
-        } else if (this.mode === 'goToIron') {
-            this._resetToWander();
+            this.targetResource = closestIron;
+            this.mode = 'goToIron';
+            this.setTarget(closestIron.x, closestIron.y);
         }
     }
 
@@ -105,4 +108,4 @@ class Geodezist extends Unit {
     }
 }
 
-module.exports = Geodezist;
+module.exports = Worker;

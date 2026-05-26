@@ -94,14 +94,6 @@ export type TBuilding = {
     isAttacking?: boolean;
 }
 
-// Лужа слайма
-export type TSlimePool = {
-    x: number;
-    y: number;
-    radius: number;
-    ttl: number;
-}
-
 // Снаряд
 export type TProjectile = {
     guid: string;
@@ -122,6 +114,5 @@ export type TArmyState = {
     units: TUnit[];
     enemyUnits?: TUnit[];
     buildings: TBuilding[];
-    slimePuddles: TSlimePool[];
     projectiles: TProjectile[];
 };

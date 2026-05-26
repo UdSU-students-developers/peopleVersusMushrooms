@@ -12,21 +12,18 @@ import { coerceTerrainCell } from './fogOfWar';
 import { drawTerrainCell, drawGridFogAware } from './terrainRenderer';
 import { drawBuildings, drawUnits, drawEnemyUnits, drawProjectileLayer, drawEconomyUnits } from './unitRenderer';
 
-interface IInitializableCanvas extends HTMLCanvasElement {
-    __cameraInitialized?: boolean;
-}
-
 export { preloadFogWarTextures };
 
 export function drawGame(
   ctx: CanvasRenderingContext2D,
   state: GameState | null,
-  widthCSS: number,
-  heightCSS: number,
   camera: TCamera
 ) {
   const canvas = ctx.canvas;
 
+  // Синхронизируем размер canvas с его CSS-размерами каждый кадр.
+  // Весь код рендеринга оперирует CSS-пикселями, поэтому canvas.width/height
+  // должны соответствовать getBoundingClientRect(), а не физическим пикселям DPR.
   const rect = canvas.getBoundingClientRect();
   if (canvas.width !== rect.width || canvas.height !== rect.height) {
     canvas.width = rect.width;
@@ -34,11 +31,6 @@ export function drawGame(
   }
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  if (!(canvas as IInitializableCanvas).__cameraInitialized) {
-    initCameraListeners(canvas);
-    (canvas as IInitializableCanvas).__cameraInitialized = true;
-  }
 
   if (!state) return;
 
@@ -102,8 +94,8 @@ export function drawGame(
   ctx.restore();
 }
 
-function initCameraListeners(canvas: HTMLCanvasElement) {
-  window.addEventListener('wheel', (e: WheelEvent) => {
+export function setupCameraListeners(canvas: HTMLCanvasElement): () => void {
+  const wheelHandler = (e: WheelEvent) => {
     const rect = canvas.getBoundingClientRect();
     const isOverCanvas =
       e.clientX >= rect.left &&
@@ -125,24 +117,36 @@ function initCameraListeners(canvas: HTMLCanvasElement) {
       camera.offsetX -= (mouseX - camera.offsetX) * (camera.scale / oldScale - 1);
       camera.offsetY -= (mouseY - camera.offsetY) * (camera.scale / oldScale - 1);
     }
-  }, { passive: false, capture: true });
+  };
 
-  canvas.addEventListener('mousedown', (e) => {
+  const mousedownHandler = (e: MouseEvent) => {
     if (e.button === 0) {
       camera.isDragging = true;
       camera.lastMouseX = e.clientX;
       camera.lastMouseY = e.clientY;
     }
-  });
+  };
 
-  window.addEventListener('mousemove', (e) => {
+  const mousemoveHandler = (e: MouseEvent) => {
     if (!camera.isDragging) return;
     camera.offsetX += e.clientX - camera.lastMouseX;
     camera.offsetY += e.clientY - camera.lastMouseY;
     camera.lastMouseX = e.clientX;
     camera.lastMouseY = e.clientY;
-  });
+  };
 
-  window.addEventListener('mouseup', () => camera.isDragging = false);
+  const mouseupHandler = () => { camera.isDragging = false; };
+
+  window.addEventListener('wheel', wheelHandler, { passive: false, capture: true });
+  canvas.addEventListener('mousedown', mousedownHandler);
+  window.addEventListener('mousemove', mousemoveHandler);
+  window.addEventListener('mouseup', mouseupHandler);
+
+  return () => {
+    window.removeEventListener('wheel', wheelHandler, { capture: true });
+    canvas.removeEventListener('mousedown', mousedownHandler);
+    window.removeEventListener('mousemove', mousemoveHandler);
+    window.removeEventListener('mouseup', mouseupHandler);
+  };
 }
 

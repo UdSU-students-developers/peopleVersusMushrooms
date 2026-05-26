@@ -31,6 +31,23 @@ type TVisibilityResponse = {
 
 type TReliefResponse = TMap;
 
+const ALLIED_ECONOMY_UNIT_TYPES = new Set(['larva', 'geodezist']);
+const PEOPLE_ARMY_UNIT_TYPES = new Set(['soldier', 'bmp', 'sniper', 'partizan']);
+const PEOPLE_ARMY_DEFAULT_HP: Record<string, number> = {
+    soldier: 20,
+    bmp: 130,
+    sniper: 18,
+    partizan: 72,
+};
+
+function normalizeMapUnitHp(unit: TVisibleEntity): TVisibleEntity {
+    const parsed = Number(unit.hp);
+    if (Number.isFinite(parsed) && parsed > 0) {
+        return { ...unit, hp: parsed };
+    }
+    return { ...unit, hp: PEOPLE_ARMY_DEFAULT_HP[unit.type] ?? 1 };
+}
+
 class ArmyManager extends BaseManager {
     private army: { [guid: string]: Army };
     private armyStateManagers: { [guid: string]: ArmyStateManager };
@@ -80,14 +97,12 @@ class ArmyManager extends BaseManager {
 
         const sanitizedAmount = Math.max(0, amount);
 
-        // Ищем цель среди юнитов
         const unit = army.units.find(u => u.guid === unitGuid);
         if (unit) {
             unit.takeDamage(sanitizedAmount);
             return true;
         }
 
-        // Ищем цель среди зданий
         const building = army.buildings.find(b => b.guid === unitGuid);
         if (building) {
             if ('takeDamage' in building && typeof building.takeDamage === 'function') {
@@ -106,8 +121,8 @@ class ArmyManager extends BaseManager {
         const unit = army.units.find(u => u.guid === unitGuid);
         if (!unit) return false;
 
-        (unit as any).targetX = x;
-        (unit as any).targetY = y;
+        unit.targetX = x;
+        unit.targetY = y;
 
         return true;
     }
@@ -141,16 +156,6 @@ class ArmyManager extends BaseManager {
         if (!army) return null;
 
         return army.spawnBuilding(type, x, y, this.common);
-    }
-
-    private triggerGetArmyMetrics(armyGuid: string): object | null {
-        const stateManager = this.armyStateManagers[armyGuid];
-        if (!stateManager) return null;
-
-        return {
-            metrics: stateManager.getMetrics(),
-            scouts: stateManager.getScouts(),
-        };
     }
 
     private buildFogMap(armyState: TArmyState, fullMap: TMap, visionRadius: number = 8): TMap {
@@ -192,6 +197,10 @@ class ArmyManager extends BaseManager {
         );
     }
 
+    /**
+     * Карта удаляет юнита при повторной отправке тех же координат.
+     * Поэтому отправляем только изменения и tombstone для пропавших юнитов.
+     */
     private async updateArmyCallback(guid: string, armyState: TArmyState) {
         const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid) as { socketId: string } | null;
         if (!user) return;
@@ -199,27 +208,15 @@ class ArmyManager extends BaseManager {
         const army = this.army[guid];
         if (!army) return;
 
-        // if (army.getAliveUnits().length === 0) {
-        //     this.io.to(user.socketId).emit(GAME_OVER, this.answer.good({ message: 'Все юниты погибли' }));
-        //     this.destroyArmy(guid);
-        //     return;
-        // }
-        
-        // if (army.buildings.length === 0) {
-        //     this.io.to(user.socketId).emit(GAME_OVER, this.answer.good({ message: 'Все здания разрушены' }));
-        //     this.destroyArmy(guid);
-        //     return;
-        // }
-
-        const { units } = armyState;
         const ownBuildings = army.buildings.map(building => building.getState());
 
-        // Отправляем юниты и здания на карту
-        // карта читает поля units / buildings (см. useUpdateUnitsHandler.js / useUpdateBuildingsHandler.js)
-        await this.send<{ mapGuid: string; userGuid: string; entities: TArmyState['units'] }>(
-            `${GLOBAL_CONFIG.MAP.URL}${GLOBAL_CONFIG.URLS.UPDATE_UNITS}`,
-            { mapGuid: army.mapGuid, userGuid: army.guid, entities: units }
-        );
+        const unitEntities = army.buildMapUnitUpdateEntities();
+        if (unitEntities.length > 0) {
+            await this.send<{ mapGuid: string; userGuid: string; entities: typeof unitEntities }>(
+                `${GLOBAL_CONFIG.MAP.URL}${GLOBAL_CONFIG.URLS.UPDATE_UNITS}`,
+                { mapGuid: army.mapGuid, userGuid: army.guid, entities: unitEntities }
+            );
+        }
 
         // Здания отправляем только новые (map использует toggle: повторная отправка удаляет с карты)
         const newBuildings = ownBuildings.filter(b => !army.sentBuildingGuids.has(b.guid));
@@ -243,8 +240,6 @@ class ArmyManager extends BaseManager {
         const ALLIED_ECONOMY_BUILDING_TYPES = new Set([
             'mycelium', 'incubator', 'reactor', 'small_reactor', 'mine',
         ]);
-        const ALLIED_ECONOMY_UNIT_TYPES = new Set(['larva', 'geodezist']);
-
         // Извлекаем здания/юниты экономики из видимости (они на карте рядом с армией)
         army.economyBuildings = visibleEnemyBuildings.filter(b => ALLIED_ECONOMY_BUILDING_TYPES.has(b.type));
         army.economyUnits     = visibleEnemyUnits.filter(u => ALLIED_ECONOMY_UNIT_TYPES.has(u.type));
@@ -271,17 +266,23 @@ class ArmyManager extends BaseManager {
             clientBuildingsByGuid.set(building.guid, building);
         }
 
+        const clientEnemyUnits = visibleEnemyUnits
+            .filter((unit) => PEOPLE_ARMY_UNIT_TYPES.has(unit.type))
+            .map(normalizeMapUnitHp);
+
         const fogMap = this.buildFogMap(updatedState, army.map);
         const stateManager = this.armyStateManagers[guid];
-        const metrics = stateManager ? stateManager.getMetrics() : null;
+        const metrics = stateManager?.getMetrics() ?? null;
+        const formation = stateManager?.getFormationState() ?? null;
 
         this.io.to(user.socketId).emit(GAME_STATE, this.answer.good({
             ...updatedState,
             map: fogMap,
-            enemyUnits: visibleEnemyUnits,
+            enemyUnits: clientEnemyUnits,
             buildings: [...clientBuildingsByGuid.values()],
             economyUnits: updatedState.economyUnits,
             metrics,
+            formation,
         }));
     }
 
@@ -310,22 +311,9 @@ class ArmyManager extends BaseManager {
         delete this.armyGuids[guid];
     }
 
-    private async handleEconomyRequest(request: EconomyRequest): Promise<EconomyResponse | null> {
-        try {
-            const response = await this.send<EconomyRequest, { success: boolean; data?: unknown }>(
-                `${GLOBAL_CONFIG.ECONOMY.URL}${GLOBAL_CONFIG.URLS.ECONOMY_REQUEST}`,
-                request
-            );
-
-            if (!response) return null;
-
-            return {
-                success: response.success,
-                data: response.data as EconomyResponse['data'],
-            };
-        } catch (error) {
-            return null;
-        }
+    private async handleEconomyRequest(_request: EconomyRequest): Promise<EconomyResponse | null> {
+        // Интеграция с сервисом экономики не реализована
+        return null;
     }
 
     private handleModeChange(armyGuid: string, newMode: ArmyMode): void {

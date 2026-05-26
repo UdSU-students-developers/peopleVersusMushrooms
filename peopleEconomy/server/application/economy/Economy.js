@@ -37,13 +37,14 @@ class Economy {
         this.buildings = [];  // все построенные здания
         this.workers = [];
 
-        this.plannedBuildings = []; // запланированные здания
+        this.plannedUnits = ['bmp', 'soldier', 'partizan', 'sniper'];
+        this.plannedBuildings = []; // { type }
 
         this.enemyBuildings = []; // данные для врагов
         this.enemyUnits = [];
 
-        this.updatedBuildings = []; // {x, y, type}
-        this.updatedUnits = []; // { type }
+        this.updatedBuildings = []; // { }
+        this.updatedUnits = []; // { }
 
 
         // данные про игроков
@@ -62,7 +63,6 @@ class Economy {
         this.interval = setInterval(() => this.update(), INTERVAL);
 
         this._initEconomy();
-        this.createUnit({ x: 10, y: 10 });
     }
 
     destructor() {
@@ -197,7 +197,7 @@ class Economy {
         }
         this.buildings.push(building);
         this.map.setBuilding(building);
-        this.updatedBuildings.push(building);
+        this.updatedBuildings.push(building.getForMap());
         this.updated = true;
     }
 
@@ -301,12 +301,13 @@ class Economy {
             .sort((a, b) => a.priority - b.priority);
         this.easyStar.setGrid(this.map.buildingsGrid);
         this.easyStar.setAcceptableTiles([1]);
+        this.easyStar.setIterationsPerCalculation(20);
         consumers.forEach(consumer => {
             reactors.forEach(reactor => {
-                if (consumer.store.ENERGY === consumer.consumption) return;
+                if (consumer.store.ENERGY >= consumer.consumption) return;
                 const energy = reactor.store.ENERGY;
                 if (energy === 0) return;
-                this.easyStar.findPath(consumer.x, consumer.y, reactor.x, reactor.y, path => {
+                this.easyStar.findPath(consumer.y, consumer.x, reactor.y, reactor.x, path => {
                     if (!path) return;
                     reactor.store.ENERGY = Math.max(
                         energy - (consumer.consumption - consumer.store.ENERGY), 
@@ -314,9 +315,9 @@ class Economy {
                     );
                     consumer.store.ENERGY += energy - reactor.store.ENERGY;
                 });
-                this.easyStar.calculate();
             });
         });
+        this.easyStar.calculate();
     }
 
     distributeOil(drillers) {
@@ -325,7 +326,7 @@ class Economy {
         );
         const consumers = this.buildings
             .filter(building => building.priority === 1)
-            .filter(building => 
+            .sort(building => 
                 (building.type === SMALL_REACTOR.type) ? 1 : -1
             );
         this.easyStar.setGrid(this.map.buildingsGrid);
@@ -335,13 +336,13 @@ class Economy {
                 if (consumer.store.OIL === consumer.consumption) return;
                 const oil = dispenser.store.OIL;
                 if (oil === 0) return;
-                this.easyStar.findPath(consumer.x, consumer.y, dispenser.x, dispenser.y, path => {
+                this.easyStar.findPath(consumer.y, consumer.x, dispenser.y, dispenser.x, path => {
                     if (!path) return;
                     dispenser.store.OIL = Math.max(
                         oil - (consumer.consumption - consumer.store.OIL), 
                         0
                     );
-                    consumer.store += oil - dispenser.store.OIL;
+                    consumer.store.OIL += oil - dispenser.store.OIL;
                 });
                 this.easyStar.calculate();
             });
@@ -357,16 +358,16 @@ class Economy {
         this.easyStar.setAcceptableTiles([1]);
         consumers.forEach(consumer => {
             [...mines, ...barrels].forEach(dispenser => {
-                if (consumer.store.IRON === consumer.consumption) return;
+                if (consumer.store.IRON === consumer.capacity.IRON) return;
                 const iron = dispenser.store.IRON;
                 if (iron === 0) return;
-                this.easyStar.findPath(consumer.x, consumer.y, dispenser.x, dispenser.y, path => {
+                this.easyStar.findPath(consumer.y, consumer.x, dispenser.y, dispenser.x, path => {
                     if (!path) return;
                     dispenser.store.IRON = Math.max(
-                        iron - (consumer.consumption - consumer.store.IRON), 
+                        iron - (consumer.capacity.IRON - consumer.store.IRON), 
                         0
                     );
-                    consumer.store += iron - dispenser.store.IRON;
+                    consumer.store.IRON += iron - dispenser.store.IRON;
                 });
                 this.easyStar.calculate();
             });
@@ -392,8 +393,8 @@ class Economy {
         // добыть нефть и железо
         const miners = this.buildings.filter(building => building.priority == 2);
         miners.forEach(miner => miner.update());
-        const drillers = miners.filter(miner => miner.type === BUILDINGS.DRILLER.type);
-        const mines = miners.filter(miner => miner.type === BUILDINGS.MINE.type);
+        const drillers = miners.filter(miner => miner.type === DRILLER.type);
+        const mines = miners.filter(miner => miner.type === MINE.type);
         // распределить нефть и железо куда-нибудь
         this.distributeOil(drillers);
         this.distributeIron(mines);
@@ -403,6 +404,11 @@ class Economy {
     produceUnits() {
         const barracks = this.buildings.filter(building => building.priority === 3);
         barracks.forEach(barrack => barrack.update(this.plannedUnits));
+    }
+
+    // 3.1. очистить энергии у зданий после тика
+    clearEnergy() {
+        this.buildings.forEach(building => building.clearEnergy());
     }
 
     // 4. переместить юнитов
@@ -426,6 +432,8 @@ class Economy {
         this.miningConsumption();
         // 3. потребить остаток энергии заводами (потратить железо)
         this.produceUnits();
+        // 3.1 обнулить энергии
+        this.clearEnergy();
         /************************/
         /* Про рабочих/крестьян */
         // ОБНОВЛЯЕМ СТАТУСЫ ВОРКЕРОВ
@@ -440,6 +448,8 @@ class Economy {
         if (this.updated) {
             this.updated = false;
             this.callbacks.updated(this.get());
+            this.updatedBuildings = [];
+            this.updatedUnits = [];
         }
     }
 

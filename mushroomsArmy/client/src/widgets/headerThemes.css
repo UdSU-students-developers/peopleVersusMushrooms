@@ -1,0 +1,103 @@
+/* ================= AUTH ================= */
+
+.header--theme-auth {
+  letter-spacing: 2px;
+  background-color: rgb(52, 152, 219);
+  border-bottom: 1px solid rgb(23, 32, 129);
+  text-shadow: 
+    -0.9px -0.9px 0 rgb(23, 32, 129),  
+    0.9px -0.9px 0 rgb(23, 32, 129),
+    -0.9px  0.9px 0 rgb(23, 32, 129),
+    0.9px  0.9px 0 rgb(23, 32, 129);
+}
+
+.header--theme-auth .header__nickname,
+.header--theme-auth .header__title {
+  color: #f0f0f0;
+}
+
+.header--theme-auth .header__menu-button {
+  letter-spacing: 2px;
+  background-color: transparent;
+  color: #f0f0f0;
+  /* border: 2px solid #423c08; */
+  text-shadow: 
+    -0.9px -0.9px 0 rgb(23, 32, 129),  
+    0.9px -0.9px 0 rgb(23, 32, 129),
+    -0.9px  0.9px 0 rgb(23, 32, 129),
+    0.9px  0.9px 0 rgb(23, 32, 129);
+}
+
+/* ================= LOBBY ================= */
+
+.header--theme-lobby {
+  background-color: rgb(26, 46, 49);
+  border: 2px solid rgb(0, 16, 17);
+}
+
+.header--theme-lobby .header__nickname,
+.header--theme-lobby .header__title {
+  letter-spacing: 2px;
+
+  color: rgb(217, 144, 54);
+
+  text-shadow: 
+    -0.5px -0.5px 0 rgb(113, 22, 22),  
+    0.5px -0.5px 0 rgb(113, 22, 22),
+    -0.5px  0.5px 0 rgb(113, 22, 22),
+    0.5px  0.5px 0 rgb(113, 22, 22);
+}
+
+.header--theme-lobby .header__menu-button {
+  letter-spacing: 2px;
+  background-color: rgb(26, 46, 49);
+  color: rgb(217, 144, 54);
+  text-shadow: 
+    -0.5px -0.5px 0 rgb(113, 22, 22),  
+    0.5px -0.5px 0 rgb(113, 22, 22),
+    -0.5px  0.5px 0 rgb(113, 22, 22),
+    0.5px  0.5px 0 rgb(113, 22, 22);
+}
+.header__menu-button:hover {
+  text-shadow: 0 0 8px #ce2222,
+   0 0 10px #f8b015,
+   0 0 30px #f8b015; 
+}
+
+/* ================= HUD ================= */
+
+.header--theme-hud {
+  letter-spacing: 2px;
+  background-color: rgb(48, 66, 35); 
+  border-bottom: 2px solid #423c08;
+}
+
+.header--theme-hud .header__nickname,
+.header--theme-hud .header__title {
+  color: #dad8b2;
+  text-shadow: 
+    -0.5px -0.5px 0 rgb(113, 22, 22),  
+    0.5px -0.5px 0 rgb(113, 22, 22),
+    -0.5px  0.5px 0 rgb(113, 22, 22),
+    0.5px  0.5px 0 rgb(113, 22, 22);
+}
+
+.header--theme-hud .header__menu-button {
+  letter-spacing: 2px;
+  background-color: rgb(48, 66, 35);
+  color: #dad8b2;
+  text-shadow: 
+    -0.5px -0.5px 0 rgb(113, 22, 22),  
+    0.5px -0.5px 0 rgb(113, 22, 22),
+    -0.5px  0.5px 0 rgb(113, 22, 22),
+    0.5px  0.5px 0 rgb(113, 22, 22);
+}
+.header--theme-hud .header__menu-button:hover {
+  color: #673f0e;              
+}
+
+/* ================= STATES ================= */
+
+.header--menu-open .header__menu-button {
+  opacity: 0.3;
+}

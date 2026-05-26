@@ -5,6 +5,9 @@ import { validateRegistration } from '../../utils/validation';
 import { TError } from '../../services';
 import { TUser } from '../../services/server/types';
 import { authStorage } from '../../utils/authStorage';
+import Header from '../../widgets/Header/Header'; 
+import OptionsPannel from '../../widgets/OptionsPannel/OptionsPannel'; 
+import { useUIScale } from '../../widgets/UIScaleContext';
 import './Registration.css';
 
 const REG_SERVER_ERRORS: Record<number, string> = {
@@ -31,10 +34,23 @@ const Registration: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage })
     const [serverError, setServerError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    
     const fieldErrors = validateRegistration(username, password, passwordRepeat);
     const hasValidationErrors =
         !!fieldErrors.login || !!fieldErrors.password || !!fieldErrors.passwordRepeat;
 
+
+
+    const handleMenuClick = () => {
+        setIsMenuOpen(!isMenuOpen);
+    };
+    
+    const handleCloseMenu = () => {
+        setIsMenuOpen(false);
+    };
+    
+    
     useEffect(() => {
         const { USER_REGISTERED, ERROR } = mediator.getEventTypes();
 
@@ -87,6 +103,15 @@ const Registration: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage })
         !!fieldErrors.passwordRepeat && (passwordRepeat !== '' || password !== '');
 
     return (
+        <>
+        <Header
+            theme="auth"
+            scale="M" 
+            showNickname={false}
+            showMenuButton={true}
+            onMenuClick={handleMenuClick}
+            isMenuOpen={isMenuOpen}
+        />
         <div className="registration">
             <h1>Регистрация</h1>
             <div className="registration-form">
@@ -144,18 +169,20 @@ const Registration: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage })
             </div>
             <p className="login-link">
                 Уже есть аккаунт?{' '}
-                <a
-                    href="#"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        setPage(PAGES.LOGIN);
-                    }}
-                >
+                <button type="button" className="text-link-button" onClick={() => setPage(PAGES.LOGIN)}>
                     Войти
-                </a>
+                </button>
             </p>
         </div>
+
+        <OptionsPannel
+            variant="auth"
+            isOpen={isMenuOpen}
+            onClose={handleCloseMenu}
+            />
+        </>
     );
 };
 
 export default Registration;
+

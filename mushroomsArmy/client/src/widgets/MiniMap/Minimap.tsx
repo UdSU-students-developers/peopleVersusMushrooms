@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { GameState, TCamera, MapTile } from '../../pages/Game/types';
 import {
   buildCircularVisibilityMask,
@@ -14,12 +14,24 @@ interface MinimapProps {
   camera: TCamera;
 }
 
+type MinimapDot = {
+  guid: string;
+  color: string;
+  x: number;
+  y: number;
+  isEnemy?: boolean;
+};
+
 const getTerrainColor = (tile: MapTile): string => {
   switch (tile) {
-    case 0: return '#2ecc71';
-    case 1: return '#7fd3ff';
-    case 2: return '#8b5a2b';
-    default: return '#1f2d24';
+    case 0:
+      return '#2ecc71';
+    case 1:
+      return '#7fd3ff';
+    case 2:
+      return '#8b5a2b';
+    default:
+      return '#1f2d24';
   }
 };
 
@@ -56,9 +68,10 @@ const isAliveEntity = (hp?: number) => (hp ?? 1) > 0;
 
 const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const map = gameState?.map;
 
-  // Точки юнитов и зданий для отображения поверх ландшафта
-  const dots = useMemo(() => {
+  // 1. Твой расчет точек юнитов (оставляем без изменений)
+  const dots = useMemo<MinimapDot[]>(() => {
     if (!gameState?.map?.length) return [];
     const map = gameState.map;
     const rows = map.length;
@@ -126,10 +139,10 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
 
   // Позиция и размер рамки камеры на миникарте (в процентах от размера карты)
   const cameraRectStyle = useMemo(() => {
-    if (!gameState?.map?.[0]) return { display: 'none' };
+    if (!map?.[0]) return { display: 'none' };
 
-    const rows = gameState.map.length;
-    const cols = gameState.map[0].length;
+    const rows = map.length;
+    const cols = map[0].length;
 
     // Размер одного тайла на экране с учётом зума
     const currentTileSize = (window.innerWidth / cols) * camera.scale;
@@ -160,14 +173,15 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
       boxSizing: 'border-box' as const,
       pointerEvents: 'none' as const,
       zIndex: 100,
-      backgroundColor: 'rgba(255, 255, 255, 0.1)'
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
     };
-  }, [gameState, camera.offsetX, camera.offsetY, camera.scale]);
+  }, [map, camera.offsetX, camera.offsetY, camera.scale]);
 
   // Рисуем ландшафт на canvas при изменении карты
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !gameState || !gameState.map) return;
+    if (!canvas || !map) return;
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -177,7 +191,6 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
     canvas.height = height * dpr;
     ctx.scale(dpr, dpr);
 
-    const map = gameState.map;
     const rows = map.length;
     const cols = map[0]?.length ?? 0;
 
@@ -187,6 +200,7 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
       const cellW = width / cols;
       const cellH = height / rows;
       ctx.clearRect(0, 0, width, height);
+
       for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
           const terrain = resolveMinimapTerrain(map, visibilityMask, x, y);
@@ -199,7 +213,7 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
 
   return (
     <div className="game-minimap">
-      <div className="minimap-field" style={{ position: 'relative' }}>
+      <div className="minimap-field">
         <canvas ref={canvasRef} className="minimap-canvas" />
 
         {dots.map((dot) => (
@@ -210,7 +224,7 @@ const Minimap: React.FC<MinimapProps> = ({ gameState, camera }) => {
               backgroundColor: dot.color,
               left: `${dot.x}%`,
               top: `${dot.y}%`,
-              position: 'absolute'
+              position: 'absolute',
             }}
           />
         ))}

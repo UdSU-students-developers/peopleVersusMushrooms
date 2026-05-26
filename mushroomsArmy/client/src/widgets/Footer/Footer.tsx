@@ -5,11 +5,19 @@ import Minimap from '../MiniMap/Minimap';
 import './Footer.css';
 import { GameState, TCamera } from '../../pages/Game/types';
 import { camera as globalCamera } from '../../utils/camera';
+import { buildCircularVisibilityMask } from '../../pages/Game/renderer/fogOfWar';
 
-type FooterResource = {
-  label: string;
-  value: string | number;
-};
+import sporometImg from '../../assets/units/Sporomet.png';
+import champignebImg from '../../assets/units/Champigneb.png';
+import eblekarImg from '../../assets/units/Eblekar.png';
+import pizdoglyadImg from '../../assets/units/Pizdoglyad1.png';
+import vzryvomorImg from '../../assets/buildings/vzryvomor/frame_0.png'
+import sporovayaBashnyaImg from '../../assets/buildings/sporovaya_bashnya/idle.png'
+
+import soldierImg from '../../assets/people/soldier.png';
+import sniperImg from '../../assets/people/sniper.png';
+import bmpImg from '../../assets/people/bmp.png';
+import partizanImg from '../../assets/people/partizan1.png';
 
 const ECONOMY_RESOURCES = [
   { id: 'mycelium', label: 'Мицелий', value: 1250 },
@@ -18,56 +26,81 @@ const ECONOMY_RESOURCES = [
   { id: 'energy', label: 'Энергия', value: '94%' },
 ];
 
-const getFooterResources = (state: GameState | null): FooterResource[] => {
-  const aliveUnits = state?.units.filter((unit) => unit.hp > 0) ?? [];
-  const aliveBuildings =
-    state?.buildings.filter((building) => building.hp > 0 && building.isAlive !== false) ?? [];
+const MUSHROOM_UNITS = [
+  { type: 'sporomet',     label: 'Споромет',     image: sporometImg },
+  { type: 'champigneb',   label: 'Шампиньеб',   image: champignebImg },
+  { type: 'eblekar',      label: 'Еблекарь',    image: eblekarImg },
+  { type: 'pizdoglyad',   label: 'Пиздогляд',   image: pizdoglyadImg },
+  { type: 'vzryvomor',      label: 'Взрывомор',    image: vzryvomorImg },
+  { type: 'sporovaya_bashnya', label: 'Споровая башня', image: sporovayaBashnyaImg },
+] as const;
 
-  return [
-    {
-      label: 'Спорометов',
-      value: aliveUnits.filter((unit) => unit.type === 'sporomet').length,
-    },
-    {
-      label: 'Шампиньебов',
-      value: aliveUnits.filter((unit) => unit.type === 'champigneb').length,
-    },
-    {
-      label: 'Еблекарей',
-      value: aliveUnits.filter((unit) => unit.type === 'eblekar').length,
-    },
-    {
-      label: 'Пиздогляд',
-      value: aliveUnits.filter((unit) => unit.type === 'pizdoglyad').length,
-    },
-    {
-      label: 'Взрывоморов',
-      value: aliveBuildings.filter((building) => building.type === 'vzryvomor').length,
-    },
-    {
-      label: 'Споровых башен',
-      value: aliveBuildings.filter((building) => building.type === 'sporovaya_bashnya').length,
-    },
-  ];
+const PEOPLE_ARMY_UNITS = [
+  { type: 'soldier', label: 'Солдат', image: soldierImg },
+  { type: 'sniper', label: 'Снайпер', image: sniperImg },
+  { type: 'bmp', label: 'БМП', image: bmpImg },
+  { type: 'partizan', label: 'Партизан', image: partizanImg },
+] as const;
+
+
+const getMushroomArmy = (state: GameState | null) => {
+  const aliveUnits = state?.units?.filter((unit) => unit.hp > 0) ?? [];
+  const aliveBuildings = state?.buildings?.filter((b) => b.hp > 0 && b.isAlive !== false) ?? [];
+
+  return MUSHROOM_UNITS.map((unit) => {
+    let count = 0;
+    if (unit.type === 'vzryvomor' || unit.type === 'sporovaya_bashnya') {
+      count = aliveBuildings.filter((b) => b.type === unit.type).length;
+    } else {
+      count = aliveUnits.filter((u) => u.type === unit.type).length;
+    }
+    return { ...unit, count };
+  });
+};
+
+const getPeopleArmy = (state: GameState | null) => {
+  if (!state?.map?.length) {
+    return PEOPLE_ARMY_UNITS.map((unit) => ({ ...unit, count: 0 }));
+  }
+
+  const rows = state.map.length;
+  const cols = state.map[0]?.length ?? 0;
+  const visibilityMask = buildCircularVisibilityMask(state, rows, cols);
+
+  const visibleUnits = state?.enemyUnits?.filter((unit) => {
+    if ((unit.hp ?? 1) <= 0) return false;
+    const ux = Math.floor(unit.x);
+    const uy = Math.floor(unit.y);
+    return visibilityMask[uy]?.[ux] === true;
+  }) ?? [];
+
+  return PEOPLE_ARMY_UNITS.map((unit) => ({
+    ...unit,
+    count: visibleUnits.filter((u) => u.type === unit.type).length,
+  }));
 };
 
 const Footer: React.FC = () => {
   const mediator = useContext(MediatorContext);
+
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const [resources, setResources] = useState<FooterResource[]>(getFooterResources(null));
+  const [mushroomArmy, setMushroomArmy] = useState(getMushroomArmy(null));
+  const [peopleArmy, setPeopleArmy] = useState(getPeopleArmy(null));
 
   const [cameraState, setCameraState] = useState<TCamera>({ ...globalCamera });
 
   useEffect(() => {
     if (!mediator) return;
 
-   const handler = (newState: GameState) => {
+    const handler = (newState: GameState) => {
       setGameState(newState);
-      setResources(getFooterResources(newState));
+      setMushroomArmy(getMushroomArmy(newState));
+      setPeopleArmy(getPeopleArmy(newState));
     };
+
     mediator.subscribe(CONFIG.MEDIATOR.EVENTS.GAME_STATE_UPDATED, handler);
 
-      const interval = setInterval(() => {
+    const interval = setInterval(() => {
       setCameraState({
         offsetX: globalCamera.offsetX,
         offsetY: globalCamera.offsetY,
@@ -91,35 +124,58 @@ const Footer: React.FC = () => {
       </div>
 
       <div className="game-footer-main-panel">
+        {/* Ресурсы */}
+        {/* <div className="game-economy-box">
+          <span className="game-section-title">•РЕСУРСы•</span>
+          <div className="game-economy-list">
+            {ECONOMY_RESOURCES.map((res) => (
+              <div className="game-info-item" key={res.id}>
+                <span className="game-info-label">{res.label}:</span>
+                <span className="game-info-value">{res.value}</span>
+              </div>
+            ))}
+          </div>
+        </div> */}
 
-        <div className="game-economy-container">
-          <span className="game-economy-resources-title">Ресурсы</span>
-          <div className="game-economy-resources">
-            <div className="game-economy-resources-list">
-              {ECONOMY_RESOURCES.map((resource) => (
-                <div className="game-economy-resource" key={resource.id}>
-                  <span className="game-economy-resource-label">{resource.label}:</span>
-                  <span className="game-economy-resource-value">{resource.value}</span>
-                </div>
-              ))}
-            </div>
+        {/* Армия */}
+        <div className="game-army-box">
+          <span className="game-section-title">•армия грибов•</span>
+          <div className="game-army-list">
+            {mushroomArmy.map((unit) => (
+              <div className="army-unit-item" key={unit.type} title={unit.label}>
+                <img
+                  src={unit.image}
+                  alt={unit.label}
+                  className="unit-icon"
+                  width={50}
+                  height={50}
+                />
+                <span className="unit-count">{unit.count}</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="game-footer-stats-layout">
-          <span className="game-economy-resources-title">Армия</span>
-          <div className="game-footer-stats-container">
-            <div className="game-footer-stats">
-              {resources.map((resource) => (
-                <div className="game-stat-item" key={resource.label}>
-                  <span className="game-stat-label">{resource.label}</span>
-                  <span className="game-stat-value">{resource.value}</span>
-                </div>
-              ))}
-            </div>
+
+
+        {/* Армия - ВРАГИ */}
+        <div className="game-army-enemy-box">
+          <span className="game-section-title">•армия людей•</span>
+          <div className="game-army-list">
+            {peopleArmy.map((unit) => (
+              <div className="army-unit-item" key={unit.type} title={unit.label}>
+                <img
+                  src={unit.image}
+                  alt={unit.label}
+                  className="unit-icon"
+                  width={50}
+                  height={50}
+                />
+                <span className="unit-count">{unit.count}</span>
+              </div>
+            ))}
           </div>
         </div>
-
       </div>
     </footer>
   );

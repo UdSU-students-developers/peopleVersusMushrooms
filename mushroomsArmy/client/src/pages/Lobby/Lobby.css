@@ -1,128 +1,199 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+@import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&display=swap');
+
 .lobby {
-    min-height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     display: flex;
     justify-content: center;
-    align-items: flex-start;
-    background: linear-gradient(135deg, #eef2ff, #f0f0f0);
-    font-family: Arial, sans-serif;
-    padding: 40px 20px;
+    align-items: flex-start;  
+    background: url('../../assets/ui/lobby/lobby-background.png') center / cover no-repeat fixed;
+    font-family: 'Pixelify Sans', sans-serif;
+    /* padding-top: 150px;      */
+    /* padding-top: calc(150px * var(--lobby-scale));      */
+    padding-top: clamp(
+        40px,
+        calc(90px * var(--lobby-scale)),
+        120px
+    );
+    font-size: var(--font-base);
+    overflow-y: auto;
+
+    
+}
+.lobby button {
+    font-family: var(--font-main);
+}
+.lobby::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 12, 20, 0.445);           
+    backdrop-filter: blur(2px);                   
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 2;
+}
+.lobby::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: repeating-radial-gradient(
+    circle at 50% 50%, 
+    rgba(9, 14, 63, 0.168) 0%, 
+    transparent 10%
+  );
+  background-size: 4px 4px; 
+  opacity: 0.5;
+  pointer-events: none; 
+  z-index: 3;
 }
 
 .lobby__container {
+    width: min(100%, calc(900px * var(--lobby-scale)));
+    max-width: clamp(
+        300px,
+        calc(700px * var(--lobby-scale)),
+    );
+    min-width: 0;
+    background: #ffffff15;
+    border-radius: 8px;
+    padding:37px 28px;
+    /* margin-top: -90px;  */
+    z-index: 10;
+    border: 2px solid rgb(0, 16, 17);
+    backdrop-filter: blur(20px);                   
+    -webkit-backdrop-filter: blur(20px);    
+
+    margin-bottom: 40px;
+}
+
+.lobby__inner-border {
+    display: flex;
+    flex-direction: column;
+    border: 2px solid rgba(29, 53, 51, 0.568);
+    border-radius: 6px;
+    padding: calc(16px * var(--lobby-scale)) calc(28px * var(--lobby-scale));
+    height: 100%;
     width: 100%;
-    max-width: 900px;
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
-    padding: 24px;
+    box-sizing: border-box;
 }
 
 .lobby__container > .lobby__secondaryButton {
-    margin-top: 4px;
+    margin-top: calc(3px * var(--lobby-scale));
 }
 
-.lobby__topBar {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 18px;
-}
-
-.lobby__userName {
-    font-size: 16px;
-    font-weight: 600;
-    color: #2d3748;
-}
 
 .lobby__title {
-    margin: 0 0 16px;
-    font-size: 28px;
-    color: #1f2937;
+    position: relative;
+    top: calc(-31px * var(--lobby-scale));
+    text-align: center;
+    width: 100%;             
+    margin: calc(-16px * var(--lobby-scale)) 0 calc(20px * var(--lobby-scale));
+    font-size: var(--title-font-size);
+    color: rgb(217, 144, 54);
+    -webkit-text-stroke: 0.8px rgb(113, 22, 22);
 }
 
 .lobby__subtitle {
-    margin: 0 0 16px;
+    margin: 0 0 calc(16px * var(--lobby-scale));
     color: #6b7280;
+    font-size: var(--font-small);
 }
 
 .lobby__list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    margin-bottom: 16px;
+    gap: calc(12px * var(--lobby-scale));
+    margin-bottom: calc(16px * var(--lobby-scale));
 }
 
 .lobby__card {
-    border: 1px solid #e5e7eb;
+    border: 1px solid #222a2b;
     border-radius: 12px;
-    padding: 14px;
-    background: #f9fafb;
+    padding: calc(14px * var(--lobby-scale));
+    background: #31404d00;
 }
 
 .lobby__cardHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: calc(10px * var(--lobby-scale));
 }
 
 .lobby__cardTitle {
     margin: 0;
-    font-size: 18px;
-    color: #111827;
+    font-size: var(--font-base);
+    color: #9ea4af;
+    -webkit-text-stroke: 0.5px rgb(0, 16, 17);
 }
 
 .lobby__slots {
-    color: #4b5563;
+    color: #9ea4af;
+    -webkit-text-stroke: 0.5px rgb(0, 16, 17);
     font-weight: 600;
+    font-size: var(--font-small);
 }
 
 .lobby__cardActions {
     display: flex;
-    gap: 10px;
+    gap: calc(10px * var(--lobby-scale));
     align-items: center;
 }
 
 .lobby__roleLabel {
     flex: 1;
-    font-size: 14px;
+    font-size: var(--font-small);
+
     font-weight: 600;
-    color: #374151;
-    padding: 0 4px;
+    color: #9ea4af;
+    -webkit-text-stroke: 0.5px rgb(0, 16, 17);
+    padding: 0 calc(4px * var(--lobby-scale));
 }
 
 .lobby__errorToast {
+    position: relative;
+    top: calc(-130px * var(--lobby-scale));
     background: #fee2e2;
     border: 1px solid #fca5a5;
     color: #b91c1c;
     border-radius: 8px;
-    padding: 10px 16px;
-    margin-bottom: 12px;
-    font-size: 14px;
+    padding: calc(10px * var(--lobby-scale)) calc(16px * var(--lobby-scale));
+    margin-bottom: calc(12px * var(--lobby-scale));
+    font-size: var(--font-small);
     font-weight: 500;
     text-align: center;
+    z-index: 100;
 }
 
 .lobby__select {
     flex: 1;
-    min-height: 38px;
+    min-height: calc(38px * var(--lobby-scale));
     border: 1px solid #d1d5db;
     border-radius: 8px;
-    padding: 0 10px;
+    padding: 0 calc(10px * var(--lobby-scale));
     background: #fff;
+    font-size: var(--font-small);
 }
 
 .lobby__primaryButton,
 .lobby__secondaryButton,
 .lobby__dangerButton {
-    min-height: 38px;
-    padding: 0 14px;
+    min-height: calc(38px * var(--lobby-scale));
+    padding: 0 calc(14px * var(--lobby-scale));
     border: none;
     border-radius: 8px;
     color: white;
     cursor: pointer;
     transition: background-color 0.2s ease;
-    font-size: 14px;
+    font-size: var(--font-small);
 }
 
 .lobby__primaryButton:disabled,
@@ -130,6 +201,13 @@
 .lobby__dangerButton:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+.lobby__modalTitle {
+    margin: 0 0 12px;
+    text-align: center;
+    font-size: 20px;
+    color: #4b4742;
 }
 
 .lobby__primaryButton {
@@ -141,11 +219,28 @@
 }
 
 .lobby__secondaryButton {
-    background: #4b5563;
+    background: #414242;
+    
+}
+.lobby__secondaryButton:hover {
+    background: #36322e;
 }
 
-.lobby__secondaryButton:hover {
-    background: #374151;
+.lobby__secondaryButton--create {
+    margin-top: 60px;      
+    margin: calc(40px * var(--lobby-scale)) auto 0 auto;
+    display: block;
+    width: fit-content;
+    bottom: calc(-40px * var(--lobby-scale));
+    padding: calc(4px * var(--lobby-scale)) calc(20px * var(--lobby-scale));
+    background: #4b5358;
+    border: 1px solid rgb(0, 16, 17);
+    line-height: 1.2;         
+    min-height: auto;
+    font-size: var(--font-small);
+}
+.lobby__secondaryButton--create:hover {
+    background: #39635d;
 }
 
 .lobby__dangerButton {
@@ -157,40 +252,42 @@
 }
 
 .lobby__empty {
-    border: 1px dashed #d1d5db;
-    border-radius: 10px;
-    padding: 18px;
-    color: #6b7280;
+    padding: calc(18px * var(--lobby-scale));
+    color: rgb(0, 16, 17);
     text-align: center;
+    font-size: var(--font-base);
 }
 
 .lobby__rolesTable {
-    min-width: 720px;
+    min-width: calc(720px * var(--lobby-scale));
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 16px;
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
+    margin-bottom: calc(16px * var(--lobby-scale));
+    border-radius: 8px;
     overflow: hidden;
 }
 
 .lobby__tableWrap {
+    width: 100%;
+    max-width: 100%;
     overflow-x: auto;
-    margin-bottom: 16px;
+    overflow-x: auto;
+    margin-bottom: calc(16px * var(--lobby-scale));
 }
 
 .lobby__rolesTable th,
 .lobby__rolesTable td {
-    border-bottom: 1px solid #e5e7eb;
-    padding: 10px;
+    border-bottom: 1px solid #1A2E31;
+    padding: calc(10px * var(--lobby-scale));
     text-align: left;
     vertical-align: middle;
+    font-size: var(--font-small);
 }
 
 .lobby__rolesTable th {
-    background: #f3f4f6;
-    color: #111827;
+    background: #1a2e31da;
+    color: #a2a7b1;
+    -webkit-text-stroke: 0.5px rgb(0, 16, 17);
     font-weight: 600;
 }
 
@@ -200,24 +297,26 @@
 
 .lobby__readyBadge {
     display: inline-block;
-    background: #e5e7eb;
-    color: #374151;
+    background: #1A2E31;
+    color: #a2a7b1;
+    -webkit-text-stroke: 0.5px rgb(0, 16, 17);
     border-radius: 999px;
-    padding: 2px 10px;
-    font-size: 12px;
+    padding: calc(2px * var(--lobby-scale)) calc(10px * var(--lobby-scale));
+    font-size: var(--font-small);
     font-weight: 600;
 }
 
 .lobby__readyBadge--yes {
-    background: #dcfce7;
+    background: #164627;
     color: #166534;
 }
 
 .lobby__roomActions {
     display: flex;
-    gap: 10px;
+    gap: calc(10px * var(--lobby-scale));
     flex-wrap: wrap;
     align-items: center;
+    margin-top: calc(40px * var(--lobby-scale));
 }
 
 .lobby__modalOverlay {
@@ -227,39 +326,41 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 16px;
-    z-index: 20;
+    padding: calc(16px * var(--lobby-scale));
 }
 
 .lobby__modal {
     width: 100%;
-    max-width: 420px;
-    background: #fff;
+    max-width: calc(420px * var(--lobby-scale));
+    background: rgb(104, 117, 119);
     border-radius: 12px;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
-    padding: 16px;
+    padding: calc(16px * var(--lobby-scale));
+    border: 2px rgb(0, 16, 17);
 }
 
 .lobby__modalTitle {
-    margin: 0 0 12px;
-    font-size: 20px;
-    color: #111827;
+    margin: 0 0 calc(12px * var(--lobby-scale));
+    text-align: center;
+    font-size: var(--title-font-size);
+    color: rgb(217, 144, 54);
+    -webkit-text-stroke: 0.8px rgb(113, 22, 22);
 }
 
 .lobby__input {
     width: 100%;
-    min-height: 38px;
-    border: 1px solid #d1d5db;
+    min-height: calc(38px * var(--lobby-scale));
+    border: 1px solid rgb(0, 16, 17);
     border-radius: 8px;
-    padding: 0 10px;
-    margin-bottom: 10px;
+    padding: 0 calc(10px * var(--lobby-scale));
+    margin-bottom: calc(10px * var(--lobby-scale));
 }
 
 .lobby__modalActions {
     display: flex;
     justify-content: flex-end;
-    gap: 8px;
-    margin-top: 12px;
+    gap: calc(8px * var(--lobby-scale));
+    margin-top: calc(12px * var(--lobby-scale));
 }
 
 @media (max-width: 640px) {
@@ -292,4 +393,4 @@
         flex-direction: column;
         align-items: stretch;
     }
-}
+} 

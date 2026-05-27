@@ -11,6 +11,9 @@ import {
     BUILDING_DEFAULT_SIZE,
     LARVA_SPRITE_SRCS,
 } from './assets';
+import { TILE } from './terrainConstants';
+import { drawTerrainCell } from './terrainRenderer';
+import { getTerrainTilePreviewUrl } from './terrainTiles';
 
 /** Базовый размер клетки (карта скроллится, если не влезает) */
 const MIN_CELL_PX = 40;
@@ -27,16 +30,15 @@ const ZOOM_FACTOR = 0.2;
 /** Кадры спрайтов (ходьба юнитов, vzryvomor, здания mushroomsEconomy, союзные здания) */
 const SPRITE_FRAME_MS = 200;
 
-/** Типы клеток рельефа (как в map/server/.../MapConfig.js TILES) */
-const TILE = {
-    PLANE: 0,
-    WATER: 1,
-    MOUNTAIN: 2,
-} as const;
-
 /** Типы юнитов в легенде (фиксированный порядок) */
 const ALLY_LEGEND_TYPES = ['soldier', 'bmp', 'partizan', 'sniper'] as const;
 const ENEMY_LEGEND_TYPES = ['sporomet', 'champigneb', 'eblekar', 'pizdoglyad', 'larva'] as const;
+
+const TERRAIN_PREVIEW = {
+    grass: getTerrainTilePreviewUrl('grass', 0),
+    water: getTerrainTilePreviewUrl('water', 0),
+    stone: getTerrainTilePreviewUrl('stone', 0),
+};
 
 const LEGEND_LABELS: Record<(typeof ALLY_LEGEND_TYPES)[number] | (typeof ENEMY_LEGEND_TYPES)[number], string> = {
     soldier: 'Солдат',
@@ -277,38 +279,6 @@ function getBuildingSize(b: EnemyBuildingData): number {
     return Math.max(1, Number(b.size) || BUILDING_DEFAULT_SIZE[type] || 1);
 }
 
-function drawWaterCell(ctx: CanvasRenderingContext2D, px: number, py: number, cell: number) {
-    const g = ctx.createLinearGradient(px, py, px + cell, py + cell);
-    g.addColorStop(0, COLOR.waterLight);
-    g.addColorStop(0.45, COLOR.water);
-    g.addColorStop(1, COLOR.waterDeep);
-    ctx.fillStyle = g;
-    ctx.fillRect(px, py, cell, cell);
-    const cx = px + cell * 0.35;
-    const cy = py + cell * 0.4;
-    const r = Math.max(1, cell * 0.55);
-    const h = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-    h.addColorStop(0, 'rgba(140, 210, 255, 0.12)');
-    h.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = h;
-    ctx.fillRect(px, py, cell, cell);
-}
-
-function drawMountainCell(ctx: CanvasRenderingContext2D, px: number, py: number, cell: number) {
-    ctx.fillStyle = COLOR.mountainDark;
-    ctx.fillRect(px, py, cell, cell);
-    ctx.fillStyle = COLOR.mountain;
-    const inset = cell * 0.08;
-    ctx.fillRect(px + inset, py + inset, cell - 2 * inset, cell - 2 * inset);
-    ctx.fillStyle = COLOR.mountainLight;
-    const h = Math.max(1, cell * 0.25);
-    const w = Math.max(1, cell * 0.35);
-    ctx.fillRect(px + inset, py + inset, w, h);
-    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-    ctx.lineWidth = Math.max(0.5, cell * 0.05);
-    ctx.strokeRect(px + inset, py + inset, cell - 2 * inset, cell - 2 * inset);
-}
-
 function drawMap(ctx: CanvasRenderingContext2D, map: number[][], cell: number) {
     const rows = map.length;
     const cols = map.reduce((max, row) => Math.max(max, row.length), 0);
@@ -316,35 +286,13 @@ function drawMap(ctx: CanvasRenderingContext2D, map: number[][], cell: number) {
     ctx.fillStyle = COLOR.bg;
     ctx.fillRect(0, 0, cols * cell, rows * cell);
 
-    ctx.strokeStyle = COLOR.grid;
-    ctx.lineWidth = Math.max(0.25, cell * 0.04);
-    for (let y = 0; y <= rows; y++) {
-        ctx.beginPath();
-        ctx.moveTo(0, y * cell);
-        ctx.lineTo(cols * cell, y * cell);
-        ctx.stroke();
-    }
-    for (let x = 0; x <= cols; x++) {
-        ctx.beginPath();
-        ctx.moveTo(x * cell, 0);
-        ctx.lineTo(x * cell, rows * cell);
-        ctx.stroke();
-    }
-
     for (let y = 0; y < rows; y++) {
         const row = map[y];
         for (let x = 0; x < cols; x++) {
             const v = row[x];
             const px = x * cell;
             const py = y * cell;
-            if (v === TILE.WATER) {
-                drawWaterCell(ctx, px, py, cell);
-            } else if (v === TILE.MOUNTAIN) {
-                drawMountainCell(ctx, px, py, cell);
-            } else if (v !== undefined && v !== TILE.PLANE) {
-                ctx.fillStyle = COLOR.terrainUnknown;
-                ctx.fillRect(px, py, cell, cell);
-            }
+            drawTerrainCell(ctx, x, y, px, py, cell, v, COLOR.terrainUnknown);
         }
     }
 }
@@ -847,19 +795,17 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage }) => {
                         </div>
                     ))}
                     <p className="game-legend-subhead">Рельеф</p>
-                    <div className="game-legend-row">
-                        <span
-                            className="game-legend-dot"
-                            style={{ background: COLOR.water, borderRadius: '2px' }}
-                        />
-                        Вода
+                    <div className="game-legend-row game-legend-row--unit">
+                        <img className="game-legend-sprite game-legend-sprite--terrain" src={TERRAIN_PREVIEW.grass} alt="" width={22} height={22} />
+                        <span className="game-legend-name">Земля</span>
                     </div>
-                    <div className="game-legend-row">
-                        <span
-                            className="game-legend-dot"
-                            style={{ background: COLOR.mountain, borderRadius: '2px' }}
-                        />
-                        Горы / камень
+                    <div className="game-legend-row game-legend-row--unit">
+                        <img className="game-legend-sprite game-legend-sprite--terrain" src={TERRAIN_PREVIEW.water} alt="" width={22} height={22} />
+                        <span className="game-legend-name">Вода</span>
+                    </div>
+                    <div className="game-legend-row game-legend-row--unit">
+                        <img className="game-legend-sprite game-legend-sprite--terrain" src={TERRAIN_PREVIEW.stone} alt="" width={22} height={22} />
+                        <span className="game-legend-name">Камень / горы</span>
                     </div>
                 </div>
             </div>

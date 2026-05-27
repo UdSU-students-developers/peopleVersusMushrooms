@@ -153,6 +153,12 @@
     flex-shrink: 0;
 }
 
+.game-legend-sprite--terrain {
+    image-rendering: pixelated;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 2px;
+}
+
 .game-legend-count {
     font-variant-numeric: tabular-nums;
     font-weight: 600;

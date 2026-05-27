@@ -110,10 +110,18 @@ class Worker extends Unit {
 
     //переопределяем move
     move() {
+        const oldX = this.x;
+        const oldY = this.y;
+
         if (this.status === WORKER_STATUS.SEARCH) {
             this.updateSearchStatus();
         }
         super.move();
+
+        if (oldX !== this.x || oldY !== this.y) {
+            this.economy.updatedUnits.push(this.get());
+            this.economy.updated = true;
+        }
     }
 
     //получить текущий статус

@@ -27,7 +27,7 @@ const CONFIG = {
         },
         WORKER: {
             HP: 150,
-            SPEED: 2,
+            SPEED: 0.02,
             TYPE: "worker",
             VISIBILITY: 3,
         },

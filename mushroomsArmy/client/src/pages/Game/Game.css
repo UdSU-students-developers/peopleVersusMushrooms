@@ -1,0 +1,111 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&display=swap');
+
+.game-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(7, 8, 14, 0.877);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(20px);
+}
+
+.game-overlay-content {
+  background: #080808;
+  width: 280px;
+  padding: 24px 20px;
+  text-align: center;
+  color: rgb(220, 51, 51);
+  box-shadow: 0 0 700px rgb(0, 0, 0);
+  border: 2px solid rgba(12, 10, 0, 0);
+  border-radius: 16px;
+}
+
+.game-overlay-content h2 {
+  color: #a2b8b5;
+  font-size: 24px;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+  text-shadow: 
+    0 0 10px rgba(255, 204, 0, 0.7),
+    0 0 20px rgba(255, 204, 0, 0.5),
+    0 0 30px rgba(255, 204, 0, 0.3);
+}
+
+.game-overlay-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+}
+
+.game-btn, 
+.game-btn-secondary {
+  height: 44px;
+  width: 100%;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 2px solid #ffcc00;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #835134bb;
+  color: #ffcc00;
+  font-weight: bold;
+}
+
+.game-btn:hover, 
+.game-btn-secondary:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 15px rgba(255, 204, 0, 0.4);
+}
+.game-page {
+  position: fixed;
+  top: var(--header-height);
+  right: 0;
+  bottom: var(--footer-height);
+  left: 0;
+  width: 100%;
+  background-color: #1d1010;
+  margin: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.game-canvas-wrapper {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: #1a1a1a;
+}
+.game-footer-stats {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap; 
+  gap: calc(16px * var(--scale)); 
+}
+
+
+.game-stat-item {
+  display: flex;
+  align-items: center;
+  gap: calc(6px * var(--scale)); 
+  white-space: nowrap;
+}
+
+.game-stat-label::after {
+  content: ":";
+}

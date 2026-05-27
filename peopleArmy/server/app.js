@@ -1,27 +1,63 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const app = express();
+const server = http.createServer(app);
+// global imports
+const GLOBAL_CONFIG = require('../../global/globalConfig');
+const LobbyManager = require('../../global/modules/lobby/LobbyManager');
+// config
+// answer
+// mediator
+// UserManager
+// db
+
+// local imports
 const CONFIG = require('./config');
 const Router = require('./application/router/Router');
+const Answer = require('./application/Answer');
+const Common = require('./application/modules/common/Common');
 const DB = require('./application/modules/db/DB');
 const Mediator = require('./application/modules/mediator/Mediator');
-const ExampleManager = require('./application/modules/exampleModule/ExampleManager')
-const { NAME, PORT, DATABASE } = CONFIG;
+const ChatManager = require('./application/modules/chat/ChatManager');
+const ArmyManager = require('./application/modules/army/ArmyManager');
+const UserManager = require('../../global/modules/user/UserManager');
+const { NAME, PORT, DATABASE, ROLE } = CONFIG;
 
+// Создаем сокеты в app.js
+const io = new Server(server, {
+    cors: GLOBAL_CONFIG.CORS
+});
+
+const answer = new Answer();
+const common = new Common();
 const db = new DB({ DATABASE });
 const mediator = new Mediator(CONFIG.MEDIATOR);
 
-const exampleManager = new ExampleManager(mediator, db);
+// Менеджеры создаём здесь, чтобы они зарегистрировали триггеры в медиаторе
+new UserManager({ mediator, db, io, common, answer });
+new ChatManager({ mediator, db, io, common, answer });
+new ArmyManager({ mediator, db, io, common, answer });
+new LobbyManager({ mediator, db, io, common, answer }, ROLE);
+// io.on('connection', (socket) => {
+//     console.log('connected:', socket.id);
 
-const router = new Router({ exampleManager });
-
+//     socket.onAny((event, ...args) => {
+//         console.log('SERVER EVENT:', event, args);
+//     });
+// });
+app.use(GLOBAL_CONFIG.CORS.middleware);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(`${__dirname}/public`));
-app.use('/', router);
+app.use('/', new Router(mediator, answer));
 
 function deinit() {
-    db.destrucor();
-    setTimeout(() =>process.exit(), 500);
+    armyManager.destructor();
+    db.destructor();
+    setTimeout(() => process.exit(), 500);
 }
 
-app.listen(PORT, () => console.log(`${NAME} started at port ${PORT}`));
+server.listen(PORT, () => console.log(`${NAME} started at port ${PORT}`));
 
-process.on('SIGNINT', deinit);
+process.on('SIGINT', deinit);

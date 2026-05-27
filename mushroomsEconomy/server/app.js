@@ -1,27 +1,53 @@
+//GLOBAL
+const GLOBAL_CONFIG = require('../../global/globalConfig');
+const DB = require('../../global/modules/db/DB');
+const Mediator = require('../../global/modules/Mediator');
+const Answer = require('../../global/Answer');
+const UserManager = require('../../global/modules/user/UserManager');
+const Common = require('../../global/modules/common/Common');
+const LobbyManager = require('../../global/modules/lobby/LobbyManager');
+
+//LOCAL
+const CONFIG = require('./config');
+
 const express = require('express');
 const app = express();
-const CONFIG = require('./config');
+const server = require('http').createServer(app);
+const io = require('socket.io')(server, {cors: GLOBAL_CONFIG.CORS});
+
 const Router = require('./application/router/Router');
-const DB = require('./application/modules/db/DB');
-const Mediator = require('./application/modules/mediator/Mediator');
-const ExampleManager = require('./application/modules/exampleModule/ExampleManager')
-const { NAME, PORT, DATABASE } = CONFIG;
+const GameManager = require('./application/modules/game/GameManager');
+const ChatManager = require('./application/modules/chat/ChatManager');
 
-const db = new DB({ DATABASE });
+const { NAME, PORT } = CONFIG;
+const { DATABASES } = GLOBAL_CONFIG
+
+const common = new Common();
+const db = new DB({ DATABASE: DATABASES.MUSHROOMS_ECONOMY, common });
 const mediator = new Mediator(CONFIG.MEDIATOR);
+const answer = new Answer();
 
-const exampleManager = new ExampleManager(mediator, db);
+new GameManager( { mediator, db, io, answer, common } );
+new UserManager( { mediator, db, io, answer, common } );
+new ChatManager( { mediator, db, io, answer, common } );
+new LobbyManager({ mediator, db, io, answer, common }, GLOBAL_CONFIG.ROLES.MUSHROOM_ECONOMY);
 
-const router = new Router({ exampleManager });
+
+app.use(GLOBAL_CONFIG.CORS.middleware);
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static(`${__dirname}/public`));
-app.use('/', router);
+app.use('/', new Router({ mediator, answer }));
 
 function deinit() {
-    db.destrucor();
-    setTimeout(() =>process.exit(), 500);
+    db.destructor();
+    setTimeout(() => process.exit(), 500);
 }
 
-app.listen(PORT, () => console.log(`${NAME} started at port ${PORT}`));
+const startLog = `${NAME} started at port ${PORT} \nYou can connect to server ONLY from CORS: \n ${GLOBAL_CONFIG.CORS.origin}`;
+
+server.listen(PORT, () => console.log(startLog));
 
 process.on('SIGNINT', deinit);

@@ -1,26 +1,30 @@
 import CONFIG from '../../config';
-import Store from "../Store/Store";
+import Mediator from '../Mediator/Mediator';
 import { TUser } from "./types";
 
-const HOST = CONFIG.HOST;
+
+const { MEDIATOR } = CONFIG;
+const { TRIGGERS } = MEDIATOR;
+const HOST = CONFIG.SERVER_URL;
 
 class Server {
     HOST = HOST;
-    store: Store;
+    mediator: Mediator;
     chatInterval: NodeJS.Timer | null = null;
-    showErrorCb: (text: string) => void = function() {};
+    showErrorCb: (text: string) => void = function () { };
 
-    constructor(store: Store) {
-        this.store = store;
+    constructor(mediator: Mediator) {
+        this.mediator = mediator;
     }
 
     private async request<T>(
         method: string,
         params: { [key: string]: string } = {},
-        queryParams: { [key: string]: string } = {}
+        queryParams: { [key: string]: string } = {},
+        options?: { passThroughAnswerErrors?: boolean }
     ): Promise<T | null> {
         try {
-            const token = this.store.getToken();
+            const token = this.mediator.get(TRIGGERS.GET_STORE, 'token');
             let url = `${this.HOST}/${method}`;
             const paramValues = Object.values(params);
             if (paramValues.length > 0) {
@@ -41,6 +45,14 @@ class Server {
             const response = await fetch(url);
             const body = await response.json();
 
+            if (body?.result === 'error') {
+                if (options?.passThroughAnswerErrors) {
+                    return body as T;
+                }
+                this.setError(body.error);
+                console.error("Server error:", body.error);
+                return null;
+            }
             if (body && body.error) {
                 this.setError(body.error);
                 console.error("Server error:", body.error);
@@ -66,9 +78,13 @@ class Server {
         const user = await this.request<TUser & { username?: string; name?: string; id?: number }>("reg", { username, password });
         if (!user) return false;
         const name = user.username ? user.username : user.name;
-        this.store.setUser({ token: user.token, name: name, id: user.id });
+        this.mediator.get(TRIGGERS.SET_STORE, { name: 'token', value: user.token });
+        this.mediator.get(TRIGGERS.SET_STORE, { name: 'user', value: { token: user.token, name, id: user.id } });
+
+
         return true;
     }
+
 }
 
 export default Server;

@@ -1,19 +1,31 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
+
 import App from './App';
-import reportWebVitals from './reportWebVitals';
+
+// Блокируем масштабирование страницы браузером через клавиатуру и колёсико
+window.addEventListener('keydown', (e) => {
+  if (
+    e.ctrlKey && 
+    (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '_')
+  ) {
+    e.preventDefault();
+  }
+});
+
+window.addEventListener('wheel', (e) => {
+  if (e.ctrlKey) {
+    e.preventDefault();
+  }
+}, { passive: false });
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
+
 root.render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
 );
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();

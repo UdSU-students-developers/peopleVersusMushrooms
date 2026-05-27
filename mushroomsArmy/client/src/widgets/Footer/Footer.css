@@ -1,0 +1,206 @@
+@import url('https://fonts.googleapis.com/css2?family=Handjet:wght@400;500;600;700&display=swap');
+
+.game-footer-wrapper {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  z-index: 100;
+  font-family: 'Pixelify Sans', sans-serif;
+}
+
+.game-footer-main-panel {
+  width: 100%;
+  height: var(--footer-height);
+  background-color: rgb(25, 19, 5);
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
+    url('../../assets/ui/tree.webp');
+  background-size: calc(100px * var(--scale)) calc(100px * var(--scale));
+  background-position: center;
+  background-repeat: repeat;
+  box-sizing: border-box;
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5), 0 -4px 14px rgba(0, 0, 0, 0.35);
+  border: 2px solid rgb(25, 19, 5);
+
+  display: flex;
+  align-items: flex-start;    
+  padding-left: calc(var(--minimap-box-size) + 20px);
+  padding-top: calc(1px * var(--scale)); 
+  padding-bottom: calc(4px * var(--scale));
+  gap: calc(40px * var(--scale));
+}
+
+/* ===================== РЕСУРСЫ ===================== */
+.game-economy-box {
+  width: calc(250px * var(--scale)); 
+  height: calc(var(--footer-height) - (28px * var(--scale)));
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: calc(6px * var(--scale));
+  box-sizing: border-box;
+  padding: calc(1px * var(--scale)) 14px;
+  overflow: hidden;
+}
+.game-economy-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: calc(4px * var(--scale)) 14px;
+  align-items: baseline;
+}
+
+/* ================= АРМИЯ ГРИБОВ ==================== */
+.game-army-box {
+  flex: 0 0 calc(440px * var(--scale));
+  width: calc(440px * var(--scale));
+  height: calc(var(--footer-height) - (28px * var(--scale)));
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: calc(6px * var(--scale));
+  box-sizing: border-box;
+  padding: calc(1px * var(--scale)) 20px;
+}
+
+
+/* ================= АРМИЯ ЛЮДЕЙ ==================== */ 
+.game-army-enemy-box {
+  flex: 1 1 auto;
+  min-width: calc(280px * var(--scale));
+  max-width: calc(300px * var(--scale));
+  height: calc(var(--footer-height) - (28px * var(--scale)));
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: calc(6px * var(--scale));
+  box-sizing: border-box;
+  padding: calc(1px * var(--scale)) 20px;
+}
+
+.game-subsection-title {
+  font-size: calc(17px * var(--scale));
+  font-weight: 400;
+  color: rgb(235, 201, 120);
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.45);
+  letter-spacing: 1px;
+}
+
+.unit-icon--building {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  font-size: calc(18px * var(--scale));
+  font-weight: 700;
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ===================== Общие ===================== */
+.game-section-title {
+  font-size: calc(20px * var(--scale)); 
+  font-weight: 100;
+  color: rgb(217, 144, 54);
+  text-shadow: 1px 1px 1px rgb(113, 22, 22);
+  letter-spacing: 1.5px;
+  text-align: center;
+  margin: 0;
+}
+.game-info-item {
+  display: flex;
+  align-items: center;
+  gap: calc(6px * var(--scale));
+  white-space: nowrap;
+}
+.game-info-label {
+  font-size: calc(16.5px * var(--scale));
+  color: #e0e0e0;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.9);
+}
+.game-info-value {
+  font-family: 'Handjet', sans-serif;
+  font-size: calc(19px * var(--scale));
+  font-weight: 700;
+  font-weight: bold;
+  color: rgb(217, 144, 54);
+  text-shadow: 1px 1px 1px rgb(113, 22, 22);
+  letter-spacing: 0.5px;
+}
+
+
+/* ===================== Армия (иконки) ===================== */
+.game-army-list {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: calc(20px * var(--scale));
+  row-gap: calc(8px * var(--scale));
+  align-items: flex-start;
+}
+.army-unit-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: help;
+}
+.unit-icon {
+  width: calc(46px * var(--scale));
+  height: calc(46px * var(--scale));
+  image-rendering: pixelated;
+  border: calc(2px * var(--scale)) solid #3d2b1a;
+  border-radius: calc(6px * var(--scale));
+  background-color: rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s ease, border-color 0.1s ease;
+}
+.unit-icon:hover {
+  transform: scale(1.08);         
+  border-color: rgb(217, 144, 54);
+}
+
+.unit-count {
+  font-family: 'Handjet', sans-serif;
+  font-size: calc(17.5px * var(--scale));
+  font-weight: 700;
+  color: rgb(217, 144, 54);
+  text-shadow: 1px 1px 2px rgb(0, 0, 0);
+  min-width: calc(24px * var(--scale));
+  text-align: center;
+  margin-top: calc(3px * var(--scale));
+}
+
+.minimap-container {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  padding: 1px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: min(var(--minimap-box-size), calc(100vw - 12px));
+  height: min(var(--minimap-box-size), calc(100vw - 12px));
+  max-height: calc(100vh - 12px);
+  background-color: #3d2b1a;
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+    url('../../assets/ui/tree.webp');
+  background-size: calc(110px * var(--scale)) calc(110px * var(--scale));
+  background-position: center;
+  background-repeat: repeat;
+  border-radius: 10px;
+  z-index: 101;  
+}
+
+.game-minimap {
+  width: min(var(--minimap-canvas-size), calc(100% - 2px)) !important;
+  height: min(var(--minimap-canvas-size), calc(100% - 2px)) !important;
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .minimap-container {
+    width: min(var(--minimap-box-size), calc(100vw - 8px));
+    height: min(var(--minimap-box-size), calc(100vw - 8px));
+  }
+}

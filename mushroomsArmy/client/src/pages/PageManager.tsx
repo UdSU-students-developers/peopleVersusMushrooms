@@ -1,40 +1,38 @@
-import React, { useState } from 'react';
-import Server from '../services/server/Server';
+import React from 'react';
 import Registration from './Registration/Registration';
 import Login from './Login/Login';
-import Chat from './Chat/Chat'
-import Store from '../services/Store/Store';
+import Lobby from './Lobby/Lobby';
+import Game from './Game/Game';
+import { MediatorContext, ServerContext } from '../App';
+import Mediator from '../services/Mediator/Mediator';
+import Server from '../services/server/Server';
 
 
 export enum PAGES {
     LOGIN,
     REGISTRATION,
-    CHAT,
+    LOBBY,
+    GAME,
 }
 
-export interface IBasePage {
-    setPage: (name: PAGES) => void;
-    server: Server,
-    store: Store,
+interface IPageManagerProps {
+    page: PAGES;
+    setPage: (page: PAGES) => void;
+    mediator: Mediator;
+    server: Server;
 }
 
-const PageManager: React.FC = () => {
-    const [page, setPage] = useState<PAGES>(PAGES.LOGIN);
-    const store = new Store();
-    const server = new Server(store);
-
-    const props = {
-        setPage,
-        server,
-        store,
-    }
+const PageManager: React.FC<IPageManagerProps> = ({page, setPage, mediator, server}) => {
 
     return (
-        <>
-            {page === PAGES.REGISTRATION && <Registration {...props} />}
-            {page === PAGES.LOGIN && <Login {...props} />}
-            {page === PAGES.CHAT && <Chat {...props} />}
-        </>
+        <MediatorContext.Provider value={mediator}>
+            <ServerContext.Provider value={server}>
+                {page === PAGES.REGISTRATION && <Registration setPage={setPage} />}
+                {page === PAGES.LOGIN && <Login setPage={setPage} />}
+                {page === PAGES.LOBBY && <Lobby setPage={setPage} />}
+                {page === PAGES.GAME && <Game setPage={setPage} />}
+            </ServerContext.Provider>
+        </MediatorContext.Provider>
     );
 }
 

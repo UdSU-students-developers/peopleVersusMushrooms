@@ -1,0 +1,230 @@
+.game-page {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+    background: #0d1117;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', 'Fira Mono', monospace;
+    min-height: 0;
+}
+
+.game-sidebar {
+    width: 200px;
+    min-width: 200px;
+    padding: 24px 16px;
+    border-right: 1px solid #1a2332;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: #0d1117;
+    overflow-y: auto;
+}
+
+.game-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #c9d1d9;
+    margin: 0;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.game-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 10px 12px;
+    background: #161b22;
+    border: 1px solid #1a2332;
+    border-radius: 6px;
+}
+
+.game-stat-label {
+    font-size: 11px;
+    color: #6e7681;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.game-stat-value {
+    font-size: 22px;
+    font-weight: 600;
+    color: #4a9eff;
+}
+
+.game-section-label {
+    font-size: 11px;
+    color: #6e7681;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 8px 0;
+}
+
+.game-type-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.game-type-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: transparent;
+    border: 1px solid #1a2332;
+    border-radius: 6px;
+    color: #8b949e;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.game-type-btn:hover {
+    border-color: #30363d;
+    color: #c9d1d9;
+    background: #161b22;
+}
+
+.game-type-btn.active {
+    border-color: #4a9eff;
+    color: #c9d1d9;
+    background: rgba(74, 158, 255, 0.08);
+}
+
+.game-type-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.game-type-dot.soldier {
+    background: #4a9eff;
+    border-radius: 50%;
+}
+
+.game-type-dot.bmp {
+    background: #39d353;
+    border-radius: 2px;
+}
+
+.game-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.game-legend-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #6e7681;
+    padding: 4px 0;
+}
+
+.game-legend-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.game-canvas-wrap {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    cursor: grab;
+    /* inline-block внутри центрируется — scrollWidth/Height = реальный размер карты */
+    text-align: center;
+    line-height: 0;
+    user-select: none;
+}
+
+.game-canvas-wrap.game-canvas-wrap--dragging {
+    cursor: grabbing !important;
+}
+
+.game-canvas-inner {
+    display: inline-flex;
+    vertical-align: top;
+    text-align: left;
+    line-height: normal;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.game-zoom {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.game-zoom-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid #1a2332;
+    border-radius: 5px;
+    color: #8b949e;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.game-zoom-btn:hover {
+    border-color: #30363d;
+    color: #c9d1d9;
+    background: #161b22;
+}
+
+.game-zoom-value {
+    flex: 1;
+    padding: 4px 0;
+    background: transparent;
+    border: 1px solid #1a2332;
+    border-radius: 5px;
+    color: #6e7681;
+    font-size: 12px;
+    text-align: center;
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.game-zoom-value:hover {
+    border-color: #30363d;
+    color: #c9d1d9;
+}
+
+.game-no-map {
+    margin: 0;
+    font-size: 13px;
+    color: #6e7681;
+    padding: 40px 24px;
+    line-height: normal;
+}
+
+.game-canvas {
+    cursor: inherit;
+    display: block;
+    flex-shrink: 0;
+    image-rendering: auto;
+    border: 1px solid #1a2332;
+    border-radius: 4px;
+}
+
+.game-canvas:hover {
+    border-color: #30363d;
+}

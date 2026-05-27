@@ -1,0 +1,130 @@
+.registration-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    box-sizing: border-box;
+    background: linear-gradient(160deg, #eef3f9 0%, #f8fafc 45%, #e8eef6 100%);
+}
+
+.registration-card {
+    width: 100%;
+    max-width: 380px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 28px 28px 24px;
+    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    text-align: left;
+}
+
+.registration-brand {
+    margin: 0 0 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #2563eb;
+}
+
+.registration-title {
+    margin: 0 0 6px;
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.registration-subtitle {
+    margin: 0 0 22px;
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+.registration-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.registration-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.registration-input {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #0f172a;
+    background: #fff;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.registration-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+
+.registration-input::placeholder {
+    color: #94a3b8;
+}
+
+.registration-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.registration-btn {
+    padding: 11px 16px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: background 0.15s ease, transform 0.05s ease;
+}
+
+.registration-btn:active {
+    transform: scale(0.98);
+}
+
+.registration-btn-primary {
+    background: #007bff;
+    color: #fff;
+}
+
+.registration-btn-primary:hover {
+    background: #0056b3;
+}
+
+.registration-btn-secondary {
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+}
+
+.registration-btn-secondary:hover {
+    background: #e2e8f0;
+}
+
+.registration-error {
+    margin: 14px 0 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: #991b1b;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+}

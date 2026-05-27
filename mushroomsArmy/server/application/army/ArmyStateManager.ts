@@ -1,6 +1,5 @@
 import { Army, TArmyState, TBuildingInput } from './Army';
 import Common from '../modules/common/Common';
-import FormationPlanner from './FormationPlanner';
 
 export type ArmyMode = 'defense' | 'attack' | 'balanced';
 
@@ -84,9 +83,6 @@ export class ArmyStateManager {
     private onScoutRespawn?: (scoutGuid: string) => void;
     private economyRequestCallback?: (request: EconomyRequest) => Promise<EconomyResponse | null>;
 
-    // Планировщик построения (lazy-init: базы и карта известны после конструктора Army)
-    private formationPlanner: FormationPlanner | null = null;
-
     // Интервал обновления
     private updateInterval?: NodeJS.Timeout;
     private readonly UPDATE_RATE = 200; // мс
@@ -128,274 +124,111 @@ export class ArmyStateManager {
         for (const u of this.army.units) {
             if (u.isAlive) this.knownUnitGuids.add(u.guid);
         }
-
-        if (this.metrics.currentMode === 'attack') return;
-
-        const planner = this.ensureFormationPlanner();
-        if (!planner) return;
-
-        for (const u of this.army.units) {
-            if (!u.isAlive) continue;
-            if (u.type !== 'sporomet' && u.type !== 'eblekar' && u.type !== 'champigneb') continue;
-            if (u.formationTarget) continue;
-        }
     }
 
-    // Тик-логика формации: counts → планнер → stable assign → wall trigger.
-    // Семантика — spec/formation.md.
+    // Тик-логика формации: равномерная шахматная расстановка по слоям.
     private updateFormationAndWalls(): void {
-        const planner = this.ensureFormationPlanner();
-        if (!planner) return;
-
         const aliveUnits = this.army.units.filter(u => u.isAlive);
-        const counts = { sporomet: 0, eblekar: 0, champigneb: 0 };
-        for (const u of this.army.units) {
-            if (!u.isAlive) continue;
-            if (u.type === 'sporomet') counts.sporomet++;
-            else if (u.type === 'eblekar') counts.eblekar++;
-            else if (u.type === 'champigneb') counts.champigneb++;
-        }
+        const map = this.army.map;
+        if (!map || map.length === 0 || (map[0]?.length ?? 0) === 0) return;
 
-        // Режим Атаки
-        if (this.metrics.currentMode === 'attack') {
-            const allCombat = aliveUnits.filter(
-                u => u.type === 'sporomet' || u.type === 'eblekar' || u.type === 'champigneb'
-            );
+        const rows = map.length;
+        const cols = map[0].length;
+        const baseWallTopY = Math.max(0, rows - 15);
+        const baseWallLeftX = Math.max(0, cols - 15);
 
-            if (allCombat.length === 0) return;
+        const isDefenseWalkable = (x: number, y: number): boolean => {
+            return x >= 0 && y >= 0 && x < cols && y < rows && (map[y][x] === 0 || map[y][x] === 2);
+        };
 
-            // Синхронизируем скорость сразу 
-            this.syncGroupSpeed(allCombat);
+        const collectCheckerboardSlots = (
+            rowOffsets: number[],
+            colOffsets: number[],
+            count: number,
+            parity: number,
+        ): { x: number; y: number }[] => {
+            if (count <= 0) return [];
+            const candidates: { x: number; y: number }[] = [];
+            const candidateKeys = new Set<string>();
 
-            const avgX = allCombat.reduce((s, u) => s + u.x, 0) / allCombat.length;
-            const avgY = allCombat.reduce((s, u) => s + u.y, 0) / allCombat.length;
-
-            // Ближайший враг
-            const nearestEnemy = this.findNearestEnemy(avgX, avgY);
-
-            // Направление марша: к врагу если есть, иначе к (0,0)
-            const marchDirX = nearestEnemy ? nearestEnemy.x - avgX : 0 - avgX;
-            const marchDirY = nearestEnemy ? nearestEnemy.y - avgY : 0 - avgY;
-            const marchNorm = Math.sqrt(marchDirX * marchDirX + marchDirY * marchDirY) || 1;
-            const enemyNear = nearestEnemy
-                ? Math.sqrt((nearestEnemy.x - avgX) ** 2 + (nearestEnemy.y - avgY) ** 2) <= 25
-                : false;
-
-            // Строим полукруг вокруг центра масс группы лицом в сторону марша
-            const slots = this.buildMarchSemicircle(
-                allCombat,
-                avgX, avgY,
-                marchDirX / marchNorm, marchDirY / marchNorm,
-                counts,
-            );
-            
-            this.assignFormationTargets(slots);
-
-            const formationReady = allCombat.every(u => {
-                if (!u.formationTarget) return false;
-                const dx = u.x - u.formationTarget.x;
-                const dy = u.y - u.formationTarget.y;
-                return Math.sqrt(dx * dx + dy * dy) <= 1.5;
-            });
-
-            for (const u of aliveUnits) {
-                if (u.type === 'pizdoglyad') {
-                    u.formationHold = false;
-                    u.leashRadius = Infinity;
-                    u.formationTarget = null;
-                    continue;
-
-
+            for (const offset of rowOffsets) {
+                const y = baseWallTopY + offset;
+                if (y < 0 || y >= rows) continue;
+                for (let x = baseWallLeftX; x < cols; x++) {
+                    if (!isDefenseWalkable(x, y)) continue;
+                    if (((x + y + parity) & 1) !== 0) continue;
+                    const key = `${x},${y}`;
+                    if (candidateKeys.has(key)) continue;
+                    candidateKeys.add(key);
+                    candidates.push({ x, y });
                 }
-
-                u.formationHold = !formationReady && !enemyNear;
-            }
-            for (const u of allCombat) {
-                u.leashRadius = enemyNear ? 18 : formationReady ? 12 : Infinity;
             }
 
-            if (!nearestEnemy) {
-                for (const u of allCombat) {
-                    if (u.formationTarget) {
-                        const slotOffsetX = u.formationTarget.x - avgX;
-                        const slotOffsetY = u.formationTarget.y - avgY;
-                        u.formationTarget = {
-                            x: Math.max(0, Math.round(slotOffsetX)), // слоты не уходят за карту
-                            y: Math.max(0, Math.round(slotOffsetY)),
-                        };
-                    } else {
-                        u.formationTarget = { x: 0, y: 0 };
-                    }
-                    (u as any).hasReachedFormation = false;
-                    (u as any).reachedTarget = false;
-                    (u as any).isAtFormationTarget = false;
+            for (const offset of colOffsets) {
+                const x = baseWallLeftX + offset;
+                if (x < 0 || x >= cols) continue;
+                for (let y = baseWallTopY; y < rows; y++) {
+                    if (!isDefenseWalkable(x, y)) continue;
+                    if (((x + y + parity) & 1) !== 0) continue;
+                    const key = `${x},${y}`;
+                    if (candidateKeys.has(key)) continue;
+                    candidateKeys.add(key);
+                    candidates.push({ x, y });
                 }
-                return;
             }
-            return;
-        }
 
-        // Обычный/оборонительный режим
-        const isDefense = this.metrics.currentMode === 'defense';
+            if (candidates.length === 0) return [];
+            const slotCount = Math.min(count, candidates.length);
+            if (slotCount === candidates.length) return candidates;
+            const selected: { x: number; y: number }[] = [];
+            const step = (candidates.length - 1) / Math.max(1, slotCount - 1);
+            for (let i = 0; i < slotCount; i++) {
+                selected.push(candidates[Math.round(i * step)]);
+            }
+            return selected;
+        };
+
+        const typeCounts = {
+            sporomet: aliveUnits.filter(u => u.type === 'sporomet').length,
+            eblekar: aliveUnits.filter(u => u.type === 'eblekar').length,
+            champigneb: aliveUnits.filter(u => u.type === 'champigneb').length,
+        };
+
+        const maxEblekarSlots = Math.max(0, Math.floor(typeCounts.sporomet / 4));
+        const eblekarSlotsToUse = Math.min(typeCounts.eblekar, maxEblekarSlots);
+
+        const champSlots = collectCheckerboardSlots([-3, -2], [-3, -2], typeCounts.champigneb, 0);
+        const sporSlots = collectCheckerboardSlots([1, 2], [1, 2], typeCounts.sporomet, 1);
+        const ebleSlots = collectCheckerboardSlots([3, 4], [0, 1], eblekarSlotsToUse, 0);
+
+        this.assignFormationTargets({
+            champigneb: champSlots,
+            sporomet: sporSlots,
+            eblekar: ebleSlots,
+        });
+
         for (const u of aliveUnits) {
-            u.currentSpeed = u.speed;
-            u.formationHold = false;
-            // В режиме обороны — ограничиваем поводок: юниты атакуют врагов,
-            // подошедших близко, но не уходят далеко от своего слота в строю.
-            u.leashRadius = isDefense ? 10 : Infinity;
-        }
+            if (u.type === 'pizdoglyad') {
+                u.formationHold = false;
+                u.leashRadius = Infinity;
+                u.formationTarget = null;
+                continue;
+            }
 
-        const slots = planner.updateForCounts(counts, { defenseHold: isDefense });
-        this.assignFormationTargets(slots);
+            if (u.type === 'sporomet' || u.type === 'eblekar') {
+                u.formationHold = true;
+                u.leashRadius = 2;
+                continue;
+            }
 
-        // Settle-detection (spec §5): юниты в transit и без слота не считаются —
-        // иначе стены строятся на спавне далеко от формации.
-        const SETTLE_RADIUS = 1;
-        const unitPositions: { x: number; y: number }[] = [];
-        for (const u of this.army.units) {
-            if (!u.isAlive) continue;
-            if (u.type !== 'sporomet' && u.type !== 'eblekar' && u.type !== 'champigneb') continue;
-            if (!u.formationTarget) continue;
-            const dx = Math.abs(u.x - u.formationTarget.x);
-            const dy = Math.abs(u.y - u.formationTarget.y);
-            if (Math.max(dx, dy) > SETTLE_RADIUS) continue;
-            unitPositions.push({ x: u.x, y: u.y });
-        }
-        // Больше не строим внешние уровни обороны и не расставляем башни за пределами базы.
-        // Оборона должна оставаться только внутри стартового правого нижнего угла.
-        // Дополнительно: гарантируем, что в режиме обороны юниты остаются внутри системы
-        // обороны: `sporomet` и `eblekar` держатся позади стены, `champigneb` — рядом
-        // со стеной. `pizdoglyad` не трогаем логикой формирования (но оставляем их в
-        // режиме обороны по общему флагу).
-        if (this.metrics.currentMode === 'defense') {
-            const map = this.army.map;
-            const rows = map.length;
-            const cols = map[0]?.length ?? 0;
-            const baseWallTopY = Math.max(0, rows - 15);
-            const baseWallLeftX = Math.max(0, cols - 15);
-
-            const champSlots = planner.getSlots('champigneb');
-            const sporSlots = planner.getSlots('sporomet');
-            const ebleSlots = planner.getSlots('eblekar');
-            // Дополнительный отступ внутрь базы (чем больше, тем глубже от стены).
-            const BASE_BACKOFF = 3;
-
-            const pickNearestSlot = (slots: ReadonlyArray<{ x: number; y: number }>, x: number, y: number) => {
-                if (!slots || slots.length === 0) return null;
-                let best = slots[0];
-                let bestDist = Infinity;
-                for (const s of slots) {
-                    const dx = s.x - x, dy = s.y - y;
-                    const d = dx * dx + dy * dy;
-                    if (d < bestDist) { best = s; bestDist = d; }
-                }
-                return best;
-            };
-
-            
-
-            for (const u of this.army.units) {
-                if (!u.isAlive) continue;
-                // Пиздогляды используют свою собственную логику разведки из Pizdoglyad.ts
-                // Не вмешиваемся в их поведение
-                if (u.type === 'pizdoglyad') {
-                    u.formationHold = false;
-                    u.leashRadius = Infinity;
-                    u.formationTarget = null;
-                    continue;
-                }
-
-                if (u.type === 'sporomet' || u.type === 'eblekar') {
-                    // гарантируем, что слот глубже внутри базы (backoff от стены)
-                    u.formationHold = true;
-                    u.leashRadius = 2;
-                    const minX = baseWallLeftX + 1 + BASE_BACKOFF;
-                    const minY = baseWallTopY + 1 + BASE_BACKOFF;
-                    if (!u.formationTarget) {
-                        const slots = u.type === 'sporomet' ? sporSlots : ebleSlots;
-                        // фильтруем слоты глубже внутри базы
-                        const inside = slots.filter(s => s.x >= minX && s.y >= minY);
-                        const pick = pickNearestSlot(inside.length ? inside : slots, u.x, u.y);
-                        if (pick) u.formationTarget = { x: pick.x, y: pick.y };
-                    } else {
-                        if (u.formationTarget.x < minX) u.formationTarget.x = minX;
-                        if (u.formationTarget.y < minY) u.formationTarget.y = minY;
-                    }
-                    continue;
-                }
-
-                if (u.type === 'champigneb') {
-                    // шампиньебы — рядом со стеной (приближаемся к ближайшему слоту champ)
-                    u.formationHold = true;
-                    u.leashRadius = 4;
-                    if (!u.formationTarget) {
-                        const pick = pickNearestSlot(champSlots, u.x, u.y);
-                        if (pick) u.formationTarget = { x: pick.x, y: pick.y };
-                    }
-                    // дополнительно стараемся держать их ближе к стене: если слот далеко,
-                    // ограничиваем отклонение (не позволяем уходить внутрь более чем на 3 клетки)
-                    if (u.formationTarget) {
-                        const maxInner = 2; // шампиньебы ближе к стене
-                        const capX = baseWallLeftX + 1 + BASE_BACKOFF + maxInner;
-                        const capY = baseWallTopY + 1 + BASE_BACKOFF + maxInner;
-                        if (u.formationTarget.x > capX) u.formationTarget.x = capX;
-                        if (u.formationTarget.y > capY) u.formationTarget.y = capY;
-                    }
-                }
+            if (u.type === 'champigneb') {
+                u.formationHold = true;
+                u.leashRadius = 4;
+                continue;
             }
         }
     }
 
-private buildMarchSemicircle(
-    units: { type: string }[],
-    cx: number, cy: number,
-    dirX: number, dirY: number,
-    counts: { sporomet: number; eblekar: number; champigneb: number },
-): Record<'sporomet' | 'eblekar' | 'champigneb', { x: number; y: number }[]> {
-    const map = this.army.map;
-    const rows = map?.length ?? 0;
-    const cols = map?.[0]?.length ?? 0;
-
-    const isWalkable = (x: number, y: number): boolean => {
-        if (x < 0 || y < 0 || x >= cols || y >= rows) return false;
-        const tile = map[y]?.[x];
-        return tile === 0 || tile === 2;
-    };
-
-    const angle = Math.atan2(dirY, dirX);
-    const arcSlots = (
-        r: number, n: number, spreadRad: number, offsetAngle = 0,
-    ): { x: number; y: number }[] => {
-        if (n === 0) return [];
-        const slots: { x: number; y: number }[] = [];
-        for (let i = 0; i < n; i++) {
-            const t = n > 1 ? (i / (n - 1) - 0.5) * spreadRad : 0;
-            const a = angle + offsetAngle + t;
-            const sx = Math.round(cx + r * Math.cos(a));
-            const sy = Math.round(cy + r * Math.sin(a));
-            // Пробуем слот и ближайших соседей если непроходимо
-            let placed = false;
-            for (let dr = 0; dr <= 2 && !placed; dr++) {
-                for (const [ox, oy] of [[0,0],[1,0],[-1,0],[0,1],[0,-1]]) {
-                    const nx = sx + ox * dr, ny = sy + oy * dr;
-                    if (isWalkable(nx, ny)) {
-                        slots.push({ x: nx, y: ny });
-                        placed = true;
-                        break;
-                    }
-                }
-            }
-            if (!placed) slots.push({ x: Math.max(0, sx), y: Math.max(0, sy) });
-        }
-        return slots;
-    };
-    
-    const champSlots = arcSlots(8, counts.champigneb, Math.PI * 0.8);
-    const sporSlots = arcSlots(4, counts.sporomet, Math.PI * 0.7);
-    const eblSlots = arcSlots(4, counts.eblekar, Math.PI * 0.7, Math.PI);
-
-    return { champigneb: champSlots, sporomet: sporSlots, eblekar: eblSlots };
-}
 
     private findNearestEnemy(fromX: number, fromY: number,): { x: number; y: number } | null {
         const targets: { x: number; y: number }[] = [
@@ -443,8 +276,10 @@ private buildMarchSemicircle(
         const slotKey = (s: { x: number; y: number }) => `${s.x},${s.y}`;
 
         for (const type of ['sporomet', 'eblekar', 'champigneb'] as const) {
-            const alive = this.army.units.filter(u => u.isAlive && u.type === type);
-            const typeSlots = slots[type];
+            const alive = this.army.units
+                .filter(u => u.isAlive && u.type === type)
+                .sort((a, b) => a.guid.localeCompare(b.guid));
+            const typeSlots = slots[type].slice().sort((a, b) => a.x - b.x || a.y - b.y);
 
             const slotMap = new Map<string, { x: number; y: number }>();
             for (const s of typeSlots) slotMap.set(slotKey(s), s);
@@ -462,7 +297,7 @@ private buildMarchSemicircle(
                 }
             }
 
-            // Выдаём свободные слоты в порядке очереди, пропуская уже занятые глобально
+            // Выдаём свободные слоты в отсортированном порядке, чтобы позиции были стабильны
             const freeSlots = typeSlots.filter(s => !globalClaimed.has(slotKey(s)));
             let freeIdx = 0;
             for (const u of alive) {
@@ -697,54 +532,7 @@ private buildMarchSemicircle(
      * чтобы нарисовать рамку и пустые маркеры слотов поверх юнитов.
      */
     public getFormationState(): TFormationState | null {
-        const p = this.formationPlanner;
-        if (!p) return null;
-        const c = p.center;
-        return {
-            center: { x: c.x, y: c.y },
-            slots: {
-                champigneb: p.getSlots('champigneb').map(s => ({ x: s.x, y: s.y })),
-                sporomet: p.getSlots('sporomet').map(s => ({ x: s.x, y: s.y })),
-                eblekar: p.getSlots('eblekar').map(s => ({ x: s.x, y: s.y })),
-            },
-        };
-    }
-
-    private ensureFormationPlanner(): FormationPlanner | null {
-        if (this.formationPlanner) return this.formationPlanner;
-
-        const map = this.army.map;
-        if (!map || map.length === 0 || (map[0]?.length ?? 0) === 0) return null;
-
-        // Base zone — правый нижний угол 15×15 (Army.generateDefensiveLayout).
-        // Вычисляем из текущей карты, не хардкодим — на случай других размеров.
-        const rows = map.length;
-        const cols = map[0].length;
-        const baseWallTopY = rows - 15;
-        const baseWallLeftX = cols - 15;
-
-        // Центр базы = среднее по координатам своих башен (если есть), иначе
-        // геометрический центр угловой зоны.
-        const towers = this.army.buildings.filter(b => b.type === 'sporovaya_bashnya');
-        let baseCenter: { x: number; y: number };
-        if (towers.length > 0) {
-            let sumX = 0, sumY = 0;
-            for (const t of towers) { sumX += t.x; sumY += t.y; }
-            baseCenter = { x: sumX / towers.length, y: sumY / towers.length };
-        } else {
-            baseCenter = {
-                x: baseWallLeftX + 7,
-                y: baseWallTopY + 7,
-            };
-        }
-
-        this.formationPlanner = new FormationPlanner({
-            map,
-            baseCenter,
-            baseWallTopY,
-            baseWallLeftX,
-        });
-        return this.formationPlanner;
+        return null;
     }
 
     public registerUnitSpawn(type: string, guid: string): void {

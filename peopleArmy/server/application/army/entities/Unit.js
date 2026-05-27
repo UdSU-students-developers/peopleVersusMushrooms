@@ -5,7 +5,7 @@ const { buildPathGrid, isWalkable } = require("../pathGrid");
 const WALK_POINTS_PER_STEP = 5;
 
 class Unit {
-    constructor({ guid, x, y }) {
+    constructor({ guid, x, y, shotCooldown, shotCooldownJitter } = {}) {
         this.guid = guid;
         this.x = x;
         this.y = y;
@@ -27,6 +27,15 @@ class Unit {
         this.path = [];
         // Накопленные очки ходьбы
         this.walkPoints = 0;
+
+        this.shotCooldown = shotCooldown ?? 2;
+        this.shotCooldownJitter = shotCooldownJitter ?? Math.random() * 0.35;
+        this.lastShotTime = -999;
+        this.formationSlot = null;
+        this.moveGoal = null;
+        this.tacticalTarget = null;
+        this.tacticalAim = null;
+        this.tacticalRetreat = null;
     }
 
     // Задать цель движения юнита
@@ -144,10 +153,20 @@ class Unit {
             return;
         }
 
+        const startX = Math.floor(this.x);
+        const startY = Math.floor(this.y);
+        const endX = Math.floor(this.targetX);
+        const endY = Math.floor(this.targetY);
+
+        if (startX === endX && startY === endY) {
+            this.path = [];
+            return;
+        }
+
         this.path = [];
         const route = this.findPath(grid);
         if (route === null || route.length < 2) {
-            this.clearTarget();
+            // Цель сохраняем — пересчитаем путь на следующих тиках (здания/толпа).
             return;
         }
         this.path = route.slice(1);

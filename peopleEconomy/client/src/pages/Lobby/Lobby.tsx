@@ -117,14 +117,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
         const lobbyUpdatedHandler = (data: any) => {
             console.log('Комната обновлена:', data);
             setCurrentLobby(data);
-            if (data.playersReady && server.user) {
-                const userRole = Object.keys(data.playersGuids).find(
-                    role => data.playersGuids[role] === server.user.guid
-                );
-                if (userRole) {
-                    setIsReady(data.playersReady[userRole] || false);
-                }
-            }
         };
 
         const lobbiesListUpdatedHandler = (data: any) => {
@@ -173,7 +165,7 @@ const Lobby: React.FC<IBasePage> = (props) => {
             mediator.unsubscribe(SET_READY, setReadyHandler);
             mediator.unsubscribe(DROP_FROM_LOBBY, dropFromLobbyHandler);
         };
-    }, [mediator, setPage, server, currentLobby]);
+    }, [mediator, setPage, server]);
 
     return (
         <div className='lobby'>
@@ -197,57 +189,27 @@ const Lobby: React.FC<IBasePage> = (props) => {
             {currentLobby && (
                 <div className="current-lobby">
                     <h2>Текущая комната: {currentLobby.lobbyName}</h2>
-                    <div className="lobby-info">
-                        <p>Игроки: {Object.values(currentLobby.playersGuids).filter(g => g !== null).length}/5</p>
-                        <div className="players-list">
-                            <h3>Игроки:</h3>
-                            <ul>
-                                {
-                                    Object.keys(currentLobby.playersGuids)
-                                        .filter(role => currentLobby.playersGuids[role as keyof typeof currentLobby.playersGuids] !== null)
-                                        .map((role, index) => {
-                                            const playerGuid = currentLobby.playersGuids[role as keyof typeof currentLobby.playersGuids];
-                                            const isCreator = playerGuid === currentLobby.lobbyGuid;
-                                            const isCurrentUser = playerGuid === server.user?.guid;
-                                            const canKick = currentLobby.lobbyGuid === server.user?.guid && !isCreator && !isCurrentUser;
-
-                                            return (
-                                                <li key={index} className="player-item">
-                                                    {canKick && (
-                                                        <Button
-                                                            onClick={() => kickPlayerHandler(playerGuid!)}
-                                                            text='Кикнуть'
-                                                            className='button-kick'
-                                                        />
-                                                    )}
-                                                </li>
-                                            );
-                                        })
-                                }
-                            </ul>
-                        </div>
-                        <div className="player-info">
-                            {isReady ? '✅ Готов' : '⏳ Не готов'}
-                        </div>
-                        <Button
-                            onClick={setReadyHandler}
-                            text={'Готов'}
-                        />
-
-                        {currentLobby.lobbyGuid === currentLobby.playersGuids.peopleEconomy && (
-                            <Button
-                                onClick={startGameHandler}
-                                text='Начать игру'
-                                className='button-start-game'
-                                isDisabled={!isReady}
-                            />
-                        )}
-                        <Button
-                            onClick={leaveLobbyHandler}
-                            text='Покинуть комнату'
-                            className='button-leave'
-                        />
+                    <div className="player-info">
+                        {isReady ? '✅ Готов' : '⏳ Не готов'}
                     </div>
+                    <Button
+                        onClick={setReadyHandler}
+                        text={'Готов'}
+                    />
+
+                    {currentLobby.lobbyGuid === currentLobby.playersGuids.peopleEconomy && (
+                        <Button
+                            onClick={startGameHandler}
+                            text='Начать игру'
+                            className='button-start-game'
+                            isDisabled={!isReady}
+                        />
+                    )}
+                    <Button
+                        onClick={leaveLobbyHandler}
+                        text='Покинуть комнату'
+                        className='button-leave'
+                    />
                 </div>
             )}
 

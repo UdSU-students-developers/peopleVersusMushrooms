@@ -53,13 +53,6 @@ export interface EconomyResponse {
     };
 }
 
-export interface BuildQueueItem {
-    type: 'sporovaya_bashnya' | 'vzryvomor';
-    x: number;
-    y: number;
-    scheduledAt: number;
-}
-
 export class ArmyStateManager {
     private army: Army;
     private common: Common;
@@ -84,13 +77,6 @@ export class ArmyStateManager {
     // Дистанция
     private readonly DISTANCE_MILESTONE = 15; // метров
     private unitPositionHistory: Map<string, { x: number; y: number }> = new Map();
-
-    // Авто-постройка
-    private buildQueue: BuildQueueItem[] = [];
-    private readonly TOWER_BUILD_INTERVAL = 180000; // 180 сек
-    private readonly WALL_BUILD_INTERVAL = 30000; // 30 сек
-    private lastTowerBuild = 0;
-    private lastWallBuild = 0;
 
     // Коллбэки
     private onModeChange?: (newMode: ArmyMode) => void;
@@ -132,7 +118,6 @@ export class ArmyStateManager {
         this.assignNewUnitsToFormation();
         this.updateScouts();
         this.updateDistanceTraveled();
-        this.processAutoBuild();
     }
 
     private assignNewUnitsToFormation(): void {
@@ -272,12 +257,120 @@ export class ArmyStateManager {
             if (Math.max(dx, dy) > SETTLE_RADIUS) continue;
             unitPositions.push({ x: u.x, y: u.y });
         }
-        const newWallPositions = planner.checkWallTrigger(unitPositions);
-        if (newWallPositions) {
-            for (const pos of newWallPositions) {
-                this.army.spawnBuilding('vzryvomor', pos.x, pos.y, this.common);
+        // Больше не строим внешние уровни обороны и не расставляем башни за пределами базы.
+        // Оборона должна оставаться только внутри стартового правого нижнего угла.
+        // Дополнительно: гарантируем, что в режиме обороны юниты остаются внутри системы
+        // обороны: `sporomet` и `eblekar` держатся позади стены, `champigneb` — рядом
+        // со стеной. `pizdoglyad` не трогаем логикой формирования (но оставляем их в
+        // режиме обороны по общему флагу).
+        if (this.metrics.currentMode === 'defense') {
+            const map = this.army.map;
+            const rows = map.length;
+            const cols = map[0]?.length ?? 0;
+            const baseWallTopY = Math.max(0, rows - 15);
+            const baseWallLeftX = Math.max(0, cols - 15);
+
+            const champSlots = planner.getSlots('champigneb');
+            const sporSlots = planner.getSlots('sporomet');
+            const ebleSlots = planner.getSlots('eblekar');
+            // Дополнительный отступ внутрь базы (чем больше, тем глубже от стены).
+            const BASE_BACKOFF = 3;
+
+            const pickNearestSlot = (slots: ReadonlyArray<{ x: number; y: number }>, x: number, y: number) => {
+                if (!slots || slots.length === 0) return null;
+                let best = slots[0];
+                let bestDist = Infinity;
+                for (const s of slots) {
+                    const dx = s.x - x, dy = s.y - y;
+                    const d = dx * dx + dy * dy;
+                    if (d < bestDist) { best = s; bestDist = d; }
+                }
+                return best;
+            };
+
+            
+
+            for (const u of this.army.units) {
+                if (!u.isAlive) continue;
+                // Пиздоглядов не переприсваиваем слоты здесь
+                if (u.type === 'pizdoglyad') {
+                    // Если на карте ещё есть туман войны — ведём разведку (unit AI).
+                    // Иначе — займём позицию в правом верхнем углу (formationHold).
+                    const hasFog = (() => {
+                        for (let yy = 0; yy < rows; yy++) {
+                            for (let xx = 0; xx < cols; xx++) if (map[yy][xx] === null) return true;
+                        }
+                        return false;
+                    })();
+
+                    if (hasFog) {
+                        u.leashRadius = 6;
+                        u.formationHold = false; // позволяем юнитам самостоятельно искать туманные точки
+                        u.formationTarget = null;
+                        continue;
+                    }
+
+                    // Карта разведана — занимаем правый верхний угол.
+                    const zoneW = Math.min(15, cols);
+                    const zoneH = Math.min(15, rows);
+                    let placed = false;
+                    for (let dy = 0; dy < zoneH && !placed; dy++) {
+                        for (let dx = 0; dx < zoneW && !placed; dx++) {
+                            const yy = dy; // top
+                            const xx = cols - zoneW + dx; // right side
+                            if (yy >= 0 && xx >= 0 && map[yy][xx] !== null && (map[yy][xx] === 0 || map[yy][xx] === 2)) {
+                                u.formationTarget = { x: xx, y: yy };
+                                u.formationHold = true;
+                                u.leashRadius = 3;
+                                placed = true;
+                            }
+                        }
+                    }
+                    if (!placed) {
+                        u.formationHold = true;
+                        u.leashRadius = 3;
+                    }
+                    continue;
+                }
+
+                if (u.type === 'sporomet' || u.type === 'eblekar') {
+                    // гарантируем, что слот глубже внутри базы (backoff от стены)
+                    u.formationHold = true;
+                    u.leashRadius = 2;
+                    const minX = baseWallLeftX + 1 + BASE_BACKOFF;
+                    const minY = baseWallTopY + 1 + BASE_BACKOFF;
+                    if (!u.formationTarget) {
+                        const slots = u.type === 'sporomet' ? sporSlots : ebleSlots;
+                        // фильтруем слоты глубже внутри базы
+                        const inside = slots.filter(s => s.x >= minX && s.y >= minY);
+                        const pick = pickNearestSlot(inside.length ? inside : slots, u.x, u.y);
+                        if (pick) u.formationTarget = { x: pick.x, y: pick.y };
+                    } else {
+                        if (u.formationTarget.x < minX) u.formationTarget.x = minX;
+                        if (u.formationTarget.y < minY) u.formationTarget.y = minY;
+                    }
+                    continue;
+                }
+
+                if (u.type === 'champigneb') {
+                    // шампиньебы — рядом со стеной (приближаемся к ближайшему слоту champ)
+                    u.formationHold = true;
+                    u.leashRadius = 4;
+                    if (!u.formationTarget) {
+                        const pick = pickNearestSlot(champSlots, u.x, u.y);
+                        if (pick) u.formationTarget = { x: pick.x, y: pick.y };
+                    }
+                    // дополнительно стараемся держать их ближе к стене: если слот далеко,
+                    // ограничиваем отклонение (не позволяем уходить внутрь более чем на 3 клетки)
+                    if (u.formationTarget) {
+                        const maxInner = 2; // шампиньебы ближе к стене
+                        const capX = baseWallLeftX + 1 + BASE_BACKOFF + maxInner;
+                        const capY = baseWallTopY + 1 + BASE_BACKOFF + maxInner;
+                        if (u.formationTarget.x > capX) u.formationTarget.x = capX;
+                        if (u.formationTarget.y > capY) u.formationTarget.y = capY;
+                    }
+                }
             }
-            this.spawnTowersBehindDefenseLine(newWallPositions);
         }
     }
 
@@ -372,34 +465,119 @@ private buildMarchSemicircle(
     // Stable assignment (spec §4.1): юниты с target в новом slots[type] сохраняют его;
     // остальные получают свободные слоты в wave-order; излишки → null.
     private assignFormationTargets(slots: Record<'sporomet' | 'eblekar' | 'champigneb', { x: number; y: number }[]>): void {
+        // Глобальная таблица занятых слотов (по координатам) — чтобы избежать
+        // дублирования целей между разными типами юнитов.
+        const globalClaimed = new Set<string>();
+        const slotKey = (s: { x: number; y: number }) => `${s.x},${s.y}`;
+
         for (const type of ['sporomet', 'eblekar', 'champigneb'] as const) {
             const alive = this.army.units.filter(u => u.isAlive && u.type === type);
             const typeSlots = slots[type];
 
-            const slotKey = (s: { x: number; y: number }) => `${s.x},${s.y}`;
             const slotMap = new Map<string, { x: number; y: number }>();
             for (const s of typeSlots) slotMap.set(slotKey(s), s);
 
-            const claimedKeys = new Set<string>();
+            // Сначала сохраняем предыдущие валидные цели (если они ещё доступны и не заняты)
+            const claimedByThisType = new Set<string>();
             for (const u of alive) {
                 if (!u.formationTarget) continue;
                 const k = slotKey(u.formationTarget);
-                if (slotMap.has(k) && !claimedKeys.has(k)) {
-                    claimedKeys.add(k);
+                if (slotMap.has(k) && !globalClaimed.has(k) && !claimedByThisType.has(k)) {
+                    claimedByThisType.add(k);
+                    globalClaimed.add(k);
                 } else {
                     u.formationTarget = null;
                 }
             }
 
-            const freeSlots = typeSlots.filter(s => !claimedKeys.has(slotKey(s)));
+            // Выдаём свободные слоты в порядке очереди, пропуская уже занятые глобально
+            const freeSlots = typeSlots.filter(s => !globalClaimed.has(slotKey(s)));
             let freeIdx = 0;
             for (const u of alive) {
                 if (u.formationTarget) continue;
+                while (freeIdx < freeSlots.length && globalClaimed.has(slotKey(freeSlots[freeIdx]))) freeIdx++;
                 if (freeIdx < freeSlots.length) {
-                    u.formationTarget = { x: freeSlots[freeIdx].x, y: freeSlots[freeIdx].y };
-                    freeIdx++;
+                    const s = freeSlots[freeIdx++];
+                    u.formationTarget = { x: s.x, y: s.y };
+                    globalClaimed.add(slotKey(s));
                 } else {
                     u.formationTarget = null;
+                }
+            }
+        }
+
+        // После назначения целей — гарантируем, что юниты не окажутся на одинаковых
+        // тайлах в текущем положении. Если коллизии есть — пытаемся перетащить
+        // лишние юниты на ближайшие свободные тайлы внутри зоны базы.
+        this.resolveCollisionsNearBase();
+    }
+
+    // Ищет ближайшую свободную клетку (по BFS) внутри заданной зоны и не занятую другими юнитами.
+    private findNearestFreeTile(startX: number, startY: number, minX: number, minY: number, maxX: number, maxY: number): { x: number; y: number } | null {
+        const map = this.army.map;
+        const rows = map.length;
+        const cols = map[0]?.length ?? 0;
+        const key = (x: number, y: number) => `${x},${y}`;
+
+        const occupied = new Set<string>(this.army.units.filter(u => u.isAlive).map(u => `${u.x},${u.y}`));
+
+        const inZone = (x: number, y: number) => x >= minX && y >= minY && x <= maxX && y <= maxY;
+
+        const q: Array<{ x: number; y: number }> = [{ x: startX, y: startY }];
+        const seen = new Set<string>([key(startX, startY)]);
+        const NEI = [[0,0],[1,0],[-1,0],[0,1],[0,-1]] as const;
+
+        while (q.length) {
+            const p = q.shift()!;
+            if (inZone(p.x, p.y) && map[p.y]?.[p.x] === 0 && !occupied.has(key(p.x, p.y))) return p;
+            for (const [dx, dy] of NEI) {
+                const nx = p.x + dx, ny = p.y + dy;
+                const k = key(nx, ny);
+                if (nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue;
+                if (seen.has(k)) continue;
+                seen.add(k);
+                q.push({ x: nx, y: ny });
+            }
+        }
+        return null;
+    }
+
+    // Разрешает коллизии текущих позиций юнитов: если несколько юнитов в одной клетке,
+    // перемещаем лишних на ближайшие свободные тайлы внутри правого-нижнего блока базы.
+    private resolveCollisionsNearBase(): void {
+        const map = this.army.map;
+        if (!map || map.length === 0) return;
+        const rows = map.length;
+        const cols = map[0].length;
+        const zoneX0 = Math.max(0, cols - 15);
+        const zoneY0 = Math.max(0, rows - 15);
+        const zoneX1 = cols - 1;
+        const zoneY1 = rows - 1;
+
+        const posMap = new Map<string, any[]>();
+        for (const u of this.army.units) {
+            if (!u.isAlive) continue;
+            // Не трогаем разведчиков — они должны свободно перемещаться для разведки
+            if (u.type === 'pizdoglyad') continue;
+            const k = `${u.x},${u.y}`;
+            const arr = posMap.get(k) ?? [] as any[];
+            arr.push(u);
+            posMap.set(k, arr);
+        }
+
+        for (const [k, arr] of posMap.entries()) {
+            if (arr.length <= 1) continue;
+            // Первый остаётся, остальные — ищем свободную клетку и перемещаем.
+            for (let i = 1; i < arr.length; i++) {
+                const u = arr[i];
+                const free = this.findNearestFreeTile(u.x, u.y, zoneX0, zoneY0, zoneX1, zoneY1);
+                if (free) {
+                    u.x = free.x;
+                    u.y = free.y;
+                } else {
+                    // Если не нашли внутри зоны — ищем вокруг текущей позиции по карте целиком
+                    const freeGlobal = this.findNearestFreeTile(u.x, u.y, 0, 0, cols - 1, rows - 1);
+                    if (freeGlobal) { u.x = freeGlobal.x; u.y = freeGlobal.y; }
                 }
             }
         }
@@ -539,136 +717,6 @@ private buildMarchSemicircle(
             this.metrics.lastDistanceMilestone = this.metrics.distanceTraveled;
             this.onDistanceMilestone?.(this.metrics.distanceTraveled);
         }
-    }
-
-    private async processAutoBuild(): Promise<void> {
-        const now = Date.now();
-
-        // Постройка башни каждые 180 сек
-        if (now - this.lastTowerBuild >= this.TOWER_BUILD_INTERVAL) {
-            await this.tryBuildStructure('sporovaya_bashnya');
-            this.lastTowerBuild = now;
-        }
-
-        // Постройка стены каждые 30 сек
-        if (now - this.lastWallBuild >= this.WALL_BUILD_INTERVAL) {
-            await this.tryBuildStructure('vzryvomor');
-            this.lastWallBuild = now;
-        }
-    }
-
-    private async tryBuildStructure(type: 'sporovaya_bashnya' | 'vzryvomor'): Promise<void> {
-        if (this.economyRequestCallback) {
-            const response = await this.economyRequestCallback({
-                armyGuid: this.army.guid,
-                requestType: 'can_build',
-                data: { buildingType: type },
-            });
-
-            if (!response?.success || !response.data?.canBuild) {
-                return; // Недостаточно ресурсов
-            }
-        }
-
-        // Ищем место для постройки
-        const position = this.findBuildPosition(type);
-        if (!position) return;
-
-        // Строим
-        const result = this.army.spawnBuilding(type, position.x, position.y, this.common);
-        if (result) {
-            if (this.economyRequestCallback) {
-                await this.economyRequestCallback({
-                    armyGuid: this.army.guid,
-                    requestType: 'resources',
-                    data: { action: 'spend', buildingType: type },
-                });
-            }
-        }
-    }
-
-    /**
-     * Спавнит споровые башни каждые 10 клеток за L-линией обороны взрывоморов.
-     * Горизонтальное плечо (y=topY) — башни при y=topY+1.
-     * Вертикальное плечо (x=leftX) — башни при x=leftX+1.
-     * Башни могут ставиться на горах (разрешено в spawnBuilding для sporovaya_bashnya).
-     */
-    private spawnTowersBehindDefenseLine(wallPositions: ReadonlyArray<{ x: number; y: number }>): void {
-        if (wallPositions.length === 0) return;
-
-        const map = this.army.map;
-        const rows = map.length;
-        const cols = map[0]?.length ?? 0;
-
-        // Апекс L-линии: минимальные topY и leftX
-        let topY = Infinity, leftX = Infinity;
-        for (const p of wallPositions) {
-            if (p.y < topY) topY = p.y;
-            if (p.x < leftX) leftX = p.x;
-        }
-
-        // Горизонтальное плечо (y === topY): башни за ним — y = topY + 1
-        const topWall = wallPositions
-            .filter(p => p.y === topY)
-            .sort((a, b) => a.x - b.x);
-        for (let i = 0; i < topWall.length; i += 7) {
-            const tx = topWall[i].x;
-            const ty = topY + 1;
-            if (ty + 1 < rows) {
-                this.army.spawnBuilding('sporovaya_bashnya', tx, ty, this.common);
-            }
-        }
-
-        // Вертикальное плечо (x === leftX, y > topY): башни за ним — x = leftX + 1
-        const leftWall = wallPositions
-            .filter(p => p.x === leftX && p.y > topY)
-            .sort((a, b) => a.y - b.y);
-        for (let i = 0; i < leftWall.length; i += 7) {
-            const tx = leftX + 1;
-            const ty = leftWall[i].y;
-            if (tx + 1 < cols) {
-                this.army.spawnBuilding('sporovaya_bashnya', tx, ty, this.common);
-            }
-        }
-    }
-
-    private findBuildPosition(type: 'sporovaya_bashnya' | 'vzryvomor'): { x: number; y: number } | null {
-        const map = this.army.map;
-        if (!map || map.length === 0) return null;
-
-        const rows = map.length;
-        const cols = map[0].length;
-
-        // Зона постройки: правый нижний угол 15×15
-        const zoneX0 = Math.max(0, cols - 15);
-        const zoneY0 = Math.max(0, rows - 15);
-
-        if (type === 'vzryvomor') {
-            // Ищем свободный тайл 1×1
-            for (let y = zoneY0; y < rows; y++) {
-                for (let x = zoneX0; x < cols; x++) {
-                    if (map[y][x] === 0) {
-                        return { x, y };
-                    }
-                }
-            }
-        } else {
-            // Ищем свободный блок 2×2
-            for (let y = zoneY0; y < rows - 1; y++) {
-                for (let x = zoneX0; x < cols - 1; x++) {
-                    if (
-                        map[y][x] === 0 &&
-                        map[y + 1][x] === 0 &&
-                        map[y][x + 1] === 0 &&
-                        map[y + 1][x + 1] === 0
-                    ) {
-                        return { x, y };
-                    }
-                }
-            }
-        }
-
-        return null;
     }
 
     /**

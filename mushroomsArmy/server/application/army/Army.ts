@@ -288,7 +288,43 @@ export class Army {
         const zoneX1 = mapCols - 1;  // правая граница (включительно)
         const zoneY1 = mapRows - 1;  // нижняя граница зоны (включительно)
 
-        // Вспомогательная функция: разместить башню 2×2 с левым верхним тайлом (topY, leftX)
+        // Стена взрывоморов и пять споровых башен в правом нижнем углу.
+        const placeWallRow = (y: number): void => {
+            if (y < zoneY0 || y > zoneY1) return;
+            for (let x = zoneX0; x <= zoneX1; x++) {
+                if (isFree(y, x)) {
+                    result.push({
+                        guid: common.guid(),
+                        type: 'vzryvomor',
+                        x,
+                        y,
+                    });
+                }
+            }
+        };
+
+        const placeWallColumn = (x: number): void => {
+            if (x < zoneX0 || x > zoneX1) return;
+            for (let y = zoneY0; y <= zoneY1; y++) {
+                if (isFree(y, x)) {
+                    result.push({
+                        guid: common.guid(),
+                        type: 'vzryvomor',
+                        x,
+                        y,
+                    });
+                }
+            }
+        };
+
+        const towerPositions = [
+            { x: zoneX0 + 1, y: zoneY0 + 1 }, // угол
+            { x: zoneX0 + 7, y: zoneY0 + 1 }, // сверху
+            { x: zoneX0 + 13, y: zoneY0 + 1 }, // сверху
+            { x: zoneX0 + 1, y: zoneY0 + 7 }, // справа
+            { x: zoneX0 + 1, y: zoneY0 + 13 }, // справа
+        ];
+
         const tryPlaceTower = (topY: number, leftX: number): void => {
             for (let dy = 0; dy <= 1; dy++) {
                 for (let dx = 0; dx <= 1; dx++) {
@@ -303,80 +339,10 @@ export class Army {
             });
         };
 
-        // Три башни: угловая (пересечение стен), правая верхняя, левая нижняя
-        tryPlaceTower(zoneY0 + 1, zoneX0 + 1); // угол стен
-        tryPlaceTower(zoneY0 + 1, zoneX1 - 1); // правый верхний
-        tryPlaceTower(zoneY1 - 1, zoneX0 + 1); // левый нижний
-
-        // Левая стена: x=zoneX0, вся высота зоны
-        for (let y = zoneY0; y <= zoneY1; y++) {
-            if (isFree(y, zoneX0)) {
-                result.push({
-                    guid: common.guid(),
-                    type: 'vzryvomor',
-                    x: zoneX0,
-                    y,
-                });
-            }
-        }
-
-        // Верхняя стена: y=zoneY0, вся ширина зоны кроме x=zoneX0 (уже занят левой стеной)
-        for (let x = zoneX0 + 1; x <= zoneX1; x++) {
-            if (isFree(zoneY0, x)) {
-                result.push({
-                    guid: common.guid(),
-                    type: 'vzryvomor',
-                    x,
-                    y: zoneY0,
-                });
-            }
-        }
-
-        // ── Споровые башни вдоль линий обороны, каждые 10 клеток ──────────────
-        // Могут ставиться на равнине (0) и горах (2).
-        // Строятся за стеной (со стороны базы), чтобы стена их прикрывала.
-
-        // Множество уже занятых тайлов для предотвращения наложений
-        const occupied = new Set<string>();
-        for (const b of result) {
-            const sx = b.type === 'sporovaya_bashnya' ? 2 : 1;
-            const sy = b.type === 'sporovaya_bashnya' ? 2 : 1;
-            for (let dy = 0; dy < sy; dy++)
-                for (let dx = 0; dx < sx; dx++)
-                    occupied.add(`${b.x + dx},${b.y + dy}`);
-        }
-
-        // Проверка блока 2×2: равнина или гора, не занято
-        const isFreeForTower = (topY: number, leftX: number): boolean => {
-            for (let dy = 0; dy <= 1; dy++) {
-                for (let dx = 0; dx <= 1; dx++) {
-                    const ty = topY + dy, tx = leftX + dx;
-                    if (ty < 0 || ty >= mapRows || tx < 0 || tx >= mapCols) return false;
-                    const tile = map[ty][tx];
-                    if (tile !== 0 && tile !== 2) return false;
-                    if (occupied.has(`${tx},${ty}`)) return false;
-                }
-            }
-            return true;
-        };
-
-        const addTower = (topY: number, leftX: number): void => {
-            if (!isFreeForTower(topY, leftX)) return;
-            const b: TBuildingInput = { guid: common.guid(), type: 'sporovaya_bashnya', x: leftX, y: topY };
-            result.push(b);
-            for (let dy = 0; dy <= 1; dy++)
-                for (let dx = 0; dx <= 1; dx++)
-                    occupied.add(`${leftX + dx},${topY + dy}`);
-        };
-
-        // За левой стеной (x=zoneX0) — башня сдвинута вправо на 1, каждые 7 клеток по Y
-        for (let y = zoneY0; y <= zoneY1 - 1; y += 7) {
-            addTower(y, zoneX0 + 1);
-        }
-
-        // За верхней стеной (y=zoneY0) — башня сдвинута вниз на 1, каждые 7 клеток по X
-        for (let x = zoneX0 + 1; x <= zoneX1 - 1; x += 7) {
-            addTower(zoneY0 + 1, x);
+        placeWallRow(zoneY0);
+        placeWallColumn(zoneX0);
+        for (const pos of towerPositions) {
+            tryPlaceTower(pos.y, pos.x);
         }
 
         return result;

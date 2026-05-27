@@ -14,6 +14,7 @@ import {
 import { TILE } from './terrainConstants';
 import { drawTerrainCell } from './terrainRenderer';
 import { getTerrainTilePreviewUrl } from './terrainTiles';
+import { buildAllyVisibilityGrid, drawVisibilityFog } from './visibilityFog';
 
 /** Базовый размер клетки (карта скроллится, если не влезает) */
 const MIN_CELL_PX = 40;
@@ -253,6 +254,7 @@ interface UnitData {
     hp: number;
     maxHp?: number;
     speed: number;
+    visible?: number;
     targetX: number | null;
     targetY: number | null;
 }
@@ -724,6 +726,8 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage }) => {
                 canvas.height = h;
             }
             drawMap(ctx, map, cell);
+            const visibleGrid = buildAllyVisibilityGrid(rows, cols, unitsRef.current);
+            drawVisibilityFog(ctx, cols, rows, cell, visibleGrid);
             alliedBuildingsRef.current.forEach((b) => drawAlliedBuilding(ctx, b, cell));
             enemyBuildingsRef.current.forEach((b) => drawEnemyBuilding(ctx, b, cell));
             enemyUnitsRef.current.forEach((eu) => drawEnemyUnit(ctx, eu, cell));

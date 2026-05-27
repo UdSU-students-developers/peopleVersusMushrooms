@@ -51,6 +51,60 @@ function isWalkable(grid, x, y) {
     return grid[y]?.[x] === 0;
 }
 
+/**
+ * Находит достижимую клетку, наиболее близкую к целевой точке.
+ * Поиск идёт BFS от позиции юнита только по связной компоненте проходимости.
+ * @returns {{ x: number, y: number } | null}
+ */
+function findNearestReachableTile(grid, fromX, fromY, targetX, targetY) {
+    const rows = grid.length;
+    const cols = grid[0]?.length ?? 0;
+    const sx = Math.floor(fromX);
+    const sy = Math.floor(fromY);
+    const tx = Math.floor(targetX);
+    const ty = Math.floor(targetY);
+
+    if (sx < 0 || sy < 0 || sx >= cols || sy >= rows || !isWalkable(grid, sx, sy)) {
+        return null;
+    }
+
+    const visited = Array.from({ length: rows }, () => Array(cols).fill(false));
+    const queue = [{ x: sx, y: sy }];
+    visited[sy][sx] = true;
+
+    let best = { x: sx, y: sy };
+    let bestDistSq = (sx - tx) * (sx - tx) + (sy - ty) * (sy - ty);
+
+    for (let i = 0; i < queue.length; i += 1) {
+        const current = queue[i];
+        const distSq = (current.x - tx) * (current.x - tx) + (current.y - ty) * (current.y - ty);
+        if (distSq < bestDistSq) {
+            best = current;
+            bestDistSq = distSq;
+        }
+
+        const neighbors = [
+            { x: current.x + 1, y: current.y },
+            { x: current.x - 1, y: current.y },
+            { x: current.x, y: current.y + 1 },
+            { x: current.x, y: current.y - 1 },
+        ];
+
+        for (const next of neighbors) {
+            if (next.x < 0 || next.y < 0 || next.x >= cols || next.y >= rows) {
+                continue;
+            }
+            if (visited[next.y][next.x] || !isWalkable(grid, next.x, next.y)) {
+                continue;
+            }
+            visited[next.y][next.x] = true;
+            queue.push(next);
+        }
+    }
+
+    return best;
+}
+
 /** Проходимая клетка рельефа (без учёта зданий). */
 function isTerrainWalkable(map, x, y) {
     const tile = map[y]?.[x];
@@ -94,6 +148,7 @@ module.exports = {
     buildingFootprintSize,
     buildPathGrid,
     isWalkable,
+    findNearestReachableTile,
     isTerrainWalkable,
     findNearestWalkableTile,
 };

@@ -201,11 +201,7 @@ export class ArmyStateManager {
             for (const u of aliveUnits) {
                 if (u.type === 'pizdoglyad') {
                     u.formationHold = false;
-                    u.leashRadius = Infinity;
-                    u.formationTarget = null;
                     continue;
-
-
                 }
 
                 u.formationHold = !formationReady && !enemyNear;
@@ -296,12 +292,44 @@ export class ArmyStateManager {
 
             for (const u of this.army.units) {
                 if (!u.isAlive) continue;
-                // Пиздогляды используют свою собственную логику разведки из Pizdoglyad.ts
-                // Не вмешиваемся в их поведение
+                // Пиздоглядов не переприсваиваем слоты здесь
                 if (u.type === 'pizdoglyad') {
-                    u.formationHold = false;
-                    u.leashRadius = Infinity;
-                    u.formationTarget = null;
+                    // Если на карте ещё есть туман войны — ведём разведку (unit AI).
+                    // Иначе — займём позицию в правом верхнем углу (formationHold).
+                    const hasFog = (() => {
+                        for (let yy = 0; yy < rows; yy++) {
+                            for (let xx = 0; xx < cols; xx++) if (map[yy][xx] === null) return true;
+                        }
+                        return false;
+                    })();
+
+                    if (hasFog) {
+                        u.leashRadius = 6;
+                        u.formationHold = false; // позволяем юнитам самостоятельно искать туманные точки
+                        u.formationTarget = null;
+                        continue;
+                    }
+
+                    // Карта разведана — занимаем правый верхний угол.
+                    const zoneW = Math.min(15, cols);
+                    const zoneH = Math.min(15, rows);
+                    let placed = false;
+                    for (let dy = 0; dy < zoneH && !placed; dy++) {
+                        for (let dx = 0; dx < zoneW && !placed; dx++) {
+                            const yy = dy; // top
+                            const xx = cols - zoneW + dx; // right side
+                            if (yy >= 0 && xx >= 0 && map[yy][xx] !== null && (map[yy][xx] === 0 || map[yy][xx] === 2)) {
+                                u.formationTarget = { x: xx, y: yy };
+                                u.formationHold = true;
+                                u.leashRadius = 3;
+                                placed = true;
+                            }
+                        }
+                    }
+                    if (!placed) {
+                        u.formationHold = true;
+                        u.leashRadius = 3;
+                    }
                     continue;
                 }
 

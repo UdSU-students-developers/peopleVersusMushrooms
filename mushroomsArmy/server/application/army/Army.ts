@@ -87,8 +87,6 @@ export class Army {
     public projectiles: TProjectile[] = [];
     private mapSyncedUnits = new Map<string, { x: number; y: number; type: string; visibility: number }>();
     public mapSyncedBuildings = new Map<string, { guid: string; x: number; y: number; type: string; visibility: number; size: number }>();
-    /** Счетчик пиздоглядов для присвоения индексов зон */
-    private pizdoglyadCounter: number = 0;
     public callbacks: {
         update: (guid: string, data: TArmyState) => void;
         takeDamage?: (unitGuid: string, amount: number) => void;
@@ -404,10 +402,8 @@ export class Army {
 
         for (const unit of this.units) {
             if (unit.isAlive) {
-                if (unit.type === 'eblekar') {
+                if (unit.type === 'eblekar' || unit.type === 'pizdoglyad') {
                     (unit as Eblekar).update(this.calculateSharedVisibility(), this.map, deltaTime, aliveAllies);
-                } else if (unit.type === 'pizdoglyad') {
-                    (unit as any).update(this.calculateSharedVisibility(), this.map, deltaTime, aliveAllies, this.economyBuildings, this.economyUnits);
                 } else {
                     unit.update(this.calculateSharedVisibility(), this.map, deltaTime);
                 }
@@ -476,7 +472,7 @@ export class Army {
         } else if (type === 'eblekar') {
             this.units.push(new Eblekar({ guid, type, x, y, speed: 1, attackRange: 0, projectiles: this.projectiles }));
         } else if (type === 'pizdoglyad') {
-                    this.units.push(new Pizdoglyad({ guid, type, x, y, speed: 7, attackRange: 0 }, this.pizdoglyadCounter++));
+            this.units.push(new Pizdoglyad({ guid, type, x, y, speed: 7, attackRange: 0 }));
         }
 
         return { guid };

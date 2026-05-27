@@ -2,7 +2,7 @@ const { SHOT_COOLDOWN_BY_TYPE, MARCH_OBJECTIVE } = require('./constants');
 const { buildSenseSnapshot, aimPoint } = require('./sensing');
 const { pickEngageTarget, pickShootTarget } = require('./targeting');
 const { hasLineOfSight } = require('./lineOfSight');
-const { findNearestWalkableTile } = require('../pathGrid');
+const { findNearestWalkableTile, buildPathGrid, findNearestReachableTile } = require('../pathGrid');
 
 /**
  * Упрощённая тактика:
@@ -95,6 +95,7 @@ class TacticalController {
     executeMovement() {
         const army = this.army;
         const { units: enemyUnits, buildings: enemyBuildings } = army.getShootableTargets();
+        const grid = buildPathGrid(army.map, army.alliedBuildings);
 
         for (const unit of army.units) {
             if (unit.isDead?.() || (typeof unit.hp === 'number' && unit.hp <= 0)) {
@@ -119,8 +120,9 @@ class TacticalController {
             }
 
             const goal = unit.moveGoal || this._snapGoal(MARCH_OBJECTIVE.x, MARCH_OBJECTIVE.y, 'march');
-            const gx = Math.round(goal.x);
-            const gy = Math.round(goal.y);
+            const reachableGoal = findNearestReachableTile(grid, unit.x, unit.y, goal.x, goal.y);
+            const gx = Math.round(reachableGoal?.x ?? goal.x);
+            const gy = Math.round(reachableGoal?.y ?? goal.y);
 
             const goalKey = `${goal.reason}:${gx},${gy}`;
             if (unit._goalKey !== goalKey) {

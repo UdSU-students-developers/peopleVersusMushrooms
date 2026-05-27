@@ -127,6 +127,7 @@ const CONFIG = {
             SOURCES_VISIBILITY: 100,
             GROWTH_LIMIT: 100, //сколько тиков нужно личинке чтобы превратиться в рабочего
             MUTATION_ENERGY_COST: 15, // энергия для мутации личинки в рабочего
+            MUTATION_IRON_COST: 0,
         },
 
         WORKER: {

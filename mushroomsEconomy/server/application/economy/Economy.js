@@ -152,6 +152,7 @@ class Economy {
         this.units.larvae = this.units.larvae.filter(l => l.guid !== lar.guid);
 
         this.addWorker(lar.x, lar.y);
+        this.updated = true;
         return true;
     }
 
@@ -369,16 +370,13 @@ class Economy {
         const grid = this.map.larvaGrid;
         if (!grid) return;
 
-        const allUnits = [
-            ...this.units.larvae,
-            ...this.units.workers,
-        ];
-
-        for (const larva of this.units.larvae) {
+        for (const larva of [...this.units.larvae]) {
+            const allUnits = [...this.units.larvae, ...this.units.workers];
             this._updateUnit(larva, grid, allUnits);
         }
 
-        for (const worker of this.units.workers) {
+        for (const worker of [...this.units.workers]) {
+            const allUnits = [...this.units.larvae, ...this.units.workers];
             this._updateUnit(worker, grid, allUnits);
         }
     }

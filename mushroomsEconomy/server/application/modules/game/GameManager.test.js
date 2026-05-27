@@ -184,9 +184,9 @@ describe('GameManager', () => {
             expect(mockIo.to).toHaveBeenCalledWith(testSocketId);
             expect(mockIo.emit).toHaveBeenCalledWith(
                 GLOBAL_CONFIG.SOCKET.START_GAME,
-                mockEconomyInstance.get()
+                mockAnswer.good(mockEconomyInstance.get())
             );
-            expect(result).toEqual(mockEconomyInstance.get());
+            expect(result).toEqual(mockAnswer.good(mockEconomyInstance.get()));
         });
 
         test('отсутствует guids.mushroomsEconomy - возвращает bad(4001)', () => {
@@ -215,16 +215,24 @@ describe('GameManager', () => {
     });
 
     describe('eventApplyDamage', () => {
-        test('успешный сценарий: вызывает economy.applyDamage и возвращает true', () => {
+        test('успешный сценарий: вызывает economy.applyDamage и возвращает answer.good', () => {
             gameManager.economies[testGuid] = mockEconomyInstance;
-            const result = gameManager.eventApplyDamage({ guid: 'unit-123', damage: 25, economyGuid: testGuid });
+            const result = gameManager.eventApplyDamage({
+                entityGuid: 'unit-123',
+                damage: 25,
+                mushroomsEconomy: testGuid,
+            });
             expect(mockEconomyInstance.applyDamage).toHaveBeenCalledWith('unit-123', 25);
-            expect(result).toBe(true);
+            expect(result).toEqual(mockAnswer.good(true));
         });
 
-        test('экономика не существует - возвращает false', () => {
-            const result = gameManager.eventApplyDamage({ guid: 'unit-123', damage: 25, economyGuid: 'non-existent' });
-            expect(result).toBe(false);
+        test('экономика не существует - возвращает answer.bad(4002)', () => {
+            const result = gameManager.eventApplyDamage({
+                entityGuid: 'unit-123',
+                damage: 25,
+                mushroomsEconomy: 'non-existent',
+            });
+            expect(result).toEqual(mockAnswer.bad(4002));
         });
     });
 

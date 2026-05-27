@@ -97,7 +97,7 @@ class GameManager extends BaseManager {
 				this.getRelief(this.economies[guid].map, guid, this.economies[guid].guids.mapGuid);
 				return sceneData;
 			}
-			return this.answer.bad(1001)
+			return this.answer.bad(1001);
 		}
 		return this.answer.bad(4001);
 	}
@@ -107,10 +107,14 @@ class GameManager extends BaseManager {
 		const economy = this.economies[mushroomsEconomy];
 		
 		if (!economy) {
-			return false;
+			return this.answer.bad(4002);
 		}
-		
-		return economy.applyDamage(entityGuid, damage);
+
+		if (!economy.applyDamage(entityGuid, damage)) {
+			return this.answer.bad(4002);
+		}
+
+		return this.answer.good(true);
 	}
 
 	eventMoveUnit(data = {}) {
@@ -118,10 +122,14 @@ class GameManager extends BaseManager {
 		const economy = this.economies[mushroomsEconomy];
 
 		if (!economy) {
-			return false;
+			return this.answer.bad(4003);
 		}
 
-		return economy.moveUnitToNearestCell(guid);
+		if (!economy.moveUnitToNearestCell(guid)) {
+			return this.answer.bad(4003);
+		}
+
+		return this.answer.good(true);
 	}
 
 	eventRequestUnits(data = {}) {
@@ -129,11 +137,11 @@ class GameManager extends BaseManager {
 		const economy = this.economies[mushroomsEconomy];
 
 		if (!economy) {
-			return { error: 4001 };
+			return this.answer.bad(4001);
 		}
 
 		economy.autopilot.addUnitRequests(unitsType, unitsAmount);
-		return { success: true };
+		return this.answer.good(true);
 	}
 
 	eventRequestBuildings(data = {}) {
@@ -141,11 +149,11 @@ class GameManager extends BaseManager {
 		const economy = this.economies[mushroomsEconomy];
 
 		if (!economy) {
-			return { error: 4001 };
+			return this.answer.bad(4001);
 		}
 
 		economy.autopilot.addBuildingRequests(buildingsType, buildingsAmount);
-		return { success: true };
+		return this.answer.good(true);
 	}
 	
 	async getRelief(map, guid, mapGuid) {

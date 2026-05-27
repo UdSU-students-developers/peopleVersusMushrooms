@@ -75,9 +75,6 @@ import mine2Src from '../../assets/buildings/mine/mine2.png';
 
 // --- Здания и юниты mushroomsEconomy (враг peopleArmy) ---
 import mushMycelium1Src from '../../assets/buildings/mushrooms_economy/mycelium/mycelium1.png';
-import mushMycelium2Src from '../../assets/buildings/mushrooms_economy/mycelium/mycelium2.png';
-import mushMycelium3Src from '../../assets/buildings/mushrooms_economy/mycelium/mycelium3.png';
-import mushMycelium4Src from '../../assets/buildings/mushrooms_economy/mycelium/mycelium4.png';
 import mushIncubator1Src from '../../assets/buildings/mushrooms_economy/incubator/incubator1.png';
 import mushIncubator2Src from '../../assets/buildings/mushrooms_economy/incubator/incubator2.png';
 import mushReactor1Src from '../../assets/buildings/mushrooms_economy/reactor/reactor1.png';
@@ -162,7 +159,7 @@ export const PEOPLE_ECONOMY_BUILDING_SRCS: Record<string, string[]> = {
  * Поле larva — на случай, если карта отдаёт личинку в buildings.
  */
 export const MUSHROOMS_ECONOMY_BUILDING_SRCS: Record<string, string[]> = {
-    mycelium: [mushMycelium1Src, mushMycelium2Src, mushMycelium3Src, mushMycelium4Src],
+    mycelium: [mushMycelium1Src],
     incubator: [mushIncubator1Src, mushIncubator2Src],
     reactor: [mushReactor1Src, mushReactor2Src, mushReactor3Src, mushReactor4Src],
     small_reactor: [

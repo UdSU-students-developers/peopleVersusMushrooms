@@ -36,8 +36,8 @@ class Larva extends Unit {
         }
 
         if (this.growthScale >= GROWTH_LIMIT) {
-            this.callbacks.mutateToWorker(this);
-            return;
+            const mutated = this.callbacks.mutateToWorker(this);
+            if (mutated) return;
         }
 
         if (this._hasReachedTarget()) {

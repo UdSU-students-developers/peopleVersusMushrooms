@@ -145,13 +145,15 @@ class Economy {
 
     mutateLarvaToWorker(lar) {
         const { MUTATION_ENERGY_COST } = CONFIG.ECONOMY.LARVA;
-        if (this.resources.energy < MUTATION_ENERGY_COST) return;
+        if (this.resources.energy < MUTATION_ENERGY_COST) return false;
 
         this.resources.energy -= MUTATION_ENERGY_COST;
         this.updatedUnits.push(lar.get());
         this.units.larvae = this.units.larvae.filter(l => l.guid !== lar.guid);
 
         this.addWorker(lar.x, lar.y);
+        this.updated = true;
+        return true;
     }
 
     addWorker(x, y) {
@@ -350,25 +352,32 @@ class Economy {
         });
     }
 
+    _updateUnit(unit, grid, allUnits) {
+        const prevX = unit.x;
+        const prevY = unit.y;
+
+        unit.setGrid(grid);
+        unit.setUnits(allUnits);
+        unit.update();
+
+        if (unit.x !== prevX || unit.y !== prevY) {
+            this.updatedUnits.push(unit.get());
+            this.updated = true;
+        }
+    }
+
     updateUnits() {
         const grid = this.map.larvaGrid;
         if (!grid) return;
 
-        const allUnits = [
-            ...this.units.larvae,
-            ...this.units.workers,
-        ];
-
-        for (const larva of this.units.larvae) {
-            larva.setGrid(grid);
-            larva.setUnits(allUnits);
-            larva.update();
+        for (const larva of [...this.units.larvae]) {
+            const allUnits = [...this.units.larvae, ...this.units.workers];
+            this._updateUnit(larva, grid, allUnits);
         }
 
-        for (const worker of this.units.workers) {
-            worker.setGrid(grid);
-            worker.setUnits(allUnits);
-            worker.update();
+        for (const worker of [...this.units.workers]) {
+            const allUnits = [...this.units.larvae, ...this.units.workers];
+            this._updateUnit(worker, grid, allUnits);
         }
     }
 

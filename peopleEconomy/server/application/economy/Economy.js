@@ -1,5 +1,6 @@
 const EasyStar = require('easystarjs');
 const CONFIG = require('../../config');
+const Worker = require('./entities/Units/Worker');
 
 const Map = require('./entities/Map/Map');
 const { 
@@ -46,6 +47,9 @@ class Economy {
         this.updatedBuildings = []; // { }
         this.updatedUnits = []; // { }
 
+        this.unknownPoints = [];
+        this.knownResources = [];
+
 
         // данные про игроков
         this.guids = {
@@ -91,6 +95,8 @@ class Economy {
     }
 
     _initEconomy() {
+        this._initUnknownPoints()
+        this.createUnit({ x: 1, y: 1, type: 'worker'});
         this.createBuilding({ x: 2, y: 2, buildingType: DRILLER.type });
         this.createBuilding({ x: 2, y: 3, buildingType: MINE.type });
         this.createBuilding({ x: 3, y: 2, buildingType: PIPE.type });
@@ -116,8 +122,69 @@ class Economy {
         } 
     }
 
+    //инициализация неизвестных точек
+    _initUnknownPoints() {
+        for (let x = 0; x < 100; x++) {
+            for (let y = 0; y < 100; y++) {
+                this.unknownPoints.push({ x, y });
+            }
+        }
+    }
+
+    getNearestUnknownPoint(x, y) {
+        if (this.unknownPoints.length === 0) return null;
+        
+        let nearest = null;
+        let minDistance = Infinity;
+        
+        for (const point of this.unknownPoints) {
+            const dx = Math.abs(x - point.x);
+            const dy = Math.abs(y - point.y);
+            const distance = dx * dx + dy * dy;
+            
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearest = point;
+            }
+        }
+        
+        return nearest;
+    }
+
+    //отметить точку как исследованную
+    markPointAsExplored(x, y) {
+        const index = this.unknownPoints.findIndex(p => p.x === x && p.y === y);
+        if (index !== -1) {
+            this.unknownPoints.splice(index, 1);
+        }
+    }
+
+    //добавить найденный ресурс
+    addKnownResource(x, y, type, saturation) {
+        const exists = this.knownResources.some(r => r.x === x && r.y === y);
+        if (!exists) {
+            this.knownResources.push({ x, y, type, saturation });
+            console.log(`НАЙДЕН РЕСУРС: (${x}, ${y}) тип: ${type}, насыщение: ${saturation}`);
+        }
+    }
+
+    //получить все известные ресурсы
+    getKnownResources() {
+        return this.knownResources;
+    }
+
+    //получить ресурс по координатам
+    getKnownResourceAt(x, y) {
+        return this.knownResources.find(r => r.x === x && r.y === y);
+    }
+
     setRelief(relief) {
         this.map.setRelief(relief);
+        for (const worker of this.workers) {
+            if (worker.onReliefLoaded) {
+                worker.onReliefLoaded();
+            }
+        }
     }
 
     setResources(resources) {
@@ -142,21 +209,31 @@ class Economy {
     }
 
     //создать юнита
-    createUnit({ x, y, type = null }) {
+    createUnit({ x, y, type = 'worker' }) {
+        const unitGuid = this.common.guid();
+        
+        if (type === 'worker') {
+            const worker = new Worker({
+                guid: unitGuid,
+                x,
+                y,
+                map: this.map,
+                easystar: this.easyStar,
+                economy: this
+            });
+            this.workers.push(worker);
+            this.map.setUnit(worker.get());
+            this.updatedUnits.push(worker.get());
+            this.updated = true;
+            return;
+        }
+        
         const unit = {
-            guid: this.common.guid(),
+            guid: this.guids.peopleArmy,
             x,
             y,
             type
         };
-        if (unit.type === 'worker') {
-            this.workers.push(unit);
-            this.map.setUnit(unit);
-            this.updatedUnits(unit);
-            this.updated = true;
-            return
-        }
-        unit.guid = this.guids.peopleArmy;
         this.callbacks.spawnArmyUnit(unit);
     }
 

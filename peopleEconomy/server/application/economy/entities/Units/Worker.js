@@ -1,5 +1,5 @@
 const Unit = require("../Unit");
-const CONFIG = require("../../config");
+const CONFIG = require("../../../../config");
 
 const { HP, SPEED, TYPE, VISIBILITY } = CONFIG.ECONOMY.WORKER;
 const { WORKER_STATUS, SEARCH, BUILD, FLEE } = CONFIG.ECONOMY;
@@ -15,10 +15,32 @@ class Worker extends Unit {
         this.speed = SPEED;
         this.status = WORKER_STATUS.SEARCH;
         this.economy = options.economy;
+        this.pendingTarget = null; // цель, которую нужно установить после загрузки карты
+        this.reliefLoaded = false; // флаг, что рельеф загружен
+        
+        console.log(`Воркер ${this.guid} создан, статус: ${this.status}`);
+        
+        // если рельеф еще не загружен, сохраняем цель
+        if (!this.economy.map.relief) {
+            this.pendingTarget = this.economy.getNearestUnknownPoint(this.x, this.y);
+        } else {
+            this.setStatus(WORKER_STATUS.SEARCH);
+        }
     }
 
     get() {
         return { ...super.get(), hp: this.hp, status: this.status };
+    }
+
+    //вызывается из Economy, когда рельеф загружен
+    onReliefLoaded() {
+        this.reliefLoaded = true;
+        if (this.pendingTarget) {
+            this.setTarget({ x: this.pendingTarget.x, y: this.pendingTarget.y });
+            this.pendingTarget = null;
+        } else {
+            this.setStatus(WORKER_STATUS.SEARCH);
+        }
     }
 
     //установить статус поведения
@@ -32,7 +54,21 @@ class Worker extends Unit {
                 }
                 break;
             case WORKER_STATUS.SEARCH:
-                //...
+                //смотрит на массив неизвестных точек в экономике
+                //ищет точку с найменьшей суммой координат и идет к ней
+                //когда доходит до точки, то такая точка становиться не неизвестной
+                //если эта точка является ресурсом, то она записывается в массив видимых ресурсов в экономике, который импользуют все воркеры
+                
+                //проверяем, загружен ли рельеф
+                if (!this.economy.map.relief) {
+                    this.pendingTarget = this.economy.getNearestUnknownPoint(this.x, this.y);
+                    return;
+                }
+                const unknownPoint = this.economy.getNearestUnknownPoint(this.x, this.y);
+                if (unknownPoint) {
+                    this.setTarget({ x: unknownPoint.x, y: unknownPoint.y });
+                }
+                break;
             case WORKER_STATUS.BUILD:
                 //...
                 //смотрим в свои постройки -> принимаем решение что-то построить (на основе очереди на стриотелсьттво?)
@@ -42,6 +78,42 @@ class Worker extends Unit {
                 this.status = WORKER_STATUS.SEARCH;
                 break;
         }
+    }
+
+    //обновление поведения в статусе SEARCH
+    updateSearchStatus() {
+        if (!this.target || this._hasReachedTarget()) {
+            if (this.target && this._hasReachedTarget()) {
+                this.economy.markPointAsExplored(this.target.x, this.target.y);
+                const resource = this.economy.map.resources[this.target.y]?.[this.target.x];
+                if (resource && resource.saturation > 0) {
+                    this.economy.addKnownResource(this.target.x, this.target.y, resource.type, resource.saturation);
+                }
+            }
+            
+            let unknownPoint = this.economy.getNearestUnknownPoint(this.x, this.y);
+            while (unknownPoint) {
+                const walkableTarget = this._findNearestWalkable(unknownPoint.x, unknownPoint.y);
+                if (walkableTarget && (walkableTarget.x !== unknownPoint.x || walkableTarget.y !== unknownPoint.y)) {
+                    this.economy.markPointAsExplored(unknownPoint.x, unknownPoint.y);
+                    unknownPoint = this.economy.getNearestUnknownPoint(this.x, this.y);
+                } else {
+                    break;
+                }
+            }
+            
+            if (unknownPoint) {
+                this.setTarget({ x: unknownPoint.x, y: unknownPoint.y });
+            }
+        }
+    }
+
+    //переопределяем move
+    move() {
+        if (this.status === WORKER_STATUS.SEARCH) {
+            this.updateSearchStatus();
+        }
+        super.move();
     }
 
     //получить текущий статус

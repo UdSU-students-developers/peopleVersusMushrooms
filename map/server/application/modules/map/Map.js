@@ -141,6 +141,7 @@ class Map {
     }
 
     updateUnit(unit) {
+        console.log(`ЮНИТ ОБНОВЛЕН:`, { guid: unit.guid, x: unit.x, y: unit.y });
         // ищем юнита по гуиду
         const unitIndex = this.units.findIndex(elem => unit.guid === elem.guid);
         if (unitIndex + 1) {
@@ -149,6 +150,7 @@ class Map {
             if (unit.x === unitInArray.x && unit.y === unitInArray.y) {
                 this.units.splice(unitIndex, 1);
             } else {
+                console.log(`ЮНИТ ${unit.guid} ПЕРЕМЕСТИЛСЯ: (${unitInArray.x}, ${unitInArray.y}) -> (${unit.x}, ${unit.y})`);
                 // если нашелся и изменился - передвинулся
                 unitInArray.x = unit.x;
                 unitInArray.y = unit.y;

@@ -154,27 +154,27 @@ const CONFIG = {
         UNITS: {
             BMP: {
                 COST: 130,
-                INERTIA: 350,
+                INERTIA: 3250,
                 TYPE: 'bmp'
             },
             PARTIZAN: {
                 COST: 55,
-                INERTIA: 150,
+                INERTIA: 1550,
                 TYPE: 'partizan'
             },
             SNIPER: {
                 COST: 45,
-                INERTIA: 120,
+                INERTIA: 1800,
                 TYPE: 'sniper'
             },
             SOLDIER: {
                 COST: 30,
-                INERTIA: 60,
+                INERTIA: 1360,
                 TYPE: 'soldier'
             },
             WORKER: {
                 COST: 35,
-                INERTIA: 60,
+                INERTIA: 1360,
                 TYPE: 'worker'
             }
         },

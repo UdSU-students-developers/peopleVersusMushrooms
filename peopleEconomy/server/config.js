@@ -90,7 +90,7 @@ const CONFIG = {
                 size: 2,
                 hp: 200,
                 visibility: 4,
-                consumption: 3,
+                consumption: 4,
                 production: 0,
                 capacity: {
                     OIL: 0,

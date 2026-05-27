@@ -33,6 +33,8 @@ const SPRITE_FRAME_MS = 200;
 /** Типы юнитов в легенде (фиксированный порядок) */
 const ALLY_LEGEND_TYPES = ['soldier', 'bmp', 'partizan', 'sniper'] as const;
 const ENEMY_LEGEND_TYPES = ['sporomet', 'champigneb', 'eblekar', 'pizdoglyad', 'larva'] as const;
+/** Здания mushroomsArmy на карте */
+const ENEMY_BUILDING_LEGEND_TYPES = ['sporovaya_bashnya', 'vzryvomor'] as const;
 
 const TERRAIN_PREVIEW = {
     grass: getTerrainTilePreviewUrl('grass', 0),
@@ -50,6 +52,16 @@ const LEGEND_LABELS: Record<(typeof ALLY_LEGEND_TYPES)[number] | (typeof ENEMY_L
     eblekar: 'Эблекар',
     pizdoglyad: 'Пиздогляд',
     larva: 'Личинка',
+};
+
+const BUILDING_LEGEND_LABELS: Record<(typeof ENEMY_BUILDING_LEGEND_TYPES)[number], string> = {
+    sporovaya_bashnya: 'Споровая башня',
+    vzryvomor: 'Взрывомор',
+};
+
+const BUILDING_LEGEND_PREVIEW: Record<(typeof ENEMY_BUILDING_LEGEND_TYPES)[number], string> = {
+    sporovaya_bashnya: SPOROVAYA_BASHNYA_SRCS.idle,
+    vzryvomor: VZRYVOMOR_BUILDING_SRCS[0],
 };
 
 const COLOR = {
@@ -138,6 +150,24 @@ function countUnitsByTypes(units: { type?: string }[], types: readonly string[])
     }
     for (const u of units) {
         const t = normUnitType(u.type);
+        if (Object.prototype.hasOwnProperty.call(out, t)) {
+            out[t] += 1;
+        }
+    }
+    return out;
+}
+
+function countBuildingsByTypes(
+    buildings: EnemyBuildingData[],
+    types: readonly string[],
+): Record<string, number> {
+    const out: Record<string, number> = {};
+    for (const t of types) {
+        out[t] = 0;
+    }
+    for (const b of buildings) {
+        if (!isEnemyBuildingAlive(b)) continue;
+        const t = normBuildingType(b.type);
         if (Object.prototype.hasOwnProperty.call(out, t)) {
             out[t] += 1;
         }
@@ -475,6 +505,7 @@ function fitCellToWrap(wrap: HTMLElement, cols: number, rows: number): number {
 type LegendUnitStats = {
     allies: Record<string, number>;
     enemies: Record<string, number>;
+    enemyBuildings: Record<string, number>;
 };
 
 function applyArmyUpdate(
@@ -527,6 +558,10 @@ function applyArmyUpdate(
     setLegendUnitStats({
         allies: countUnitsByTypes(unitsRef.current, ALLY_LEGEND_TYPES),
         enemies: countUnitsByTypes(enemyUnitsRef.current, ENEMY_LEGEND_TYPES),
+        enemyBuildings: countBuildingsByTypes(
+            Array.from(enemyBuildingsRef.current.values()),
+            ENEMY_BUILDING_LEGEND_TYPES,
+        ),
     });
 }
 
@@ -547,6 +582,7 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage }) => {
     const [legendUnitStats, setLegendUnitStats] = useState<LegendUnitStats>(() => ({
         allies: countUnitsByTypes([], ALLY_LEGEND_TYPES),
         enemies: countUnitsByTypes([], ENEMY_LEGEND_TYPES),
+        enemyBuildings: countBuildingsByTypes([], ENEMY_BUILDING_LEGEND_TYPES),
     }));
     const [hasMap, setHasMap] = useState(false);
     const [zoom, setZoom] = useState(ZOOM_DEFAULT);
@@ -792,6 +828,20 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage }) => {
                             />
                             <span className="game-legend-name">{LEGEND_LABELS[type]}</span>
                             <span className="game-legend-count">{legendUnitStats.enemies[type] ?? 0}</span>
+                        </div>
+                    ))}
+                    <p className="game-legend-subhead">Здания (армия грибов)</p>
+                    {ENEMY_BUILDING_LEGEND_TYPES.map((type) => (
+                        <div key={type} className="game-legend-row game-legend-row--unit">
+                            <img
+                                className="game-legend-sprite"
+                                src={BUILDING_LEGEND_PREVIEW[type]}
+                                alt=""
+                                width={22}
+                                height={22}
+                            />
+                            <span className="game-legend-name">{BUILDING_LEGEND_LABELS[type]}</span>
+                            <span className="game-legend-count">{legendUnitStats.enemyBuildings[type] ?? 0}</span>
                         </div>
                     ))}
                     <p className="game-legend-subhead">Рельеф</p>

@@ -19,12 +19,10 @@ class Pizdoglyad extends Unit {
     /** Экономические юниты людей, переданные снаружи через update() */
     private lastEconomyUnits: TBuildingInput[] = [];
 
-    /** Индекс зоны разведки (0, 1, 2) или -1 если следует за еблекаром */
+    /** Индекс зоны разведки (0, 1, 2) */
     private scoutZoneIndex: number = 0;
-    /** Еблекар, за которым следует этот пиздогляд (если scoutZoneIndex === -1) */
-    private assignedEblekar: Unit | null = null;
 
-    private currentMode: 'panic' | 'watch' | 'scout' | 'follow_eblekar' = 'scout';
+    private currentMode: 'panic' | 'watch' | 'scout' = 'scout';
 
     constructor(options: TUnitOptions, scoutZoneIndex: number = 0) {
         super({ ...options, hp: 2, speed: 7, attackRange: 0 });
@@ -35,11 +33,6 @@ class Pizdoglyad extends Unit {
     }
 
     protected onEnemyFound(enemy: Unit, distance: number): void {
-        // Пиздогляды с индексом >= 3 следуют за еблекаром и не реагируют на врагов
-        if (this.scoutZoneIndex >= 3) {
-            return;
-        }
-
         // Проверяем, находится ли враг в зоне ответственности пиздогляда
         const zoneCenters = [
             { x: 0, y: 15 },
@@ -111,63 +104,6 @@ class Pizdoglyad extends Unit {
         this.doScout(map);
     }
 
-    private updateFollowEblekar(allies: Unit[], map: TMap, deltaTime: number): void {
-        this.currentMode = 'follow_eblekar';
-
-        // Если назначенный еблекар умер или не существует, ищем нового
-        if (!this.assignedEblekar || !this.assignedEblekar.isAlive) {
-            this.assignedEblekar = this.findUnassignedEblekar(allies);
-        }
-
-        if (this.assignedEblekar) {
-            // Стоим на одну клетку вниз и правее еблекара
-            const targetX = this.assignedEblekar.x + 1;
-            const targetY = this.assignedEblekar.y + 1;
-
-            // Проверяем, проходима ли целевая клетка
-            const mapRows = map.length;
-            const mapCols = map[0]?.length ?? 0;
-            const targetTileX = Math.floor(targetX);
-            const targetTileY = Math.floor(targetY);
-
-            if (targetTileX >= 0 && targetTileX < mapCols && targetTileY >= 0 && targetTileY < mapRows) {
-                const tile = map[targetTileY][targetTileX];
-                if (tile === 0 || tile === 2) {
-                    // Клетка проходима - идем туда
-                    this.targetX = targetX;
-                    this.targetY = targetY;
-                } else {
-                    // Клетка непроходима - стоим на месте
-                    this.targetX = this.x;
-                    this.targetY = this.y;
-                }
-            } else {
-                // За пределами карты - стоим на месте
-                this.targetX = this.x;
-                this.targetY = this.y;
-            }
-        } else {
-            // Еблекаров нет - стоим на месте
-            this.targetX = this.x;
-            this.targetY = this.y;
-        }
-    }
-
-    private findUnassignedEblekar(allies: Unit[]): Unit | null {
-        // Находим всех еблекаров
-        const eblekars = allies.filter(u => u.type === 'eblekar' && u.isAlive);
-        if (eblekars.length === 0) return null;
-
-        // Проверяем, какие еблекары уже имеют назначенных пиздоглядов
-        // Для этого используем простой подход: распределяем по round-robin
-        const pizdoglyads = allies.filter(u => u.type === 'pizdoglyad' && u.isAlive && (u as any).scoutZoneIndex >= 3);
-        const myIndex = this.scoutZoneIndex - 3; // 0, 1, 2, ... для пиздоглядов с индексом >= 3
-
-        // Распределяем еблекаров циклически
-        const assignedIndex = myIndex % eblekars.length;
-        return eblekars[assignedIndex];
-    }
-
     public update(enemies: Unit[], map: TMap, deltaTime: number, allies: Unit[] = [], economyBuildings: TBuildingInput[] = [], economyUnits: TBuildingInput[] = []): void {
         if (!this.isAlive) return;
 
@@ -192,13 +128,6 @@ class Pizdoglyad extends Unit {
             return;
         }
 
-        // Если индекс >= 3, следуем за еблекаром
-        if (this.scoutZoneIndex >= 3) {
-            this.updateFollowEblekar(allies, map, deltaTime);
-            this.pizdoglyadMoveOnly(map, deltaTime);
-            return;
-        }
-
         const nearestEnemy = this.findNearestEnemy(enemies);
 
         if (nearestEnemy) {
@@ -207,10 +136,8 @@ class Pizdoglyad extends Unit {
             const distance = Math.sqrt(dx * dx + dy * dy);
             this.onEnemyFound(nearestEnemy, distance);
         } else {
-            // Пиздогляды с индексом >= 3 не разведывают
-            if (this.scoutZoneIndex < 3) {
-                this.onNoEnemy(map);
-            }
+
+            this.onNoEnemy(map);
         }
         this.pizdoglyadMoveOnly(map, deltaTime);
     }
@@ -244,16 +171,10 @@ class Pizdoglyad extends Unit {
      * - Индекс 0: центр (0, 15) - левая середина
      * - Индекс 1: центр (15, 15) - центр карты
      * - Индекс 2: центр (15, 0) - верхняя середина
-     * - Индекс >= 3: следует за еблекаром, не разведывает
      * Приоритет точкам рядом с экономическими зданиями людей.
      * Если карта полностью разведана в зоне — случайная точка в зоне.
      */
     private findUnexploredPoint(map: TMap): { x: number; y: number } | null {
-        // Пиздогляды с индексом >= 3 не разведывают
-        if (this.scoutZoneIndex >= 3) {
-            return null;
-        }
-
         const rows = map.length;
         const cols = map[0]?.length ?? 0;
         if (!rows || !cols) return null;

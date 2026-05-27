@@ -34,6 +34,22 @@ const TILE = {
     MOUNTAIN: 2,
 } as const;
 
+/** Типы юнитов в легенде (фиксированный порядок) */
+const ALLY_LEGEND_TYPES = ['soldier', 'bmp', 'partizan', 'sniper'] as const;
+const ENEMY_LEGEND_TYPES = ['sporomet', 'champigneb', 'eblekar', 'pizdoglyad', 'larva'] as const;
+
+const LEGEND_LABELS: Record<(typeof ALLY_LEGEND_TYPES)[number] | (typeof ENEMY_LEGEND_TYPES)[number], string> = {
+    soldier: 'Солдат',
+    bmp: 'БМП',
+    partizan: 'Партизан',
+    sniper: 'Снайпер',
+    sporomet: 'Споромёт',
+    champigneb: 'Шампиньёнб',
+    eblekar: 'Эблекар',
+    pizdoglyad: 'Пиздогляд',
+    larva: 'Личинка',
+};
+
 const COLOR = {
     bg: '#0d1117',
     grid: '#1a2332',
@@ -111,6 +127,20 @@ function spriteFrameIndex(frameCount: number): number {
 function normUnitType(type: string | undefined): string {
     const t = String(type ?? '').trim().toLowerCase();
     return t || 'soldier';
+}
+
+function countUnitsByTypes(units: { type?: string }[], types: readonly string[]): Record<string, number> {
+    const out: Record<string, number> = {};
+    for (const t of types) {
+        out[t] = 0;
+    }
+    for (const u of units) {
+        const t = normUnitType(u.type);
+        if (Object.prototype.hasOwnProperty.call(out, t)) {
+            out[t] += 1;
+        }
+    }
+    return out;
 }
 
 function getUnitFrames(type: string): HTMLImageElement[] {
@@ -494,6 +524,11 @@ function fitCellToWrap(wrap: HTMLElement, cols: number, rows: number): number {
     return Math.min(Math.max(fit, MIN_CELL_PX), MAX_CELL_PX);
 }
 
+type LegendUnitStats = {
+    allies: Record<string, number>;
+    enemies: Record<string, number>;
+};
+
 function applyArmyUpdate(
     data: ArmyData,
     unitsRef: React.MutableRefObject<UnitData[]>,
@@ -501,6 +536,7 @@ function applyArmyUpdate(
     enemyBuildingsRef: React.MutableRefObject<Map<string, EnemyBuildingData>>,
     alliedBuildingsRef: React.MutableRefObject<Map<string, EnemyBuildingData>>,
     setUnitCount: (n: number) => void,
+    setLegendUnitStats: (s: LegendUnitStats) => void,
 ): void {
     if (Array.isArray(data.units)) {
         unitsRef.current = data.units;
@@ -539,6 +575,11 @@ function applyArmyUpdate(
             enemyBuildingsRef.current.set(b.guid, b);
         }
     }
+
+    setLegendUnitStats({
+        allies: countUnitsByTypes(unitsRef.current, ALLY_LEGEND_TYPES),
+        enemies: countUnitsByTypes(enemyUnitsRef.current, ENEMY_LEGEND_TYPES),
+    });
 }
 
 const Game: React.FC<IBasePage> = ({ mediator, setPage }) => {
@@ -555,6 +596,10 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage }) => {
     const alliedBuildingsRef = useRef<Map<string, EnemyBuildingData>>(new Map());
     const animFrameRef = useRef<number>(0);
     const [unitCount, setUnitCount] = useState(0);
+    const [legendUnitStats, setLegendUnitStats] = useState<LegendUnitStats>(() => ({
+        allies: countUnitsByTypes([], ALLY_LEGEND_TYPES),
+        enemies: countUnitsByTypes([], ENEMY_LEGEND_TYPES),
+    }));
     const [hasMap, setHasMap] = useState(false);
     const [zoom, setZoom] = useState(ZOOM_DEFAULT);
 
@@ -733,6 +778,7 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage }) => {
                 enemyBuildingsRef,
                 alliedBuildingsRef,
                 setUnitCount,
+                setLegendUnitStats,
             );
         };
 
@@ -772,24 +818,35 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage }) => {
 
                 <div className="game-legend">
                     <p className="game-section-label">Легенда</p>
-                    <div className="game-legend-row">
-                        <span className="game-legend-dot" style={{ background: COLOR.soldier }} />
-                        Солдат
-                    </div>
-                    <div className="game-legend-row">
-                        <span
-                            className="game-legend-dot"
-                            style={{ background: COLOR.bmp, borderRadius: '2px' }}
-                        />
-                        БМП
-                    </div>
-                    <div className="game-legend-row">
-                        <span
-                            className="game-legend-dot"
-                            style={{ background: COLOR.enemyMushroom, borderRadius: '4px' }}
-                        />
-                        Враг (грибы)
-                    </div>
+                    <p className="game-legend-subhead">Армия людей</p>
+                    {ALLY_LEGEND_TYPES.map((type) => (
+                        <div key={type} className="game-legend-row game-legend-row--unit">
+                            <img
+                                className="game-legend-sprite"
+                                src={UNIT_FRAME_SRCS[type]?.[0]}
+                                alt=""
+                                width={22}
+                                height={22}
+                            />
+                            <span className="game-legend-name">{LEGEND_LABELS[type]}</span>
+                            <span className="game-legend-count">{legendUnitStats.allies[type] ?? 0}</span>
+                        </div>
+                    ))}
+                    <p className="game-legend-subhead">Армия грибов</p>
+                    {ENEMY_LEGEND_TYPES.map((type) => (
+                        <div key={type} className="game-legend-row game-legend-row--unit">
+                            <img
+                                className="game-legend-sprite"
+                                src={UNIT_FRAME_SRCS[type]?.[0]}
+                                alt=""
+                                width={22}
+                                height={22}
+                            />
+                            <span className="game-legend-name">{LEGEND_LABELS[type]}</span>
+                            <span className="game-legend-count">{legendUnitStats.enemies[type] ?? 0}</span>
+                        </div>
+                    ))}
+                    <p className="game-legend-subhead">Рельеф</p>
                     <div className="game-legend-row">
                         <span
                             className="game-legend-dot"

@@ -117,6 +117,19 @@
     gap: 0;
 }
 
+.game-legend-subhead {
+    font-size: 11px;
+    font-weight: 600;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 10px 0 4px;
+}
+
+.game-legend-subhead:first-of-type {
+    margin-top: 4px;
+}
+
 .game-legend-row {
     display: flex;
     align-items: center;
@@ -124,6 +137,28 @@
     font-size: 12px;
     color: #6e7681;
     padding: 4px 0;
+}
+
+.game-legend-row--unit .game-legend-name {
+    flex: 1;
+    min-width: 0;
+    color: #c9d1d9;
+}
+
+.game-legend-sprite {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    flex-shrink: 0;
+}
+
+.game-legend-count {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: #58a6ff;
+    min-width: 1.5rem;
+    text-align: right;
 }
 
 .game-legend-dot {

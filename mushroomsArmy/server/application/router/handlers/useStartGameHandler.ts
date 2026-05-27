@@ -4,7 +4,7 @@ import { IAnswer, IMediator } from '../../types/global';
 
 export const useStartGameHandler = (mediator: IMediator, answer: IAnswer) =>
     (req: Request, res: Response): void => {
-        const { armyGuid, mushroomsArmy, mapGuid, map, buildings, peopleArmy } = req.body;
+        const { armyGuid, mushroomsArmy, mapGuid, map, buildings, peopleArmy, mushroomsEconomy } = req.body;
 
         // Поддерживаем оба варианта: armyGuid напрямую или mushroomsArmy (от map-сервера)
         const guid = armyGuid ?? mushroomsArmy;
@@ -20,6 +20,7 @@ export const useStartGameHandler = (mediator: IMediator, answer: IAnswer) =>
             map: map ?? null,
             buildings: buildings ?? [],
             peopleArmyGuid: peopleArmy ?? null,
+            mushroomsEconomyGuid: mushroomsEconomy ?? null,
         });
 
         res.json(answer.good(true));

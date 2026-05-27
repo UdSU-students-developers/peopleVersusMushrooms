@@ -8,7 +8,6 @@ const CONFIG = {
             LOBBY_UPDATED: 'LOBBY_UPDATED',
             START_GAME: 'START_GAME',
             DAMAGE: 'DAMAGE'
-            
         },
         TRIGGERS: {
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',
@@ -17,27 +16,12 @@ const CONFIG = {
     },
 
     SOCKET: {
-        MESSAGE: 'MESSAGE',  // шлет сообщение
-        MESSAGES: 'MESSAGES',
-        NEW_MESSAGE: 'NEW_MESSAGE',
-        TYPING: 'TYPING',           // печатает
-        
         UPDATE_SCENE: 'UPDATE_SCENE',
         GET_SCENE: 'GET_SCENE',
     },
 
     ECONOMY: {
         INTERVAL: 200, //ms (единица времени)
-
-        MINE: {
-
-        },
-        STORAGE_IRON: {
-
-        },
-        STORAGE_FAT: {
-
-        },
         UNIT: {
             RADIUS: 10, //максимальный радиус расчета ближайшей точки от центра стремления(больше 20 не ставить)
         },
@@ -110,7 +94,7 @@ const CONFIG = {
                 production: 0,
                 capacity: {
                     OIL: 0,
-                    IRON: 10
+                    IRON: 120
                 },
             },
             SMALL_REACTOR: {
@@ -146,7 +130,7 @@ const CONFIG = {
                 hp: 30,
                 visibility: 3,
                 consumption: 2,
-                production: 1,
+                production: 4,
                 capacity: {
                     OIL: 6,
                     IRON: 0
@@ -159,11 +143,39 @@ const CONFIG = {
                 hp: 30,
                 visibility: 3,
                 consumption: 2,
-                production: 1,
+                production: 2,
                 capacity: {
                     OIL: 0,
                     IRON: 6
                 },
+            }
+        },
+
+        UNITS: {
+            BMP: {
+                COST: 120,
+                INERTIA: 300,
+                TYPE: 'bmp'
+            },
+            PARTIZAN: {
+                COST: 50,
+                INERTIA: 140,
+                TYPE: 'partizan'
+            },
+            SNIPER: {
+                COST: 40,
+                INERTIA: 100,
+                TYPE: 'sniper'
+            },
+            SOLDIER: {
+                COST: 30,
+                INERTIA: 60,
+                TYPE: 'soldier'
+            },
+            WORKER: {
+                COST: 40,
+                INERTIA: 60,
+                TYPE: 'worker'
             }
         },
 

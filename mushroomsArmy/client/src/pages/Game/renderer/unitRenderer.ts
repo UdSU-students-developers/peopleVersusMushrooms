@@ -542,7 +542,7 @@ export function drawEnemyUnits(
   circularVisibilityMask: boolean[][]
 ): void {
   units.forEach(unit => {
-    if (unit.hp <= 0) return;
+    if ((unit.hp ?? 1) <= 0) return;
     const ux = Math.floor(unit.x);
     const uy = Math.floor(unit.y);
     if (circularVisibilityMask[uy]?.[ux] !== true) return;
@@ -604,7 +604,8 @@ export function drawEnemyUnits(
     const barHeight = 5;
     const barX = cx - barWidth / 2;
     const barY = cy - radius - 5;
-    const hpPercent = Math.max(0, Math.min(1, unit.hp / getMaxHp(unit.type)));
+    const unitHp = unit.hp ?? getMaxHp(unit.type);
+    const hpPercent = Math.max(0, Math.min(1, unitHp / getMaxHp(unit.type)));
 
     ctx.fillStyle = '#d32f2f';
     ctx.fillRect(barX, barY, barWidth, barHeight);

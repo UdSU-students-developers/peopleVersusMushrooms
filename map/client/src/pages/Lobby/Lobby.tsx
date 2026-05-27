@@ -71,6 +71,7 @@ const Lobby: React.FC<IBasePage> = (props) => {
             LOBBY_UPDATED,
             LOBBIES_LIST_UPDATED,
             START_GAME,
+            GENERATE_MAP,
             SET_READY,
             DROP_FROM_LOBBY
         } = mediator.getEventTypes();
@@ -190,63 +191,33 @@ const Lobby: React.FC<IBasePage> = (props) => {
             </div>
 
             {error && <p id='test-errors-lobby' className='errors'>{error.message}</p>}
-
             {currentLobby && (
                 <div className="current-lobby">
                     <h2>Текущая комната: {currentLobby.lobbyName}</h2>
-                    <div className="lobby-info">
-                        <p>Игроки: {Object.values(currentLobby.playersGuids).filter(g => g !== null).length}/5</p>
-                        <div className="players-list">
-                            <h3>Игроки:</h3>
-                            <ul>
-                                {
-                                    Object.keys(currentLobby.playersGuids)
-                                        .filter(role => currentLobby.playersGuids[role as keyof typeof currentLobby.playersGuids] !== null)
-                                        .map((role, index) => {
-                                            const playerGuid = currentLobby.playersGuids[role as keyof typeof currentLobby.playersGuids];
-                                            const isCreator = playerGuid === currentLobby.lobbyGuid;
-                                            const isCurrentUser = playerGuid === server.user?.guid;
-                                            const canKick = currentLobby.lobbyGuid === server.user?.guid && !isCreator && !isCurrentUser;
-
-                                            return (
-                                                <li key={index} className="player-item">
-                                                    {canKick && (
-                                                        <Button
-                                                            onClick={() => kickPlayerHandler(playerGuid!)}
-                                                            text='Кикнуть'
-                                                            className='button-kick'
-                                                        />
-                                                    )}
-                                                </li>
-                                            );
-                                        })
-                                }
-                            </ul>
-                        </div>
-                        <div className="player-info">
-                            {isReady ? '✅ Готов' : '⏳ Не готов'}
-                        </div>
-                        <Button
-                            onClick={setReadyHandler}
-                            text={'Готов'}
-                        />
-
-                        {currentLobby.lobbyGuid === currentLobby.playersGuids.spectator && (
-                            <Button
-                                onClick={startGameHandler}
-                                text='Начать игру'
-                                className='button-start-game'
-                                isDisabled={!isReady}
-                            />
-                        )}
-                        <Button
-                            onClick={leaveLobbyHandler}
-                            text='Покинуть комнату'
-                            className='button-leave'
-                        />
+                    <div className="player-info">
+                        {isReady ? '✅ Готов' : '⏳ Не готов'}
                     </div>
+                    <Button
+                        onClick={setReadyHandler}
+                        text={'Готов'}
+                    />
+
+                    {currentLobby.lobbyGuid === currentLobby.playersGuids.spectator && (
+                        <Button
+                            onClick={startGameHandler}
+                            text='Начать игру'
+                            className='button-start-game'
+                            isDisabled={!isReady}
+                        />
+                    )}
+                    <Button
+                        onClick={leaveLobbyHandler}
+                        text='Покинуть комнату'
+                        className='button-leave'
+                    />
                 </div>
-            )}
+            )
+            }
 
             <div className="lobbies-list">
                 <h2>Доступные комнаты</h2>
@@ -272,33 +243,35 @@ const Lobby: React.FC<IBasePage> = (props) => {
                 )}
             </div>
 
-            {showCreateModal && (
-                <div className="modal-overlay" onClick={cancelCreateLobby}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <h2>Создать комнату</h2>
-                        <input
-                            type="text"
-                            placeholder="Название комнаты"
-                            value={lobbyName}
-                            onChange={(e) => setLobbyName(e.target.value)}
-                            autoFocus
-                        />
-                        <div className="modal-buttons">
-                            <Button
-                                onClick={confirmCreateLobby}
-                                text='Создать'
-                                className='button-confirm'
+            {
+                showCreateModal && (
+                    <div className="modal-overlay" onClick={cancelCreateLobby}>
+                        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                            <h2>Создать комнату</h2>
+                            <input
+                                type="text"
+                                placeholder="Название комнаты"
+                                value={lobbyName}
+                                onChange={(e) => setLobbyName(e.target.value)}
+                                autoFocus
                             />
-                            <Button
-                                onClick={cancelCreateLobby}
-                                text='Отмена'
-                                className='button-cancel'
-                            />
+                            <div className="modal-buttons">
+                                <Button
+                                    onClick={confirmCreateLobby}
+                                    text='Создать'
+                                    className='button-confirm'
+                                />
+                                <Button
+                                    onClick={cancelCreateLobby}
+                                    text='Отмена'
+                                    className='button-cancel'
+                                />
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     )
 }
 

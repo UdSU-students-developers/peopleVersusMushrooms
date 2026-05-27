@@ -8,9 +8,9 @@ class Building extends Entity {
         super({ guid, x, y, callbacks, type, hp, visibility })
 
         this.size = size;
+        this.priority = priority;
         this.is_walkable = false;
         this.is_working = false;
-        this.priority = null;
 
         this.consumption = consumption; // энергопотребление (топливо) за единицу времени
         this.production = production; // выработка ресурса за единицу времени (число)
@@ -19,10 +19,7 @@ class Building extends Entity {
             IRON: 0,
             ENERGY: 0
         }
-        this.capacity = { // максимальная емкость внутреннего хранилища
-            OIL: capacity.oil,
-            IRON: capacity.iron
-        };
+        this.capacity = { ...capacity };
     }
 
 
@@ -57,10 +54,14 @@ class Building extends Entity {
         return this.consumption;
     }
 
+    clearEnergy() {
+        this.store.ENERGY = 0;
+    }
+
     // потребить энергию/нефть и перейти в рабочий режим
     consume(key) {
-        if (this.consume[key] > this.store[key]) return;
-        this.store[key] -= this.consume[key];
+        if (this.consumption > this.store[key]) return;
+        this.store[key] -= this.consumption;
         this.is_working = true;
     }
     // произвести энергию/железо/нефть

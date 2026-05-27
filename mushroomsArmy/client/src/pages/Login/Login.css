@@ -1,4 +1,5 @@
 .login {
+    padding-top: var(--header-height);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -82,11 +83,16 @@
     text-align: center;
 }
 
-.register-link a {
+.text-link-button {
     color: #3498db;
     text-decoration: none;
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
 }
 
-.register-link a:hover {
+.text-link-button:hover {
     text-decoration: underline;
 }

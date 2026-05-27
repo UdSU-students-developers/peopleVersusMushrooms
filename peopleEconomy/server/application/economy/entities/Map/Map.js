@@ -44,7 +44,7 @@ class Map {
     setBuilding(building) {
         const { x, y, size } = building;
         for (let i = x; i < x + size; i++) {
-            for (let j = 0; j < y + size; j++) {
+            for (let j = y; j < y + size; j++) {
                 this.buildingsGrid[i][j] = 1;
                 if (!building.is_walkable) {
                     this.unitsGrid[i][j] = 1;

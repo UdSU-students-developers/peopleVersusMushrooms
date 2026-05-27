@@ -124,6 +124,12 @@ const GLOBAL_CONFIG = {
             SPOROMET: 'sporomet',
             CHAMPIGNEB: 'champigneb',
             EBLEKAR: 'eblekar',
+        },
+        PEOPLE_ARMY: {
+            BMP: 'bmp',
+            PARTIZAN: 'partizan',
+            SNIPER: 'sniper',
+            SOLDIER: 'soldier'
         }
     }
 };

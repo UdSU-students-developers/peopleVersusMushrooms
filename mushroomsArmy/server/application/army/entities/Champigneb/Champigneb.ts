@@ -1,23 +1,14 @@
 import Unit, { TUnitOptions } from "../Units";
 
-export type TSlimePuddle = {
-  x: number;
-  y: number;
-  radius: number;
-  ttl: number;
-};
-
 class Champigneb extends Unit {
 
     public explosionRadius: number = 6;
     public explosionDamage: number = 60;
-    public slimeDuration: number = 10;
-    public slimePuddle: TSlimePuddle = { x: 0, y: 0, radius: 0, ttl: 0 };
     public hasExploded: boolean = false;
 
     constructor(options: TUnitOptions) {
         super(options);
-        this.visibility = options.visibility ?? 10;
+        this.visibility = options.visibility ?? 4;
         this.hp = 35;
         this.baseHp = 35;
         this.speed = options.speed ?? 3;
@@ -42,13 +33,6 @@ class Champigneb extends Unit {
             }
         }
 
-        this.slimePuddle = { 
-            x: this.x,
-            y: this.y,
-            radius: this.explosionRadius,
-            ttl: this.slimeDuration
-        };
-        
         this.hasExploded = true;
         this.hp = 0; // Клиент определяет смерть по hp === 0, поэтому обнуляем явно
         this.die();

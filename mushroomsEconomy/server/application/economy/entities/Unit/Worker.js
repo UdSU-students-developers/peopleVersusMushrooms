@@ -4,12 +4,19 @@ const CONFIG = require('../../../../config');
 const { HP, SPEED, TYPE, VISIBILITY, WANDER_RADIUS, SOURCES_VISIBILITY } = CONFIG.ECONOMY.WORKER;
 
 const STEP_OFFSETS = [
-    [0, 1], [0, -1], [1, 0], [-1, 0],
+    [0, 1], [0, -1], [1, 0], [-1, 0]
 ];
 
 class Worker extends Unit {
     constructor(options) {
-        super({ ...options, type: TYPE, visibility: VISIBILITY, speed: SPEED, sourcesVisibility: SOURCES_VISIBILITY });
+        super({
+            ...options,
+            type: TYPE,
+            visibility: VISIBILITY,
+            speed: SPEED,
+            sourcesVisibility: SOURCES_VISIBILITY
+        });
+
         this.hp = HP;
         this.wanderRadius = WANDER_RADIUS;
         this.targetResource = null;
@@ -26,7 +33,7 @@ class Worker extends Unit {
             hp: this.hp,
             mode: this.mode,
             targetResource: this.targetResource,
-            assignedBuilding: this.assignedBuilding,
+            assignedBuilding: this.assignedBuilding
         };
     }
 
@@ -44,12 +51,7 @@ class Worker extends Unit {
     }
 
     _recoverFromBlockedPath() {
-        if (this._hasReachedTarget()) {
-            this._blockedPathTicks = 0;
-            return;
-        }
-
-        if (this.path.length > 0) {
+        if (this._hasReachedTarget() || this.path.length > 0) {
             this._blockedPathTicks = 0;
             return;
         }
@@ -61,7 +63,7 @@ class Worker extends Unit {
         this.targetResource = null;
         this.targetIron = null;
         this.mode = 'wander';
-        this.targetX = Math.round(this.x); 
+        this.targetX = Math.round(this.x);
         this.targetY = Math.round(this.y);
         this._recalculatePath();
     }
@@ -84,7 +86,7 @@ class Worker extends Unit {
         }
 
         if (this.mode === 'goToIron' && this._hasReachedTarget()) {
-            const mutated = this.callbacks.mutateToMine?.(this) ?? false;
+            const mutated = this.callbacks.mutateToMine ? this.callbacks.mutateToMine(this) : false;
             if (!mutated) {
                 this.targetIron = null;
                 this.targetResource = null;
@@ -122,12 +124,16 @@ class Worker extends Unit {
     _findFreeMycelium() {
         const mycelium = this.callbacks.getMycelium ? this.callbacks.getMycelium() : [];
         const buildings = this.callbacks.getBuildings ? this.callbacks.getBuildings() : [];
-        const workers = this.units.filter(u => u.guid !== this.guid && u.targetMycelium);
+        const workers = this.units || [];
 
         const takenCells = new Set();
+
         for (const w of workers) {
-            takenCells.add(`${w.targetMycelium.x},${w.targetMycelium.y}`);
+            if (w.guid !== this.guid && w.targetMycelium) {
+                takenCells.add(`${w.targetMycelium.x},${w.targetMycelium.y}`);
+            }
         }
+
         for (const b of buildings) {
             if (b.type === 'mycelium') continue;
             const size = b.size || 1;
@@ -138,15 +144,32 @@ class Worker extends Unit {
             }
         }
 
-        let free = mycelium.filter(m => !takenCells.has(`${m.x},${m.y}`));
-        if (!free.length) return null;
+        let free = [];
+        for (const m of mycelium) {
+            if (!takenCells.has(`${m.x},${m.y}`)) {
+                free.push(m);
+            }
+        }
+
+        if (free.length === 0) return null;
 
         const cx = Math.round(this.x);
         const cy = Math.round(this.y);
-        const awayFromSelf = free.filter(m => m.x !== cx || m.y !== cy);
-        if (awayFromSelf.length) free = awayFromSelf;
 
-        free.sort((a, b) => (this.x - a.x) ** 2 + (this.y - a.y) ** 2 - (this.x - b.x) ** 2 - (this.y - b.y) ** 2);
+        const awayFromSelf = [];
+        for (const item of free) {
+            if (item.x !== cx || item.y !== cy) {
+                awayFromSelf.push(item);
+            }
+        }
+
+        if (awayFromSelf.length > 0) free = awayFromSelf;
+
+        free.sort((a, b) =>
+            ((this.x - a.x) * (this.x - a.x) + (this.y - a.y) * (this.y - a.y)) -
+            ((this.x - b.x) * (this.x - b.x) + (this.y - b.y) * (this.y - b.y))
+        );
+
         return free[0];
     }
 
@@ -155,9 +178,9 @@ class Worker extends Unit {
         let mutated = false;
 
         if (type === 'reactor' || type === 'small_reactor') {
-            mutated = this.callbacks.mutateToSmallReactor?.(this) ?? false;
+            mutated = this.callbacks.mutateToSmallReactor ? this.callbacks.mutateToSmallReactor(this) : false;
         } else if (type === 'incubator') {
-            mutated = this.callbacks.mutateToIncubator?.(this) ?? false;
+            mutated = this.callbacks.mutateToIncubator ? this.callbacks.mutateToIncubator(this) : false;
         }
 
         if (!mutated) return;
@@ -180,11 +203,15 @@ class Worker extends Unit {
     _findReachableIron() {
         const resources = this.callbacks.getResources ? this.callbacks.getResources() : null;
         const buildings = this.callbacks.getBuildings ? this.callbacks.getBuildings() : null;
+
         if (!resources || !buildings || !this.grid) return null;
 
         const takenTargets = new Set();
-        for (const unit of this.units) {
+        const unitsList = this.units || [];
+
+        for (const unit of unitsList) {
             if (unit.guid === this.guid) continue;
+
             if (unit.targetIron) {
                 takenTargets.add(`${unit.targetIron.x},${unit.targetIron.y}`);
             } else if (unit.targetResource) {
@@ -194,45 +221,62 @@ class Worker extends Unit {
 
         const candidates = [];
 
-        resources.forEach((row, y) => {
-            if (!row) return;
-            row.forEach((res, x) => {
-                if (!res || res.type !== 'IRON') return;
+        for (let y = 0; y < resources.length; y++) {
+            const row = resources[y];
+            if (!row) continue;
 
-                const occupied = buildings.some(b => {
-                    if (b.type === 'mycelium') return false;
+            for (let x = 0; x < row.length; x++) {
+                const res = row[x];
+                if (!res || res.type !== 'IRON') continue;
+
+                let occupied = false;
+                for (const b of buildings) {
+                    if (b.type === 'mycelium') continue;
                     const size = b.size || 1;
-                    return x >= b.x && x < b.x + size && y >= b.y && y < b.y + size;
-                });
-                if (occupied) return;
+                    if (x >= b.x && x < b.x + size && y >= b.y && y < b.y + size) {
+                        occupied = true;
+                        break;
+                    }
+                }
+
+                if (occupied) continue;
 
                 const approach = this._getIronApproachCell(x, y);
-                if (!approach) return;
+                if (!approach) continue;
 
                 candidates.push({
                     x,
                     y,
                     standX: approach.x,
                     standY: approach.y,
-                    distSq: (this.x - approach.x) ** 2 + (this.y - approach.y) ** 2,
+                    distSq: (this.x - approach.x) * (this.x - approach.x) + (this.y - approach.y) * (this.y - approach.y)
                 });
-            });
-        });
+            }
+        }
 
         candidates.sort((a, b) => a.distSq - b.distSq);
-        return candidates.find(cell => !takenTargets.has(`${cell.x},${cell.y}`)) || null;
+
+        for (const cand of candidates) {
+            if (!takenTargets.has(`${cand.x},${cand.y}`)) {
+                return cand;
+            }
+        }
+
+        return null;
     }
 
     _getIronApproachCell(ironX, ironY) {
         if (!this.grid) return null;
-        if (this.grid[ironY]?.[ironX] === 0) {
+
+        if (this.grid[ironY] && this.grid[ironY][ironX] === 0) {
             return { x: ironX, y: ironY };
         }
 
-        for (const [dx, dy] of STEP_OFFSETS) {
-            const standX = ironX + dx;
-            const standY = ironY + dy;
-            if (this.grid[standY]?.[standX] === 0) {
+        for (const offset of STEP_OFFSETS) {
+            const standX = ironX + offset[0];
+            const standY = ironY + offset[1];
+
+            if (this.grid[standY] && this.grid[standY][standX] === 0) {
                 return { x: standX, y: standY };
             }
         }
@@ -260,9 +304,9 @@ class Worker extends Unit {
     }
 
     _pickWanderTarget() {
-        if (!this.grid) return;
+        if (!this.grid || !this.grid[0]) return;
         const rows = this.grid.length;
-        const cols = this.grid[0] ? this.grid[0].length : 0;
+        const cols = this.grid[0].length;
 
         for (let attempt = 0; attempt < 10; attempt++) {
             const angle = Math.random() * Math.PI * 2;

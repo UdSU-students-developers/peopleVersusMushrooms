@@ -69,7 +69,9 @@ class Economy {
             mushroomsEconomy: null,
             mapGuid: null,
         };
-        Object.keys(guids).forEach(key => this.guids[key] = guids[key]);
+        for (const key of Object.keys(guids)) {
+            this.guids[key] = guids[key];
+        }
 
         this.map = new Map();
         this._initBuildings(startPoint);
@@ -107,7 +109,6 @@ class Economy {
             enemyUnits: this.enemyUnits,
             map: this.map.get(),
             priority: this.autopilot.priority,
-            //updatedBuildings: this.getUpdatedBuildings(),
         };
     }
 
@@ -116,12 +117,10 @@ class Economy {
     }
 
     setResources(resources) {
-        //console.log("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", resources)
         this.map.setResources(resources);
     }
 
     setVisibility({ units = [], buildings = [] }) {
-        //console.log("\n\n\n\n\n\n\n", buildings)
         this.enemyBuildings = buildings;
         this.enemyUnits = units;
     }
@@ -222,8 +221,11 @@ class Economy {
     }
 
     _pushUpdatedBuilding(guid) {
-        this.updatedBuildings.push(this.findEntityByGuid(guid).get());
-        this.updated = true;
+        const entity = this.findEntityByGuid(guid);
+        if (entity) {
+            this.updatedBuildings.push(entity.get());
+            this.updated = true;
+        }
     }
 
     addMine(x, y) {
@@ -331,13 +333,13 @@ class Economy {
     }
 
     reactorsConsume() {
-        this.buildings.reactors.forEach(reactor => {
+        for (const reactor of this.buildings.reactors) {
             const consumed = reactor.consumeMycelium(this.buildings.mycelium);
             if (consumed > 0) {
                 this.resources.energy += consumed;
                 this.updated = true;
             }
-        });
+        }
     }
 
     // 8. породить личинок (потратить немного железа и немного энергии)
@@ -345,31 +347,34 @@ class Economy {
         const now = Date.now();
         for (const incubator of this.buildings.incubators) {
             const result = incubator.createLarvae({ availableEnergy: this.resources.energy, now });
-            if (!result) continue;
-            this.resources.energy -= result.energySpent;
-            this.updated = true;
+            if (result) {
+                this.resources.energy -= result.energySpent;
+                this.updated = true;
+            }
         }
     }
 
     // 1. вырасти грибочки
     myceliumGrowAll() {
-        this.buildings.mycelium.forEach(mycelium => {
-            if (mycelium.update()) this.updated = true;
-        });
+        for (const mycelium of this.buildings.mycelium) {
+            if (mycelium.update()) {
+                this.updated = true;
+            }
+        }
     }
 
     // 2. расширить грибницу при возможности
     myceliumExtendAll() {
-        this.buildings.mycelium.forEach(mycelium => {
+        for (const mycelium of this.buildings.mycelium) {
             const freeCells = mycelium.canExtend(this.map.relief, this.buildings.mycelium, this.buildings, this.enemyBuildings);
-            if (!freeCells.length) return;
-
-            const result = mycelium.extend(freeCells);
-            if (!result) return;
-
-            this.addMycelium(result.x, result.y);
-            this.updated = true;
-        });
+            if (freeCells.length > 0) {
+                const result = mycelium.extend(freeCells);
+                if (result) {
+                    this.addMycelium(result.x, result.y);
+                    this.updated = true;
+                }
+            }
+        }
     }
 
     _updateUnit(unit, grid, allUnits) {
@@ -390,13 +395,13 @@ class Economy {
         const grid = this.map.larvaGrid;
         if (!grid) return;
 
+        const allUnits = [...this.units.larvae, ...this.units.workers];
+
         for (const larva of [...this.units.larvae]) {
-            const allUnits = [...this.units.larvae, ...this.units.workers];
             this._updateUnit(larva, grid, allUnits);
         }
 
         for (const worker of [...this.units.workers]) {
-            const allUnits = [...this.units.larvae, ...this.units.workers];
             this._updateUnit(worker, grid, allUnits);
         }
     }
@@ -445,8 +450,10 @@ class Economy {
     applyDamage(guid, damage) {
         const entity = this.findEntityByGuid(guid);
         if (!entity) return false;
+
         const isDead = entity.takeDamage(damage);
         this.updated = true;
+
         if (isDead) {
             this._destroyEntity(guid);
         }
@@ -454,12 +461,12 @@ class Economy {
     }
 
     moveUnitToNearestCell(guid) {
-        const unit = [...this.units.larvae, ...this.units.workers].find(u => u.guid === guid);
-        if (!unit) return false;
-        if (!unit.grid) return false;
+        const allUnits = [...this.units.larvae, ...this.units.workers];
+        const unit = allUnits.find(u => u.guid === guid);
+        if (!unit || !unit.grid) return false;
 
         const cells = unit.findNearestCell();
-        if (!cells.length) return false;
+        if (cells.length === 0) return false;
 
         const target = cells[Math.floor(Math.random() * cells.length)];
         unit.setTarget(target.x, target.y);
@@ -469,12 +476,12 @@ class Economy {
 
     _initBuildings(startPoint = { x: 93, y: 93 }) {
         // создать инкубатор
-        this.addIncubator(startPoint.x+1, startPoint.y+1);
+        this.addIncubator(startPoint.x + 1, startPoint.y + 1);
         // создать маленький реактор
         this.addSmallReactor(startPoint.x, startPoint.y + 1);
         // создать грибничку
-        for (let i = 0; i<3; i++) {
-            for (let j=0; j<3; j++) {
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
                 this.addMycelium(startPoint.x + i, startPoint.y + j);
             }
         }

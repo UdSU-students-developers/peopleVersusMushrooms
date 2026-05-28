@@ -4,14 +4,14 @@ module.exports = (mediator, answer) => (req, res) => {
     const { entityGuid, damage, peopleEconomy } = req.body;
 
     if (!entityGuid || typeof damage !== 'number' || !peopleEconomy) {
-        return res.send(answer.bad(242));
+        return res.json(answer.bad(242));
     }
 
     const success = mediator.call(DAMAGE, { entityGuid, damage, peopleEconomy });
 
     if (!success) {
-        return res.send(answer.bad(4002));
+        return res.json(answer.bad(4002));
     }
 
-    return res.send(answer.good(true));
+    return res.json(answer.good(true));
 };

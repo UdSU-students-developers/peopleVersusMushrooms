@@ -1,5 +1,5 @@
 const GLOBAL_CONFIG = {
-    INTERVAL: 200, //мс
+    INTERVAL: 30, //мс
     MAP_SIZE: 100, //100 x 100
 
     MAP: {

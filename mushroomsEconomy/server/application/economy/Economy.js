@@ -106,7 +106,7 @@ class Economy {
             enemyBuildings: this.enemyBuildings,
             enemyUnits: this.enemyUnits,
             map: this.map.get(),
-            priority: this.autopilot.prioritet,
+            priority: this.autopilot.priority,
             //updatedBuildings: this.getUpdatedBuildings(),
         };
     }
@@ -166,7 +166,10 @@ class Economy {
             callbacks: {
                 getResources: () => this.map.resources,
                 getBuildings: () => Object.values(this.buildings).flat(),
+                getMycelium: () => this.buildings.mycelium,
                 mutateToMine: (wor) => this.mutateWorkerToMine(wor),
+                mutateToSmallReactor: (wor) => this.mutateWorkerToSmallReactor(wor),
+                mutateToIncubator: (wor) => this.mutateWorkerToIncubator(wor),
             },
         });
         this.units.workers.push(worker);
@@ -174,12 +177,9 @@ class Economy {
     }
 
     mutateWorkerToMine(wor) {
-        const mineCost = CONFIG.ECONOMY.MINE.IRON_COST;
-        if (this.resources.iron < mineCost) return;
-
-        this.resources.iron -= mineCost;
+        const { x, y } = wor.targetIron || wor;
         this._removeWorker(wor);
-        this.addMine(wor.x, wor.y);
+        this.addMine(x, y);
     }
 
     mutateWorkerToReactor(wor) {
@@ -469,6 +469,7 @@ class Economy {
         // 2. Мутировать здание из рабочего (потратить железо)
         // 3. передать боевых юнитов в армию (callback)
         // 3.5. для рабочих определить цели и задачи
+        this.autopilot.update(this);
 
         this.updateUnits();
         // 5. передвинуть личинки
@@ -487,8 +488,6 @@ class Economy {
 
         // 4. шахты добывают железо
         this.updateMines();
-
-        this.autopilot.update(this);
 
         // отбросить апдейт, если он случился
         if (this.updated) {

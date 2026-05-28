@@ -346,8 +346,9 @@ export class Army {
         tryPlaceTower(zoneY0 + 7, zoneX1 - 13); // правый верхний
         tryPlaceTower(zoneY1 - 13, zoneX0 + 7); // левый нижний
 
-        // Левая стена: x=zoneX0, вся высота зоны
+        // Левая стена: x=zoneX0, вся высота зоны (пропускаем последний - нижний край карты)
         for (let y = zoneY0; y <= zoneY1; y++) {
+            if (y === zoneY1) continue; // Пропускаем нижний левый угол (край карты)
             if (isFree(y, zoneX0)) {
                 result.push({
                     guid: common.guid(),
@@ -359,7 +360,9 @@ export class Army {
         }
 
         // Верхняя стена: y=zoneY0, вся ширина зоны кроме x=zoneX0 (уже занят левой стеной)
+        // Пропускаем последний - правый край (край карты)
         for (let x = zoneX0 + 1; x <= zoneX1; x++) {
+            if (x === zoneX1) continue; // Пропускаем верхний правый угол (край карты)
             if (isFree(zoneY0, x)) {
                 result.push({
                     guid: common.guid(),

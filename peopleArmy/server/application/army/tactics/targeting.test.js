@@ -45,4 +45,33 @@ describe('simplified targeting', () => {
 
         army.destructor();
     });
+
+    test('пиздоглядов не выбирают как цель для движения и стрельбы', () => {
+        const army = makeArmy();
+        const unit = { guid: 'u1', type: 'soldier', x: 0, y: 0, range: 8 };
+
+        army.enemyUnits = [
+            { guid: 'scout', x: 1, y: 0, hp: 2, type: 'pizdoglyad' },
+        ];
+        army.enemyBuildings = [];
+
+        const sense = {
+            hasVisibleEnemies: false,
+            units: [],
+            buildings: [],
+        };
+
+        expect(pickEngageTarget(army, unit, sense).target).toBeNull();
+        expect(pickShootTarget(army, unit, army.enemyUnits, army.enemyBuildings, army.map)).toBeNull();
+
+        army.enemyUnits.push({ guid: 'fighter', x: 2, y: 0, hp: 20, type: 'sporomet' });
+        const senseWithFighter = {
+            hasVisibleEnemies: true,
+            units: [{ ...army.enemyUnits[1], targetKind: 'unit' }],
+            buildings: [],
+        };
+        expect(pickEngageTarget(army, unit, senseWithFighter).target.guid).toBe('fighter');
+
+        army.destructor();
+    });
 });

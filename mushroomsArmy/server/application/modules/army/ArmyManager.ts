@@ -1,6 +1,6 @@
 import BaseManager, { TManagerOptions } from '../BaseManager';
 import CONFIG from '../../../config';
-import { Army, TMap, TArmyState, TBuildingInput } from '../../army/Army';
+import { Army, TMap, TArmyState, TBuildingInput, TDamageTarget } from '../../army/Army';
 import { ArmyStateManager, ArmyMode, EconomyRequest, EconomyResponse } from '../../army/ArmyStateManager';
 import { Socket } from 'socket.io';
 
@@ -8,7 +8,8 @@ const GLOBAL_CONFIG = require('../../../../../global/globalConfig');
 
 const { GAME_STATE, LOBBY_START, GAME_STARTED } = CONFIG.SOCKET;
 
-type TStartGame = { guid: string; map?: TMap; buildings: TBuildingInput[]; mapGuid: string; peopleArmyGuid?: string | null; mushroomsEconomyGuid?: string | null };
+type TStartGame = { guid: string; map?: TMap; buildings: TBuildingInput[]; mapGuid: string; peopleArmyGuid?: string | null; mushroomsEconomyGuid?: string | null; peopleEconomyGuid?: string | null };
+export type TArmyGuids = { peopleArmyGuid: string | null; mushroomsEconomyGuid: string | null; peopleEconomyGuid: string | null };
 type TTakeDamage = { armyGuid: string; unitGuid: string; amount: number };
 type TMoveUnit = { armyGuid: string; unitGuid: string; x: number; y: number };
 type TGetArmy = string;
@@ -33,11 +34,21 @@ type TReliefResponse = TMap;
 
 const ALLIED_ECONOMY_UNIT_TYPES = new Set(['larva', 'geodezist']);
 const PEOPLE_ARMY_UNIT_TYPES = new Set(['soldier', 'bmp', 'sniper', 'partizan']);
+const PEOPLE_ECONOMY_BUILDING_TYPES = new Set(['barracks', 'driller', 'mine', 'pipe', 'smallGenerator']);
 const PEOPLE_ARMY_DEFAULT_HP: Record<string, number> = {
     soldier: 20,
     bmp: 130,
     sniper: 18,
     partizan: 72,
+};
+// Map хранит здания без hp — нормализуем дефолтами на стороне грибов,
+// чтобы прокси-цель не убивалась одной атакой.
+const PEOPLE_ECONOMY_DEFAULT_HP: Record<string, number> = {
+    barracks: 200,
+    driller: 100,
+    mine: 100,
+    pipe: 100,
+    smallGenerator: 100,
 };
 
 function normalizeMapUnitHp(unit: TVisibleEntity): TVisibleEntity {
@@ -48,10 +59,46 @@ function normalizeMapUnitHp(unit: TVisibleEntity): TVisibleEntity {
     return { ...unit, hp: PEOPLE_ARMY_DEFAULT_HP[unit.type] ?? 1 };
 }
 
+function normalizeEnemyBuildingHp(entity: TVisibleEntity): TVisibleEntity {
+    const parsed = Number(entity.hp);
+    if (Number.isFinite(parsed) && parsed > 0) {
+        return { ...entity, hp: parsed };
+    }
+    return { ...entity, hp: PEOPLE_ECONOMY_DEFAULT_HP[entity.type] ?? 50 };
+}
+
+export type DamageRoute = { url: string; body: Record<string, unknown> };
+
+/**
+ * Чистая функция: по типу цели выбирает куда слать урон.
+ * — здание экономики людей → peopleEconomy /damage
+ * — юнит/постройка peopleArmy → peopleArmy /unit/takeDamage
+ * Возвращает null если соответствующий guid отсутствует.
+ */
+export function resolveDamageRoute(
+    targetType: string,
+    targetGuid: string,
+    amount: number,
+    guids: TArmyGuids,
+): DamageRoute | null {
+    if (PEOPLE_ECONOMY_BUILDING_TYPES.has(targetType)) {
+        if (!guids.peopleEconomyGuid) return null;
+        return {
+            url: `${GLOBAL_CONFIG.PEOPLE_ECONOMY.URL}${GLOBAL_CONFIG.URLS.DAMAGE}`,
+            body: { guid: targetGuid, damage: amount, economyGuid: guids.peopleEconomyGuid },
+        };
+    }
+    if (!guids.peopleArmyGuid) return null;
+    return {
+        url: `${GLOBAL_CONFIG.PEOPLE_ARMY.URL}${GLOBAL_CONFIG.URLS.TAKE_DAMAGE_PEOPLE_ARMY}`,
+        body: { userGuid: guids.peopleArmyGuid, unitGuid: targetGuid, damage: amount },
+    };
+}
+
 class ArmyManager extends BaseManager {
     private army: { [guid: string]: Army };
     private armyStateManagers: { [guid: string]: ArmyStateManager };
-    private armyGuids: Record<string, { peopleArmyGuid: string | null; mushroomsEconomyGuid: string | null }>;
+    private armyGuids: Record<string, TArmyGuids>;
     private economyRequestIntervals: Record<string, NodeJS.Timeout> = {};
 
     constructor(options: TManagerOptions) {
@@ -249,30 +296,49 @@ class ArmyManager extends BaseManager {
         const ALLIED_ECONOMY_BUILDING_TYPES = new Set([
             'mycelium', 'incubator', 'reactor', 'small_reactor', 'mine',
         ]);
-        // Извлекаем здания/юниты экономики из видимости (они на карте рядом с армией)
-        army.economyBuildings = visibleEnemyBuildings.filter(b => ALLIED_ECONOMY_BUILDING_TYPES.has(b.type));
+        // Фильтруем по role+type: peopleEconomy mine не должен попадать в свои economyBuildings.
+        const isAlliedEconomyBuilding = (b: TVisibleEntity & { role?: string }) =>
+            b.role === 'mushroomsEconomy' && ALLIED_ECONOMY_BUILDING_TYPES.has(b.type);
+
+        army.economyBuildings = visibleEnemyBuildings.filter(isAlliedEconomyBuilding);
         army.economyUnits     = visibleEnemyUnits.filter(u => ALLIED_ECONOMY_UNIT_TYPES.has(u.type));
 
         const visibleEnemies: TVisibleEntity[] = [
             ...visibleEnemyUnits.filter(e => !ALLIED_ECONOMY_UNIT_TYPES.has(e.type)),
-            ...visibleEnemyBuildings.filter(e => !ALLIED_ECONOMY_BUILDING_TYPES.has(e.type)),
+            ...visibleEnemyBuildings.filter(e => !isAlliedEconomyBuilding(e)),
         ];
 
-        const enemyEntities: TBuildingInput[] = visibleEnemies.map(entity => ({
-            guid: entity.guid,
-            type: entity.type,
-            x: entity.x,
-            y: entity.y,
-            hp: entity.hp,
-        }));
+        const enemyEntities: TBuildingInput[] = visibleEnemies.map(entity => {
+            const normalized = PEOPLE_ECONOMY_BUILDING_TYPES.has(entity.type)
+                ? normalizeEnemyBuildingHp(entity)
+                : entity;
+            return {
+                guid: normalized.guid,
+                type: normalized.type,
+                x: normalized.x,
+                y: normalized.y,
+                hp: normalized.hp,
+                role: (entity as { role?: string }).role,
+            };
+        });
         army.updateEnemyEntities(enemyEntities);
 
         const updatedState = army.getState();
         const clientBuildingsByGuid = new Map(
             updatedState.buildings.map(building => [building.guid, building] as const)
         );
-        for (const building of visibleEnemyBuildings.filter(e => !ALLIED_ECONOMY_BUILDING_TYPES.has(e.type))) {
-            clientBuildingsByGuid.set(building.guid, building);
+        // Map не хранит hp у buildings — берём актуальный hp из enemyUnits-прокси
+        // (он отражает накопленный damage от грибов). Иначе фолбэк на дефолт.
+        // Также скрываем недавно убитые (recentlyKilledGuids) пока peopleEconomy
+        // не уберёт их с карты через tombstone.
+        const proxyByGuid = new Map(army.enemyUnits.map(u => [u.guid, u] as const));
+        for (const raw of visibleEnemyBuildings.filter(e => !isAlliedEconomyBuilding(e))) {
+            if (army.recentlyKilledGuids.has(raw.guid)) continue;
+            const proxy = proxyByGuid.get(raw.guid);
+            const hp = proxy
+                ? proxy.hp
+                : (PEOPLE_ECONOMY_BUILDING_TYPES.has(raw.type) ? (PEOPLE_ECONOMY_DEFAULT_HP[raw.type] ?? 50) : raw.hp);
+            clientBuildingsByGuid.set(raw.guid, { ...raw, hp });
         }
 
         const clientEnemyUnits = visibleEnemyUnits
@@ -295,13 +361,14 @@ class ArmyManager extends BaseManager {
         }));
     }
 
-    private async damagePeopleUnit(armyGuid: string, unitGuid: string, amount: number): Promise<void> {
+    private async damageEnemy(armyGuid: string, target: TDamageTarget): Promise<void> {
         const guids = this.armyGuids[armyGuid];
-        if (!guids?.peopleArmyGuid) return;
-        await this.send(
-            `${GLOBAL_CONFIG.PEOPLE_ARMY.URL}${GLOBAL_CONFIG.URLS.TAKE_DAMAGE_PEOPLE_ARMY}`,
-            { userGuid: guids.peopleArmyGuid, unitGuid, damage: amount }
-        );
+        if (!guids) return;
+
+        const route = resolveDamageRoute(target.type ?? '', target.unitGuid, target.amount, guids);
+        if (!route) return;
+
+        await this.send(route.url, route.body);
     }
 
     private destroyArmy(guid: string): void {
@@ -425,7 +492,7 @@ class ArmyManager extends BaseManager {
         this.io.to(user.socketId).emit('scout_respawned', this.answer.good({ scoutGuid }));
     }
 
-    private async eventStartGame({ guid, map, buildings, mapGuid, peopleArmyGuid, mushroomsEconomyGuid }: TStartGame): Promise<void> {
+    private async eventStartGame({ guid, map, buildings, mapGuid, peopleArmyGuid, mushroomsEconomyGuid, peopleEconomyGuid }: TStartGame): Promise<void> {
         try {
             const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
             if (!user) return;
@@ -453,7 +520,11 @@ class ArmyManager extends BaseManager {
             finalBuildings = Army.generateDefensiveLayout(resolvedMap, this.common);
         }
 
-        this.armyGuids[guid] = { peopleArmyGuid: peopleArmyGuid ?? null, mushroomsEconomyGuid: mushroomsEconomyGuid ?? null };
+        this.armyGuids[guid] = {
+            peopleArmyGuid: peopleArmyGuid ?? null,
+            mushroomsEconomyGuid: mushroomsEconomyGuid ?? null,
+            peopleEconomyGuid: peopleEconomyGuid ?? null,
+        };
         this.army[guid] = new Army({
             mapGuid,
             map: resolvedMap,
@@ -462,7 +533,7 @@ class ArmyManager extends BaseManager {
             guid,
             callbacks: {
                 update: (guid: string, armyState: TArmyState) => this.updateArmyCallback(guid, armyState),
-                takeDamage: (unitGuid: string, amount: number) => this.damagePeopleUnit(guid, unitGuid, amount),
+                takeDamage: (target: TDamageTarget) => this.damageEnemy(guid, target),
             }
         });
 

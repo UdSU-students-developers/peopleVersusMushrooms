@@ -43,7 +43,7 @@ export type EntityType =
     | 'SMALL_REACTOR'
     | 'LARGE_REACTOR'
     | 'BARRACKS'
-    | 'WORKER'
+    | 'worker'
     | 'bmp'
     | 'soldier'
     | 'partizan'
@@ -100,7 +100,7 @@ export const useSprites = () => {
         SMALL_REACTOR: 1,
         LARGE_REACTOR: 1,
         BARRACKS: 1,
-        WORKER: 2,
+        worker: 2,
 
         bmp: 2,
         soldier: 2,
@@ -131,7 +131,7 @@ export const useSprites = () => {
         eblekar: { image: loadImage(eblekar), frameWidth: 32, frameHeight: 32 },
         vzryvomor: { image: loadImage(vzryvomor), frameWidth: 32, frameHeight: 32 },
         pizdoglyad: { image: loadImage(pizdoglyad), frameWidth: 32, frameHeight: 32 },
-        WORKER: { image: loadImage(WORKER), frameWidth: 32, frameHeight: 32 },
+        worker: { image: loadImage(WORKER), frameWidth: 32, frameHeight: 32 },
         bmp: { image: loadImage(bmp), frameWidth: 64, frameHeight: 48 },
         soldier: { image: loadImage(soldier), frameWidth: 32, frameHeight: 32 },
         partizan: { image: loadImage(partizan), frameWidth: 32, frameHeight: 32 },
@@ -156,7 +156,7 @@ export const useSprites = () => {
         PIPE: createAnimation(1),
         LARGE_REACTOR: createAnimation(4),
         BARRACKS: createAnimation(7),
-        WORKER: createAnimation(4),
+        worker: createAnimation(4),
         bmp: createAnimation(1),
         soldier: createAnimation(4),
         partizan: createAnimation(2),

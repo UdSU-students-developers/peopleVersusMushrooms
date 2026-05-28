@@ -11,6 +11,10 @@ import {
     BUILDING_DEFAULT_SIZE,
     LARVA_SPRITE_SRCS,
 } from './assets';
+import { TILE } from './terrainConstants';
+import { drawTerrainCell } from './terrainRenderer';
+import { getTerrainTilePreviewUrl } from './terrainTiles';
+import { buildAllyVisibilityGrid, drawVisibilityFog } from './visibilityFog';
 
 /** Базовый размер клетки (карта скроллится, если не влезает) */
 const MIN_CELL_PX = 40;
@@ -27,12 +31,39 @@ const ZOOM_FACTOR = 0.2;
 /** Кадры спрайтов (ходьба юнитов, vzryvomor, здания mushroomsEconomy, союзные здания) */
 const SPRITE_FRAME_MS = 200;
 
-/** Типы клеток рельефа (как в map/server/.../MapConfig.js TILES) */
-const TILE = {
-    PLANE: 0,
-    WATER: 1,
-    MOUNTAIN: 2,
-} as const;
+/** Типы юнитов в легенде (фиксированный порядок) */
+const ALLY_LEGEND_TYPES = ['soldier', 'bmp', 'partizan', 'sniper'] as const;
+const ENEMY_LEGEND_TYPES = ['sporomet', 'champigneb', 'eblekar', 'pizdoglyad', 'larva'] as const;
+/** Здания mushroomsArmy на карте */
+const ENEMY_BUILDING_LEGEND_TYPES = ['sporovaya_bashnya', 'vzryvomor'] as const;
+
+const TERRAIN_PREVIEW = {
+    grass: getTerrainTilePreviewUrl('grass', 0),
+    water: getTerrainTilePreviewUrl('water', 0),
+    stone: getTerrainTilePreviewUrl('stone', 0),
+};
+
+const LEGEND_LABELS: Record<(typeof ALLY_LEGEND_TYPES)[number] | (typeof ENEMY_LEGEND_TYPES)[number], string> = {
+    soldier: 'Солдат',
+    bmp: 'БМП',
+    partizan: 'Партизан',
+    sniper: 'Снайпер',
+    sporomet: 'Споромёт',
+    champigneb: 'Шампиньёнб',
+    eblekar: 'Эблекар',
+    pizdoglyad: 'Пиздогляд',
+    larva: 'Личинка',
+};
+
+const BUILDING_LEGEND_LABELS: Record<(typeof ENEMY_BUILDING_LEGEND_TYPES)[number], string> = {
+    sporovaya_bashnya: 'Споровая башня',
+    vzryvomor: 'Взрывомор',
+};
+
+const BUILDING_LEGEND_PREVIEW: Record<(typeof ENEMY_BUILDING_LEGEND_TYPES)[number], string> = {
+    sporovaya_bashnya: SPOROVAYA_BASHNYA_SRCS.idle,
+    vzryvomor: VZRYVOMOR_BUILDING_SRCS[0],
+};
 
 const COLOR = {
     bg: '#0d1117',
@@ -113,6 +144,38 @@ function normUnitType(type: string | undefined): string {
     return t || 'soldier';
 }
 
+function countUnitsByTypes(units: { type?: string }[], types: readonly string[]): Record<string, number> {
+    const out: Record<string, number> = {};
+    for (const t of types) {
+        out[t] = 0;
+    }
+    for (const u of units) {
+        const t = normUnitType(u.type);
+        if (Object.prototype.hasOwnProperty.call(out, t)) {
+            out[t] += 1;
+        }
+    }
+    return out;
+}
+
+function countBuildingsByTypes(
+    buildings: EnemyBuildingData[],
+    types: readonly string[],
+): Record<string, number> {
+    const out: Record<string, number> = {};
+    for (const t of types) {
+        out[t] = 0;
+    }
+    for (const b of buildings) {
+        if (!isEnemyBuildingAlive(b)) continue;
+        const t = normBuildingType(b.type);
+        if (Object.prototype.hasOwnProperty.call(out, t)) {
+            out[t] += 1;
+        }
+    }
+    return out;
+}
+
 function getUnitFrames(type: string): HTMLImageElement[] {
     const key = normUnitType(type);
     if (unitImageCache[key]) return unitImageCache[key];
@@ -191,6 +254,7 @@ interface UnitData {
     hp: number;
     maxHp?: number;
     speed: number;
+    visible?: number;
     targetX: number | null;
     targetY: number | null;
 }
@@ -247,38 +311,6 @@ function getBuildingSize(b: EnemyBuildingData): number {
     return Math.max(1, Number(b.size) || BUILDING_DEFAULT_SIZE[type] || 1);
 }
 
-function drawWaterCell(ctx: CanvasRenderingContext2D, px: number, py: number, cell: number) {
-    const g = ctx.createLinearGradient(px, py, px + cell, py + cell);
-    g.addColorStop(0, COLOR.waterLight);
-    g.addColorStop(0.45, COLOR.water);
-    g.addColorStop(1, COLOR.waterDeep);
-    ctx.fillStyle = g;
-    ctx.fillRect(px, py, cell, cell);
-    const cx = px + cell * 0.35;
-    const cy = py + cell * 0.4;
-    const r = Math.max(1, cell * 0.55);
-    const h = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-    h.addColorStop(0, 'rgba(140, 210, 255, 0.12)');
-    h.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = h;
-    ctx.fillRect(px, py, cell, cell);
-}
-
-function drawMountainCell(ctx: CanvasRenderingContext2D, px: number, py: number, cell: number) {
-    ctx.fillStyle = COLOR.mountainDark;
-    ctx.fillRect(px, py, cell, cell);
-    ctx.fillStyle = COLOR.mountain;
-    const inset = cell * 0.08;
-    ctx.fillRect(px + inset, py + inset, cell - 2 * inset, cell - 2 * inset);
-    ctx.fillStyle = COLOR.mountainLight;
-    const h = Math.max(1, cell * 0.25);
-    const w = Math.max(1, cell * 0.35);
-    ctx.fillRect(px + inset, py + inset, w, h);
-    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-    ctx.lineWidth = Math.max(0.5, cell * 0.05);
-    ctx.strokeRect(px + inset, py + inset, cell - 2 * inset, cell - 2 * inset);
-}
-
 function drawMap(ctx: CanvasRenderingContext2D, map: number[][], cell: number) {
     const rows = map.length;
     const cols = map.reduce((max, row) => Math.max(max, row.length), 0);
@@ -286,35 +318,13 @@ function drawMap(ctx: CanvasRenderingContext2D, map: number[][], cell: number) {
     ctx.fillStyle = COLOR.bg;
     ctx.fillRect(0, 0, cols * cell, rows * cell);
 
-    ctx.strokeStyle = COLOR.grid;
-    ctx.lineWidth = Math.max(0.25, cell * 0.04);
-    for (let y = 0; y <= rows; y++) {
-        ctx.beginPath();
-        ctx.moveTo(0, y * cell);
-        ctx.lineTo(cols * cell, y * cell);
-        ctx.stroke();
-    }
-    for (let x = 0; x <= cols; x++) {
-        ctx.beginPath();
-        ctx.moveTo(x * cell, 0);
-        ctx.lineTo(x * cell, rows * cell);
-        ctx.stroke();
-    }
-
     for (let y = 0; y < rows; y++) {
         const row = map[y];
         for (let x = 0; x < cols; x++) {
             const v = row[x];
             const px = x * cell;
             const py = y * cell;
-            if (v === TILE.WATER) {
-                drawWaterCell(ctx, px, py, cell);
-            } else if (v === TILE.MOUNTAIN) {
-                drawMountainCell(ctx, px, py, cell);
-            } else if (v !== undefined && v !== TILE.PLANE) {
-                ctx.fillStyle = COLOR.terrainUnknown;
-                ctx.fillRect(px, py, cell, cell);
-            }
+            drawTerrainCell(ctx, x, y, px, py, cell, v, COLOR.terrainUnknown);
         }
     }
 }
@@ -494,6 +504,12 @@ function fitCellToWrap(wrap: HTMLElement, cols: number, rows: number): number {
     return Math.min(Math.max(fit, MIN_CELL_PX), MAX_CELL_PX);
 }
 
+type LegendUnitStats = {
+    allies: Record<string, number>;
+    enemies: Record<string, number>;
+    enemyBuildings: Record<string, number>;
+};
+
 function applyArmyUpdate(
     data: ArmyData,
     unitsRef: React.MutableRefObject<UnitData[]>,
@@ -501,6 +517,7 @@ function applyArmyUpdate(
     enemyBuildingsRef: React.MutableRefObject<Map<string, EnemyBuildingData>>,
     alliedBuildingsRef: React.MutableRefObject<Map<string, EnemyBuildingData>>,
     setUnitCount: (n: number) => void,
+    setLegendUnitStats: (s: LegendUnitStats) => void,
 ): void {
     if (Array.isArray(data.units)) {
         unitsRef.current = data.units;
@@ -539,6 +556,15 @@ function applyArmyUpdate(
             enemyBuildingsRef.current.set(b.guid, b);
         }
     }
+
+    setLegendUnitStats({
+        allies: countUnitsByTypes(unitsRef.current, ALLY_LEGEND_TYPES),
+        enemies: countUnitsByTypes(enemyUnitsRef.current, ENEMY_LEGEND_TYPES),
+        enemyBuildings: countBuildingsByTypes(
+            Array.from(enemyBuildingsRef.current.values()),
+            ENEMY_BUILDING_LEGEND_TYPES,
+        ),
+    });
 }
 
 const Game: React.FC<IBasePage> = ({ mediator, setPage }) => {
@@ -555,6 +581,11 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage }) => {
     const alliedBuildingsRef = useRef<Map<string, EnemyBuildingData>>(new Map());
     const animFrameRef = useRef<number>(0);
     const [unitCount, setUnitCount] = useState(0);
+    const [legendUnitStats, setLegendUnitStats] = useState<LegendUnitStats>(() => ({
+        allies: countUnitsByTypes([], ALLY_LEGEND_TYPES),
+        enemies: countUnitsByTypes([], ENEMY_LEGEND_TYPES),
+        enemyBuildings: countBuildingsByTypes([], ENEMY_BUILDING_LEGEND_TYPES),
+    }));
     const [hasMap, setHasMap] = useState(false);
     const [zoom, setZoom] = useState(ZOOM_DEFAULT);
 
@@ -695,6 +726,8 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage }) => {
                 canvas.height = h;
             }
             drawMap(ctx, map, cell);
+            const visibleGrid = buildAllyVisibilityGrid(rows, cols, unitsRef.current);
+            drawVisibilityFog(ctx, cols, rows, cell, visibleGrid);
             alliedBuildingsRef.current.forEach((b) => drawAlliedBuilding(ctx, b, cell));
             enemyBuildingsRef.current.forEach((b) => drawEnemyBuilding(ctx, b, cell));
             enemyUnitsRef.current.forEach((eu) => drawEnemyUnit(ctx, eu, cell));
@@ -733,6 +766,7 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage }) => {
                 enemyBuildingsRef,
                 alliedBuildingsRef,
                 setUnitCount,
+                setLegendUnitStats,
             );
         };
 
@@ -772,37 +806,60 @@ const Game: React.FC<IBasePage> = ({ mediator, setPage }) => {
 
                 <div className="game-legend">
                     <p className="game-section-label">Легенда</p>
-                    <div className="game-legend-row">
-                        <span className="game-legend-dot" style={{ background: COLOR.soldier }} />
-                        Солдат
+                    <p className="game-legend-subhead">Армия людей</p>
+                    {ALLY_LEGEND_TYPES.map((type) => (
+                        <div key={type} className="game-legend-row game-legend-row--unit">
+                            <img
+                                className="game-legend-sprite"
+                                src={UNIT_FRAME_SRCS[type]?.[0]}
+                                alt=""
+                                width={22}
+                                height={22}
+                            />
+                            <span className="game-legend-name">{LEGEND_LABELS[type]}</span>
+                            <span className="game-legend-count">{legendUnitStats.allies[type] ?? 0}</span>
+                        </div>
+                    ))}
+                    <p className="game-legend-subhead">Армия грибов</p>
+                    {ENEMY_LEGEND_TYPES.map((type) => (
+                        <div key={type} className="game-legend-row game-legend-row--unit">
+                            <img
+                                className="game-legend-sprite"
+                                src={UNIT_FRAME_SRCS[type]?.[0]}
+                                alt=""
+                                width={22}
+                                height={22}
+                            />
+                            <span className="game-legend-name">{LEGEND_LABELS[type]}</span>
+                            <span className="game-legend-count">{legendUnitStats.enemies[type] ?? 0}</span>
+                        </div>
+                    ))}
+                    <p className="game-legend-subhead">Здания (армия грибов)</p>
+                    {ENEMY_BUILDING_LEGEND_TYPES.map((type) => (
+                        <div key={type} className="game-legend-row game-legend-row--unit">
+                            <img
+                                className="game-legend-sprite"
+                                src={BUILDING_LEGEND_PREVIEW[type]}
+                                alt=""
+                                width={22}
+                                height={22}
+                            />
+                            <span className="game-legend-name">{BUILDING_LEGEND_LABELS[type]}</span>
+                            <span className="game-legend-count">{legendUnitStats.enemyBuildings[type] ?? 0}</span>
+                        </div>
+                    ))}
+                    <p className="game-legend-subhead">Рельеф</p>
+                    <div className="game-legend-row game-legend-row--unit">
+                        <img className="game-legend-sprite game-legend-sprite--terrain" src={TERRAIN_PREVIEW.grass} alt="" width={22} height={22} />
+                        <span className="game-legend-name">Земля</span>
                     </div>
-                    <div className="game-legend-row">
-                        <span
-                            className="game-legend-dot"
-                            style={{ background: COLOR.bmp, borderRadius: '2px' }}
-                        />
-                        БМП
+                    <div className="game-legend-row game-legend-row--unit">
+                        <img className="game-legend-sprite game-legend-sprite--terrain" src={TERRAIN_PREVIEW.water} alt="" width={22} height={22} />
+                        <span className="game-legend-name">Вода</span>
                     </div>
-                    <div className="game-legend-row">
-                        <span
-                            className="game-legend-dot"
-                            style={{ background: COLOR.enemyMushroom, borderRadius: '4px' }}
-                        />
-                        Враг (грибы)
-                    </div>
-                    <div className="game-legend-row">
-                        <span
-                            className="game-legend-dot"
-                            style={{ background: COLOR.water, borderRadius: '2px' }}
-                        />
-                        Вода
-                    </div>
-                    <div className="game-legend-row">
-                        <span
-                            className="game-legend-dot"
-                            style={{ background: COLOR.mountain, borderRadius: '2px' }}
-                        />
-                        Горы / камень
+                    <div className="game-legend-row game-legend-row--unit">
+                        <img className="game-legend-sprite game-legend-sprite--terrain" src={TERRAIN_PREVIEW.stone} alt="" width={22} height={22} />
+                        <span className="game-legend-name">Камень / горы</span>
                     </div>
                 </div>
             </div>

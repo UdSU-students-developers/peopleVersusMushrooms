@@ -2,6 +2,7 @@ import Unit, { TUnitOptions } from "../Units";
 
 class Champigneb extends Unit {
 
+    private currentEnemiesPool: Unit[] = [];
     public explosionRadius: number = 6;
     public explosionDamage: number = 60;
     public hasExploded: boolean = false;
@@ -23,7 +24,10 @@ class Champigneb extends Unit {
 
         if(this.hasExploded) return;
 
-        for (const enemy of this.enemies){
+        const targets = this.currentEnemiesPool.length > 0 ? this.currentEnemiesPool : this.enemies;
+        
+        for (const enemy of targets){
+            if (!enemy.isAlive) continue;
 
             const dx = enemy.x - this.x;
             const dy = enemy.y - this.y;
@@ -41,6 +45,11 @@ class Champigneb extends Unit {
     protected onEnemyFound(enemy: Unit, distance: number): void {
         this.targetX = enemy.x;
         this.targetY = enemy.y;
+
+        if (this.enemies) {
+            this.currentEnemiesPool = this.enemies;
+        }
+
         if (distance < 6) {
             this.explode();
         }

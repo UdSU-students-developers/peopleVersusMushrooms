@@ -126,7 +126,6 @@ class Autopilot {
 
                 const buildingType = this.requestsFromArmy.buildings[0];
                 const cost = ironCosts[buildingType] || 0;
-
                 if (economy.resources.iron < cost) continue;
 
                 this.requestsFromArmy.buildings.shift();

@@ -1,12 +1,11 @@
 const CONFIG = require('../../config');
 
 class Autopilot {
-
     constructor() {
-        this.priority = "economy";
+        this.priority = 'economy';
         this.requestsFromArmy = {
             units: [],
-            buildings: [],
+            buildings: []
         };
     }
 
@@ -27,26 +26,26 @@ class Autopilot {
     }
 
     _getEnergyPerTick(economy) {
-        return economy.buildings.reactors.reduce((sum, r) => {
+        let sum = 0;
+        for (const r of economy.buildings.reactors) {
             const prod = r.type === CONFIG.ECONOMY.BIO_REACTOR_SMALL.TYPE
                 ? CONFIG.ECONOMY.BIO_REACTOR_SMALL.PRODUCTION
                 : CONFIG.ECONOMY.BIO_REACTOR.PRODUCTION;
-            return sum + prod;
-        }, 0);
+            sum += prod;
+        }
+        return sum;
     }
 
     _updatePriority(economy) {
         const economyReady = this._getEnergyPerTick(economy) >= 5 && this._getIronPerTick(economy) >= 2;
-        const hasArmyWork = this.requestsFromArmy.units.length > 0
-            || this.requestsFromArmy.buildings.length > 0;
-        const totalArmyRequests = this.requestsFromArmy.units.length
-            + this.requestsFromArmy.buildings.length;
-        const armyByInfrastructure = economy.buildings.reactors.length >= 2
-            && totalArmyRequests > 2;
-        const next = (hasArmyWork && (economyReady || armyByInfrastructure)) ? "army" : "economy";
+        const hasArmyWork = this.requestsFromArmy.units.length > 0 || this.requestsFromArmy.buildings.length > 0;
+        const totalArmyRequests = this.requestsFromArmy.units.length + this.requestsFromArmy.buildings.length;
+        const armyByInfrastructure = economy.buildings.reactors.length >= 2 && totalArmyRequests > 2;
 
-        if (next !== this.priority) {
-            this.priority = next;
+        const nextPriority = (hasArmyWork && (economyReady || armyByInfrastructure)) ? 'army' : 'economy';
+
+        if (nextPriority !== this.priority) {
+            this.priority = nextPriority;
             economy.updated = true;
         }
     }
@@ -61,20 +60,23 @@ class Autopilot {
         if (mines.length === 0) return 'mine';
         if (reactors.length === 0) return 'reactor';
 
-        const reactorUnits = reactors.reduce((sum, r) => sum + this._getSmallReactorEquivalent(r), 0);
+        let reactorUnits = 0;
+        for (const r of reactors) {
+            reactorUnits += this._getSmallReactorEquivalent(r);
+        }
+
         const mineUnits = mines.length;
         const incubatorUnits = incubators.length;
 
         const targetRatios = { reactor: 3, mine: 2, incubator: 1 };
-        const current = { reactor: reactorUnits, mine: mineUnits, incubator: incubatorUnits };
-
-        const total = reactorUnits + mineUnits + incubatorUnits;
+        const currentUnits = { reactor: reactorUnits, mine: mineUnits, incubator: incubatorUnits };
+        const totalUnits = reactorUnits + mineUnits + incubatorUnits;
 
         let mostNeeded = null;
         let worstRatio = Infinity;
 
         for (const [type, target] of Object.entries(targetRatios)) {
-            const ratio = current[type] / (total * target);
+            const ratio = currentUnits[type] / (totalUnits * target);
             if (ratio < worstRatio) {
                 worstRatio = ratio;
                 mostNeeded = type;
@@ -85,11 +87,12 @@ class Autopilot {
     }
 
     _mutateLarvae(economy) {
+        if (this.priority !== 'army') return;
+
         const { MUTATION_IRON_COST, MUTATION_ENERGY_COST } = CONFIG.ECONOMY.LARVA;
+        const larvaeCopy = [...economy.units.larvae];
 
-        if (this.priority !== "army") return;
-
-        for (const larva of [...economy.units.larvae]) {
+        for (const larva of larvaeCopy) {
             if (this.requestsFromArmy.units.length === 0) break;
             if (economy.resources.iron < MUTATION_IRON_COST) break;
             if (economy.resources.energy < MUTATION_ENERGY_COST) break;
@@ -97,39 +100,41 @@ class Autopilot {
             const unitType = this.requestsFromArmy.units.shift();
             economy.resources.iron -= MUTATION_IRON_COST;
             economy.resources.energy -= MUTATION_ENERGY_COST;
+
             economy.units.larvae = economy.units.larvae.filter(l => l.guid !== larva.guid);
             economy.spawnArmyUnit({
                 armyGuid: economy.guids.mushroomsArmy,
                 type: unitType,
                 x: larva.x,
-                y: larva.y,
+                y: larva.y
             });
         }
     }
 
     _assignWorkers(economy) {
         const ironCosts = {
-            reactor:   CONFIG.ECONOMY.BIO_REACTOR_SMALL.IRON_COST,
+            reactor: CONFIG.ECONOMY.BIO_REACTOR_SMALL.IRON_COST,
             incubator: CONFIG.ECONOMY.INCUBATOR.IRON_COST,
-            mine:      CONFIG.ECONOMY.MINE.IRON_COST,
+            mine: CONFIG.ECONOMY.MINE.IRON_COST
         };
 
         for (const worker of economy.units.workers) {
             if (worker.assignedBuilding) continue;
 
-            if (this.priority === "army") {
+            if (this.priority === 'army') {
                 if (this.requestsFromArmy.buildings.length === 0) continue;
 
                 const buildingType = this.requestsFromArmy.buildings[0];
                 const cost = ironCosts[buildingType] || 0;
+
                 if (economy.resources.iron < cost) continue;
 
                 this.requestsFromArmy.buildings.shift();
                 worker.assignedBuilding = buildingType;
-
             } else {
                 const neededType = this._getNeededBuildingType(economy);
                 const cost = ironCosts[neededType] || 0;
+
                 if (economy.resources.iron < cost) continue;
 
                 worker.assignedBuilding = neededType;

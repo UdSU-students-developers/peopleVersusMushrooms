@@ -410,11 +410,15 @@ export class ArmyStateManager {
     //Обновляет режим: атака при >100 юнитов, оборона при <20
     private updateMode(): void {
         const count = this.metrics.aliveUnitsCount;
-        let newMode: ArmyMode = 'balanced';
+        let newMode: ArmyMode = 'defense';
 
-        if (count > 100) {
+        // Логика: оборона до 100 юнитов, атака с 100 до 20, потом опять оборона
+        if (count >= 100) {
             newMode = 'attack';
         } else if (count < 20) {
+            newMode = 'defense';
+        } else {
+            // 20 <= count < 100: оборона
             newMode = 'defense';
         }
 

@@ -176,25 +176,44 @@ class Economy {
         this.updatedUnits.push(worker.get());
     }
 
+    _payIronCost(cost) {
+        if (this.resources.iron < cost) return false;
+        this.resources.iron -= cost;
+        this.updated = true;
+        return true;
+    }
+
     mutateWorkerToMine(wor) {
+        if (!this._payIronCost(CONFIG.ECONOMY.MINE.IRON_COST)) return false;
+
         const { x, y } = wor.targetIron || wor;
         this._removeWorker(wor);
         this.addMine(x, y);
+        return true;
     }
 
     mutateWorkerToReactor(wor) {
+        if (!this._payIronCost(CONFIG.ECONOMY.BIO_REACTOR.IRON_COST)) return false;
+
         this._removeWorker(wor);
         this.addReactor(wor.x, wor.y);
+        return true;
     }
 
     mutateWorkerToSmallReactor(wor) {
+        if (!this._payIronCost(CONFIG.ECONOMY.BIO_REACTOR_SMALL.IRON_COST)) return false;
+
         this._removeWorker(wor);
         this.addSmallReactor(wor.x, wor.y);
+        return true;
     }
 
     mutateWorkerToIncubator(wor) {
+        if (!this._payIronCost(CONFIG.ECONOMY.INCUBATOR.IRON_COST)) return false;
+
         this._removeWorker(wor);
         this.addIncubator(wor.x, wor.y);
+        return true;
     }
 
     _removeWorker(wor) {

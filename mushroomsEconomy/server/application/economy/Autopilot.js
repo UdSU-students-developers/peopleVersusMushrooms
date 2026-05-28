@@ -36,10 +36,14 @@ class Autopilot {
     }
 
     _updatePriority(economy) {
-        if (this._getEnergyPerTick(economy) >= 5 && this._getIronPerTick(economy) >= 2) {
-            this.priority = "army";
-        } else {
-            this.priority = "economy";
+        const economyReady = this._getEnergyPerTick(economy) >= 5 && this._getIronPerTick(economy) >= 2;
+        const hasArmyWork = this.requestsFromArmy.units.length > 0
+            || this.requestsFromArmy.buildings.length > 0;
+        const next = (economyReady && hasArmyWork) ? "army" : "economy";
+
+        if (next !== this.priority) {
+            this.priority = next;
+            economy.updated = true;
         }
     }
 
@@ -110,22 +114,20 @@ class Autopilot {
             if (worker.assignedBuilding) continue;
 
             if (this.priority === "army") {
-                if (this.requestsFromArmy.buildings.length === 0) break;
+                if (this.requestsFromArmy.buildings.length === 0) continue;
 
                 const buildingType = this.requestsFromArmy.buildings[0];
                 const cost = ironCosts[buildingType] || 0;
-                if (economy.resources.iron < cost) break;
+                if (economy.resources.iron < cost) continue;
 
                 this.requestsFromArmy.buildings.shift();
-                economy.resources.iron -= cost;
                 worker.assignedBuilding = buildingType;
 
             } else {
                 const neededType = this._getNeededBuildingType(economy);
                 const cost = ironCosts[neededType] || 0;
-                if (economy.resources.iron < cost) break;
+                if (economy.resources.iron < cost) continue;
 
-                economy.resources.iron -= cost;
                 worker.assignedBuilding = neededType;
                 break;
             }

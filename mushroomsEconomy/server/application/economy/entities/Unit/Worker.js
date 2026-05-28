@@ -84,8 +84,12 @@ class Worker extends Unit {
         }
 
         if (this.mode === 'goToIron' && this._hasReachedTarget()) {
-            if (this.callbacks.mutateToMine) {
-                this.callbacks.mutateToMine(this);
+            const mutated = this.callbacks.mutateToMine?.(this) ?? false;
+            if (!mutated) {
+                this.targetIron = null;
+                this.targetResource = null;
+                this.assignedBuilding = null;
+                this.mode = 'wander';
             }
         }
     }
@@ -93,7 +97,17 @@ class Worker extends Unit {
     _handleAssignedBuilding() {
         if (!this.targetMycelium) {
             const mycelium = this._findFreeMycelium();
-            if (!mycelium) return;
+            if (!mycelium) {
+                this._stuckAssignmentTicks = (this._stuckAssignmentTicks || 0) + 1;
+                if (this._stuckAssignmentTicks >= 30) {
+                    this.assignedBuilding = null;
+                    this._stuckAssignmentTicks = 0;
+                    this.mode = 'wander';
+                }
+                return;
+            }
+
+            this._stuckAssignmentTicks = 0;
             this.targetMycelium = mycelium;
             this.mode = 'goToMycelium';
             this.setTarget(mycelium.x, mycelium.y);
@@ -138,19 +152,19 @@ class Worker extends Unit {
 
     _mutateToAssignedBuilding() {
         const type = this.assignedBuilding;
+        let mutated = false;
+
+        if (type === 'reactor' || type === 'small_reactor') {
+            mutated = this.callbacks.mutateToSmallReactor?.(this) ?? false;
+        } else if (type === 'incubator') {
+            mutated = this.callbacks.mutateToIncubator?.(this) ?? false;
+        }
+
+        if (!mutated) return;
+
         this.assignedBuilding = null;
         this.targetMycelium = null;
         this.mode = 'wander';
-
-        if (type === 'reactor' || type === 'small_reactor') {
-            if (this.callbacks.mutateToSmallReactor) {
-                this.callbacks.mutateToSmallReactor(this);
-            }
-        } else if (type === 'incubator') {
-            if (this.callbacks.mutateToIncubator) {
-                this.callbacks.mutateToIncubator(this);
-            }
-        }
     }
 
     _handleIronSearch() {

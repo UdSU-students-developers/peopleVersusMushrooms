@@ -26,6 +26,8 @@ export type TUnitState = {
   hp: number;
   visibility?: number;
   isHealing?: boolean;
+  targetX?: number;
+  targetY?: number;
 };
 
 export type TPoisonEffect = {
@@ -333,6 +335,8 @@ class Unit {
             y: Math.floor(this.y),
             hp: this.hp,
             visibility: this.visibility,
+            targetX: this.targetX !== undefined ? Math.floor(this.targetX) : undefined,
+            targetY: this.targetY !== undefined ? Math.floor(this.targetY) : undefined,
         };
     }
 

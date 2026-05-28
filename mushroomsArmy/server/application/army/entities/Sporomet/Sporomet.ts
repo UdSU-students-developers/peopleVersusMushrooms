@@ -8,7 +8,7 @@ class Sporomet extends Unit {
     public attackDamage: number = 9;
     public poisonDuration: number = 10;
     public poisonDamagePerSecond: number = 10;
-    
+
     private lastShotTime: number = 0;
     private isAiming: boolean = false;
     private aimStartTime: number = 0;
@@ -36,9 +36,9 @@ class Sporomet extends Unit {
             toY: enemy.y,
             createdAt: Date.now(),
         });
-        
+
         enemy.takeDamage(this.attackDamage);
-        
+
         this.applyPoisonEffect(enemy, {
             duration: this.poisonDuration,
             damagePerSecond: this.poisonDamagePerSecond,
@@ -58,16 +58,16 @@ class Sporomet extends Unit {
     private updatePoisonEffects(enemies: Unit[], deltaTime: number): void {
         for (const enemy of enemies) {
             if (!enemy.isAlive) continue;
-            
+
             for (let i = enemy.poisonEffects.length - 1; i >= 0; i--) {
                 const effect = enemy.poisonEffects[i];
                 effect.duration -= deltaTime;
-                
+
                 const damage = effect.damagePerSecond * deltaTime;
                 if (damage > 0) {
                     enemy.takeDamage(damage);
                 }
-                
+
                 if (effect.duration <= 0) {
                     enemy.poisonEffects.splice(i, 1);
                 }
@@ -75,50 +75,56 @@ class Sporomet extends Unit {
         }
     }
 
-    protected onEnemyFound(enemy: Unit, distance: number): void {
+    protected override onEnemyFound(enemy: Unit, distance: number): void {
         const currentTime = Date.now() / 1000;
-        
+
         // Если текущая цель мертва — сбрасываем прицел
         if (this.currentTarget && !this.currentTarget.isAlive) {
             this.isAiming = false;
             this.currentTarget = null;
         }
-        
-        if (distance < this.retreatRange) {
-            // Слишком близко — отступаем
+
+        const isBuilding = enemy.speed === 0;
+
+        if (distance < this.retreatRange && !isBuilding) {
+            // Слишком близко к мобильному юниту — отступаем
             this.isAiming = false;
             this.currentTarget = null;
-            
+
             const dx = this.x - enemy.x;
             const dy = this.y - enemy.y;
             const norm = Math.sqrt(dx * dx + dy * dy);
-            
+
             if (norm > 0.01) {
                 this.targetX = this.x + (dx / norm) * 5;
                 this.targetY = this.y + (dy / norm) * 5;
             }
         }
         else if (distance <= this.attackRange) {
-            // В зоне атаки — встаём и стреляем
-            // Оптимальная дистанция: середина между retreat и attack range
-            const optimalDistance = (this.retreatRange + this.attackRange) / 2;
-            
-            if (distance < optimalDistance - 0.5) {
-                // Чуть отходим назад к оптимальной дистанции
-                const dx = this.x - enemy.x;
-                const dy = this.y - enemy.y;
-                const norm = Math.sqrt(dx * dx + dy * dy);
-                if (norm > 0.01) {
-                    this.targetX = this.x + (dx / norm) * 1;
-                    this.targetY = this.y + (dy / norm) * 1;
-                }
-            } else {
-                // Стоим на месте
+            // В зоне атаки — выбираем позицию
+            if (isBuilding) {
+                // Если это здание — стоим на месте
                 this.targetX = this.x;
                 this.targetY = this.y;
+            } else {
+                // Оптимальная дистанция для перестрелки с юнитами
+                const optimalDistance = (this.retreatRange + this.attackRange) / 2;
+
+                if (distance < optimalDistance - 0.5) {
+                    const dx = this.x - enemy.x;
+                    const dy = this.y - enemy.y;
+                    const norm = Math.sqrt(dx * dx + dy * dy);
+                    if (norm > 0.01) {
+                        this.targetX = this.x + (dx / norm) * 1;
+                        this.targetY = this.y + (dy / norm) * 1;
+                    }
+                } else {
+                    this.targetX = this.x;
+                    this.targetY = this.y;
+                }
             }
-            
-            // Пытаемся целиться и стрелять
+
+            // Логика прицеливания (теперь работает и для зданий, и для юнитов)
             if (currentTime - this.lastShotTime >= this.cooldown) {
                 if (!this.isAiming || this.currentTarget !== enemy) {
                     this.isAiming = true;
@@ -138,11 +144,11 @@ class Sporomet extends Unit {
 
     public update(enemies: Unit[], map: TMap, deltaTime: number): void {
         if (!this.isAlive) return;
-        
+
         this.updatePoisonEffects(enemies, deltaTime);
-        
+
         super.update(enemies, map, deltaTime);
-        
+
         if (this.isAiming && this.currentTarget) {
             // Цель умерла — сброс
             if (!this.currentTarget.isAlive) {

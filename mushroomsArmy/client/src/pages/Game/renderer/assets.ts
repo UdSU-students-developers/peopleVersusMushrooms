@@ -26,6 +26,15 @@ import sporovayaBashnyaIdle from '../../../assets/buildings/sporovaya_bashnya/id
 import sporovayaBashnyaAttack from '../../../assets/buildings/sporovaya_bashnya/attack.png';
 import sporovayaBashnyaDestroyed from '../../../assets/buildings/sporovaya_bashnya/destroyed.png';
 
+import pipeSrc from '../../../assets/buildings/pipe/pipe1.png';
+import oilBarrelSrc from '../../../assets/buildings/oil_barrel/oil_barrel1.png';
+import ironBarrelSrc from '../../../assets/buildings/iron_barrel/iron_barrel1.png';
+import barracksSrc from '../../../assets/buildings/barracks/barracks1.png';
+import smallReactorSrc from '../../../assets/buildings/small_reactor/small_reactor1.png';
+import largeReactorSrc from '../../../assets/buildings/large_reactor/large_reactor1.png';
+import drillerSrc from '../../../assets/buildings/driller/driller1.png';
+import peopleMineSrc from '../../../assets/buildings/mine/mine1.png';
+
 import champignebExplFrame0 from '../../../assets/units/champigneb_explosion/frame_0.png';
 import champignebExplFrame1 from '../../../assets/units/champigneb_explosion/frame_1.png';
 import champignebExplFrame2 from '../../../assets/units/champigneb_explosion/frame_2.png';
@@ -150,6 +159,17 @@ export const SPOROVAYA_BASHNYA_SRCS = {
   idle: sporovayaBashnyaIdle,
   attack: sporovayaBashnyaAttack,
   destroyed: sporovayaBashnyaDestroyed,
+};
+
+export const PEOPLE_ECONOMY_BUILDING_SRCS: Record<string, string> = {
+  pipe: pipeSrc,
+  oil_barrel: oilBarrelSrc,
+  iron_barrel: ironBarrelSrc,
+  barracks: barracksSrc,
+  small_reactor: smallReactorSrc,
+  large_reactor: largeReactorSrc,
+  driller: drillerSrc,
+  mine: peopleMineSrc,
 };
 
 const grass1Img = Object.assign(new Image(), { src: grassTextureSrc1 });

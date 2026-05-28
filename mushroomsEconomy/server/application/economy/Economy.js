@@ -448,16 +448,17 @@ class Economy {
         return true;
     }
 
-    _initBuildings(startPoint = { x: 94, y: 94 }) {
+    _initBuildings(startPoint = { x: 93, y: 93 }) {
         // создать инкубатор
-        this.addIncubator(startPoint.x, startPoint.y);
+        this.addIncubator(startPoint.x+1, startPoint.y+1);
         // создать маленький реактор
-        this.addSmallReactor(startPoint.x + 1, startPoint.y + 1);
+        this.addSmallReactor(startPoint.x, startPoint.y + 1);
         // создать грибничку
-        this.addMycelium(startPoint.x - 1, startPoint.y - 1);
-        //this.addMycelium(1, 1);
-        //this.addReactor(startPoint.x + 3, startPoint.y + 3);
-        //this.addWorker(startPoint.x-10, startPoint.y)
+        for (let i = 0; i<3; i++) {
+            for (let j=0; j<3; j++) {
+                this.addMycelium(startPoint.x + i, startPoint.y + j);
+            }
+        }
         this.updated = true;
     }
 

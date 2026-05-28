@@ -49,8 +49,8 @@ const CONFIG = {
         MYCELIUM: {
             TYPE: 'mycelium',
             HP: 1,
-            GROW_SPEED: 70,
-            GROW_LEVEL_UP: 3000,
+            GROW_SPEED: 80,
+            GROW_LEVEL_UP: 2500,
             MAX_LEVEL: 3,
             CONSUMPTION: 0, // не потребляет энергию (растёт от Солнышка)
             PRODUCTION: 30, // чтобы для непрерывной работы малого реактора было необходимо ДВЕ грибницы

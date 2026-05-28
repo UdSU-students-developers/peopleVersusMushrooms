@@ -43,15 +43,6 @@ const PEOPLE_ECONOMY_DEFAULT_HP: Record<string, number> = {
     pipe: 100,
     smallGenerator: 100,
 };
-// Map хранит здания без hp — нормализуем дефолтами на стороне грибов,
-// чтобы прокси-цель не убивалась одной атакой.
-const PEOPLE_ECONOMY_DEFAULT_HP: Record<string, number> = {
-    barracks: 200,
-    driller: 100,
-    mine: 100,
-    pipe: 100,
-    smallGenerator: 100,
-};
 
 function normalizeMapUnitHp(unit: TVisibleEntity): TVisibleEntity {
     const parsed = Number(unit.hp);

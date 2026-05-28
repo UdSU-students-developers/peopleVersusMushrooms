@@ -27,7 +27,7 @@ class GameManager extends BaseManager {
 	callbackUpdate(data) {
 
 		const { mapGuid } = data.guids;
-		const guid = data.guids.peopleEconomy;
+		const guid = data.guid;
 		const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
 		if (!user) {
 			console.log('User отсутствует!, callbackUpdate не работает! \n map guid: ', mapGuid);

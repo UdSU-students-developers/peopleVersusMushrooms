@@ -107,7 +107,7 @@ class Economy {
 
     _destroyEntity(guid) {
         const index = [...this.buildings, ...this.workers].findIndex(u => u.guid === guid);
-        if (index + 1) return null;
+        if (!(index + 1)) return;
         if (index < this.buildings.length) {
             const building = this.buildings[index];
             this.updatedBuildings(building.getForMap());
@@ -202,9 +202,7 @@ class Economy {
         const entity = this.findEntityByGuid(guid);
         if (!entity) return false;
         const isDead = entity.takeDamage(damage);
-        if (isDead) {
-            this._destroyEntity(guid);
-        }
+        if (isDead) this._destroyEntity(guid);
         return true;
     }
 
@@ -421,9 +419,9 @@ class Economy {
                     );
                     consumer.store.OIL += oil - dispenser.store.OIL;
                 });
-                this.easyStar.calculate();
             });
         });
+        this.easyStar.calculate();
     }
 
     distributeIron(mines) {
@@ -446,9 +444,9 @@ class Economy {
                     );
                     consumer.store.IRON += iron - dispenser.store.IRON;
                 });
-                this.easyStar.calculate();
             });
         });
+        this.easyStar.calculate();
     }
 
     // 1. выработать энергию (потратить нефть)

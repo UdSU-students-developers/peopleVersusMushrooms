@@ -150,6 +150,7 @@ export type TScene = {
     map: TMap;
     units: TEconomyUnits;
     resources: TResources;
+    priority: string;
 }
 
 export type TLobby = {

@@ -106,6 +106,7 @@ class Economy {
             enemyBuildings: this.enemyBuildings,
             enemyUnits: this.enemyUnits,
             map: this.map.get(),
+            priority: this.autopilot.priority,
             //updatedBuildings: this.getUpdatedBuildings(),
         };
     }
@@ -165,35 +166,54 @@ class Economy {
             callbacks: {
                 getResources: () => this.map.resources,
                 getBuildings: () => Object.values(this.buildings).flat(),
+                getMycelium: () => this.buildings.mycelium,
                 mutateToMine: (wor) => this.mutateWorkerToMine(wor),
+                mutateToSmallReactor: (wor) => this.mutateWorkerToSmallReactor(wor),
+                mutateToIncubator: (wor) => this.mutateWorkerToIncubator(wor),
             },
         });
         this.units.workers.push(worker);
         this.updatedUnits.push(worker.get());
     }
 
-    mutateWorkerToMine(wor) {
-        const mineCost = CONFIG.ECONOMY.MINE.IRON_COST;
-        if (this.resources.iron < mineCost) return;
+    _payIronCost(cost) {
+        if (this.resources.iron < cost) return false;
+        this.resources.iron -= cost;
+        this.updated = true;
+        return true;
+    }
 
-        this.resources.iron -= mineCost;
+    mutateWorkerToMine(wor) {
+        if (!this._payIronCost(CONFIG.ECONOMY.MINE.IRON_COST)) return false;
+
+        const { x, y } = wor.targetIron || wor;
         this._removeWorker(wor);
-        this.addMine(wor.x, wor.y);
+        this.addMine(x, y);
+        return true;
     }
 
     mutateWorkerToReactor(wor) {
+        if (!this._payIronCost(CONFIG.ECONOMY.BIO_REACTOR.IRON_COST)) return false;
+
         this._removeWorker(wor);
         this.addReactor(wor.x, wor.y);
+        return true;
     }
 
     mutateWorkerToSmallReactor(wor) {
+        if (!this._payIronCost(CONFIG.ECONOMY.BIO_REACTOR_SMALL.IRON_COST)) return false;
+
         this._removeWorker(wor);
         this.addSmallReactor(wor.x, wor.y);
+        return true;
     }
 
     mutateWorkerToIncubator(wor) {
+        if (!this._payIronCost(CONFIG.ECONOMY.INCUBATOR.IRON_COST)) return false;
+
         this._removeWorker(wor);
         this.addIncubator(wor.x, wor.y);
+        return true;
     }
 
     _removeWorker(wor) {
@@ -447,16 +467,17 @@ class Economy {
         return true;
     }
 
-    _initBuildings(startPoint = { x: 94, y: 94 }) {
+    _initBuildings(startPoint = { x: 93, y: 93 }) {
         // создать инкубатор
-        this.addIncubator(startPoint.x, startPoint.y);
+        this.addIncubator(startPoint.x+1, startPoint.y+1);
         // создать маленький реактор
-        this.addSmallReactor(startPoint.x + 1, startPoint.y + 1);
+        this.addSmallReactor(startPoint.x, startPoint.y + 1);
         // создать грибничку
-        this.addMycelium(startPoint.x - 1, startPoint.y - 1);
-        this.addMycelium(1, 1);
-        //this.addReactor(startPoint.x + 3, startPoint.y + 3);
-        //this.addWorker(startPoint.x-10, startPoint.y)
+        for (let i = 0; i<3; i++) {
+            for (let j=0; j<3; j++) {
+                this.addMycelium(startPoint.x + i, startPoint.y + j);
+            }
+        }
         this.updated = true;
     }
 
@@ -467,6 +488,7 @@ class Economy {
         // 2. Мутировать здание из рабочего (потратить железо)
         // 3. передать боевых юнитов в армию (callback)
         // 3.5. для рабочих определить цели и задачи
+        this.autopilot.update(this);
 
         this.updateUnits();
         // 5. передвинуть личинки
@@ -485,8 +507,6 @@ class Economy {
 
         // 4. шахты добывают железо
         this.updateMines();
-
-        this.autopilot.update(this);
 
         // отбросить апдейт, если он случился
         if (this.updated) {

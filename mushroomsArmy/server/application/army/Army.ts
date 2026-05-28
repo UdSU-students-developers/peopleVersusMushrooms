@@ -163,7 +163,7 @@ export class Army {
     private buildingStateToMapEntity(state: TBuildingState): TMapBuildingEntity {
         const sizeX = state.sizeX ?? 1;
         const sizeY = state.sizeY ?? 1;
-        
+
         return {
             guid: state.guid,
             x: state.x,
@@ -189,7 +189,7 @@ export class Army {
             aliveGuids.add(snapshot.guid);
 
             const prev = this.mapSyncedBuildings.get(snapshot.guid);
-            
+
             // Отправляем, если здания вообще не было на карте, ИЛИ если у него изменились важные данные
             if (!prev || prev.x !== snapshot.x || prev.y !== snapshot.y || prev.visibility !== snapshot.visibility) {
                 entities.push(snapshot);
@@ -270,7 +270,7 @@ export class Army {
         return proxy;
     }
 
-     static generateDefensiveLayout(map: TMap, common: Common): TBuildingInput[] {
+    static generateDefensiveLayout(map: TMap, common: Common): TBuildingInput[] {
         const mapRows = map.length;
         const mapCols = map[0]?.length ?? 0;
         if (mapRows === 0 || mapCols === 0) return [];
@@ -307,6 +307,8 @@ export class Army {
         tryPlaceTower(zoneY0 + 1, zoneX0 + 1); // угол стен
         tryPlaceTower(zoneY0 + 1, zoneX1 - 1); // правый верхний
         tryPlaceTower(zoneY1 - 1, zoneX0 + 1); // левый нижний
+        tryPlaceTower(zoneY0 + 7, zoneX1 - 13); // правый верхний
+        tryPlaceTower(zoneY1 - 13, zoneX0 + 7); // левый нижний
 
         // Левая стена: x=zoneX0, вся высота зоны
         for (let y = zoneY0; y <= zoneY1; y++) {
@@ -332,53 +334,6 @@ export class Army {
             }
         }
 
-        // ── Споровые башни вдоль линий обороны, каждые 10 клеток ──────────────
-        // Могут ставиться на равнине (0) и горах (2).
-        // Строятся за стеной (со стороны базы), чтобы стена их прикрывала.
-
-        // Множество уже занятых тайлов для предотвращения наложений
-        const occupied = new Set<string>();
-        for (const b of result) {
-            const sx = b.type === 'sporovaya_bashnya' ? 2 : 1;
-            const sy = b.type === 'sporovaya_bashnya' ? 2 : 1;
-            for (let dy = 0; dy < sy; dy++)
-                for (let dx = 0; dx < sx; dx++)
-                    occupied.add(`${b.x + dx},${b.y + dy}`);
-        }
-
-        // Проверка блока 2×2: равнина или гора, не занято
-        const isFreeForTower = (topY: number, leftX: number): boolean => {
-            for (let dy = 0; dy <= 1; dy++) {
-                for (let dx = 0; dx <= 1; dx++) {
-                    const ty = topY + dy, tx = leftX + dx;
-                    if (ty < 0 || ty >= mapRows || tx < 0 || tx >= mapCols) return false;
-                    const tile = map[ty][tx];
-                    if (tile !== 0 && tile !== 2) return false;
-                    if (occupied.has(`${tx},${ty}`)) return false;
-                }
-            }
-            return true;
-        };
-
-        const addTower = (topY: number, leftX: number): void => {
-            if (!isFreeForTower(topY, leftX)) return;
-            const b: TBuildingInput = { guid: common.guid(), type: 'sporovaya_bashnya', x: leftX, y: topY };
-            result.push(b);
-            for (let dy = 0; dy <= 1; dy++)
-                for (let dx = 0; dx <= 1; dx++)
-                    occupied.add(`${leftX + dx},${topY + dy}`);
-        };
-
-        // За левой стеной (x=zoneX0) — башня сдвинута вправо на 1, каждые 7 клеток по Y
-        for (let y = zoneY0; y <= zoneY1 - 1; y += 7) {
-            addTower(y, zoneX0 + 1);
-        }
-
-        // За верхней стеной (y=zoneY0) — башня сдвинута вниз на 1, каждые 7 клеток по X
-        for (let x = zoneX0 + 1; x <= zoneX1 - 1; x += 7) {
-            addTower(zoneY0 + 1, x);
-        }
-
         return result;
     }
 
@@ -399,7 +354,7 @@ export class Army {
 
             return this.createEnemyProxy(entity);
         });
-        
+
     }
 
     /**

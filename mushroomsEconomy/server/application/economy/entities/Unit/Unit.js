@@ -124,9 +124,14 @@ class Unit {
 
         this.path = [];
 
+        const startX = Math.round(this.x);
+        const startY = Math.round(this.y);
+        const endX = Math.round(this.targetX);
+        const endY = Math.round(this.targetY);
+
         this.easyStar.findPath(
-            this.x, this.y,
-            this.targetX, this.targetY,
+            startX, startY,
+            endX, endY,
             (foundPath) => {
                 this.path = foundPath ? foundPath.slice(1) : [];
             }

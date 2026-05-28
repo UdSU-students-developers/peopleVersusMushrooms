@@ -13,6 +13,7 @@ const Game: React.FC<IBasePage> = ({ setPage }) => {
     const mediator = useContext(MediatorContext);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [resources, setResources] = useState<TResources>({ iron: 0, energy: 0 });
+    const [priority, setPriority] = useState('');
 
     useEffect(() => {
         const { START_GAME, UPDATE_SCENE } = mediator.getEventTypes();
@@ -20,6 +21,9 @@ const Game: React.FC<IBasePage> = ({ setPage }) => {
         const onScene = (data: any) => {
             if (data?.resources) {
                 setResources({ ...data.resources });
+            }
+            if (data?.priority) {
+                setPriority(data.priority);
             }
         };
 
@@ -61,6 +65,7 @@ const Game: React.FC<IBasePage> = ({ setPage }) => {
             <div className="resources-bar">
                 <span className="resource-item resource-iron">⛏ Железо: {resources.iron}</span>
                 <span className="resource-item resource-energy">⚡ Энергия: {resources.energy}</span>
+                <span className="resource-item resource-iron">Приоритет: {priority}</span>
             </div>
 
             <ChatWidget />

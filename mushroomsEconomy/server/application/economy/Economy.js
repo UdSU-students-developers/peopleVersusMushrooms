@@ -106,6 +106,7 @@ class Economy {
             enemyBuildings: this.enemyBuildings,
             enemyUnits: this.enemyUnits,
             map: this.map.get(),
+            priority: this.autopilot.prioritet,
             //updatedBuildings: this.getUpdatedBuildings(),
         };
     }
@@ -454,7 +455,7 @@ class Economy {
         this.addSmallReactor(startPoint.x + 1, startPoint.y + 1);
         // создать грибничку
         this.addMycelium(startPoint.x - 1, startPoint.y - 1);
-        this.addMycelium(1, 1);
+        //this.addMycelium(1, 1);
         //this.addReactor(startPoint.x + 3, startPoint.y + 3);
         //this.addWorker(startPoint.x-10, startPoint.y)
         this.updated = true;

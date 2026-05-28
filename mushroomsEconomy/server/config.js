@@ -49,8 +49,8 @@ const CONFIG = {
         MYCELIUM: {
             TYPE: 'mycelium',
             HP: 1,
-            GROW_SPEED: 50,
-            GROW_LEVEL_UP: 2000,
+            GROW_SPEED: 70,
+            GROW_LEVEL_UP: 3000,
             MAX_LEVEL: 3,
             CONSUMPTION: 0, // не потребляет энергию (растёт от Солнышка)
             PRODUCTION: 30, // чтобы для непрерывной работы малого реактора было необходимо ДВЕ грибницы
@@ -125,7 +125,7 @@ const CONFIG = {
             TYPE: "larva",
             VISIBILITY: 2,
             SOURCES_VISIBILITY: 100,
-            GROWTH_LIMIT: 100, //сколько тиков нужно личинке чтобы превратиться в рабочего
+            GROWTH_LIMIT: 80, //сколько тиков нужно личинке чтобы превратиться в рабочего
             MUTATION_ENERGY_COST: 15, // энергия для мутации личинки в рабочего
             MUTATION_IRON_COST: 0,
         },

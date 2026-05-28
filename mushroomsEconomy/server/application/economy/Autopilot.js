@@ -22,9 +22,14 @@ class Autopilot {
         }
     }
 
-    _updatePriority() {
+    _updatePriority(economy) {
         const totalRequests = this.requestsFromArmy.units.length + this.requestsFromArmy.buildings.length;
-        this.prioritet = totalRequests > 3 ? "army" : "economy";
+        if (economy._getEnergyProductionPerTick > 30 && economy._getIronProductionPerTick > 10) {
+            this.prioritet = "army";
+        } 
+        else {
+            this.prioritet = "economy";
+        }
     }
 
     _getIronProductionPerTick(economy) {
@@ -51,8 +56,8 @@ class Autopilot {
         if (reactors.length === 0) return 'reactor';
 
         const scores = {
-            mine:      this._getIronProductionPerTick(economy)   / CONFIG.ECONOMY.MINE.IRON_COST,
-            reactor:   this._getEnergyProductionPerTick(economy) / CONFIG.ECONOMY.BIO_REACTOR_SMALL.IRON_COST,
+            mine: this._getIronProductionPerTick(economy)   / CONFIG.ECONOMY.MINE.IRON_COST,
+            reactor: this._getEnergyProductionPerTick(economy) / CONFIG.ECONOMY.BIO_REACTOR_SMALL.IRON_COST,
             incubator: this._getLarvaeProductionPerTick(economy) / CONFIG.ECONOMY.INCUBATOR.IRON_COST,
         };
 
@@ -139,7 +144,7 @@ class Autopilot {
     }
 
     update(economy) {
-        this._updatePriority();
+        this._updatePriority(economy);
         this._mutateLarvae(economy);
         this._mutateWorkers(economy);
     }

@@ -120,6 +120,7 @@ class Economy {
             this.map.deleteUnit(unit.get());
             this.workers.splice[unitIndex];
         } 
+        this.updated = true;
     }
 
     //инициализация неизвестных точек
@@ -192,7 +193,7 @@ class Economy {
     }
 
     findEntityByGuid(guid) {
-        [...this.workers, ...this.buildings].find(entity => entity.guid === guid);
+        const found = [...this.workers, ...this.buildings].find(entity => entity.guid === guid);
         if (found) return found;
         return null;
     }
@@ -201,7 +202,6 @@ class Economy {
         const entity = this.findEntityByGuid(guid);
         if (!entity) return false;
         const isDead = entity.takeDamage(damage);
-        this.updated = true;
         if (isDead) {
             this._destroyEntity(guid);
         }
@@ -456,7 +456,7 @@ class Economy {
         //пробежаться по всем реакторам
         //каждый реактор потребляет нефть, перераспределенную в конце последнего update
         //если он смог потребить нефть => выработать энергию
-        const reactors = this.buildings.filter(building => building.priority == 1);
+        const reactors = this.buildings.filter(building => building.priority === 1);
         reactors.forEach(reactor => reactor.update());
         //распределить энергию по зданиям в приоритетах
         // 2 - добывающие постройки
@@ -468,7 +468,7 @@ class Economy {
         // пробежаться по всем буровым
         // потребить энергию, полученную в прошлом шаге (если есть)
         // добыть нефть и железо
-        const miners = this.buildings.filter(building => building.priority == 2);
+        const miners = this.buildings.filter(building => building.priority === 2);
         miners.forEach(miner => miner.update());
         const drillers = miners.filter(miner => miner.type === DRILLER.type);
         const mines = miners.filter(miner => miner.type === MINE.type);

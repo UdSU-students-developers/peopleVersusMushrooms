@@ -88,11 +88,19 @@ export function resolveDamageRoute(
     };
 }
 
+// Структура для отслеживания системы спавна юнитов
+type UnitSpawnQueue = {
+    queue: Array<'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad'>; // очередь типов
+    inFlight: number; // количество запросов "в пути" (макс. 5)
+    lastSpawnTime: number; // время последнего спавна
+};
+
 class ArmyManager extends BaseManager {
     private army: { [guid: string]: Army };
     private armyStateManagers: { [guid: string]: ArmyStateManager };
     private armyGuids: Record<string, TArmyGuids>;
     private economyRequestIntervals: Record<string, NodeJS.Timeout> = {};
+    private spawnQueues: Record<string, UnitSpawnQueue> = {}; // очереди спавна по армиям
 
     constructor(options: TManagerOptions) {
         super(options);
@@ -186,6 +194,14 @@ class ArmyManager extends BaseManager {
             const stateManager = this.armyStateManagers[armyGuid];
             if (stateManager) {
                 stateManager.registerUnitSpawn(type, result.guid);
+            }
+            
+            // Уменьшаем счетчик "в пути" и отправляем следующий запрос из очереди
+            const queue = this.spawnQueues[armyGuid];
+            if (queue && queue.inFlight > 0) {
+                queue.inFlight--;
+                queue.lastSpawnTime = Date.now();
+                this.processSpawnQueue(armyGuid);
             }
         }
 
@@ -382,6 +398,9 @@ class ArmyManager extends BaseManager {
             delete this.economyRequestIntervals[guid];
         }
 
+        // Очищаем очередь спавна
+        delete this.spawnQueues[guid];
+
         delete this.army[guid];
         delete this.armyStateManagers[guid];
         delete this.armyGuids[guid];
@@ -390,6 +409,13 @@ class ArmyManager extends BaseManager {
     private startEconomyRequests(armyGuid: string, mushroomsEconomyGuid: string): void {
         const url = `${GLOBAL_CONFIG.MUSHROOMS_ECONOMY.URL}${GLOBAL_CONFIG.URLS.REQUEST_UNITS}`;
         
+        // Инициализируем очередь спавна
+        this.spawnQueues[armyGuid] = {
+            queue: [],
+            inFlight: 0,
+            lastSpawnTime: Date.now()
+        };
+
         // Целевое соотношение: 40% champigneb, 40% sporomet, 10% eblekar, 10% pizdoglyad
         const TARGET_RATIOS = {
             champigneb: 0.40,
@@ -402,15 +428,12 @@ class ArmyManager extends BaseManager {
             const army = this.army[armyGuid];
             if (!army) return 'sporomet';
 
-            const units = army.units;
-            const totalUnits = units.length;
-            
-            if (totalUnits === 0) {
-                // Если нет юнитов, начинаем с champigneb
-                return 'champigneb';
-            }
+            const queue = this.spawnQueues[armyGuid];
+            if (!queue) return 'sporomet';
 
-            // Считаем текущее количество каждого типа
+            const units = army.units;
+            
+            // Считаем текущее количество каждого типа (в армии + в очереди + в пути)
             const counts = {
                 champigneb: 0,
                 sporomet: 0,
@@ -418,18 +441,33 @@ class ArmyManager extends BaseManager {
                 pizdoglyad: 0
             };
 
+            // Юниты в армии
             for (const unit of units) {
                 if (unit.type in counts) {
                     counts[unit.type as keyof typeof counts]++;
                 }
             }
 
+            // Юниты в очереди и в пути (планируемые)
+            for (const typeInQueue of queue.queue) {
+                counts[typeInQueue]++;
+            }
+
+            const totalUnits = units.length;
+            const totalExpected = totalUnits + queue.queue.length;
+
+            if (totalUnits === 0 && queue.queue.length === 0) {
+                return 'champigneb';
+            }
+
             // Находим тип с наибольшим отклонением от целевого соотношения
+            // Учитываем текущее состояние армии + планируемые спавны
             let maxDeviation = -1;
             let typeToSpawn: 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad' = 'sporomet';
 
             for (const [type, targetRatio] of Object.entries(TARGET_RATIOS)) {
-                const currentRatio = counts[type as keyof typeof counts] / totalUnits;
+                const typeCount = counts[type as keyof typeof counts];
+                const currentRatio = totalExpected > 0 ? typeCount / totalExpected : 0;
                 const deviation = targetRatio - currentRatio;
                 
                 if (deviation > maxDeviation) {
@@ -441,10 +479,43 @@ class ArmyManager extends BaseManager {
             return typeToSpawn;
         };
 
-        // Каждую секунду отправляем запрос на создание одного юнита
+        // Интервал для пополнения очереди: каждые 100мс проверяем нужно ли добавить новый запрос
+        // Максимум 5 запросов одновременно, новый отправляется когда юнит спавнится
         this.economyRequestIntervals[armyGuid] = setInterval(async () => {
             try {
-                const unitType = getUnitTypeToSpawn();
+                const queue = this.spawnQueues[armyGuid];
+                if (!queue) return;
+
+                // Пополняем очередь до 5 максимум
+                while (queue.queue.length < 5 && queue.inFlight + queue.queue.length < 5) {
+                    const unitType = getUnitTypeToSpawn();
+                    queue.queue.push(unitType);
+                }
+
+                // Отправляем из очереди если есть место
+                this.processSpawnQueue(armyGuid);
+            } catch (error) {
+                console.error('[ArmyManager] Error in economy request interval:', error);
+            }
+        }, 100); // Проверяем каждые 100мс
+    }
+
+    /** Обрабатывает очередь спавна: отправляет запросы пока не достигнем максимума 5 "в пути" */
+    private async processSpawnQueue(armyGuid: string): Promise<void> {
+        const queue = this.spawnQueues[armyGuid];
+        if (!queue) return;
+
+        const url = `${GLOBAL_CONFIG.MUSHROOMS_ECONOMY.URL}${GLOBAL_CONFIG.URLS.REQUEST_UNITS}`;
+        const mushroomsEconomyGuid = this.armyGuids[armyGuid]?.mushroomsEconomyGuid;
+        if (!mushroomsEconomyGuid) return;
+
+        // Отправляем запросы пока не достигнем максимума 5 "в пути"
+        while (queue.queue.length > 0 && queue.inFlight < 5) {
+            const unitType = queue.queue.shift();
+            if (!unitType) break;
+
+            queue.inFlight++;
+            try {
                 await this.send(
                     url,
                     {
@@ -455,8 +526,9 @@ class ArmyManager extends BaseManager {
                 );
             } catch (error) {
                 console.error('[ArmyManager] Error requesting unit from economy:', error);
+                queue.inFlight--;
             }
-        }, 1000);
+        }
     }
 
     private async handleEconomyRequest(request: EconomyRequest): Promise<EconomyResponse | null> {

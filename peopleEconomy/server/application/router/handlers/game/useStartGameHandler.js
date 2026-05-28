@@ -13,13 +13,13 @@ module.exports = (mediator, answer) => {
         } = req.body;
 
         //console.log(guids);
-        
-        const response = mediator.call(START_GAME, {guids}); //Тут startPoint дополнительно к guid
+
+        const response = mediator.call(START_GAME, { guids }); 
 
         if (response && response.error) {
-            return res.send(answer.bad(response.error));
+            return res.json(answer.bad(response.error));
         }
-        
-        res.send(answer.good(response));
+
+        return res.json(answer.good(true));
     };
 };

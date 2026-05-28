@@ -1,6 +1,6 @@
 import BaseManager, { TManagerOptions } from '../BaseManager';
 import CONFIG from '../../../config';
-import { Army, TMap, TArmyState, TBuildingInput, TDamageTarget } from '../../army/Army';
+import { Army, TMap, TArmyState, TBuildingInput, TDamageTarget, PEOPLE_ARMY_UNIT_TYPES, PEOPLE_ARMY_DEFAULT_HP } from '../../army/Army';
 import { ArmyStateManager, ArmyMode, EconomyRequest, EconomyResponse } from '../../army/ArmyStateManager';
 import { Socket } from 'socket.io';
 
@@ -33,13 +33,15 @@ type TVisibilityResponse = {
 type TReliefResponse = TMap;
 
 const ALLIED_ECONOMY_UNIT_TYPES = new Set(['larva', 'geodezist']);
-const PEOPLE_ARMY_UNIT_TYPES = new Set(['soldier', 'bmp', 'sniper', 'partizan']);
 const PEOPLE_ECONOMY_BUILDING_TYPES = new Set(['barracks', 'driller', 'mine', 'pipe', 'smallGenerator']);
-const PEOPLE_ARMY_DEFAULT_HP: Record<string, number> = {
-    soldier: 20,
-    bmp: 130,
-    sniper: 18,
-    partizan: 72,
+// Map хранит здания без hp — нормализуем дефолтами на стороне грибов,
+// чтобы прокси-цель не убивалась одной атакой.
+const PEOPLE_ECONOMY_DEFAULT_HP: Record<string, number> = {
+    barracks: 200,
+    driller: 100,
+    mine: 100,
+    pipe: 100,
+    smallGenerator: 100,
 };
 // Map хранит здания без hp — нормализуем дефолтами на стороне грибов,
 // чтобы прокси-цель не убивалась одной атакой.
@@ -466,9 +468,23 @@ class ArmyManager extends BaseManager {
         }, 1000);
     }
 
-    private async handleEconomyRequest(_request: EconomyRequest): Promise<EconomyResponse | null> {
-        // Интеграция с сервисом экономики не реализована
-        return null;
+    private async handleEconomyRequest(request: EconomyRequest): Promise<EconomyResponse | null> {
+        const guids = this.armyGuids[request.armyGuid];
+        if (!guids || !guids.mushroomsEconomyGuid) {
+            return { success: false };
+        }
+
+        const url = `${GLOBAL_CONFIG.MUSHROOMS_ECONOMY.URL}${GLOBAL_CONFIG.URLS.REQUEST_BUILDINGS}`;
+        const response = await this.send(
+            url,
+            {
+                mushroomsEconomy: guids.mushroomsEconomyGuid,
+                buildingsType: request.data?.buildingType,
+                buildingsAmount: 1,
+            }
+        );
+
+        return response ? { success: true } : { success: false };
     }
 
     private handleModeChange(armyGuid: string, newMode: ArmyMode): void {
@@ -534,7 +550,8 @@ class ArmyManager extends BaseManager {
             callbacks: {
                 update: (guid: string, armyState: TArmyState) => this.updateArmyCallback(guid, armyState),
                 takeDamage: (target: TDamageTarget) => this.damageEnemy(guid, target),
-            }
+                scheduleRebuild: (type: 'sporovaya_bashnya' | 'vzryvomor', x: number, y: number) => this.armyStateManagers[guid]?.scheduleRebuild(type, x, y),
+            } as any
         });
 
         this.armyStateManagers[guid] = new ArmyStateManager({

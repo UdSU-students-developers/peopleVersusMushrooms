@@ -11,6 +11,15 @@ import type { TFormationState } from './ArmyStateManager';
 
 export type TMap = (number | null)[][];
 
+export const PEOPLE_ARMY_UNIT_TYPES = new Set(['soldier', 'bmp', 'sniper', 'partizan']);
+
+export const PEOPLE_ARMY_DEFAULT_HP: Record<string, number> = {
+    soldier: 20,
+    bmp: 100,
+    sniper: 20,
+    partizan: 30,
+};
+
 export type TBuildingInput = {
     guid: string;
     type: string;
@@ -105,6 +114,7 @@ export class Army {
     public callbacks: {
         update: (guid: string, data: TArmyState) => void;
         takeDamage?: (target: TDamageTarget) => unknown;
+        scheduleRebuild?: (type: 'sporovaya_bashnya' | 'vzryvomor', x: number, y: number) => void;
     };
     private intervalId: NodeJS.Timeout;
 
@@ -282,10 +292,12 @@ export class Army {
             if (proxy.hp <= 0) {
                 this.recentlyKilledGuids.set(proxy.guid, Date.now());
             }
+            // Определяем targetKind по типу, если map не передал его
+            const inferredTargetKind = entity.targetKind ?? (PEOPLE_ARMY_UNIT_TYPES.has(entity.type) ? 'unit' : 'building');
             this.callbacks.takeDamage?.({
                 unitGuid: proxy.guid,
                 amount,
-                targetKind: entity.targetKind ?? 'building',
+                targetKind: inferredTargetKind,
                 type: entity.type,
                 role: entity.role,
             });
@@ -415,7 +427,9 @@ export class Army {
             }
         }
 
-        return this.enemyUnits.filter(enemy => visibleEnemyGuids.has(enemy.guid));
+        const visibleEnemies = this.enemyUnits.filter(enemy => visibleEnemyGuids.has(enemy.guid));
+
+        return visibleEnemies;
     }
 
     private update(): void {
@@ -436,16 +450,30 @@ export class Army {
 
         // Тикаем все здания — включая мёртвые взрывоморы, ожидающие respawn
         for (const building of this.buildings) {
-            building.update(this.calculateSharedVisibility(), this.map, deltaTime);
+            const sharedVisibility = this.calculateSharedVisibility();
+            building.update(sharedVisibility, this.map, deltaTime);
         }
 
         // Удаляем только те здания, что мертвы И не ждут respawn
+        const buildingsToRemove: Array<{ type: string; x: number; y: number }> = [];
         this.buildings = this.buildings.filter(b => {
             if (b.type === 'vzryvomor') {
-                return b.isAlive || (b as unknown as Vzryvomor).respawn.inProgress;
+                const vzryvomor = b as unknown as Vzryvomor;
+                if (!b.isAlive && !vzryvomor.respawn.inProgress) {
+                    buildingsToRemove.push({ type: b.type, x: b.x, y: b.y });
+                }
+                return b.isAlive || vzryvomor.respawn.inProgress;
+            }
+            if (!b.isAlive && b.type === 'sporovaya_bashnya') {
+                buildingsToRemove.push({ type: b.type, x: b.x, y: b.y });
             }
             return b.isAlive;
         });
+
+        // Планируем восстановление уничтоженных зданий
+        for (const building of buildingsToRemove) {
+            this.callbacks.scheduleRebuild?.(building.type as 'sporovaya_bashnya' | 'vzryvomor', building.x, building.y);
+        }
 
         this.units = this.units.filter(unit => {
             return unit.isAlive;

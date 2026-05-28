@@ -64,6 +64,13 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
     private elapsedFromLastDecision: number = 0;
     private DECISION_INTERVAL = 0.5; // seconds
 
+    // Регенерация HP
+    private readonly maxHp: number = 70;
+    private readonly healCooldown: number = 10; // секунд до начала регенерации
+    private readonly healRate: number = 3; // HP в секунду
+    private lastDamageTime: number = 0; // время последнего получения урона
+    private healAccumulator: number = 0; // накопленное время для регенерации
+
     constructor({guid, x, y, attackRange}: TVzryvomorOptions) {
         this.guid = guid;
         this.x = x;
@@ -91,6 +98,21 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
         }
 
         if (!this.isAlive) return;
+
+        // Регенерация HP
+        this.healAccumulator += deltaTime;
+        const timeSinceLastDamage = Date.now() / 1000 - this.lastDamageTime;
+
+        if (timeSinceLastDamage >= this.healCooldown && this.hp < this.maxHp) {
+            const healIntervals = Math.floor(this.healAccumulator);
+            if (healIntervals >= 1) {
+                const healAmount = healIntervals * this.healRate;
+                this.hp = Math.min(this.maxHp, this.hp + healAmount);
+                this.healAccumulator -= healIntervals;
+            }
+        } else {
+            this.healAccumulator = 0;
+        }
 
         this.elapsedFromLastDecision += deltaTime;
         
@@ -129,6 +151,12 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
 
         const finalAmount = Math.max(0, amount);
         this.hp -= finalAmount;
+
+        // Сбрасываем таймер регенерации при получении урона
+        if (finalAmount > 0) {
+            this.lastDamageTime = Date.now() / 1000;
+            this.healAccumulator = 0;
+        }
         
         if (this.hp <= 0) {
             this.hp = 0;

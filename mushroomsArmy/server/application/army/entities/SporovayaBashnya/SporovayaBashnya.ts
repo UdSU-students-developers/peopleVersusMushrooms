@@ -41,6 +41,13 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
     private attackTimer: number = 0;
     private projectiles: TProjectile[] = [];
 
+    // Регенерация HP
+    private readonly maxHp: number = 200;
+    private readonly healCooldown: number = 10; // секунд до начала регенерации
+    private readonly healRate: number = 5; // HP в секунду
+    private lastDamageTime: number = 0; // время последнего получения урона
+    private healAccumulator: number = 0; // накопленное время для регенерации
+
     constructor(options: TSporovayaBashnyaOptions) {
         this.guid = options.guid;
         this.x = options.x;
@@ -51,6 +58,23 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
 
     public update(enemies: Unit[], map: TMap, deltaTime: number): void {
         if (!this.isAlive) return;
+
+        // Регенерация HP
+        this.healAccumulator += deltaTime;
+        const timeSinceLastDamage = Date.now() / 1000 - this.lastDamageTime;
+
+        if (timeSinceLastDamage >= this.healCooldown && this.hp < this.maxHp) {
+            // Регенерируем каждые 1 секунду
+            const healIntervals = Math.floor(this.healAccumulator);
+            if (healIntervals >= 1) {
+                const healAmount = healIntervals * this.healRate;
+                this.hp = Math.min(this.maxHp, this.hp + healAmount);
+                this.healAccumulator -= healIntervals;
+            }
+        } else {
+            // Сбрасываем аккумулятор если получен урон или HP полное
+            this.healAccumulator = 0;
+        }
 
         // Обратный отсчёт флага анимации атаки
         if (this.attackingTimer > 0) {
@@ -82,26 +106,35 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
             }
         }
 
-        if (nearestEnemy) {
-            this.isAttacking = true;
-            this.attackingTimer = this.attackAnimDuration;
-            this.projectiles.push({
-                guid: `${this.guid}-${Date.now()}-${Math.random()}`,
-                type: ProjectileType.SPOROVAYA_BASHNYA,
-                fromX: this.x + 1,
-                fromY: this.y + 1,
-                toX: nearestEnemy.x,
-                toY: nearestEnemy.y,
-                createdAt: Date.now(),
-            });
-            nearestEnemy.takeDamage(this.attackDamage);
+        if (!nearestEnemy) {
+            return;
         }
+
+        this.isAttacking = true;
+        this.attackingTimer = this.attackAnimDuration;
+        this.projectiles.push({
+            guid: `${this.guid}-${Date.now()}-${Math.random()}`,
+            type: ProjectileType.SPOROVAYA_BASHNYA,
+            fromX: this.x + 1,
+            fromY: this.y + 1,
+            toX: nearestEnemy.x,
+            toY: nearestEnemy.y,
+            createdAt: Date.now(),
+        });
+        nearestEnemy.takeDamage(this.attackDamage);
     }
 
     public takeDamage(amount: number): void {
         if (!this.isAlive) return;
         const finalAmount = Math.max(0, amount);
         this.hp -= finalAmount;
+
+        // Сбрасываем таймер регенерации при получении урона
+        if (finalAmount > 0) {
+            this.lastDamageTime = Date.now() / 1000;
+            this.healAccumulator = 0;
+        }
+
         if (this.hp <= 0) {
             this.hp = 0;
             this.isAlive = false;

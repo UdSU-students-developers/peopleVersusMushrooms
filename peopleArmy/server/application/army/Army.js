@@ -9,8 +9,16 @@ const { SHOT_COOLDOWN_BY_TYPE } = require("./tactics/constants");
 const { INTERVAL } = GLOBAL_CONFIG;
 const TICK_DELTA_SEC = INTERVAL / 1000;
 
+/** Макс. HP юнитов mushroomsArmy (см. mushroomsArmy/server/application/army/entities). */
+const MUSHROOM_ARMY_UNIT_MAX_HP = {
+    sporomet: 20,
+    champigneb: 35,
+    eblekar: 20,
+    pizdoglyad: 2,
+};
+
 const BUILDING_MAX_HP = {
-    sporovaya_bashnya: 160,
+    sporovaya_bashnya: 200,
     vzryvomor: 70,
     mycelium: 1,
     incubator: 100,
@@ -41,7 +49,6 @@ const normalizeMapRole = (role) => {
 const HOSTILE_MAP_ROLES = new Set([
     GLOBAL_CONFIG.MUSHROOMS_ARMY.ROLE,
     GLOBAL_CONFIG.MUSHROOMS_ECONOMY.ROLE,
-    // legacy-ключи map до фикса Map.js
     'mushroomArmy',
     'mushroomEconomy',
 ]);
@@ -143,6 +150,40 @@ class Army {
 
     static _isPeopleEconomyBuildingType(type) {
         return PEOPLE_ECONOMY_BUILDING_TYPES.has(String(type || '').toLowerCase());
+    }
+
+    static _enemyUnitMaxHp(type) {
+        return MUSHROOM_ARMY_UNIT_MAX_HP[String(type || '').toLowerCase()] ?? 20;
+    }
+
+    static _normalizeEnemyUnit(unit) {
+        const type = String(unit.type || '').toLowerCase();
+        const maxHp = Army._enemyUnitMaxHp(type);
+        let hp = Number(unit.hp);
+        if (!Number.isFinite(hp) || hp < 0) {
+            hp = maxHp;
+        }
+        return {
+            ...unit,
+            type,
+            hp,
+            maxHp,
+        };
+    }
+
+    static _normalizeEnemyBuilding(building) {
+        const type = String(building.type || '').toLowerCase();
+        const maxHp = Army._buildingMaxHp(type);
+        let hp = Number(building.hp);
+        if (!Number.isFinite(hp) || hp < 0) {
+            hp = maxHp;
+        }
+        return {
+            ...building,
+            type,
+            hp,
+            maxHp,
+        };
     }
 
     static _buildingMaxHp(type) {
@@ -259,7 +300,9 @@ class Army {
      */
     setVisibility({ units = [], buildings = [] } = {}) {
         const incomingUnits = Array.isArray(units) ? units : [];
-        this.enemyUnits = incomingUnits.filter((u) => Army._isHostileMapEntity(u));
+        this.enemyUnits = incomingUnits
+            .filter((u) => Army._isHostileMapEntity(u))
+            .map((u) => Army._normalizeEnemyUnit(u));
 
         const prevHpByGuid = new Map(
             this.enemyBuildings.map((b) => [b.guid, b.hp]),
@@ -271,10 +314,11 @@ class Army {
             .filter((b) => !this.destroyedEnemyBuildingGuids.has(b.guid))
             .map((b) => {
                 const trackedHp = prevHpByGuid.get(b.guid);
+                const base = Army._normalizeEnemyBuilding(b);
                 if (typeof trackedHp === 'number') {
-                    return { ...b, hp: trackedHp };
+                    return { ...base, hp: trackedHp };
                 }
-                return b;
+                return base;
             });
 
         this.updated = true;
@@ -379,7 +423,10 @@ class Army {
         const units = this.enemyUnits
             .filter((u) => Army._isHostileMapEntity(u))
             .filter((u) => u.isAlive !== false && !(typeof u.hp === 'number' && u.hp <= 0))
-            .map((u) => ({ ...u, targetKind: 'unit' }));
+            .map((u) => {
+                const normalized = Army._normalizeEnemyUnit(u);
+                return { ...normalized, targetKind: 'unit' };
+            });
         return { units, buildings };
     }
 

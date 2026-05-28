@@ -1,12 +1,13 @@
 const { hasLineOfSight } = require('./lineOfSight');
 const { aimPoint } = require('./sensing');
+const { filterCombatEnemyUnits } = require('./enemyFilters');
 
 function prefersBuildings(unitType) {
     return unitType === 'partizan' || unitType === 'bmp';
 }
 
 function buildPool(sense, unitType) {
-    const units = sense.units;
+    const units = filterCombatEnemyUnits(sense.units);
     const buildings = sense.buildings;
     if (prefersBuildings(unitType)) {
         return buildings.length > 0 ? [...buildings, ...units] : units;
@@ -61,7 +62,7 @@ function pickShootTarget(army, unit, enemyUnits, enemyBuildings, map) {
         })
         .map((t) => ({ ...t, targetKind: kind }));
 
-    const units = inRange(enemyUnits, 'unit');
+    const units = inRange(filterCombatEnemyUnits(enemyUnits), 'unit');
     const buildings = inRange(enemyBuildings, 'building');
 
     const [primary, secondary] = prefersBuildings(unitType)

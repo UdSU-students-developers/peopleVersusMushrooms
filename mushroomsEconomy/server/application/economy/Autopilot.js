@@ -39,7 +39,11 @@ class Autopilot {
         const economyReady = this._getEnergyPerTick(economy) >= 5 && this._getIronPerTick(economy) >= 2;
         const hasArmyWork = this.requestsFromArmy.units.length > 0
             || this.requestsFromArmy.buildings.length > 0;
-        const next = (economyReady && hasArmyWork) ? "army" : "economy";
+        const totalArmyRequests = this.requestsFromArmy.units.length
+            + this.requestsFromArmy.buildings.length;
+        const armyByInfrastructure = economy.buildings.reactors.length >= 2
+            && totalArmyRequests > 2;
+        const next = (hasArmyWork && (economyReady || armyByInfrastructure)) ? "army" : "economy";
 
         if (next !== this.priority) {
             this.priority = next;

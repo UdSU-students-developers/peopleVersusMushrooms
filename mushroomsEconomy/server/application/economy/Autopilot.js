@@ -26,12 +26,11 @@ class Autopilot {
     }
 
     _getEnergyPerTick(economy) {
+        const { POWER } = CONFIG.ECONOMY.MYCELIUM;
         let sum = 0;
         for (const r of economy.buildings.reactors) {
-            const prod = r.type === CONFIG.ECONOMY.BIO_REACTOR_SMALL.TYPE
-                ? CONFIG.ECONOMY.BIO_REACTOR_SMALL.PRODUCTION
-                : CONFIG.ECONOMY.BIO_REACTOR.PRODUCTION;
-            sum += prod;
+            const consumable = r.getConsumable(economy.buildings.mycelium);
+            sum += consumable.length * POWER;
         }
         return sum;
     }
@@ -68,15 +67,20 @@ class Autopilot {
         const mineUnits = mines.length;
         const incubatorUnits = incubators.length;
 
-        const targetRatios = { reactor: 3, mine: 2, incubator: 1 };
+        const targetWeights = mines.length >= 1
+            ? { reactor: 3, incubator: 1 }
+            : { reactor: 3, mine: 2, incubator: 1 };
+        const totalWeight = Object.values(targetWeights).reduce((a, b) => a + b, 0);
         const currentUnits = { reactor: reactorUnits, mine: mineUnits, incubator: incubatorUnits };
-        const totalUnits = reactorUnits + mineUnits + incubatorUnits;
+        const totalUnits = Object.keys(targetWeights).reduce((s, t) => s + currentUnits[t], 0);
 
         let mostNeeded = null;
         let worstRatio = Infinity;
 
-        for (const [type, target] of Object.entries(targetRatios)) {
-            const ratio = currentUnits[type] / (totalUnits * target);
+        for (const [type, weight] of Object.entries(targetWeights)) {
+            const currentShare = totalUnits > 0 ? currentUnits[type] / totalUnits : 0;
+            const targetShare = weight / totalWeight;
+            const ratio = currentShare / targetShare;
             if (ratio < worstRatio) {
                 worstRatio = ratio;
                 mostNeeded = type;
@@ -89,25 +93,16 @@ class Autopilot {
     _mutateLarvae(economy) {
         if (this.priority !== 'army') return;
 
-        const { MUTATION_IRON_COST, MUTATION_ENERGY_COST } = CONFIG.ECONOMY.LARVA;
         const larvaeCopy = [...economy.units.larvae];
 
         for (const larva of larvaeCopy) {
             if (this.requestsFromArmy.units.length === 0) break;
-            if (economy.resources.iron < MUTATION_IRON_COST) break;
-            if (economy.resources.energy < MUTATION_ENERGY_COST) break;
 
             const unitType = this.requestsFromArmy.units.shift();
-            economy.resources.iron -= MUTATION_IRON_COST;
-            economy.resources.energy -= MUTATION_ENERGY_COST;
-
-            economy.units.larvae = economy.units.larvae.filter(l => l.guid !== larva.guid);
-            economy.spawnArmyUnit({
-                armyGuid: economy.guids.mushroomsArmy,
-                type: unitType,
-                x: larva.x,
-                y: larva.y
-            });
+            if (!economy.mutateLarvaToArmyUnit(larva, unitType)) {
+                this.requestsFromArmy.units.unshift(unitType);
+                break;
+            }
         }
     }
 
@@ -118,26 +113,27 @@ class Autopilot {
             mine: CONFIG.ECONOMY.MINE.IRON_COST
         };
 
+        let reservedIron = 0;
+
         for (const worker of economy.units.workers) {
             if (worker.assignedBuilding) continue;
 
-            if (this.priority === 'army') {
-                if (this.requestsFromArmy.buildings.length === 0) continue;
-
+            if (this.priority === 'army' && this.requestsFromArmy.buildings.length > 0) {
                 const buildingType = this.requestsFromArmy.buildings[0];
                 const cost = ironCosts[buildingType] || 0;
-                if (economy.resources.iron < cost) continue;
+                if (economy.resources.iron - reservedIron < cost) continue;
 
+                reservedIron += cost;
                 this.requestsFromArmy.buildings.shift();
                 worker.assignedBuilding = buildingType;
             } else {
                 const neededType = this._getNeededBuildingType(economy);
                 const cost = ironCosts[neededType] || 0;
 
-                if (economy.resources.iron < cost) continue;
+                if (economy.resources.iron - reservedIron < cost) continue;
 
+                reservedIron += cost;
                 worker.assignedBuilding = neededType;
-                break;
             }
         }
     }

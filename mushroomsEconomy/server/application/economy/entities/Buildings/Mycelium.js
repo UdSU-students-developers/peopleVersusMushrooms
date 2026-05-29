@@ -33,6 +33,7 @@ class Mycelium extends Building {
             visibility: VISIBILITY,
         });
 
+        this.power = POWER;
         this.hp = HP;
         this.level = 1; // уровень выросших грибочков
         this.grow = 0;  // накопленный прогресс роста
@@ -70,7 +71,7 @@ class Mycelium extends Building {
     }
 
     getPower() {
-        return POWER;
+        return this.power;
     }
 
     _getFreeCells(relief, mycelium, buildings, enemyBuildings) {

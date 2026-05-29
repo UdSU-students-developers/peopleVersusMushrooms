@@ -3,8 +3,20 @@
 import sporometSrc from '../../../assets/units/Sporomet.png';
 import champignebSrc from '../../../assets/units/Champigneb.png';
 import eblekarSrc from '../../../assets/units/Eblekar.png';
-import pizdoglyadIdleSrc from '../../../assets/units/Pizdoglyad2.png';
-import pizdoglyadWalkSrc from '../../../assets/units/Pizdoglyad1.png';
+import pizdoglyadIdleSrc from '../../../assets/units/pizdoglyad/Pizdoglyad2.png';
+import pizdoglyadWalkSrc from '../../../assets/units/pizdoglyad/Pizdoglyad1.png';
+
+import sporomet1Src from '../../../assets/units/sporomet/sporomet1.png';
+import sporomet2Src from '../../../assets/units/sporomet/sporomet2.png';
+import sporomet3Src from '../../../assets/units/sporomet/sporomet3.png';
+import champigneb1Src from '../../../assets/units/champigneb/champigneb1.png';
+import champigneb2Src from '../../../assets/units/champigneb/champigneb2.png';
+import eblekar1Src from '../../../assets/units/eblekar/eblekar1.png';
+import eblekar2Src from '../../../assets/units/eblekar/eblekar2.png';
+import eblekar3Src from '../../../assets/units/eblekar/eblekar3.png';
+import eblekar4Src from '../../../assets/units/eblekar/eblekar4.png';
+import eblekar5Src from '../../../assets/units/eblekar/eblekar5.png';
+import eblekar6Src from '../../../assets/units/eblekar/eblekar6.png';
 
 import peopleSoldierSrc from '../../../assets/people/soldier.png';
 import peopleBmpSrc from '../../../assets/people/bmp.png';
@@ -35,12 +47,14 @@ import largeReactorSrc from '../../../assets/buildings/large_reactor/large_react
 import drillerSrc from '../../../assets/buildings/driller/driller1.png';
 import peopleMineSrc from '../../../assets/buildings/mine/mine1.png';
 
-import champignebExplFrame0 from '../../../assets/units/champigneb_explosion/frame_0.png';
-import champignebExplFrame1 from '../../../assets/units/champigneb_explosion/frame_1.png';
-import champignebExplFrame2 from '../../../assets/units/champigneb_explosion/frame_2.png';
-import champignebExplFrame3 from '../../../assets/units/champigneb_explosion/frame_3.png';
-import champignebExplFrame4 from '../../../assets/units/champigneb_explosion/frame_4.png';
+// импорт анимации для шампиньеба юнита
+import champignebExplFrame0 from '../../../assets/buildings/vzryvomor_explosion/frame_0.png';
+import champignebExplFrame1 from '../../../assets/buildings/vzryvomor_explosion/frame_1.png';
+import champignebExplFrame2 from '../../../assets/buildings/vzryvomor_explosion/frame_2.png';
+import champignebExplFrame3 from '../../../assets/buildings/vzryvomor_explosion/frame_3.png';
+import champignebExplFrame4 from '../../../assets/buildings/vzryvomor_explosion/frame_4.png';
 
+// импорты для анимации взрывомора ( здания)
 import vzryvomorExplFrame0 from '../../../assets/buildings/vzryvomor_explosion/frame_0.png';
 import vzryvomorExplFrame1 from '../../../assets/buildings/vzryvomor_explosion/frame_1.png';
 import vzryvomorExplFrame2 from '../../../assets/buildings/vzryvomor_explosion/frame_2.png';
@@ -107,6 +121,13 @@ export const UNIT_SRCS: Record<string, string> = {
   champigneb: champignebSrc,
   eblekar: eblekarSrc,
   pizdoglyad: pizdoglyadIdleSrc,
+};
+
+export const UNIT_FRAME_SRCS: Record<string, string[]> = {
+  sporomet: [sporomet1Src, sporomet2Src, sporomet3Src],
+  champigneb: [champigneb1Src, champigneb2Src],
+  eblekar: [eblekar6Src, eblekar5Src, eblekar4Src, eblekar3Src, eblekar2Src, eblekar1Src, ],
+  pizdoglyad: [pizdoglyadIdleSrc, pizdoglyadWalkSrc],
 };
 
 export const PEOPLE_UNIT_SRCS: Record<string, string> = {

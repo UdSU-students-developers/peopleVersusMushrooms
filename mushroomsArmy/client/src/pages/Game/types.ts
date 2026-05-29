@@ -24,6 +24,7 @@ export type Unit = {
   isHealing?: boolean;
   targetX?: number;
   targetY?: number;
+  deadAt?: number;
 };
 
 export type EnemyUnit = Omit<Unit, 'type'> & {

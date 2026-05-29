@@ -56,9 +56,10 @@ class Economy {
 
         this.updatedUnits = [];
 
-        // данные про врагов
+        // данные про врагов и союзников (с карты)
         this.enemyBuildings = [];
         this.enemyUnits = [];
+        this.allyUnits = [];
 
         // данные про игроков
         this.guids = {
@@ -107,6 +108,7 @@ class Economy {
             },
             enemyBuildings: this.enemyBuildings,
             enemyUnits: this.enemyUnits,
+            allyUnits: this.allyUnits,
             map: this.map.get(),
             priority: this.autopilot.priority,
         };
@@ -122,7 +124,10 @@ class Economy {
 
     setVisibility({ units = [], buildings = [] }) {
         this.enemyBuildings = buildings;
-        this.enemyUnits = units;
+
+        const mushroomsArmyTypes = new Set(Object.values(GLOBAL_CONFIG.UNIT_TYPES.MUSHROOMS_ARMY));
+        this.allyUnits  = units.filter(u => mushroomsArmyTypes.has(u.type));
+        this.enemyUnits = units.filter(u => !mushroomsArmyTypes.has(u.type));
     }
 
     // Методы добавления объектов

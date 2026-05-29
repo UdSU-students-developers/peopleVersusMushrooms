@@ -35,6 +35,7 @@ type VzryvomorState = {
     isExploding: boolean;
     respawn: Respawn;
     elapsedFromLastDecision: number;
+    visibility?: number;
 };
 
 export interface IBuilding<T> {
@@ -70,6 +71,7 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
     private readonly healRate: number = 3; // HP в секунду
     private lastDamageTime: number = 0; // время последнего получения урона
     private healAccumulator: number = 0; // накопленное время для регенерации
+    public visibility: number = 7; // 7 клеток видимости
 
     constructor({guid, x, y, attackRange}: TVzryvomorOptions) {
         this.guid = guid;
@@ -123,7 +125,7 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
     }
 
     private makeDecision(enemies: Unit[]): void {
-        const nearbyEnemies = enemies.filter(e => e.isAlive && distance({ x: e.x, y: e.y }, { x: this.x, y: this.y }) < this.attackRange);
+        const nearbyEnemies = enemies.filter(e => e.isAlive && distance({ x: e.x, y: e.y }, { x: this.x, y: this.y }) <= this.attackRange);
 
         if (nearbyEnemies.length === 0) return;
 
@@ -182,6 +184,7 @@ export class Vzryvomor implements IBuilding<VzryvomorState> {
             isAlive: this.isAlive,
             isExploding: this.respawn.inProgress,
             respawn: this.respawn,
+            visibility: this.visibility,
         };
     }
 }

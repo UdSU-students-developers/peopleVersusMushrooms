@@ -20,6 +20,7 @@ type TSporovayaBashnyaState = {
     sizeY: number;
     isAlive: boolean;
     isAttacking: boolean;
+    visibility?: number;
 };
 
 class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
@@ -47,6 +48,7 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
     private readonly healRate: number = 5; // HP в секунду
     private lastDamageTime: number = 0; // время последнего получения урона
     private healAccumulator: number = 0; // накопленное время для регенерации
+    public visibility: number = 20; // 20 клеток видимости
 
     constructor(options: TSporovayaBashnyaOptions) {
         this.guid = options.guid;
@@ -152,6 +154,7 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
             sizeY: this.sizeY,
             isAlive: this.isAlive,
             isAttacking: this.isAttacking,
+            visibility: this.visibility,
         };
     }
 }

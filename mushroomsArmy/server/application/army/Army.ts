@@ -415,6 +415,7 @@ export class Army {
         const visibleEnemyGuids = new Set<string>();
         const aliveUnits = this.units.filter(u => u.isAlive);
 
+        // Проверяем видимость юнитов
         for (const unit of aliveUnits) {
             for (const enemy of this.enemyUnits) {
                 if (!enemy.isAlive) continue;
@@ -425,6 +426,26 @@ export class Army {
                 const dist = Math.sqrt(dx * dx + dy * dy);
 
                 if (dist <= unit.visibility && unit.hasLineOfSight(unit.x, unit.y, enemy.x, enemy.y, this.map)) {
+                    visibleEnemyGuids.add(enemy.guid);
+                }
+            }
+        }
+
+        // Проверяем видимость зданий
+        for (const building of this.buildings) {
+            const buildingState = building.getState();
+            const buildingVisibility = buildingState.visibility ?? 1;
+            
+            for (const enemy of this.enemyUnits) {
+                if (!enemy.isAlive) continue;
+                if (visibleEnemyGuids.has(enemy.guid)) continue;
+
+                const dx = enemy.x - building.x;
+                const dy = enemy.y - building.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                // Здания видят врагов в пределах своей видимости
+                if (dist <= buildingVisibility) {
                     visibleEnemyGuids.add(enemy.guid);
                 }
             }

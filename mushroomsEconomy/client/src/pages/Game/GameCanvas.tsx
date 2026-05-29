@@ -96,8 +96,10 @@ const GameCanvas: React.FC = () => {
             drawTile(SPRITE.WORKER, g.x, g.y);
 
         //enemy
-        for (const enemy of scene.enemyBuildings)
-            drawTile(SPRITE.ENEMY_BUILDING, enemy.x, enemy.y);
+        for (const enemy of scene.enemyBuildings) {
+            const tileSize = enemy.size ?? 1;
+            drawTileSized(SPRITE.ENEMY_BUILDING, enemy.x, enemy.y, tileSize);
+        }
 
         for (const enemy of scene.enemyUnits)
             drawTile(SPRITE.ENEMY_UNIT, enemy.x, enemy.y);

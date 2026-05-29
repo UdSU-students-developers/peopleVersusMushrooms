@@ -27,6 +27,11 @@ class Entity {
             hp: this.hp
         }
     }
+
+    takeDamage(amount) {
+        this.hp = Math.max(0, this.hp - amount);
+        return this.hp === 0;
+    }
 }
 
 module.exports = Entity;

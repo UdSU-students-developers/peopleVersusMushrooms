@@ -1,109 +1,111 @@
-/* --- СИСТЕМА МАСШТАБИРОВАНИЯ (ГОСТ) --- */
+﻿@import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&display=swap');
 
-:root {
-  /* золотой стандарт (Medium) */
-  --gost-menu-w: 250px;
-  --gost-menu-h: 400px;
-  
-  --gost-header-h: 60px;
-  --gost-footer-h: 145px;
-  --gost-gap: -15px;
-  --gost-btn-h: 42px;
-  --gost-font: 16px;
-  --gost-title-font: 18px;
+.game-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(7, 8, 14, 0.877);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(20px);
 }
 
-/* МАЛЕНЬКИЙ (Коэффициент 0.8) */
-body[data-game-ui-size="small"] {
-  --scale: 0.8;
+.game-overlay-content {
+  background: #080808;
+  width: 280px;
+  padding: 24px 20px;
+  text-align: center;
+  color: rgb(220, 51, 51);
+  box-shadow: 0 0 700px rgb(0, 0, 0);
+  border: 2px solid rgba(12, 10, 0, 0);
+  border-radius: 16px;
 }
 
-/* СРЕДНИЙ (Коэффициент 0.9) */
-body[data-game-ui-size="medium"], body:not([data-game-ui-size]) {
-  --scale: 0.9;
+.game-overlay-content h2 {
+  color: #a2b8b5;
+  font-size: 24px;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+  text-shadow: 
+    0 0 10px rgba(255, 204, 0, 0.7),
+    0 0 20px rgba(255, 204, 0, 0.5),
+    0 0 30px rgba(255, 204, 0, 0.3);
 }
 
-/* БОЛЬШОЙ (Коэффициент 1.1) */
-body[data-game-ui-size="large"] {
-  --scale: 1.1;
-}
-
-/* АВТОМАТИЧЕСКИЙ РАСЧЕТ ПЕРЕМЕННЫХ */
-body {
-  --menu-width: calc(var(--gost-menu-w) * var(--scale));
-  --menu-height: calc(var(--gost-menu-h) * var(--scale));
-  --header-height: calc(var(--gost-header-h) * var(--scale));
-  --footer-height: calc(var(--gost-footer-h) * var(--scale));
-  --menu-gap: calc(var(--gost-gap) * var(--scale));
-  --btn-height: calc(var(--gost-btn-h) * var(--scale));
-  --btn-font-size: calc(var(--gost-font) * var(--scale));
-  --title-font-size: calc(var(--gost-title-font) * var(--scale));
-
-  font-family: var(--font-main);
-
-}
-
-button, input, select, textarea {
-  font-family: inherit;
-}
-
-/* --- БАЗОВЫЕ СТИЛИ СТРАНИЦЫ --- */
-
-.game-page {
+.game-overlay-actions {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  width: 100vw;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+}
+
+.game-btn, 
+.game-btn-secondary {
+  height: 44px;
+  width: 100%;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 2px solid #ffcc00;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #835134bb;
+  color: #ffcc00;
+  font-weight: bold;
+}
+
+.game-btn:hover, 
+.game-btn-secondary:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 15px rgba(255, 204, 0, 0.4);
+}
+.game-page {
+  position: fixed;
+  top: var(--header-height);
+  right: 0;
+  bottom: var(--footer-height);
+  left: 0;
+  width: 100%;
   background-color: #1d1010;
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
   margin: 0;
   overflow: hidden;
-  position: relative;
-  padding-top: var(--header-height);
-  padding-bottom: var(--footer-height);
   box-sizing: border-box;
 }
 
-/* --- КОНТЕЙНЕР ДЛЯ КАРТЫ (Растягивание) --- */
 .game-canvas-wrapper {
-  flex: 1; /* Занимает все место между хедером и футером */
-  position: relative;
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
-  display: block; /* Убрано центрирование flex, так как карта теперь 100% */
 }
 
 .game-canvas {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
   background-color: #1a1a1a;
 }
-
-
-/* --- OVERLAY (GameOver) --- */
-.game-overlay {
-  position: fixed; 
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.8);
+.game-footer-stats {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-  backdrop-filter: blur(4px);
+  flex-direction: row;
+  flex-wrap: wrap; 
+  gap: calc(16px * var(--scale)); 
 }
 
-.game-overlay-content {
-  background: #2c2c2c;
-  padding: calc(var(--font-base) * 2) calc(var(--font-base) * 3); 
-  border-radius: 24px;
-  text-align: center;
-  color: white;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  border: 2px solid #ffcc00;
+
+.game-stat-item {
+  display: flex;
+  align-items: center;
+  gap: calc(6px * var(--scale)); 
+  white-space: nowrap;
+}
+
+.game-stat-label::after {
+  content: ":";
 }

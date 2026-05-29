@@ -26,6 +26,8 @@ export type TUnitState = {
   hp: number;
   visibility?: number;
   isHealing?: boolean;
+  targetX?: number;
+  targetY?: number;
 };
 
 export type TPoisonEffect = {
@@ -59,6 +61,7 @@ class Unit {
     public x: number;
     public y: number;
     public visibility: number;
+    private _currentSpeed: number;
     public targetX: number;
     public targetY: number;
     public isAlive: boolean;
@@ -68,6 +71,9 @@ class Unit {
     // Cлот формации, назначаемый ArmyStateManager. Используется как fallback-цель,
     // когда у юнита нет более приоритетного таргета (боевой / хил-ally).
     public formationTarget: { x: number; y: number } | null = null;
+    // Когда true, юнит игнорирует врагов и идёт только к formationTarget, пока не
+    // соберётся весь отряд.
+    public formationHold: boolean = false;
     // Поводок: дальше этого расстояния от formationTarget враг игнорируется в
     // makeDecision. Infinity = без ограничения (sporomet/eblekar). Champigneb
     // переопределяет на конечное значение, чтобы держать "пояс мин" вдоль слота.
@@ -91,6 +97,7 @@ class Unit {
         this.hp = hp ?? 0;
         this.baseHp = hp ?? 0;
         this.speed = speed ?? 0;
+        this._currentSpeed = speed ?? 0;
         this.attackRange = attackRange ?? 0;
         this.visibility = visibility ?? 1;
         this.projectiles = projectiles;
@@ -123,6 +130,12 @@ class Unit {
     }
     
     private makeDecision(enemies: Unit[], map: TMap): void {
+        if (this.formationHold && this.formationTarget) {
+            this.targetX = this.formationTarget.x;
+            this.targetY = this.formationTarget.y;
+            return;
+        }
+
         // Leash-фильтр: не даёт champigneb рассыпаться по карте вдали от слота.
         const leashOk = (enemy: Unit): boolean => {
             if (!this.formationTarget || this.leashRadius === Infinity) return true;
@@ -161,7 +174,7 @@ class Unit {
     }
 
     /** Проверяет прямую видимость между двумя точками (Bresenham) */
-    protected hasLineOfSight(
+    public hasLineOfSight(
         fromX: number, fromY: number,
         toX: number, toY: number,
         map: TMap
@@ -200,13 +213,20 @@ class Unit {
         return true;
     }
 
+    public set currentSpeed(value: number) {
+        this._currentSpeed = value;
+    }
+
+    public get currentSpeed(): number {
+        return this._currentSpeed;
+    }
+
     protected moveTo(targetX: number, targetY: number, map: TMap, deltaTime: number): void {
         if (!this.isAlive) return;
-
+        
         this.calculateUnitPath(map);
-
-        // Цикл позволяет быстрым юнитам (Pizdoglyad) пройти несколько точек пути за один тик.
-        let remaining = this.speed * deltaTime;
+        
+        let remaining = this._currentSpeed * deltaTime;
         while (remaining > 0 && this.path.length > 0) {
             const next = this.path[0];
             const dx = (next.x + 0.5) - this.x;
@@ -306,6 +326,7 @@ class Unit {
         this.onDeath();
     }
     
+    
     getState(): TUnitState {
         return {
             guid: this.guid,
@@ -314,6 +335,8 @@ class Unit {
             y: Math.floor(this.y),
             hp: this.hp,
             visibility: this.visibility,
+            targetX: this.targetX !== undefined ? Math.floor(this.targetX) : undefined,
+            targetY: this.targetY !== undefined ? Math.floor(this.targetY) : undefined,
         };
     }
 

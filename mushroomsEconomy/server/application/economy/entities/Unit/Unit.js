@@ -59,9 +59,8 @@ class Unit {
     }
 
     takeDamage(amount) {
-        if (amount <= 0) return false;
         this.hp = Math.max(0, this.hp - amount);
-        return this.hp === 0;
+        return this.hp <= 0;
     }
 
     findNearestCell() {
@@ -125,9 +124,14 @@ class Unit {
 
         this.path = [];
 
+        const startX = Math.round(this.x);
+        const startY = Math.round(this.y);
+        const endX = Math.round(this.targetX);
+        const endY = Math.round(this.targetY);
+
         this.easyStar.findPath(
-            this.x, this.y,
-            this.targetX, this.targetY,
+            startX, startY,
+            endX, endY,
             (foundPath) => {
                 this.path = foundPath ? foundPath.slice(1) : [];
             }

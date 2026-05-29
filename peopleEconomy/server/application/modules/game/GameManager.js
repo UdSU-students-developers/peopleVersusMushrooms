@@ -27,7 +27,7 @@ class GameManager extends BaseManager {
 	callbackUpdate(data) {
 
 		const { mapGuid } = data.guids;
-		const guid = data.guids.peopleEconomy;
+		const guid = data.guid;
 		const user = this.mediator.get(this.TRIGGERS.GET_USER_BY_GUID, guid);
 		if (!user) {
 			console.log('User отсутствует!, callbackUpdate не работает! \n map guid: ', mapGuid);
@@ -93,8 +93,8 @@ class GameManager extends BaseManager {
 	}
 	
 	eventApplyDamage(data = {}) {
-		const { guid, damage, economyGuid } = data;
-		const economy = this.economies[economyGuid];
+		const { guid, damage, peopleEconomy } = data;
+		const economy = this.economies[peopleEconomy];
 
 		if (!economy) {
 			return false;

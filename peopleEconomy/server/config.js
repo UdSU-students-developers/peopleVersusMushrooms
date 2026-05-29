@@ -5,11 +5,9 @@ const CONFIG = {
     MEDIATOR: {
         EVENTS: {
             DELETE_USER: "DELETE_USER",
-
             LOBBY_UPDATED: 'LOBBY_UPDATED',
             START_GAME: 'START_GAME',
-
-            
+            DAMAGE: 'DAMAGE'
         },
         TRIGGERS: {
             GET_USER_BY_GUID: 'GET_USER_BY_GUID',
@@ -18,33 +16,18 @@ const CONFIG = {
     },
 
     SOCKET: {
-        MESSAGE: 'MESSAGE',  // шлет сообщение
-        MESSAGES: 'MESSAGES',
-        NEW_MESSAGE: 'NEW_MESSAGE',
-        TYPING: 'TYPING',           // печатает
-        
         UPDATE_SCENE: 'UPDATE_SCENE',
         GET_SCENE: 'GET_SCENE',
     },
 
     ECONOMY: {
         INTERVAL: 200, //ms (единица времени)
-
-        MINE: {
-
-        },
-        STORAGE_IRON: {
-
-        },
-        STORAGE_FAT: {
-
-        },
         UNIT: {
             RADIUS: 10, //максимальный радиус расчета ближайшей точки от центра стремления(больше 20 не ставить)
         },
         WORKER: {
-            HP: 150,
-            SPEED: 2,
+            HP: 60,
+            SPEED: 0.02,
             TYPE: "worker",
             VISIBILITY: 3,
         },
@@ -105,13 +88,13 @@ const CONFIG = {
                 type: 'BARRACKS', 
                 priority: 3,
                 size: 2,
-                hp: 300,
+                hp: 200,
                 visibility: 4,
                 consumption: 4,
                 production: 0,
                 capacity: {
                     OIL: 0,
-                    IRON: 10
+                    IRON: 120
                 },
             },
             SMALL_REACTOR: {
@@ -121,7 +104,7 @@ const CONFIG = {
                 hp: 20,
                 visibility: 2,
                 consumption: 2,
-                production: 8,
+                production: 6,
                 capacity: {
                     OIL: 4,
                     IRON: 0
@@ -136,7 +119,7 @@ const CONFIG = {
                 consumption: 4,
                 production: 20,
                 capacity: {
-                    OIL: 8,
+                    OIL: 12,
                     IRON: 0
                 },
             },
@@ -144,12 +127,12 @@ const CONFIG = {
                 type: 'DRILLER', 
                 priority: 2,
                 size: 1,
-                hp: 30,
+                hp: 50,
                 visibility: 3,
                 consumption: 2,
-                production: 1,
+                production: 4,
                 capacity: {
-                    OIL: 6,
+                    OIL: 10,
                     IRON: 0
                 },
             },
@@ -157,14 +140,42 @@ const CONFIG = {
                 type: 'MINE', 
                 priority: 2,
                 size: 1,
-                hp: 30,
+                hp: 60,
                 visibility: 3,
                 consumption: 2,
-                production: 1,
+                production: 2,
                 capacity: {
                     OIL: 0,
-                    IRON: 6
+                    IRON: 10
                 },
+            }
+        },
+
+        UNITS: {
+            BMP: {
+                COST: 130,
+                INERTIA: 3250,
+                TYPE: 'bmp'
+            },
+            PARTIZAN: {
+                COST: 55,
+                INERTIA: 1550,
+                TYPE: 'partizan'
+            },
+            SNIPER: {
+                COST: 45,
+                INERTIA: 1800,
+                TYPE: 'sniper'
+            },
+            SOLDIER: {
+                COST: 30,
+                INERTIA: 1360,
+                TYPE: 'soldier'
+            },
+            WORKER: {
+                COST: 35,
+                INERTIA: 1360,
+                TYPE: 'worker'
             }
         },
 

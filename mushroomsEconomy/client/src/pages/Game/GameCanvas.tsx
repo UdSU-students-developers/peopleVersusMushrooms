@@ -95,8 +95,12 @@ const GameCanvas: React.FC = () => {
         for (const g of scene.units.workers ?? [])
             drawTile(SPRITE.WORKER, g.x, g.y);
 
+        //enemy
         for (const enemy of scene.enemyBuildings)
             drawTile(SPRITE.ENEMY_BUILDING, enemy.x, enemy.y);
+
+        for (const enemy of scene.enemyUnits)
+            drawTile(SPRITE.ENEMY_UNIT, enemy.x, enemy.y);
     };
 
     function render(FPS: number) {

@@ -13,12 +13,12 @@ module.exports = (mediator, answer) => {
             return res.send(answer.bad(242));
         }
         
-        const response = mediator.call(REQUEST_UNITS, {options});
+        const response = mediator.call(REQUEST_UNITS, options);
 
-        if (response && response.error) {
-            return res.send(answer.bad(response.error));
+        if (response?.result) {
+            return res.send(response);
         }
-        
-        res.send(answer.good(response));
+
+        return res.send(answer.bad(9000));
     };
 };

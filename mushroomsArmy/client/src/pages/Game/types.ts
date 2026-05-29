@@ -21,7 +21,9 @@ export type Unit = {
   type: 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad';
   hp: number;               
   visibility?: number;
-  isHealing?: boolean;          
+  isHealing?: boolean;
+  targetX?: number;
+  targetY?: number;
 };
 
 export type EnemyUnit = Omit<Unit, 'type'> & {
@@ -37,6 +39,8 @@ export type Building = {
   x: number;
   y: number;
   hp: number;
+  role?: string | null;
+  size?: number;
   level?: number;
   visibility?: number;
   sizeX?: number;
@@ -44,15 +48,6 @@ export type Building = {
   isAlive?: boolean;
   isExploding?: boolean;
   isAttacking?: boolean;
-};
-
-/**
- * Лужа слизи
- */
-export type SlimePuddle = {
-  x: number;               
-  y: number;                
-  radius: number;          
 };
 
 export type Projectile = {
@@ -85,7 +80,6 @@ export type GameState = {
   enemyUnits?: EnemyUnit[];
   buildings: Building[];
   economyUnits?: EconomyUnit[];
-  slimePuddles: SlimePuddle[]; 
   projectiles: Projectile[];
 };
 

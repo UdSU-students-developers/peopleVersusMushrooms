@@ -1,5 +1,5 @@
 import Common from "../modules/common/Common";
-import Champigneb, { TSlimePuddle } from "./entities/Champigneb/Champigneb";
+import Champigneb from "./entities/Champigneb/Champigneb";
 import Eblekar from "./entities/Eblekar/Eblekar";
 import Pizdoglyad from "./entities/Pizdoglyad/Pizdoglyad";
 import Sporomet from "./entities/Sporomet/Sporomet";
@@ -17,10 +17,21 @@ export type TBuildingInput = {
     x: number;
     y: number;
     hp?: number;
+    role?: string | null;
+    targetKind?: 'unit' | 'building';
+    size?: number;
     level?: number;
     attackRange?: number;
     sizeX?: number;
     sizeY?: number;
+};
+
+export type TDamageTarget = {
+    unitGuid: string;
+    amount: number;
+    targetKind?: 'unit' | 'building';
+    type?: string;
+    role?: string | null;
 };
 
 export type TBuildingState = {
@@ -49,7 +60,7 @@ export type TArmyOptions = {
     common: Common;
     callbacks: {
         update: (guid: string, data: TArmyState) => void;
-        takeDamage?: (unitGuid: string, amount: number) => void;
+        takeDamage?: (target: TDamageTarget) => unknown;
     };
 };
 
@@ -59,10 +70,18 @@ export type TArmyState = {
     enemyUnits: TUnitState[];
     buildings: TBuildingState[];
     economyUnits: TBuildingInput[];
-    slimePuddles: TSlimePuddle[];
     projectiles: TProjectile[];
     formation: TFormationState | null;
 }
+
+export type TMapBuildingEntity = {
+    guid: string;
+    x: number;
+    y: number;
+    type: string;
+    visibility: number;
+    size: number;
+};
 
 export class Army {
     public mapGuid: string;
@@ -74,14 +93,18 @@ export class Army {
     public enemyBuildings: TBuildingInput[] = [];
     public economyBuildings: TBuildingInput[] = [];
     public economyUnits: TBuildingInput[] = [];
+    // Видимость map может возвращать только что убитое здание (пока tombstone не дошёл).
+    // Игнорируем такие guid'ы N мс, чтобы прокси не воскресал.
+    public recentlyKilledGuids: Map<string, number> = new Map();
+    public readonly KILLED_GUID_TTL_MS = 5000;
+    // public sentBuildingGuids: Set<string> = new Set();
     /** Последнее состояние юнитов, отданное карте (протокол UPDATE_UNITS). */
-    public mapSyncedUnits = new Map<string, { x: number; y: number; type: string; visibility: number }>();
-    /** Здания, уже добавленные на карту (протокол UPDATE_BUILDINGS: повтор guid → удаление). */
-    public mapSyncedBuildings = new Map<string, { guid: string; x: number; y: number; type: string; visibility: number; size: number }>();
     public projectiles: TProjectile[] = [];
+    private mapSyncedUnits = new Map<string, { x: number; y: number; type: string; visibility: number }>();
+    public mapSyncedBuildings = new Map<string, { guid: string; x: number; y: number; type: string; visibility: number; size: number }>();
     public callbacks: {
         update: (guid: string, data: TArmyState) => void;
-        takeDamage?: (unitGuid: string, amount: number) => void;
+        takeDamage?: (target: TDamageTarget) => unknown;
     };
     private intervalId: NodeJS.Timeout;
 
@@ -149,9 +172,13 @@ export class Army {
         return entities;
     }
 
-    private buildingStateToMapEntity(state: TBuildingState): { guid: string; x: number; y: number; type: string; visibility: number; size: number } {
+    /**
+     * Преобразует внутренний стейт здания в сущность для синхронизации с картой.
+     */
+    private buildingStateToMapEntity(state: TBuildingState): TMapBuildingEntity {
         const sizeX = state.sizeX ?? 1;
         const sizeY = state.sizeY ?? 1;
+
         return {
             guid: state.guid,
             x: state.x,
@@ -164,32 +191,32 @@ export class Army {
 
     /**
      * Дельта для map UPDATE_BUILDINGS (см. map/API.md §4.2.5):
-     * — новый guid → добавление;
-     * — guid был на карте, здания в армии нет → повтор (toggle) → удаление.
+     * — Новое здание или изменившееся старое → отправляем snapshot
+     * — Здание уничтожено (было в кэше, но пропало из армии) → отправляем старый snapshot (tombstone)
      */
-    public buildMapBuildingUpdateEntities(): Array<{ guid: string; x: number; y: number; type: string; visibility: number; size: number }> {
-        const entities: Array<{ guid: string; x: number; y: number; type: string; visibility: number; size: number }> = [];
+    public buildMapBuildingUpdateEntities(): TMapBuildingEntity[] {
+        const entities: TMapBuildingEntity[] = [];
         const aliveGuids = new Set<string>();
 
+        // 1. Проверяем текущие живые здания армии
         for (const building of this.buildings) {
             const snapshot = this.buildingStateToMapEntity(building.getState());
             aliveGuids.add(snapshot.guid);
-            if (!this.mapSyncedBuildings.has(snapshot.guid)) {
+
+            const prev = this.mapSyncedBuildings.get(snapshot.guid);
+
+            // Отправляем, если здания вообще не было на карте, ИЛИ если у него изменились важные данные
+            if (!prev || prev.x !== snapshot.x || prev.y !== snapshot.y || prev.visibility !== snapshot.visibility) {
                 entities.push(snapshot);
+                this.mapSyncedBuildings.set(snapshot.guid, snapshot); // Сразу пишем в кэш
             }
         }
 
-        for (const [guid, prev] of this.mapSyncedBuildings) {
+        // 2. Ищем здания, которые были снесены (были на карте, но их больше нет в стейте)
+        for (const [guid, prevSnapshot] of this.mapSyncedBuildings) {
             if (!aliveGuids.has(guid)) {
-                entities.push(prev);
-            }
-        }
-
-        for (const entity of entities) {
-            if (aliveGuids.has(entity.guid)) {
-                this.mapSyncedBuildings.set(entity.guid, entity);
-            } else {
-                this.mapSyncedBuildings.delete(entity.guid);
+                entities.push(prevSnapshot);          // Отправляем tombstone (повтор координат удаляет объект)
+                this.mapSyncedBuildings.delete(guid); // Сразу чистим кэш
             }
         }
 
@@ -252,13 +279,22 @@ export class Army {
         proxy.takeDamage = (amount: number): void => {
             baseTakeDamage(amount);
             this.syncBuildingDamage(proxy.guid, proxy.hp);
-            this.callbacks.takeDamage?.(proxy.guid, amount);
+            if (proxy.hp <= 0) {
+                this.recentlyKilledGuids.set(proxy.guid, Date.now());
+            }
+            this.callbacks.takeDamage?.({
+                unitGuid: proxy.guid,
+                amount,
+                targetKind: entity.targetKind ?? 'building',
+                type: entity.type,
+                role: entity.role,
+            });
         };
 
         return proxy;
     }
 
-     static generateDefensiveLayout(map: TMap, common: Common): TBuildingInput[] {
+    static generateDefensiveLayout(map: TMap, common: Common): TBuildingInput[] {
         const mapRows = map.length;
         const mapCols = map[0]?.length ?? 0;
         if (mapRows === 0 || mapCols === 0) return [];
@@ -295,6 +331,8 @@ export class Army {
         tryPlaceTower(zoneY0 + 1, zoneX0 + 1); // угол стен
         tryPlaceTower(zoneY0 + 1, zoneX1 - 1); // правый верхний
         tryPlaceTower(zoneY1 - 1, zoneX0 + 1); // левый нижний
+        tryPlaceTower(zoneY0 + 7, zoneX1 - 13); // правый верхний
+        tryPlaceTower(zoneY1 - 13, zoneX0 + 7); // левый нижний
 
         // Левая стена: x=zoneX0, вся высота зоны
         for (let y = zoneY0; y <= zoneY1; y++) {
@@ -325,11 +363,22 @@ export class Army {
 
     /** Обновляет цели из видимости: существующим proxy меняет координаты, и создаёт новых по guid. */
     public updateEnemyEntities(entities: TBuildingInput[]): void {
+        // Чистим протухшие записи в кэше убитых
+        const now = Date.now();
+        for (const [guid, killedAt] of this.recentlyKilledGuids.entries()) {
+            if (now - killedAt > this.KILLED_GUID_TTL_MS) {
+                this.recentlyKilledGuids.delete(guid);
+            }
+        }
+
+        // Видимость map может вернуть только что убитое здание (пока tombstone не дошёл)
+        const filtered = entities.filter(e => !this.recentlyKilledGuids.has(e.guid));
+
         const existingEnemiesByGuid = new Map(
             this.enemyUnits.map(enemy => [enemy.guid, enemy] as const)
         );
 
-        this.enemyUnits = entities.map(entity => {
+        this.enemyUnits = filtered.map(entity => {
             const existingEnemy = existingEnemiesByGuid.get(entity.guid);
 
             if (existingEnemy) {
@@ -340,30 +389,33 @@ export class Army {
 
             return this.createEnemyProxy(entity);
         });
-        
+
     }
 
-    /** Наносит урон вражеским юнитам, находящимся в лужах слизи (5 damage/sec) */
-    private applySlimePuddleDamage(deltaTime: number): void {
-        const SLIME_DAMAGE_PER_SECOND = 5;
-        const activePuddles = this.units
-            .filter(u => u.type === 'champigneb' && !u.isAlive && (u as unknown as Champigneb).slimePuddle.ttl > 0)
-            .map(u => (u as unknown as Champigneb).slimePuddle);
+    /**
+     * Вычисляет общую видимость для всей армии.
+     * Враг считается видимым, если его видит хотя бы один юнит армии (с учётом LoS).
+     */
+    private calculateSharedVisibility(): Unit[] {
+        const visibleEnemyGuids = new Set<string>();
+        const aliveUnits = this.units.filter(u => u.isAlive);
 
-        if (activePuddles.length === 0) return;
+        for (const unit of aliveUnits) {
+            for (const enemy of this.enemyUnits) {
+                if (!enemy.isAlive) continue;
+                if (visibleEnemyGuids.has(enemy.guid)) continue;
 
-        for (const enemy of this.enemyUnits) {
-            if (!enemy.isAlive) continue;
-            for (const puddle of activePuddles) {
-                const dx = enemy.x - puddle.x;
-                const dy = enemy.y - puddle.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                if (distance <= puddle.radius) {
-                    enemy.takeDamage(SLIME_DAMAGE_PER_SECOND * deltaTime);
-                    break; // Не стакаем урон от нескольких луж за один тик
+                const dx = enemy.x - unit.x;
+                const dy = enemy.y - unit.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist <= unit.visibility && unit.hasLineOfSight(unit.x, unit.y, enemy.x, enemy.y, this.map)) {
+                    visibleEnemyGuids.add(enemy.guid);
                 }
             }
         }
+
+        return this.enemyUnits.filter(enemy => visibleEnemyGuids.has(enemy.guid));
     }
 
     private update(): void {
@@ -375,21 +427,16 @@ export class Army {
         for (const unit of this.units) {
             if (unit.isAlive) {
                 if (unit.type === 'eblekar' || unit.type === 'pizdoglyad') {
-                    (unit as Eblekar).update(this.enemyUnits, this.map, deltaTime, aliveAllies);
+                    (unit as Eblekar).update(this.calculateSharedVisibility(), this.map, deltaTime, aliveAllies);
                 } else {
-                    unit.update(this.enemyUnits, this.map, deltaTime);
+                    unit.update(this.calculateSharedVisibility(), this.map, deltaTime);
                 }
-            } else if (unit.type === 'champigneb') {
-                (unit as unknown as Champigneb).slimePuddle.ttl -= deltaTime;
             }
         }
 
-        // Урон от луж слизи по вражеским юнитам
-        this.applySlimePuddleDamage(deltaTime);
-
         // Тикаем все здания — включая мёртвые взрывоморы, ожидающие respawn
         for (const building of this.buildings) {
-            building.update(this.enemyUnits, this.map, deltaTime);
+            building.update(this.calculateSharedVisibility(), this.map, deltaTime);
         }
 
         // Удаляем только те здания, что мертвы И не ждут respawn
@@ -401,17 +448,13 @@ export class Army {
         });
 
         this.units = this.units.filter(unit => {
-            if (!unit.isAlive) {
-                if (unit.type === 'champigneb') {
-                    return (unit as unknown as Champigneb).slimePuddle.ttl > 0;
-                }
-                return false;
-            }
-            return true;
+            return unit.isAlive;
         });
 
         this.callbacks.update(this.guid!, this.getState());
     }
+
+
 
     public getState(): TArmyState {
         return {
@@ -424,9 +467,6 @@ export class Army {
                 ...this.economyBuildings.map(b => ({ ...b, hp: b.hp ?? 0 })),
             ],
             economyUnits: this.economyUnits,
-            slimePuddles: this.units
-                .filter(u => u.type === 'champigneb' && !u.isAlive)
-                .map(u => (u as unknown as Champigneb).slimePuddle),
             projectiles: this.projectiles,
             formation: null,
         };
@@ -450,11 +490,11 @@ export class Army {
         const guid = common.guid();
 
         if (type === 'sporomet') {
-            this.units.push(new Sporomet({ guid, type, x, y, speed: 1, attackRange: 12, projectiles: this.projectiles }));
+            this.units.push(new Sporomet({ guid, type, x, y, speed: 2, attackRange: 10, projectiles: this.projectiles }));
         } else if (type === 'champigneb') {
             this.units.push(new Champigneb({ guid, type, x, y, speed: 3, attackRange: 6 }));
         } else if (type === 'eblekar') {
-            this.units.push(new Eblekar({ guid, type, x, y, speed: 1, attackRange: 1, projectiles: this.projectiles }));
+            this.units.push(new Eblekar({ guid, type, x, y, speed: 1, attackRange: 0, projectiles: this.projectiles }));
         } else if (type === 'pizdoglyad') {
             this.units.push(new Pizdoglyad({ guid, type, x, y, speed: 7, attackRange: 0 }));
         }
@@ -466,14 +506,23 @@ export class Army {
     public spawnBuilding(type: 'vzryvomor' | 'sporovaya_bashnya', x: number, y: number, common: Common): { guid: string } | null {
         const rows = this.map.length;
         const cols = this.map[0]?.length ?? 0;
-        const isValid = (y1: number, x1: number): boolean =>
-            y1 >= 0 && y1 < rows && x1 >= 0 && x1 < cols && this.map[y1][x1] === 0;
+        const isTilePlaceable = (tx: number, ty: number): boolean => {
+            if (ty < 0 || ty >= rows || tx < 0 || tx >= cols) return false;
+            const tile = this.map[ty][tx];
+            // Споровая башня может стоять на равнине (0) и горах (2);
+            // взрывомор — только на равнине (0)
+            if (type === 'sporovaya_bashnya') {
+                if (tile !== 0 && tile !== 2) return false;
+            } else {
+                if (tile !== 0) return false;
+            }
+            // Нельзя поверх существующих зданий (свои + враги + экономика)
+            if (this.isTileOccupiedByBuilding(tx, ty)) return false;
+            return true;
+        };
 
-        const coords: [number, number][] = type === 'sporovaya_bashnya'
-            ? [[y, x], [y + 1, x], [y, x + 1], [y + 1, x + 1]]
-            : [[y, x]];
-
-        if (!coords.every(([cy, cx]) => isValid(cy, cx))) return null;
+        const footprint = this.buildingFootprint(type, x, y);
+        if (!footprint.every(([tx, ty]) => isTilePlaceable(tx, ty))) return null;
 
         const guid = common.guid();
         if (type === 'vzryvomor') {
@@ -482,5 +531,36 @@ export class Army {
             this.buildings.push(new SporovayaBashnya({ guid, x, y, projectiles: this.projectiles }));
         }
         return { guid };
+    }
+
+    /** Тайлы, занимаемые зданием с левым-верхним углом (x,y). 2×2 у споровой башни, 1×1 у остальных. */
+    private buildingFootprint(type: string, x: number, y: number, declaredSizeX?: number, declaredSizeY?: number): ReadonlyArray<readonly [number, number]> {
+        const defaultSize = type === 'sporovaya_bashnya' ? 2 : 1;
+        const sx = declaredSizeX ?? defaultSize;
+        const sy = declaredSizeY ?? defaultSize;
+        const tiles: [number, number][] = [];
+        for (let dy = 0; dy < sy; dy++) {
+            for (let dx = 0; dx < sx; dx++) {
+                tiles.push([x + dx, y + dy]);
+            }
+        }
+        return tiles;
+    }
+
+    /** Проверяет, занят ли тайл футпринтом любого существующего здания (свои/враги/экономика). */
+    private isTileOccupiedByBuilding(tx: number, ty: number): boolean {
+        const hit = (tiles: ReadonlyArray<readonly [number, number]>): boolean =>
+            tiles.some(([bx, by]) => bx === tx && by === ty);
+
+        for (const b of this.buildings) {
+            if (hit(this.buildingFootprint(b.type, b.x, b.y))) return true;
+        }
+        for (const b of this.enemyBuildings) {
+            if (hit(this.buildingFootprint(b.type, b.x, b.y, b.sizeX, b.sizeY))) return true;
+        }
+        for (const b of this.economyBuildings) {
+            if (hit(this.buildingFootprint(b.type, b.x, b.y, b.sizeX, b.sizeY))) return true;
+        }
+        return false;
     }
 }

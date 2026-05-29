@@ -146,9 +146,11 @@ export type TScene = {
     guid: string;
     buildings: TEconomyBuildings;
     enemyBuildings: TBuilding[];
+    enemyUnits: TUnit[];
     map: TMap;
     units: TEconomyUnits;
     resources: TResources;
+    priority: string;
 }
 
 export type TLobby = {

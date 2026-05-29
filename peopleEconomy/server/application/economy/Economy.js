@@ -1,13 +1,31 @@
 const EasyStar = require('easystarjs');
 const CONFIG = require('../../config');
+const Worker = require('./entities/Units/Worker');
 
 const Map = require('./entities/Map/Map');
-const Driller = require('./entities/Buildings/Driller');
-const Mine = require('./entities/Buildings/Mine');
-const LargeReactor = require('./entities/Buildings/Reactors/LargeReactor');
-const Barracks = require('./entities/Buildings/Barracks');
+const { 
+    Driller,
+    Mine,
+    Barracks,
+    Pipe,
+    SmallReactor,
+    LargeReactor,
+    OilBarrel,
+    IronBarrel
+} = require('./entities/Buildings/buildingsIndex');
 
-const { INTERVAL } = CONFIG.ECONOMY.INTERVAL
+const { 
+    PIPE, 
+    IRON_BARREL, 
+    OIL_BARREL, 
+    BARRACKS, 
+    DRILLER, 
+    MINE, 
+    SMALL_REACTOR, 
+    LARGE_REACTOR 
+} = CONFIG.ECONOMY.BUILDINGS;
+
+const { INTERVAL } = CONFIG.ECONOMY.INTERVAL;
 
 class Economy {
     constructor({ common, callbacks: { updated, spawnArmyUnit }, guids }) {
@@ -20,16 +38,17 @@ class Economy {
         this.buildings = [];  // все построенные здания
         this.workers = [];
 
-        this.plannedBuildings = []; // запланированные здания
-
-        this.buildingsMap = Array.from({ length: 100 }, () => Array(100).fill(0));
-        this.unitsMap = Array.from({ length: 100 }, () => Array(100).fill(0));
+        this.plannedUnits = ['bmp', 'soldier', 'partizan', 'sniper'];
+        this.plannedBuildings = []; // { type }
 
         this.enemyBuildings = []; // данные для врагов
         this.enemyUnits = [];
 
-        this.updatedBuildings = []; // {x, y, type}
-        this.updatedUnits = []; // { type }
+        this.updatedBuildings = []; // { }
+        this.updatedUnits = []; // { }
+
+        this.unknownPoints = [];
+        this.knownResources = [];
 
 
         // данные про игроков
@@ -48,7 +67,6 @@ class Economy {
         this.interval = setInterval(() => this.update(), INTERVAL);
 
         this._initEconomy();
-        this.createUnit({ x: 10, y: 10 });
     }
 
     destructor() {
@@ -77,60 +95,143 @@ class Economy {
     }
 
     _initEconomy() {
-        const driller = new Driller({
-            guid: this.common.guid(),
-            x: 2,
-            y: 2,
-            callbacks: {}
-        });
-        const mine = new Mine({
-            guid: this.common.guid(),
-            x: 2,
-            y: 3,
-            callbacks: {}
-        });
-        const reactor = new LargeReactor({
-            guid: this.common.guid(),
-            x: 3,
-            y: 2,
-            callbacks: {}
-        });
-        const barrack = new Barracks({
-            guid: this.common.guid(),
-            x: 5,
-            y: 2,
-            callbacks: {}
-        });
-        this.updatedBuildings.push(driller.getForMap());
-        this.updatedBuildings.push(mine.getForMap());
-        this.updatedBuildings.push(reactor.getForMap());
-        this.updatedBuildings.push(barrack.getForMap());
+        this._initUnknownPoints()
+        this.createUnit({ x: 1, y: 1, type: 'worker'});
+        this.createBuilding({ x: 2, y: 2, buildingType: DRILLER.type });
+        this.createBuilding({ x: 2, y: 3, buildingType: MINE.type });
+        this.createBuilding({ x: 3, y: 2, buildingType: PIPE.type });
+        this.createBuilding({ x: 3, y: 3, buildingType: PIPE.type });
+        this.createBuilding({ x: 4, y: 2, buildingType: LARGE_REACTOR.type });
+        this.createBuilding({ x: 6, y: 2, buildingType: BARRACKS.type });
+    }
+
+    _destroyEntity(guid) {
+        const index = [...this.buildings, ...this.workers].findIndex(u => u.guid === guid);
+        if (!(index + 1)) return;
+        if (index < this.buildings.length) {
+            const building = this.buildings[index];
+            this.updatedBuildings(building.getForMap());
+            this.map.deleteBuilding(building.get());
+            this.buildings.splice(index);
+        } else {
+            const unitIndex = index - this.buildings.length + 1;
+            const unit = this.workers[unitIndex];
+            this.updatedUnits(unit.getForMap());
+            this.map.deleteUnit(unit.get());
+            this.workers.splice[unitIndex];
+        } 
         this.updated = true;
+    }
+
+    //инициализация неизвестных точек
+    _initUnknownPoints() {
+        for (let x = 0; x < 100; x++) {
+            for (let y = 0; y < 100; y++) {
+                this.unknownPoints.push({ x, y });
+            }
+        }
+    }
+
+    getNearestUnknownPoint(x, y) {
+        if (this.unknownPoints.length === 0) return null;
+        
+        let nearest = null;
+        let minDistance = Infinity;
+        
+        for (const point of this.unknownPoints) {
+            const dx = Math.abs(x - point.x);
+            const dy = Math.abs(y - point.y);
+            const distance = dx * dx + dy * dy;
+            
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearest = point;
+            }
+        }
+        
+        return nearest;
+    }
+
+    //отметить точку как исследованную
+    markPointAsExplored(x, y) {
+        const index = this.unknownPoints.findIndex(p => p.x === x && p.y === y);
+        if (index !== -1) {
+            this.unknownPoints.splice(index, 1);
+        }
+    }
+
+    //добавить найденный ресурс
+    addKnownResource(x, y, type, saturation) {
+        const exists = this.knownResources.some(r => r.x === x && r.y === y);
+        if (!exists) {
+            this.knownResources.push({ x, y, type, saturation });
+            console.log(`НАЙДЕН РЕСУРС: (${x}, ${y}) тип: ${type}, насыщение: ${saturation}`);
+        }
+    }
+
+    //получить все известные ресурсы
+    getKnownResources() {
+        return this.knownResources;
+    }
+
+    //получить ресурс по координатам
+    getKnownResourceAt(x, y) {
+        return this.knownResources.find(r => r.x === x && r.y === y);
     }
 
     setRelief(relief) {
         this.map.setRelief(relief);
+        for (const worker of this.workers) {
+            if (worker.onReliefLoaded) {
+                worker.onReliefLoaded();
+            }
+        }
     }
 
     setResources(resources) {
         this.map.setResources(resources);
     }
 
+    findEntityByGuid(guid) {
+        const found = [...this.workers, ...this.buildings].find(entity => entity.guid === guid);
+        if (found) return found;
+        return null;
+    }
+
+    applyDamage(guid, damage) {
+        const entity = this.findEntityByGuid(guid);
+        if (!entity) return false;
+        const isDead = entity.takeDamage(damage);
+        if (isDead) this._destroyEntity(guid);
+        return true;
+    }
+
     //создать юнита
-    createUnit({ x, y, type = null }) {
+    createUnit({ x, y, type = 'worker' }) {
+        const unitGuid = this.common.guid();
+        
+        if (type === 'worker') {
+            const worker = new Worker({
+                guid: unitGuid,
+                x,
+                y,
+                map: this.map,
+                easystar: this.easyStar,
+                economy: this
+            });
+            this.workers.push(worker);
+            this.map.setUnit(worker.get());
+            this.updatedUnits.push(worker.get());
+            this.updated = true;
+            return;
+        }
+        
         const unit = {
-            guid: this.common.guid(),
+            guid: this.guids.peopleArmy,
             x,
             y,
             type
         };
-        if (unit.type === 'worker') {
-            this.workers.push(unit);
-            this.updatedUnits(unit);
-            this.updated = true;
-            return
-        }
-        unit.guid = this.guids.peopleArmy;
         this.callbacks.spawnArmyUnit(unit);
     }
 
@@ -140,25 +241,39 @@ class Economy {
         let building = null;
 
         switch (buildingType) {
-            case CONFIG.ECONOMY.BUILDINGS.PIPE:
+            case PIPE.type:
                 building = new Pipe({ guid, x, y });
                 break;
-            case CONFIG.ECONOMY.BUILDINGS.BARRACKS:
-                building = new Barracks({ guid, x, y });
+            case BARRACKS.type:
+                building = new Barracks({ guid, x, y, callbacks: {
+                    createUnit: (data) => this.createUnit(data)
+                }});
                 break;
-            case CONFIG.ECONOMY.BUILDINGS.SMALL_GENERATOR:
-                building = new SmallGenerator({ guid, x, y });
+            case SMALL_REACTOR.type:
+                building = new SmallReactor({ guid, x, y });
                 break;
-            case CONFIG.ECONOMY.BUILDINGS.DRILLER:
+            case LARGE_REACTOR.type:
+                building = new LargeReactor({ guid, x, y });
+                break;
+            case DRILLER.type:
                 building = new Driller({ guid, x, y });
                 break;
+            case MINE.type:
+                building = new Mine({ guid, x, y });
+                break;
+            case OIL_BARREL.type:
+                building = new OilBarrel({ guid, x, y });
+                break;
+            case IRON_BARREL.type:
+                building = new IronBarrel({ guid, x, y });
+                break; 
             default:
                 return false;
         }
-
         this.buildings.push(building);
+        this.map.setBuilding(building);
+        this.updatedBuildings.push(building.getForMap());
         this.updated = true;
-        return building;
     }
 
     /***** УПРАВЛЕНИЕ ПОВЕДЕНИЕМ ЮНИТА *****/
@@ -259,14 +374,15 @@ class Economy {
         const consumers = this.buildings
             .filter(building => building.priority === 2 || building.priority === 3)
             .sort((a, b) => a.priority - b.priority);
-        this.easyStar.setGrid(this.buildingsMap);
+        this.easyStar.setGrid(this.map.buildingsGrid);
         this.easyStar.setAcceptableTiles([1]);
+        this.easyStar.setIterationsPerCalculation(20);
         consumers.forEach(consumer => {
-            this.reactors.forEach(reactor => {
-                if (consumer.store.ENERGY === consumer.consumption) return;
+            reactors.forEach(reactor => {
+                if (consumer.store.ENERGY >= consumer.consumption) return;
                 const energy = reactor.store.ENERGY;
                 if (energy === 0) return;
-                this.easyStar.findPath(consumer.x, consumer.y, reactor.x, reactor.y, path => {
+                this.easyStar.findPath(consumer.y, consumer.x, reactor.y, reactor.x, path => {
                     if (!path) return;
                     reactor.store.ENERGY = Math.max(
                         energy - (consumer.consumption - consumer.store.ENERGY), 
@@ -274,63 +390,63 @@ class Economy {
                     );
                     consumer.store.ENERGY += energy - reactor.store.ENERGY;
                 });
-                this.easyStar.calculate();
             });
         });
+        this.easyStar.calculate();
     }
 
     distributeOil(drillers) {
         const barrels = this.buildings.filter(building =>
-            building.type === CONFIG.ECONOMY.BUILDINGS.OIL_BARREL.type
+            building.type === OIL_BARREL.type
         );
         const consumers = this.buildings
             .filter(building => building.priority === 1)
-            .filter(building => 
-                (building.type === CONFIG.ECONOMY.BUILDINGS.SMALL_REACTOR.type) ? 1 : -1
+            .sort(building => 
+                (building.type === SMALL_REACTOR.type) ? 1 : -1
             );
-        this.easyStar.setGrid(this.buildingsMap);
+        this.easyStar.setGrid(this.map.buildingsGrid);
         this.easyStar.setAcceptableTiles([1]);
         consumers.forEach(consumer => {
-            [...this.drillers, ...barrels].forEach(dispenser => {
+            [...drillers, ...barrels].forEach(dispenser => {
                 if (consumer.store.OIL === consumer.consumption) return;
                 const oil = dispenser.store.OIL;
                 if (oil === 0) return;
-                this.easyStar.findPath(consumer.x, consumer.y, dispenser.x, dispenser.y, path => {
+                this.easyStar.findPath(consumer.y, consumer.x, dispenser.y, dispenser.x, path => {
                     if (!path) return;
                     dispenser.store.OIL = Math.max(
                         oil - (consumer.consumption - consumer.store.OIL), 
                         0
                     );
-                    consumer.store += oil - dispenser.store.OIL;
+                    consumer.store.OIL += oil - dispenser.store.OIL;
                 });
-                this.easyStar.calculate();
             });
         });
+        this.easyStar.calculate();
     }
 
     distributeIron(mines) {
         const barrels = this.buildings.filter(building =>
-            building.type === CONFIG.ECONOMY.BUILDINGS.IRON_BARREL.type
+            building.type === IRON_BARREL.type
         );
         const consumers = this.buildings.filter(building => building.priority === 3);
-        this.easyStar.setGrid(this.buildingsMap);
+        this.easyStar.setGrid(this.map.buildingsGrid);
         this.easyStar.setAcceptableTiles([1]);
         consumers.forEach(consumer => {
-            [...this.drillers, ...barrels].forEach(dispenser => {
-                if (consumer.store.OIL === consumer.consumption) return;
-                const oil = dispenser.store.OIL;
-                if (oil === 0) return;
-                this.easyStar.findPath(consumer.x, consumer.y, dispenser.x, dispenser.y, path => {
+            [...mines, ...barrels].forEach(dispenser => {
+                if (consumer.store.IRON === consumer.capacity.IRON) return;
+                const iron = dispenser.store.IRON;
+                if (iron === 0) return;
+                this.easyStar.findPath(consumer.y, consumer.x, dispenser.y, dispenser.x, path => {
                     if (!path) return;
-                    dispenser.store.OIL = Math.max(
-                        oil - (consumer.consumption - consumer.store.OIL), 
+                    dispenser.store.IRON = Math.max(
+                        iron - (consumer.capacity.IRON - consumer.store.IRON), 
                         0
                     );
-                    consumer.store += oil - dispenser.store.OIL;
+                    consumer.store.IRON += iron - dispenser.store.IRON;
                 });
-                this.easyStar.calculate();
             });
         });
+        this.easyStar.calculate();
     }
 
     // 1. выработать энергию (потратить нефть)
@@ -338,7 +454,7 @@ class Economy {
         //пробежаться по всем реакторам
         //каждый реактор потребляет нефть, перераспределенную в конце последнего update
         //если он смог потребить нефть => выработать энергию
-        const reactors = this.buildings.filter(building => building.priority == 1);
+        const reactors = this.buildings.filter(building => building.priority === 1);
         reactors.forEach(reactor => reactor.update());
         //распределить энергию по зданиям в приоритетах
         // 2 - добывающие постройки
@@ -350,10 +466,10 @@ class Economy {
         // пробежаться по всем буровым
         // потребить энергию, полученную в прошлом шаге (если есть)
         // добыть нефть и железо
-        const miners = this.buildings.filter(building => building.priority == 2);
+        const miners = this.buildings.filter(building => building.priority === 2);
         miners.forEach(miner => miner.update());
-        const drillers = miners.filter(miner => miner.type === CONFIG.ECONOMY.BUILDINGS.DRILLER.type);
-        const mines = miners.filter(miner => miner.type === CONFIG.ECONOMY.BUILDINGS.MINE.type);
+        const drillers = miners.filter(miner => miner.type === DRILLER.type);
+        const mines = miners.filter(miner => miner.type === MINE.type);
         // распределить нефть и железо куда-нибудь
         this.distributeOil(drillers);
         this.distributeIron(mines);
@@ -363,6 +479,11 @@ class Economy {
     produceUnits() {
         const barracks = this.buildings.filter(building => building.priority === 3);
         barracks.forEach(barrack => barrack.update(this.plannedUnits));
+    }
+
+    // 3.1. очистить энергии у зданий после тика
+    clearEnergy() {
+        this.buildings.forEach(building => building.clearEnergy());
     }
 
     // 4. переместить юнитов
@@ -386,6 +507,8 @@ class Economy {
         this.miningConsumption();
         // 3. потребить остаток энергии заводами (потратить железо)
         this.produceUnits();
+        // 3.1 обнулить энергии
+        this.clearEnergy();
         /************************/
         /* Про рабочих/крестьян */
         // ОБНОВЛЯЕМ СТАТУСЫ ВОРКЕРОВ
@@ -400,6 +523,8 @@ class Economy {
         if (this.updated) {
             this.updated = false;
             this.callbacks.updated(this.get());
+            this.updatedBuildings = [];
+            this.updatedUnits = [];
         }
     }
 

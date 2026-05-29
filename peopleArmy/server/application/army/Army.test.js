@@ -3,7 +3,7 @@ const Army = require('./Army');
 // ─── фабрики ─────────────────────────────────────────────────────────────────
 
 function makeArmy(overrides = {}) {
-    return new Army({
+    return trackArmy(new Army({
         guids: { mushroomsArmy: 'army-guid', mushroomsEconomy: 'eco-guid' },
         guid: 'people-army',
         common: { guid: () => 'gen-guid' },
@@ -15,7 +15,7 @@ function makeArmy(overrides = {}) {
         buildings: [],
         unitTypes: {},
         ...overrides,
-    });
+    }));
 }
 
 /** Атакующий юнит (наш) */
@@ -56,6 +56,19 @@ beforeEach(() => {
 afterEach(() => {
     jest.useRealTimers();
     jest.restoreAllMocks();
+});
+
+/** @type {Army[]} */
+const activeArmies = [];
+function trackArmy(army) {
+    activeArmies.push(army);
+    return army;
+}
+
+afterEach(() => {
+    while (activeArmies.length) {
+        activeArmies.pop()?.destructor?.();
+    }
 });
 
 // ─── buildMapUnitUpdateEntities ───────────────────────────────────────────────
@@ -218,8 +231,14 @@ describe('getShootableTargets', () => {
         expect(buildings).toHaveLength(0);
     });
 
-    test('hp здания нормализуется: не-число заменяется на 1', () => {
+    test('hp здания нормализуется: не-число заменяется на 1 без типа', () => {
         army.enemyBuildings = [makeBuilding({ guid: 'b1', hp: 'bad' })];
+        const { buildings } = army.getShootableTargets();
+        expect(buildings[0].hp).toBe(1);
+    });
+
+    test('hp здания нормализуется: не-число заменяется на maxHp типа', () => {
+        army.enemyBuildings = [makeBuilding({ guid: 'b1', type: 'mycelium', hp: 'bad' })];
         const { buildings } = army.getShootableTargets();
         expect(buildings[0].hp).toBe(1);
     });
@@ -381,13 +400,47 @@ describe('уничтоженные здания', () => {
             type: 'sporovaya_bashnya',
             x: 1,
             y: 0,
-            hp: 160,
+            hp: 200,
         })];
 
         await army.shotUnits();
 
         expect(army.get().enemyBuildings).toHaveLength(0);
         expect(army.destroyedEnemyBuildingGuids.has('tower-1')).toBe(true);
+    });
+
+    test('синхронизация hp с mushroomsArmy: hp=0 на сервере грибов убирает башню локально', async () => {
+        takeDamage.mockResolvedValue({ kind: 'building', hp: 0, isAlive: false });
+        army.units = [makeUnit({ type: 'soldier', x: 0, y: 0, range: 5, damage: 5 })];
+        army.enemyBuildings = [makeBuilding({
+            guid: 'tower-1',
+            type: 'sporovaya_bashnya',
+            x: 1,
+            y: 0,
+            hp: 80,
+        })];
+
+        await army.shotUnits();
+
+        expect(army.get().enemyBuildings).toHaveLength(0);
+        expect(army.destroyedEnemyBuildingGuids.has('tower-1')).toBe(true);
+    });
+
+    test('404 от mushroomsArmy помечает башню уничтоженной', async () => {
+        takeDamage.mockResolvedValue(null);
+        army.units = [makeUnit({ type: 'soldier', x: 0, y: 0, range: 5, damage: 5 })];
+        army.enemyBuildings = [makeBuilding({
+            guid: 'tower-gone',
+            type: 'sporovaya_bashnya',
+            x: 1,
+            y: 0,
+            hp: 40,
+        })];
+
+        await army.shotUnits();
+
+        expect(army.get().enemyBuildings).toHaveLength(0);
+        expect(army.destroyedEnemyBuildingGuids.has('tower-gone')).toBe(true);
     });
 
     test('setVisibility не возвращает guid из destroyedEnemyBuildingGuids', () => {
@@ -399,6 +452,63 @@ describe('уничтоженные здания', () => {
         expect(army.enemyBuildings).toHaveLength(0);
     });
 
+    test('setVisibility отфильтровывает здания peopleEconomy по role', () => {
+        army.setVisibility({
+            units: [],
+            buildings: [
+                makeBuilding({ guid: 'ally-1', type: 'BARRACKS', role: 'peopleEconomy' }),
+                makeBuilding({ guid: 'enemy-1', type: 'sporovaya_bashnya', role: 'mushroomsArmy' }),
+            ],
+        });
+        expect(army.enemyBuildings).toHaveLength(1);
+        expect(army.enemyBuildings[0].guid).toBe('enemy-1');
+        expect(army.alliedBuildings).toHaveLength(1);
+        expect(army.alliedBuildings[0].guid).toBe('ally-1');
+    });
+
+    test('get() отдаёт alliedBuildings для клиента', () => {
+        army.alliedBuildings = [makeBuilding({ guid: 'ally-1', type: 'DRILLER', role: 'peopleEconomy' })];
+        expect(army.get().alliedBuildings).toHaveLength(1);
+    });
+
+    test('setVisibility отфильтровывает воркеров peopleEconomy из enemyUnits', () => {
+        army.setVisibility({
+            units: [
+                makeEnemy({ guid: 'worker-1', type: 'worker', role: 'peopleEconomy' }),
+                makeEnemy({ guid: 'shroom-1', type: 'pizdoglyad', role: 'mushroomsArmy' }),
+            ],
+            buildings: [],
+        });
+        expect(army.enemyUnits).toHaveLength(1);
+        expect(army.enemyUnits[0].guid).toBe('shroom-1');
+        expect(army.enemyUnits[0].maxHp).toBe(2);
+    });
+
+    test('setVisibility подставляет maxHp юнитов mushroomsArmy по типу', () => {
+        army.setVisibility({
+            units: [
+                makeEnemy({ guid: 'c1', type: 'champigneb', role: 'mushroomsArmy', x: 1, y: 0 }),
+                makeEnemy({ guid: 's1', type: 'sporomet', role: 'mushroomsArmy', x: 2, y: 0, hp: 12 }),
+            ],
+            buildings: [],
+        });
+        expect(army.enemyUnits.find((u) => u.guid === 'c1').maxHp).toBe(35);
+        expect(army.enemyUnits.find((u) => u.guid === 's1').hp).toBe(12);
+        expect(army.enemyUnits.find((u) => u.guid === 's1').maxHp).toBe(20);
+    });
+
+    test('setVisibility подставляет hp здания mushroomsArmy без hp с карты', () => {
+        army.setVisibility({
+            units: [],
+            buildings: [
+                { guid: 't1', type: 'sporovaya_bashnya', role: 'mushroomsArmy', x: 1, y: 0, size: 1 },
+                { guid: 'w1', type: 'vzryvomor', role: 'mushroomsArmy', x: 2, y: 0, size: 1 },
+            ],
+        });
+        expect(army.enemyBuildings.find((b) => b.guid === 't1').hp).toBe(200);
+        expect(army.enemyBuildings.find((b) => b.guid === 'w1').hp).toBe(70);
+    });
+
     test('get() отдаёт destroyedEnemyBuildingGuids для клиента', async () => {
         army.units = [makeUnit({ type: 'partizan', x: 0, y: 0, range: 5, damage: 200 })];
         army.enemyBuildings = [makeBuilding({
@@ -406,11 +516,46 @@ describe('уничтоженные здания', () => {
             type: 'sporovaya_bashnya',
             x: 1,
             y: 0,
-            hp: 160,
+            hp: 200,
         })];
         await army.shotUnits();
         expect(army.get().destroyedEnemyBuildingGuids).toEqual(['tower-1']);
     });
+
+    test('мицелий исчезает после одного успешного выстрела (HP=1)', async () => {
+        army.units = [makeUnit({ type: 'soldier', x: 0, y: 0, range: 5, damage: 10 })];
+        army.enemyBuildings = [makeBuilding({
+            guid: 'mc-1',
+            type: 'mycelium',
+            role: 'mushroomsEconomy',
+            x: 1,
+            y: 0,
+            hp: 1,
+        })];
+
+        await army.shotUnits();
+
+        expect(army.get().enemyBuildings).toHaveLength(0);
+        expect(army.destroyedEnemyBuildingGuids.has('mc-1')).toBe(true);
+    });
+
+    test('при провале урона по economy-зданию guid уходит в destroyedEnemyBuildingGuids', async () => {
+        takeDamage.mockResolvedValue(null);
+        army.units = [makeUnit({ type: 'soldier', x: 0, y: 0, range: 5, damage: 10 })];
+        army.enemyBuildings = [makeBuilding({
+            guid: 'mc-ghost',
+            type: 'mycelium',
+            role: 'mushroomsEconomy',
+            x: 1,
+            y: 0,
+        })];
+
+        await army.shotUnits();
+
+        expect(army.get().enemyBuildings).toHaveLength(0);
+        expect(army.destroyedEnemyBuildingGuids.has('mc-ghost')).toBe(true);
+    });
+
 });
 
 describe('shotUnits — параметры takeDamage', () => {
@@ -475,6 +620,40 @@ describe('shotUnits — параметры takeDamage', () => {
 
         await army.shotUnits();
 
+        expect(takeDamage).toHaveBeenCalledTimes(2);
+    });
+
+    test('update вызывает тактический tick каждый тик (200 мс)', async () => {
+        const tickSpy = jest.spyOn(army.tactics, 'tick').mockResolvedValue(undefined);
+
+        await army.update();
+        await army.update();
+
+        expect(tickSpy).toHaveBeenCalledTimes(2);
+        expect(tickSpy).toHaveBeenCalledWith(0.2);
+
+        tickSpy.mockRestore();
+        army.destructor();
+    });
+
+    test('юнит со своим кулдауном может стрелять чаще глобальных 2 с', async () => {
+        army.units = [makeUnit({
+            type: 'soldier',
+            x: 0,
+            y: 0,
+            range: 5,
+            damage: 5,
+            shotCooldown: 0.4,
+            shotCooldownJitter: 0,
+            lastShotTime: -999,
+        })];
+        army.enemyUnits = [makeEnemy({ guid: 'e1', x: 1, y: 0, hp: 50 })];
+
+        army.tactics.plan();
+        await army.tactics.executeCombat(0);
+        expect(takeDamage).toHaveBeenCalledTimes(1);
+
+        await army.tactics.executeCombat(0.5);
         expect(takeDamage).toHaveBeenCalledTimes(2);
     });
 });
@@ -566,17 +745,63 @@ describe('moveUnits — остановка при целях в радиусе',
         expect(unit.move).not.toHaveBeenCalled();
     });
 
-    test('юнит останавливается при здании в радиусе', () => {
+    test('юнит останавливается при вражеском здании в радиусе', () => {
         const unit = makeUnit({ x: 0, y: 0, range: 5, path: [{ x: 1, y: 0 }], walkPoints: 3 });
         unit.move = jest.fn();
         army.units = [unit];
-        army.enemyBuildings = [makeBuilding({ guid: 'b1', x: 2, y: 0, hp: 50 })];
+        army.enemyBuildings = [makeBuilding({
+            guid: 'b1', x: 2, y: 0, hp: 50, role: 'mushroomsArmy', type: 'sporovaya_bashnya',
+        })];
 
         army.moveUnits();
 
         expect(unit.path).toEqual([]);
         expect(unit.walkPoints).toBe(0);
         expect(unit.move).not.toHaveBeenCalled();
+    });
+
+    test('юнит не останавливается у здания peopleEconomy в радиусе', () => {
+        const unit = makeUnit({ x: 0, y: 0, range: 5, path: [{ x: 1, y: 0 }], walkPoints: 3 });
+        unit.move = jest.fn().mockReturnValue(false);
+        unit.moveGoal = { x: 1, y: 0, reason: 'march' };
+        unit._goalKey = 'march:1,0';
+        army.units = [unit];
+        army.enemyBuildings = [makeBuilding({
+            guid: 'ally-b', x: 1, y: 0, hp: 300, role: 'peopleEconomy', type: 'BARRACKS', size: 2,
+        })];
+
+        army.moveUnits();
+
+        expect(unit.path).toEqual([{ x: 1, y: 0 }]);
+        expect(unit.walkPoints).toBe(3);
+        expect(unit.move).toHaveBeenCalled();
+    });
+
+    test('bmp не стреляет по зданию peopleEconomy', async () => {
+        const takeDamage = jest.fn().mockResolvedValue(null);
+        army = makeArmy({ callbacks: { update: jest.fn(), takeDamage } });
+        army.units = [makeUnit({ type: 'bmp', x: 0, y: 0, range: 5, damage: 20 })];
+        army.enemyBuildings = [makeBuilding({
+            guid: 'ally-b', x: 1, y: 0, hp: 300, role: 'peopleEconomy', type: 'BARRACKS', size: 2,
+        })];
+
+        await army.shotUnits();
+
+        expect(takeDamage).not.toHaveBeenCalled();
+    });
+
+    test('юнит не останавливается у воркера peopleEconomy в радиусе', () => {
+        const unit = makeUnit({ x: 0, y: 0, range: 5, path: [{ x: 1, y: 0 }], walkPoints: 3 });
+        unit.move = jest.fn().mockReturnValue(false);
+        unit.moveGoal = { x: 1, y: 0, reason: 'march' };
+        unit._goalKey = 'march:1,0';
+        army.units = [unit];
+        army.enemyUnits = [makeEnemy({ guid: 'w1', x: 1, y: 0, hp: 150, role: 'peopleEconomy', type: 'worker' })];
+
+        army.moveUnits();
+
+        expect(unit.path).toEqual([{ x: 1, y: 0 }]);
+        expect(unit.move).toHaveBeenCalled();
     });
 
     test('юнит продолжает движение если нет целей в радиусе', () => {

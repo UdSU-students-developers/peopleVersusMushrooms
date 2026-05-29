@@ -3,6 +3,9 @@ import {
   weightedGrassPool, bushImg,
   waterBaseImg, waterFlowersImg, waterLilies, edgeImages,
   mountainImg,
+  mountainEdgeImages,
+  funnyTrusovFlowerImg,
+  plainDecorImages,
 } from './assets';
 import { coerceTerrainCell, drawFogOfWarCell, drawStaleFogCell, easeOutCubic, fogRevealAt, FOG_REVEAL_MS } from './fogOfWar';
 import { isImageDrawable, tryDrawImageScaled } from './buildingRenderer';
@@ -26,7 +29,8 @@ function getNeighbors(map: MapTile[][], x: number, y: number) {
   };
 }
 
-function drawGrass(ctx: CanvasRenderingContext2D, x: number, y: number, cellW: number, cellH: number): void {
+function drawGrass(ctx: CanvasRenderingContext2D, x: number, y: number, cellW: number, cellH: number, terrainSourceMap: MapTile[][]): void {
+  //базовая ртава
   const hash = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
   const seed = Math.abs(hash - Math.floor(hash));
   const assetIndex = Math.floor(seed * weightedGrassPool.length);
@@ -36,6 +40,91 @@ function drawGrass(ctx: CanvasRenderingContext2D, x: number, y: number, cellW: n
     ctx.drawImage(activeImg, x * cellW, y * cellH, cellW, cellH);
   }
 
+  const neighbors = getNeighbors(terrainSourceMap, x, y);
+  const cellX = x * cellW;
+  const cellY = y * cellH;
+
+
+  //переходы горы-трава
+  if (
+    isImageDrawable(mountainEdgeImages.top) ||
+    isImageDrawable(mountainEdgeImages.right) ||
+    isImageDrawable(mountainEdgeImages.bottom) ||
+    isImageDrawable(mountainEdgeImages.left)
+  ) {
+    const edgeW = cellW / 2;
+    const edgeH = cellH / 2;
+
+    const drawMountainEdgeTriplet = (img: HTMLImageElement, side: 'top' | 'right' | 'bottom' | 'left') => {
+      if (!isImageDrawable(img)) return;
+
+      if (side === 'top') {
+        for (let i = 0; i < 3; i++) {
+          ctx.drawImage(img, cellX + i * edgeW, cellY, edgeW, edgeH);
+        }
+      } else if (side === 'bottom') {
+        for (let i = 0; i < 3; i++) {
+          ctx.drawImage(img, cellX + i * edgeW, cellY + cellH - edgeH, edgeW, edgeH);
+        }
+      } else if (side === 'left') {
+        for (let i = 0; i < 3; i++) {
+          ctx.drawImage(img, cellX, cellY + i * edgeH, edgeW, edgeH);
+        }
+      } else { 
+        for (let i = 0; i < 3; i++) {
+          ctx.drawImage(img, cellX + cellW - edgeW, cellY + i * edgeH, edgeW, edgeH);
+        }
+      }
+    };
+
+    if (neighbors.top === 2)    drawMountainEdgeTriplet(mountainEdgeImages.bottom, 'top');
+    if (neighbors.bottom === 2) drawMountainEdgeTriplet(mountainEdgeImages.top, 'bottom');
+    if (neighbors.left === 2)   drawMountainEdgeTriplet(mountainEdgeImages.right, 'left');
+    if (neighbors.right === 2)  drawMountainEdgeTriplet(mountainEdgeImages.left, 'right');
+  }
+
+  //скругление горы-трава
+  if (
+    isImageDrawable(mountainEdgeImages.topLeft) ||
+    isImageDrawable(mountainEdgeImages.topRight) ||
+    isImageDrawable(mountainEdgeImages.bottomLeft) ||
+    isImageDrawable(mountainEdgeImages.bottomRight)
+  ) {
+
+    const tTopLeft = coerceTerrainCell(terrainSourceMap[y - 1]?.[x - 1]);
+    const tTopRight = coerceTerrainCell(terrainSourceMap[y - 1]?.[x + 1]);
+    const tBottomLeft = coerceTerrainCell(terrainSourceMap[y + 1]?.[x - 1]);
+    const tBottomRight = coerceTerrainCell(terrainSourceMap[y + 1]?.[x + 1]);
+
+    if (neighbors.bottom === 0 && neighbors.left === 0 && tBottomLeft === 2) {
+      if (isImageDrawable(mountainEdgeImages.topRight)) {
+        ctx.drawImage(mountainEdgeImages.topRight, cellX, cellY, cellW, cellH);
+      }
+    }
+
+    if (neighbors.bottom === 0 && neighbors.right === 0 && tBottomRight === 2) {
+      if (isImageDrawable(mountainEdgeImages.topLeft)) {
+        ctx.drawImage(mountainEdgeImages.topLeft, cellX, cellY, cellW, cellH);
+      }
+    }
+
+    if (neighbors.top === 0 && neighbors.left === 0 && tTopLeft === 2) {
+      if (isImageDrawable(mountainEdgeImages.bottomRight)) {
+        ctx.drawImage(mountainEdgeImages.bottomRight, cellX, cellY, cellW, cellH);
+      }
+    }
+
+    if (neighbors.top === 0 && neighbors.right === 0 && tTopRight === 2) {
+      if (isImageDrawable(mountainEdgeImages.bottomLeft)) {
+        ctx.drawImage(mountainEdgeImages.bottomLeft, cellX, cellY, cellW, cellH);
+      }
+    }
+  }
+
+
+
+
+  //кустики!!
   if (isImageDrawable(bushImg)) {
     const bushSeed = Math.abs((x * 73856093) ^ (y * 19349663));
     if ((bushSeed % 100) < 3) {
@@ -46,6 +135,24 @@ function drawGrass(ctx: CanvasRenderingContext2D, x: number, y: number, cellW: n
       ctx.restore();
     }
   }
+
+    // === ПАСХАЛКА ===
+  if (y === 94 && x === 99) {
+    if (isImageDrawable(funnyTrusovFlowerImg)) {
+      ctx.drawImage(funnyTrusovFlowerImg, x * cellW, y * cellH, cellW, cellH);
+    }
+  }
+
+    // === ДЕКОРАЦИИ: ЧЕРЕПА ===
+  const decorSeed = Math.abs((x * 83492791) ^ (y * 2654435761));
+  if ((decorSeed % 200) < 2 && plainDecorImages.length > 0) {
+    const decorImg = plainDecorImages[decorSeed % plainDecorImages.length];
+    if (isImageDrawable(decorImg)) {
+      ctx.drawImage(decorImg, x * cellW, y * cellH, cellW, cellH);
+    }
+  }
+
+
 }
 
 function drawWater(
@@ -135,7 +242,7 @@ export function drawTerrainCell(
   wasExplored: boolean
 ): void {
   if (terrain === 0) {
-    drawGrass(ctx, x, y, cellW, cellH);
+    drawGrass(ctx, x, y, cellW, cellH, terrainSourceMap);
   } else if (terrain === 1) {
     drawWater(ctx, x, y, cellW, cellH, terrainSourceMap);
   } else if (terrain === 2) {

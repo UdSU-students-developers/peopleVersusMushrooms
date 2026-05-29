@@ -3,13 +3,68 @@ const Soldier = require("./entities/Soldier");
 const BMP = require("./entities/BMP");
 const Sniper = require("./entities/Sniper");
 const Partizan = require("./entities/Partizan");
+const TacticalController = require("./tactics/TacticalController");
+const { SHOT_COOLDOWN_BY_TYPE } = require("./tactics/constants");
 
 const { INTERVAL } = GLOBAL_CONFIG;
+const TICK_DELTA_SEC = INTERVAL / 1000;
+
+/** Макс. HP юнитов mushroomsArmy (см. mushroomsArmy/server/application/army/entities). */
+const MUSHROOM_ARMY_UNIT_MAX_HP = {
+    sporomet: 20,
+    champigneb: 35,
+    eblekar: 20,
+    pizdoglyad: 2,
+};
 
 const BUILDING_MAX_HP = {
-    sporovaya_bashnya: 160,
+    sporovaya_bashnya: 200,
     vzryvomor: 70,
+    mycelium: 1,
+    incubator: 100,
+    reactor: 60,
+    small_reactor: 20,
+    mine: 80,
 };
+
+/** Здания mushroomsEconomy (урон через POST /damage), не mushroomsArmy */
+const MUSHROOMS_ECONOMY_BUILDING_TYPES = new Set([
+    'mycelium', 'incubator', 'reactor', 'small_reactor', 'mine',
+]);
+
+/** Роли союзников — не цели peopleArmy (юниты и здания с карты) */
+const ALLIED_MAP_ROLES = new Set([
+    GLOBAL_CONFIG.PEOPLE_ECONOMY.ROLE,
+    GLOBAL_CONFIG.PEOPLE_ARMY.ROLE,
+]);
+
+/** Нормализация role с карты (map/lobby могли отдавать разные ключи) */
+const normalizeMapRole = (role) => {
+    if (role === 'mushroomArmy') return GLOBAL_CONFIG.MUSHROOMS_ARMY.ROLE;
+    if (role === 'mushroomEconomy') return GLOBAL_CONFIG.MUSHROOMS_ECONOMY.ROLE;
+    return role;
+};
+
+/** Роли врагов — только их атакуем */
+const HOSTILE_MAP_ROLES = new Set([
+    GLOBAL_CONFIG.MUSHROOMS_ARMY.ROLE,
+    GLOBAL_CONFIG.MUSHROOMS_ECONOMY.ROLE,
+    'mushroomArmy',
+    'mushroomEconomy',
+]);
+
+/** Fallback по type, если role в ответе карты нет */
+const PEOPLE_ECONOMY_BUILDING_TYPES = new Set([
+    'pipe',
+    'oil_barrel',
+    'iron_barrel',
+    'barracks',
+    'small_reactor',
+    'large_reactor',
+    'driller',
+    'mine',
+    'small_generator',
+]);
 
 class Army {
     constructor({ guids = {}, startPoint = null, map = null, buildings = [], unitTypes = {}, mapGuid = null, common, callbacks = {}, guid }) {
@@ -25,7 +80,8 @@ class Army {
         this.towers = []; // наши здания
         this.buildings = buildings; // постройки на карте
         this.enemyUnits = []; // юниты-враги
-        this.enemyBuildings = []; // здания-враги
+        this.enemyBuildings = []; // здания-враги (цели боя)
+        this.alliedBuildings = []; // здания peopleEconomy / союзники — только отображение
         this.destroyedEnemyBuildingGuids = new Set(); // уничтожены нами — не показывать даже если карта ещё отдаёт
         /** @type {Map<string, { x: number, y: number, type: string, visibility: number }>} */
         this.mapSyncedUnits = new Map(); // последнее состояние, отданное карте (протокол UPDATE_UNITS)
@@ -35,6 +91,7 @@ class Army {
         this._initMap(map);
         this._initUnits();
 
+        this.tactics = new TacticalController(this);
         this.interval = setInterval(() => this.update(), INTERVAL); // интервал обновления игры
         this.updated = false;
     }
@@ -49,18 +106,115 @@ class Army {
 
     /**
      * Снимок состояния для клиента (UPDATE_ARMY).
-     * @returns {{ units, enemyUnits, enemyBuildings, destroyedEnemyBuildingGuids }}
+     * @returns {{ units, enemyUnits, enemyBuildings, alliedBuildings, destroyedEnemyBuildingGuids }}
      */
     get() {
         return {
             units: this.units.map((u) => (typeof u.get === 'function' ? u.get() : u)),
             enemyUnits: this.enemyUnits,
             enemyBuildings: this.enemyBuildings.filter((b) => Army._isBuildingAlive(b)),
+            alliedBuildings: this.alliedBuildings,
             destroyedEnemyBuildingGuids: [...this.destroyedEnemyBuildingGuids],
         };
     }
 
-    /** Живо ли здание-цель (guid, isAlive, hp). */
+    /** Союзная сущность с карты (peopleEconomy / peopleArmy) — не атакуем, но показываем. */
+    static _isAlliedMapEntity(entity) {
+        if (!entity || typeof entity.guid !== 'string') {
+            return false;
+        }
+        const role = normalizeMapRole(entity.role);
+        if (role) {
+            return ALLIED_MAP_ROLES.has(role);
+        }
+        return Army._isPeopleEconomyBuildingType(entity.type);
+    }
+
+    /**
+     * Враждебная сущность с карты (юнит или здание).
+     * Союзники: peopleEconomy, peopleArmy. Враги: mushroomsArmy, mushroomsEconomy.
+     */
+    static _isHostileMapEntity(entity) {
+        if (!entity || typeof entity.guid !== 'string') {
+            return false;
+        }
+        const role = normalizeMapRole(entity.role);
+        if (role) {
+            if (ALLIED_MAP_ROLES.has(role)) {
+                return false;
+            }
+            return HOSTILE_MAP_ROLES.has(role);
+        }
+        return !Army._isPeopleEconomyBuildingType(entity.type);
+    }
+
+    static _isPeopleEconomyBuildingType(type) {
+        return PEOPLE_ECONOMY_BUILDING_TYPES.has(String(type || '').toLowerCase());
+    }
+
+    static _enemyUnitMaxHp(type) {
+        return MUSHROOM_ARMY_UNIT_MAX_HP[String(type || '').toLowerCase()] ?? 20;
+    }
+
+    static _normalizeEnemyUnit(unit) {
+        const type = String(unit.type || '').toLowerCase();
+        const maxHp = Army._enemyUnitMaxHp(type);
+        let hp = Number(unit.hp);
+        if (!Number.isFinite(hp) || hp < 0) {
+            hp = maxHp;
+        }
+        return {
+            ...unit,
+            type,
+            hp,
+            maxHp,
+        };
+    }
+
+    static _normalizeEnemyBuilding(building) {
+        const type = String(building.type || '').toLowerCase();
+        const maxHp = Army._buildingMaxHp(type);
+        let hp = Number(building.hp);
+        if (!Number.isFinite(hp) || hp < 0) {
+            hp = maxHp;
+        }
+        return {
+            ...building,
+            type,
+            hp,
+            maxHp,
+        };
+    }
+
+    static _buildingMaxHp(type) {
+        return BUILDING_MAX_HP[String(type || '').toLowerCase()] ?? 100;
+    }
+
+    /** HP для выбора цели, если с карты hp не пришёл (неизвестный тип — 1). */
+    static _buildingDefaultTargetHp(type) {
+        const key = String(type || '').toLowerCase();
+        if (Object.prototype.hasOwnProperty.call(BUILDING_MAX_HP, key)) {
+            return BUILDING_MAX_HP[key];
+        }
+        return 1;
+    }
+
+    /** Здание обслуживается mushroomsEconomy (POST /damage), не mushroomsArmy. */
+    static _isMushroomsEconomyBuilding(entity) {
+        const role = normalizeMapRole(entity?.role);
+        if (role === GLOBAL_CONFIG.MUSHROOMS_ECONOMY.ROLE) {
+            return true;
+        }
+        if (role === GLOBAL_CONFIG.MUSHROOMS_ARMY.ROLE) {
+            return false;
+        }
+        return MUSHROOMS_ECONOMY_BUILDING_TYPES.has(String(entity?.type || '').toLowerCase());
+    }
+
+    static _isDamageApplied(result) {
+        return result != null && result !== false;
+    }
+
     static _isBuildingAlive(b) {
         if (!b || typeof b.guid !== 'string') return false;
         if (b.isAlive === false) return false;
@@ -145,20 +299,26 @@ class Army {
      * @param {{ units?: object[], buildings?: object[] }} params
      */
     setVisibility({ units = [], buildings = [] } = {}) {
-        this.enemyUnits = Array.isArray(units) ? units : [];
+        const incomingUnits = Array.isArray(units) ? units : [];
+        this.enemyUnits = incomingUnits
+            .filter((u) => Army._isHostileMapEntity(u))
+            .map((u) => Army._normalizeEnemyUnit(u));
 
         const prevHpByGuid = new Map(
             this.enemyBuildings.map((b) => [b.guid, b.hp]),
         );
         const incomingBuildings = Array.isArray(buildings) ? buildings : [];
+        this.alliedBuildings = incomingBuildings.filter((b) => Army._isAlliedMapEntity(b));
         this.enemyBuildings = incomingBuildings
-            .filter((b) => b?.guid && !this.destroyedEnemyBuildingGuids.has(b.guid))
+            .filter((b) => Army._isHostileMapEntity(b))
+            .filter((b) => !this.destroyedEnemyBuildingGuids.has(b.guid))
             .map((b) => {
                 const trackedHp = prevHpByGuid.get(b.guid);
+                const base = Army._normalizeEnemyBuilding(b);
                 if (typeof trackedHp === 'number') {
-                    return { ...b, hp: trackedHp };
+                    return { ...base, hp: trackedHp };
                 }
-                return b;
+                return base;
             });
 
         this.updated = true;
@@ -171,23 +331,80 @@ class Army {
      * @param {string} type
      * @param {number} amount
      */
-    _markBuildingDamaged(guid, type, amount) {
+    /**
+     * Учёт урона по зданию после выстрела.
+     * @param {object|null} remote — ответ mushroomsArmy /takeDamage: { kind, hp, isAlive }
+     */
+    _markBuildingDamaged(guid, type, amount, remote = null) {
         const index = this.enemyBuildings.findIndex((b) => b.guid === guid);
+
+        if (remote && remote.kind === 'building') {
+            if (remote.isAlive === false || (typeof remote.hp === 'number' && remote.hp <= 0)) {
+                this._forceDestroyEnemyBuilding(guid);
+                return;
+            }
+            if (index >= 0) {
+                this.enemyBuildings[index] = {
+                    ...this.enemyBuildings[index],
+                    hp: remote.hp,
+                };
+                this.updated = true;
+            }
+            return;
+        }
+
         if (index < 0) {
             return;
         }
         const building = this.enemyBuildings[index];
-        const maxHp = BUILDING_MAX_HP[String(type || '').toLowerCase()] ?? 100;
+        const maxHp = Army._buildingMaxHp(type);
         let hp = Number.isFinite(Number(building.hp)) ? Number(building.hp) : maxHp;
         hp -= Number(amount) || 0;
 
         if (hp <= 0) {
-            this.destroyedEnemyBuildingGuids.add(guid);
-            this.enemyBuildings.splice(index, 1);
+            this._forceDestroyEnemyBuilding(guid);
             return;
         }
 
         this.enemyBuildings[index] = { ...building, hp };
+        this.updated = true;
+    }
+
+    /** Здание уничтожено — скрыть у клиента даже если карта ещё отдаёт guid. */
+    _forceDestroyEnemyBuilding(guid) {
+        this.destroyedEnemyBuildingGuids.add(guid);
+        const index = this.enemyBuildings.findIndex((b) => b.guid === guid);
+        if (index >= 0) {
+            this.enemyBuildings.splice(index, 1);
+        }
+        this.updated = true;
+    }
+
+    _applyBuildingShotResult(guid, type, amount, damageResult) {
+        if (damageResult && typeof damageResult === 'object' && damageResult.kind === 'building') {
+            this._markBuildingDamaged(guid, type, amount, damageResult);
+            return;
+        }
+        if (Army._isDamageApplied(damageResult)) {
+            this._markBuildingDamaged(guid, type, amount);
+            return;
+        }
+        if (type) {
+            this._forceDestroyEnemyBuilding(guid);
+        }
+    }
+
+    /**
+     * Economy не знает guid — призрак на карте; перестаём стрелять и скрываем у клиента.
+     * @param {string} guid
+     */
+    _discardGhostEconomyBuilding(guid) {
+        this.destroyedEnemyBuildingGuids.add(guid);
+        const index = this.enemyBuildings.findIndex((b) => b.guid === guid);
+        if (index >= 0) {
+            this.enemyBuildings.splice(index, 1);
+        }
+        this.updated = true;
     }
 
     /**
@@ -196,13 +413,20 @@ class Army {
      */
     getShootableTargets() {
         const buildings = this.enemyBuildings
+            .filter((b) => Army._isHostileMapEntity(b))
             .filter((b) => Army._isBuildingAlive(b))
             .map((b) => ({
                 ...b,
-                hp: Number.isFinite(Number(b.hp)) ? Number(b.hp) : 1,
+                hp: Number.isFinite(Number(b.hp)) ? Number(b.hp) : Army._buildingDefaultTargetHp(b.type),
                 targetKind: 'building',
             }));
-        const units = this.enemyUnits.map((u) => ({ ...u, targetKind: 'unit' }));
+        const units = this.enemyUnits
+            .filter((u) => Army._isHostileMapEntity(u))
+            .filter((u) => u.isAlive !== false && !(typeof u.hp === 'number' && u.hp <= 0))
+            .map((u) => {
+                const normalized = Army._normalizeEnemyUnit(u);
+                return { ...normalized, targetKind: 'unit' };
+            });
         return { units, buildings };
     }
 
@@ -240,11 +464,11 @@ class Army {
         unit.type = unitType;
         unit.maxHp = unit.hp;
         unit.damage = Number(stats.DAMAGE) || 1;
+        unit.shotCooldown = SHOT_COOLDOWN_BY_TYPE[unitType] ?? 2;
+        unit.shotCooldownJitter = Math.random() * 0.35;
+        unit.lastShotTime = -999;
 
         this.units.push(unit);
-        this.setUnitsTarget();
-        console.log('Юнит создан:', unit.get());
-        console.log('Армия:', this.units);
         return { ok: true, data: unit.get() };
     }
 
@@ -261,11 +485,9 @@ class Army {
         }
 
         unit.takeDamage(damage);
-        console.log('Юнит получил урон:', unit.guid, 'damage:', damage, 'hp:', unit.hp);
 
         if (unit.isDead()) {
             this.units = this.units.filter((u) => u.guid !== guid);
-            console.log('Юнит уничтожен:', guid);
         }
 
         this.updated = true;
@@ -401,81 +623,24 @@ class Army {
     }
 
     /**
-     * Выстрелить всеми юнитами: приоритет целей по типу (bmp/partizan → здания),
-     * в пуле — наислабейший; урон через callbacks.takeDamage.
+     * Выстрелить всеми юнитами (utility + LoS + резервирование).
+     * Для тестов и явного вызова: сначала пересчёт плана, затем залп.
      */
     async shotUnits() {
-        if (!this.units.length || typeof this.callbacks?.takeDamage !== 'function') {
-            return;
-        }
-
-        const { units: enemyUnits, buildings: enemyBuildings } = this.getShootableTargets();
-        if (!enemyUnits.length && !enemyBuildings.length) {
-            return;
-        }
-
-        const armyGuid = this.guids.mushroomsArmy;
-        const economyGuid = this.guids.mushroomsEconomy;
-        const prefersBuildings = (type) => type === 'partizan' || type === 'bmp';
-
-        for (const unit of this.units) {
-            const unitsInRange = this.getUnitsInRange(unit, enemyUnits);
-            const buildingsInRange = this.getUnitsInRange(unit, enemyBuildings);
-
-            const [primary, secondary] = prefersBuildings(unit.type)
-                ? [buildingsInRange, unitsInRange]
-                : [unitsInRange, buildingsInRange];
-
-            const pool = primary.length ? primary : secondary;
-            if (!pool.length) {
-                continue;
-            }
-
-            const target = pool.reduce((weakest, t) => (t.hp ?? Infinity) < (weakest.hp ?? Infinity) ? t : weakest);
-            const amount = Number(unit.damage) || 1;
-            await this.callbacks.takeDamage({
-                armyGuid,
-                economyGuid,
-                unitGuid: target.guid,
-                amount,
-                targetKind: target.targetKind,
-                type: target.type,
-            });
-
-            if (target.targetKind === 'building') {
-                this._markBuildingDamaged(target.guid, target.type, amount);
-            }
-        }
+        this.tactics.plan();
+        await this.tactics.executeCombat(0);
     }
 
-    /**
-     * Сдвинуть юнитов по карте; при враге в радиусе — стоять (path сбрасывается).
-     */
+    /** Сдвинуть юнитов по тактическому moveGoal / формации. */
     moveUnits() {
-        const { units: enemyUnits, buildings: enemyBuildings } = this.getShootableTargets();
-        this.units.forEach((unit) => {
-            const inRange =
-                this.getUnitsInRange(unit, enemyUnits).length > 0 ||
-                this.getUnitsInRange(unit, enemyBuildings).length > 0;
-            if (inRange) {
-                unit.path = [];
-                unit.walkPoints = 0;
-                return;
-            }
-            if (unit.move(this.map, this.buildings, this.units, this.enemyUnits, this.enemyBuildings)) {
-                this.updated = true;
-            }
-        });
+        this.tactics.executeMovement();
     }
 
     /**
-     * Тик игры: shotUnits → setUnitsTarget → moveUnits → callbacks.update (видимость и сокет).
+     * Тик игры: тактика (план 400 мс, бой и движение каждые 200 мс) → callbacks.update.
      */
     async update() {
-        console.log(this.guids.mushroomsArmy, this.guids.mushroomsEconomy);
-        await this.shotUnits();
-        this.setUnitsTarget();
-        this.moveUnits();
+        await this.tactics.tick(TICK_DELTA_SEC);
         this.updated = false;
         this.callbacks.update(this.guid);
     }

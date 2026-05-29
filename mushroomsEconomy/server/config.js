@@ -55,7 +55,7 @@ const CONFIG = {
             CONSUMPTION: 0, // не потребляет энергию (растёт от Солнышка)
             PRODUCTION: 30, // чтобы для непрерывной работы малого реактора было необходимо ДВЕ грибницы
             CAPACITY: 0, // ничего в себе хранить не умеет
-            POWER: 1,
+            POWER: 5,
             SIZE: 1,
             VISIBILITY: 2, //Сколько клеток вокруг видит
             IRON_COST: 0,
@@ -67,7 +67,7 @@ const CONFIG = {
         INCUBATOR: {
             TYPE: 'incubator',
             HP: 100,
-            SIZE: 2,
+            SIZE: 1,
             CONSUMPTION: 1, // энергопотребление за единицу времени
             PRODUCTION: 1,  // сколько производит за единицу времени
             CAPACITY: 60, // сколько железа доступно для производства личинок
@@ -103,7 +103,7 @@ const CONFIG = {
             HP: 80,
             SIZE: 1,
             CONSUMPTION: 1,
-            PRODUCTION: 1,
+            PRODUCTION: 0.2,
             CAPACITY: 500,
             VISIBILITY: 1,
             IRON_COST: 20,
@@ -120,20 +120,20 @@ const CONFIG = {
 
         LARVA: {
             HP: 40,
-            SPEED: 0.05,
+            SPEED: 0.07,
             WANDER_RADIUS: 8, //радиус блуждания личинки
             TYPE: "larva",
             VISIBILITY: 2,
             SOURCES_VISIBILITY: 100,
-            GROWTH_LIMIT: 80, //сколько тиков нужно личинке чтобы превратиться в рабочего
-            MUTATION_ENERGY_COST: 15, // энергия для мутации личинки в рабочего
+            GROWTH_LIMIT: 70, //сколько тиков нужно личинке чтобы превратиться в рабочего
+            MUTATION_ENERGY_COST: 10, // энергия для мутации личинки в рабочего
             MUTATION_IRON_COST: 0,
         },
 
         WORKER: {
             TYPE: "worker",
             HP: 60,
-            SPEED: 0.08,
+            SPEED: 0.12,
             WANDER_RADIUS: 8,
             VISIBILITY: 4,
             SOURCES_VISIBILITY: 3,

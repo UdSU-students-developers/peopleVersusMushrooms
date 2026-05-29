@@ -56,9 +56,10 @@ class Economy {
 
         this.updatedUnits = [];
 
-        // данные про врагов
+        // данные про врагов и союзников (с карты)
         this.enemyBuildings = [];
         this.enemyUnits = [];
+        this.allyUnits = [];
 
         // данные про игроков
         this.guids = {
@@ -107,6 +108,7 @@ class Economy {
             },
             enemyBuildings: this.enemyBuildings,
             enemyUnits: this.enemyUnits,
+            allyUnits: this.allyUnits,
             map: this.map.get(),
             priority: this.autopilot.priority,
         };
@@ -122,7 +124,10 @@ class Economy {
 
     setVisibility({ units = [], buildings = [] }) {
         this.enemyBuildings = buildings;
-        this.enemyUnits = units;
+
+        const mushroomsArmyTypes = new Set(Object.values(GLOBAL_CONFIG.UNIT_TYPES.MUSHROOMS_ARMY));
+        this.allyUnits  = units.filter(u => mushroomsArmyTypes.has(u.type));
+        this.enemyUnits = units.filter(u => !mushroomsArmyTypes.has(u.type));
     }
 
     // Методы добавления объектов
@@ -152,6 +157,25 @@ class Economy {
         this.units.larvae = this.units.larvae.filter(l => l.guid !== lar.guid);
 
         this.addWorker(lar.x, lar.y);
+        this.updated = true;
+        return true;
+    }
+
+    mutateLarvaToArmyUnit(lar, unitType) {
+        const { MUTATION_IRON_COST, MUTATION_ENERGY_COST } = CONFIG.ECONOMY.LARVA;
+        if (this.resources.iron < MUTATION_IRON_COST) return false;
+        if (this.resources.energy < MUTATION_ENERGY_COST) return false;
+
+        this.resources.iron -= MUTATION_IRON_COST;
+        this.resources.energy -= MUTATION_ENERGY_COST;
+        this.updatedUnits.push(lar.get());
+        this.units.larvae = this.units.larvae.filter(l => l.guid !== lar.guid);
+        this.spawnArmyUnit({
+            armyGuid: this.guids.mushroomsArmy,
+            type: unitType,
+            x: lar.x,
+            y: lar.y,
+        });
         this.updated = true;
         return true;
     }
@@ -334,9 +358,9 @@ class Economy {
 
     reactorsConsume() {
         for (const reactor of this.buildings.reactors) {
-            const consumed = reactor.consumeMycelium(this.buildings.mycelium);
-            if (consumed > 0) {
-                this.resources.energy += consumed;
+            const energyGained = reactor.consumeMycelium(this.buildings.mycelium);
+            if (energyGained > 0) {
+                this.resources.energy += energyGained;
                 this.updated = true;
             }
         }

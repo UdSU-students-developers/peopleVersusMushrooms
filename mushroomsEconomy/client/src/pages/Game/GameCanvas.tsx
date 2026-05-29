@@ -103,6 +103,10 @@ const GameCanvas: React.FC = () => {
 
         for (const enemy of scene.enemyUnits)
             drawTile(SPRITE.ENEMY_UNIT, enemy.x, enemy.y);
+
+        // ally units
+        for (const ally of scene.allyUnits)
+            drawTile(SPRITE.ALLY_UNIT, ally.x, ally.y);
     };
 
     function render(FPS: number) {

@@ -8,7 +8,6 @@ describe('Маршрутизатор игры', () => {
     beforeEach(() => {
         jest.resetModules();
 
-        // Подготовка мок-роутера Express
         mockRouter = {
             post: jest.fn(),
             all: jest.fn()
@@ -22,8 +21,10 @@ describe('Маршрутизатор игры', () => {
             URLS: {
                 LOBBY_UPDATED: '/api/lobby-updated',
                 START_GAME: '/api/start-game',
-                APPLY_DAMAGE: '/api/damage',
-                MOVE: '/api/move'
+                DAMAGE: '/api/damage',                 
+                MOVE: '/api/move',
+                REQUEST_UNITS: '/api/request-units',    
+                REQUEST_BUILDINGS: '/api/request-buildings'
             }
         }));
 
@@ -31,14 +32,15 @@ describe('Маршрутизатор игры', () => {
             notFoundHandler: 'notFoundHandlerMock',
             useLobbyUpdatedHandler: jest.fn(() => 'lobbyHandler'),
             useStartGameHandler: jest.fn(() => 'startHandler'),
-            useDamageHandler: jest.fn(() => 'damageHandler')
+            useDamageHandler: jest.fn(() => 'damageHandler'),
+            useRequestUnitsHandler: jest.fn(() => 'requestUnitsHandler'),        
+            useRequestBuildingsHandler: jest.fn(() => 'requestBuildingsHandler') 
         }));
 
         jest.mock('./handlers/game/useMoveHandler', () =>
             jest.fn(() => 'moveHandler')
         );
 
-        // Импорт модуля после настройки моков
         Router = require('./router');
     });
 

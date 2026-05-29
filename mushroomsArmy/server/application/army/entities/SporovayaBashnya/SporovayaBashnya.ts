@@ -56,6 +56,8 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
         this.y = options.y;
         this.hp = options.hp ?? 200;
         this.projectiles = options.projectiles ?? [];
+        // Инициализируем таймер как отрицательный, чтобы башня была готова атаковать сразу
+        this.attackTimer = -this.attackCooldown;
     }
 
     public update(enemies: Unit[], map: TMap, deltaTime: number): void {
@@ -92,16 +94,24 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
 
         this.attackTimer = 0;
 
+        // Проверяем что враги это правильный массив
+        if (!Array.isArray(enemies) || enemies.length === 0) {
+            return;
+        }
+
         let nearestEnemy: Unit | null = null;
         let nearestDistance: number = Infinity;
 
+        // Башня атакует ближайшего врага в пределах дальности атаки
         for (const enemy of enemies) {
-            if (!enemy.isAlive) continue;
+            // Проверяем что враг это правильный живой объект
+            if (!enemy || !enemy.isAlive || enemy.hp <= 0) continue;
 
             const dx = enemy.x - this.x;
             const dy = enemy.y - this.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
 
+            // Враг должен быть в пределах дальности атаки
             if (distance <= this.attackRange && distance < nearestDistance) {
                 nearestEnemy = enemy;
                 nearestDistance = distance;

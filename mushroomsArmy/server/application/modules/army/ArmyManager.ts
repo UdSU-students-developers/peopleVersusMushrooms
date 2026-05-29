@@ -309,11 +309,15 @@ class ArmyManager extends BaseManager {
         const isAlliedEconomyBuilding = (b: TVisibleEntity & { role?: string }) =>
             b.role === 'mushroomsEconomy' && ALLIED_ECONOMY_BUILDING_TYPES.has(b.type);
 
+        // Также фильтруем юниты экономики по role, чтобы не атаковать союзные юниты
+        const isAlliedEconomyUnit = (u: TVisibleEntity & { role?: string }) =>
+            u.role === 'mushroomsEconomy' && ALLIED_ECONOMY_UNIT_TYPES.has(u.type);
+
         army.economyBuildings = visibleEnemyBuildings.filter(isAlliedEconomyBuilding);
-        army.economyUnits     = visibleEnemyUnits.filter(u => ALLIED_ECONOMY_UNIT_TYPES.has(u.type));
+        army.economyUnits     = visibleEnemyUnits.filter(u => isAlliedEconomyUnit(u));
 
         const visibleEnemies: TVisibleEntity[] = [
-            ...visibleEnemyUnits.filter(e => !ALLIED_ECONOMY_UNIT_TYPES.has(e.type)),
+            ...visibleEnemyUnits.filter(e => !isAlliedEconomyUnit(e)),
             ...visibleEnemyBuildings.filter(e => !isAlliedEconomyBuilding(e)),
         ];
 

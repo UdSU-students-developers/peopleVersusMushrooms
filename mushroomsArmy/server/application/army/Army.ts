@@ -473,9 +473,9 @@ export class Army {
         }
 
         // Тикаем все здания — включая мёртвые взрывоморы, ожидающие respawn
+        // Передаем ВСЕ врагов, пусть здания сами решают, кого видеть
         for (const building of this.buildings) {
-            const sharedVisibility = this.calculateSharedVisibility();
-            building.update(sharedVisibility, this.map, deltaTime);
+            building.update(this.enemyUnits, this.map, deltaTime);
         }
 
         // Удаляем только те здания, что мертвы И не ждут respawn

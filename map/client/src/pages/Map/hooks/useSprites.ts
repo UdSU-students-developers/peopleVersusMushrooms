@@ -14,6 +14,21 @@ import eblekar from '../../../assets/eblekar.png';
 import pizdoglyad from '../../../assets/pizdoglyad.png';
 import DRILLER from '../../../assets/DRILLER.png';
 import PIPE from '../../../assets/PIPE.png';
+import PIPE1 from '../../../assets/PIPE1.png';
+import PIPE2 from '../../../assets/PIPE2.png';
+import PIPE3 from '../../../assets/PIPE3.png';
+import PIPE4 from '../../../assets/PIPE4.png';
+import PIPE5 from '../../../assets/PIPE5.png';
+import PIPE6 from '../../../assets/PIPE6.png';
+import PIPE7 from '../../../assets/PIPE7.png';
+import PIPE8 from '../../../assets/PIPE8.png';
+import PIPE9 from '../../../assets/PIPE9.png';
+import PIPE10 from '../../../assets/PIPE10.png';
+import PIPE11 from '../../../assets/PIPE11.png';
+import PIPE12 from '../../../assets/PIPE12.png';
+import PIPE13 from '../../../assets/PIPE13.png';
+import PIPE14 from '../../../assets/PIPE14.png';
+import PIPE15 from '../../../assets/PIPE15.png';
 import SMALL_REACTOR from '../../../assets/SMALL_REACTOR.png';
 import LARGE_REACTOR from '../../../assets/LARGE_REACTOR.png';
 import BARRACKS from '../../../assets/BARRACKS.png';
@@ -40,6 +55,21 @@ export type EntityType =
     | 'DRILLER'
     | 'MINE'
     | 'PIPE'
+    | 'PIPE1'
+    | 'PIPE2'
+    | 'PIPE3'
+    | 'PIPE4'
+    | 'PIPE5'
+    | 'PIPE6'
+    | 'PIPE7'
+    | 'PIPE8'
+    | 'PIPE9'
+    | 'PIPE10'
+    | 'PIPE11'
+    | 'PIPE12'
+    | 'PIPE13'
+    | 'PIPE14'
+    | 'PIPE15'
     | 'SMALL_REACTOR'
     | 'LARGE_REACTOR'
     | 'BARRACKS'
@@ -106,6 +136,21 @@ export const useSprites = () => {
         soldier: 2,
         partizan: 2,
         sniper: 2,
+        PIPE1: 1,
+        PIPE2: 1,
+        PIPE3: 1,
+        PIPE4: 1,
+        PIPE5: 1,
+        PIPE6: 1,
+        PIPE7: 1,
+        PIPE8: 1,
+        PIPE9: 1,
+        PIPE10: 1,
+        PIPE11: 1,
+        PIPE12: 1,
+        PIPE13: 1,
+        PIPE14: 1,
+        PIPE15: 1,
     };
     const getRenderOrder = (type: string) =>
         renderOrder[type as EntityType] ?? 999;
@@ -119,6 +164,21 @@ export const useSprites = () => {
         DRILLER: { image: loadImage(DRILLER), frameWidth: 32, frameHeight: 32 },
         MINE: { image: loadImage(mine), frameWidth: 32, frameHeight: 32 },
         PIPE: { image: loadImage(PIPE), frameWidth: 32, frameHeight: 32 },
+        PIPE1: { image: loadImage(PIPE1), frameWidth: 32, frameHeight: 32 },
+        PIPE2: { image: loadImage(PIPE2), frameWidth: 32, frameHeight: 32 },
+        PIPE3: { image: loadImage(PIPE3), frameWidth: 32, frameHeight: 32 },
+        PIPE4: { image: loadImage(PIPE4), frameWidth: 32, frameHeight: 32 },
+        PIPE5: { image: loadImage(PIPE5), frameWidth: 32, frameHeight: 32 },
+        PIPE6: { image: loadImage(PIPE6), frameWidth: 32, frameHeight: 32 },
+        PIPE7: { image: loadImage(PIPE7), frameWidth: 32, frameHeight: 32 },
+        PIPE8: { image: loadImage(PIPE8), frameWidth: 32, frameHeight: 32 },
+        PIPE9: { image: loadImage(PIPE9), frameWidth: 32, frameHeight: 32 },
+        PIPE10: { image: loadImage(PIPE10), frameWidth: 32, frameHeight: 32 },
+        PIPE11: { image: loadImage(PIPE11), frameWidth: 32, frameHeight: 32 },
+        PIPE12: { image: loadImage(PIPE12), frameWidth: 32, frameHeight: 32 },
+        PIPE13: { image: loadImage(PIPE13), frameWidth: 32, frameHeight: 32 },
+        PIPE14: { image: loadImage(PIPE14), frameWidth: 32, frameHeight: 32 },
+        PIPE15: { image: loadImage(PIPE15), frameWidth: 32, frameHeight: 32 },
         SMALL_REACTOR: { image: loadImage(SMALL_REACTOR), frameWidth: 32, frameHeight: 32 },
         LARGE_REACTOR: { image: loadImage(LARGE_REACTOR), frameWidth: 64, frameHeight: 64 },
         BARRACKS: { image: loadImage(BARRACKS), frameWidth: 64, frameHeight: 64 },

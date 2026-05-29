@@ -82,6 +82,12 @@ class Mycelium extends Building {
 
         const allBuildings = Object.values(buildings).flat();
 
+        const occupiesCell = (b, nx, ny) => {
+            const size = b.size ?? 1;
+            return nx >= b.x && nx < b.x + size &&
+                   ny >= b.y && ny < b.y + size;
+        };
+
         return DIRECTIONS
             .map(({ dx, dy }) => ({ x: x + dx, y: y + dy }))
             .filter(({ x: nx, y: ny }) =>
@@ -89,8 +95,8 @@ class Mycelium extends Building {
                 ny >= 0 && ny < rows &&
                 relief[ny][nx] === 0 && // 0 - земля, 1 - вода, 2 - камень, null - нет видимости
                 !mycelium.some(mc => mc.x === nx && mc.y === ny) &&
-                !allBuildings.some(b => b.x === nx && b.y === ny) &&
-                !enemyBuildings.some(b => b.x === nx && b.y === ny)
+                !allBuildings.some(b => occupiesCell(b, nx, ny)) &&
+                !enemyBuildings.some(b => occupiesCell(b, nx, ny))
             );
     }
 

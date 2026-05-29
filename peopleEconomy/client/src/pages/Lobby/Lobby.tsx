@@ -49,7 +49,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
 
     const startGameHandler = () => {
         server.startGame(server.user.guid);
-        setPage(PAGES.MAP);
     }
 
     const setReadyHandler = () => {
@@ -91,11 +90,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
             setIsReady(false);
         };
 
-        const mapHandler = (data: TMap) => {
-            console.log('Карта получена:', data);
-            server.setGeneratedMap(data);
-        };
-
         const joinToLobbyHandler = (data: any) => {
             console.log('Присоединились к комнате:', data);
             setCurrentLobby(data);
@@ -117,6 +111,14 @@ const Lobby: React.FC<IBasePage> = (props) => {
         const lobbyUpdatedHandler = (data: any) => {
             console.log('Комната обновлена:', data);
             setCurrentLobby(data);
+            if (data.playersReady && server.user) {
+                const userRole = Object.keys(data.playersGuids).find(
+                    role => data.playersGuids[role] === server.user.guid
+                );
+                if (userRole) {
+                    setIsReady(data.playersReady[userRole] || false);
+                }
+            }
         };
 
         const lobbiesListUpdatedHandler = (data: any) => {
@@ -126,6 +128,11 @@ const Lobby: React.FC<IBasePage> = (props) => {
 
         const startGameHandler = (data: any) => {
             console.log('Игра началась:', data);
+            const mapGuid = currentLobby?.lobbyGuid;
+            if (mapGuid && server.user) {
+                server.getRelief(mapGuid, server.user?.guid);
+            }
+            setPage(PAGES.MAP);
         };
 
         const setReadyHandler = (data: any) => {
@@ -148,7 +155,6 @@ const Lobby: React.FC<IBasePage> = (props) => {
         mediator.subscribe(LOBBY_UPDATED, lobbyUpdatedHandler);
         mediator.subscribe(LOBBIES_LIST_UPDATED, lobbiesListUpdatedHandler);
         mediator.subscribe(START_GAME, startGameHandler);
-        mediator.subscribe(GENERATE_MAP, mapHandler);
         mediator.subscribe(SET_READY, setReadyHandler);
         mediator.subscribe(DROP_FROM_LOBBY, dropFromLobbyHandler);
 
@@ -161,11 +167,10 @@ const Lobby: React.FC<IBasePage> = (props) => {
             mediator.unsubscribe(LOBBY_UPDATED, lobbyUpdatedHandler);
             mediator.unsubscribe(LOBBIES_LIST_UPDATED, lobbiesListUpdatedHandler);
             mediator.unsubscribe(START_GAME, startGameHandler);
-            mediator.unsubscribe(GENERATE_MAP, mapHandler);
             mediator.unsubscribe(SET_READY, setReadyHandler);
             mediator.unsubscribe(DROP_FROM_LOBBY, dropFromLobbyHandler);
         };
-    }, [mediator, setPage, server]);
+    }, [mediator, setPage, server, currentLobby]);
 
     return (
         <div className='lobby'>
@@ -211,7 +216,8 @@ const Lobby: React.FC<IBasePage> = (props) => {
                         className='button-leave'
                     />
                 </div>
-            )}
+            )
+            }
 
             <div className="lobbies-list">
                 <h2>Доступные комнаты</h2>
@@ -237,33 +243,35 @@ const Lobby: React.FC<IBasePage> = (props) => {
                 )}
             </div>
 
-            {showCreateModal && (
-                <div className="modal-overlay" onClick={cancelCreateLobby}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <h2>Создать комнату</h2>
-                        <input
-                            type="text"
-                            placeholder="Название комнаты"
-                            value={lobbyName}
-                            onChange={(e) => setLobbyName(e.target.value)}
-                            autoFocus
-                        />
-                        <div className="modal-buttons">
-                            <Button
-                                onClick={confirmCreateLobby}
-                                text='Создать'
-                                className='button-confirm'
+            {
+                showCreateModal && (
+                    <div className="modal-overlay" onClick={cancelCreateLobby}>
+                        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                            <h2>Создать комнату</h2>
+                            <input
+                                type="text"
+                                placeholder="Название комнаты"
+                                value={lobbyName}
+                                onChange={(e) => setLobbyName(e.target.value)}
+                                autoFocus
                             />
-                            <Button
-                                onClick={cancelCreateLobby}
-                                text='Отмена'
-                                className='button-cancel'
-                            />
+                            <div className="modal-buttons">
+                                <Button
+                                    onClick={confirmCreateLobby}
+                                    text='Создать'
+                                    className='button-confirm'
+                                />
+                                <Button
+                                    onClick={cancelCreateLobby}
+                                    text='Отмена'
+                                    className='button-cancel'
+                                />
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     )
 }
 

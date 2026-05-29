@@ -43,7 +43,39 @@ export interface ILobby {
 
 export type TMap = {
     guid: string;
-    map: any[];
+    map: number[][];
+    sources: TSource[];
     width: number;
     height: number;
+}
+export type TSource = {
+    x: number;
+    y: number;
+    type: 'IRON' | 'OIL';
+    saturation: number;
+}
+
+export type TBuilding = {
+    guid: string;
+    role: string;
+    size: number;
+    type: string;
+    visibility: number;
+    x: number;
+    y: number;
+}
+
+export type TUnit = {
+    guid: string;
+    role: string;
+    size: number;
+    type: string;
+    visibility: number;
+    x: number;
+    y: number;
+}
+
+export type TEntities = {
+    buildings: TBuilding[] | TBuilding[][];
+    units: TUnit[] | TUnit[][];
 }

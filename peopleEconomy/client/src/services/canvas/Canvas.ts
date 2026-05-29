@@ -13,7 +13,11 @@ export type TCanvas = {
     WIDTH: number;
     HEIGHT: number;
     callbacks: {
+        mouseWheel?: (delta: number, x: number, y: number) => void;
         mouseMove: (x: number, y: number) => void;
+        mouseDown: (x: number, y: number) => void;
+        mouseUp: (x: number, y: number) => void;
+        mouseLeave?: () => void;
         mouseClick: (x: number, y: number) => void;
         mouseRightClick: () => void;
     },
@@ -39,11 +43,7 @@ class Canvas {
     dx = 0;
     dy = 0;
     interval: NodeJS.Timer;
-    callbacks: {
-        mouseMove: (x: number, y: number) => void;
-        mouseClick: (x: number, y: number) => void;
-        mouseRightClick: () => void;
-    }
+    callbacks: TCanvas['callbacks'];
 
     constructor(options: TCanvas) {
         const { parentId, WINDOW, WIDTH, HEIGHT, callbacks } = options;
@@ -70,7 +70,10 @@ class Canvas {
         this.WINDOW = WINDOW;
         this.callbacks = callbacks;
 
+        this.canvas.addEventListener('wheel', (event) => this.mouseWheelHandler(event));
         this.canvas.addEventListener('mousemove', (event) => this.mouseMoveHandler(event));
+        this.canvas.addEventListener('mousedown', (event) => this.mouseDownHandler(event));
+        this.canvas.addEventListener('mouseup', (event) => this.mouseUpHandler(event));
         this.canvas.addEventListener('mouseleave', () => this.mouseLeaveHandler());
         this.canvas.addEventListener('click', (event) => this.mouseClickHandler(event));
         this.canvas.addEventListener('contextmenu', (event) => this.mouseRightClickHandler(event));
@@ -96,6 +99,14 @@ class Canvas {
         clearInterval(this.interval);
     }
 
+    mouseWheelHandler(event: WheelEvent) {
+        event.preventDefault();
+        const { offsetX, offsetY, deltaY } = event;
+        if (this.callbacks.mouseWheel) {
+            this.callbacks.mouseWheel(deltaY, this.sx(offsetX), this.sy(offsetY));
+        }
+    }
+
     mouseClickHandler(event: MouseEvent) {
         const { offsetX, offsetY } = event;
         this.callbacks.mouseClick(this.sx(offsetX), this.sy(offsetY));
@@ -108,31 +119,31 @@ class Canvas {
 
     mouseMoveHandler(event: MouseEvent) {
         const { offsetX, offsetY } = event;
-        // для скролла окошка относительно положения мышки
-        /*
-        const pX = offsetX / this.WIDTH;
-        const pY = offsetY / this.HEIGHT;
-        if (pX <= 0.1) {
-            this.dx = -1;
-        } else if (pX >= 0.9) {
-            this.dx = 1;
-        } else {
-            this.dx = 0;
-        }
-        if (pY <= 0.1) {
-            this.dy = -1;
-        } else if (pY >= 0.9) {
-            this.dy = 1;
-        } else {
-            this.dy = 0;
-        }
-        */
         this.callbacks.mouseMove(this.sx(offsetX), this.sy(offsetY));
+    }
+
+    mouseDownHandler(event: MouseEvent) {
+        event.preventDefault();
+        const { offsetX, offsetY, button } = event;
+        if (button === 0) {
+            this.callbacks.mouseDown(this.sx(offsetX), this.sy(offsetY));
+        }
+    }
+
+    mouseUpHandler(event: MouseEvent) {
+        event.preventDefault();
+        const { offsetX, offsetY, button } = event;
+        if (button === 0) {
+            this.callbacks.mouseUp(this.sx(offsetX), this.sy(offsetY));
+        }
     }
 
     mouseLeaveHandler() {
         this.dx = 0;
         this.dy = 0;
+        if (this.callbacks.mouseLeave) {
+            this.callbacks.mouseLeave();
+        }
     }
 
     // перевод в экранные координаты
@@ -176,35 +187,13 @@ class Canvas {
         this.contextV.closePath();
     }
 
-    arrow(x1: number, y1: number, x2: number, y2: number, color = '#ff0000', lineWidth = 3): void {
+    circle(x: number, y: number, radius: number, color: string): void {
         if (!this.contextV) return;
-        const screenX1 = this.xs(x1);
-        const screenY1 = this.ys(y1);
-        const screenX2 = this.xs(x2);
-        const screenY2 = this.ys(y2);
         this.contextV.beginPath();
-        this.contextV.strokeStyle = color;
-        this.contextV.lineWidth = lineWidth;
-        this.contextV.moveTo(screenX1, screenY1);
-        this.contextV.lineTo(screenX2, screenY2);
-        this.contextV.stroke();
-        const angle = Math.atan2(screenY2 - screenY1, screenX2 - screenX1);
-        const arrowLength = 15;
-        const arrowAngle = Math.PI / 6;
-        this.contextV.beginPath();
-        this.contextV.moveTo(screenX2, screenY2);
-        this.contextV.lineTo(
-            screenX2 - arrowLength * Math.cos(angle - arrowAngle),
-            screenY2 - arrowLength * Math.sin(angle - arrowAngle)
-        );
-        this.contextV.stroke();
-        this.contextV.beginPath();
-        this.contextV.moveTo(screenX2, screenY2);
-        this.contextV.lineTo(
-            screenX2 - arrowLength * Math.cos(angle + arrowAngle),
-            screenY2 - arrowLength * Math.sin(angle + arrowAngle)
-        );
-        this.contextV.stroke();
+        this.contextV.arc(this.xs(x), this.ys(y), this.dec(radius), 0, Math.PI * 2);
+        this.contextV.fillStyle = color;
+        this.contextV.fill();
+        this.contextV.closePath();
     }
 
     text(x: number, y: number, text: string, color = '#fff', font = 'bold 1rem Arial'): void {
@@ -214,9 +203,16 @@ class Canvas {
         this.contextV.fillText(text, this.xs(x), this.ys(y));
     }
 
+    screenText(x: number, y: number, text: string, color = '#fff', font = 'bold 1rem Arial'): void {
+        if (!this.contextV) return;
+        this.contextV.fillStyle = color;
+        this.contextV.font = font;
+        this.contextV.fillText(text, x, y);
+    }
+
     rect(x: number, y: number, size = 64, color = '#f004'): void {
         this.contextV.fillStyle = color;
-        this.contextV.fillRect(this.xs(x), this.ys(y), size, size)
+        this.contextV.fillRect(this.xs(x), this.ys(y), this.dec(size), this.dec(size))
     }
 
     // прямоугольник. НЕ квадрат
@@ -226,9 +222,9 @@ class Canvas {
         this.contextV.fillRect(this.xs(x), this.ys(y), width, height);
     }
 
-    spriteFull(image: HTMLImageElement, dx: number, dy: number, sx: number, sy: number, size: number): void {
+    sprite(image: HTMLImageElement, sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number): void {
         if (!this.contextV) return;
-        this.contextV.drawImage(image, sx, sy, size, size, this.xs(dx), this.ys(dy), size, size);
+        this.contextV.drawImage(image, sx, sy, sw, sh, this.xs(dx), this.ys(dy), this.dec(dw), this.dec(dh));
     }
 
     // копируем изображение с виртуального канваса на основной

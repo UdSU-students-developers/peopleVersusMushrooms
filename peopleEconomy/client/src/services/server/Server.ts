@@ -37,7 +37,6 @@ class Server {
         });
 
         this.socket.on(MEDIATOR.EVENTS.REGISTRATION, (data: TAnswer<TUser>) => {
-            console.log(data)
             const result = this._validate(data);
             if (result) {
                 const { REGISTRATION } = this.mediator.getEventTypes();
@@ -117,11 +116,19 @@ class Server {
             }
         });
 
-        this.socket.on(MEDIATOR.EVENTS.GENERATE_MAP, (data: TAnswer<TMap>) => {
+        this.socket.on(MEDIATOR.EVENTS.GET_RELIEF, (data: TAnswer<TMap>) => {
             const result = this._validate(data);
             if (result) {
-                const { GENERATE_MAP } = this.mediator.getEventTypes();
-                this.mediator.call(GENERATE_MAP, result);
+                const { GET_RELIEF } = this.mediator.getEventTypes();
+                this.mediator.call(GET_RELIEF, result);
+            }
+        });
+
+        this.socket.on(MEDIATOR.EVENTS.UPDATE_MAP, (data: TAnswer<TMap>) => {
+            const result = this._validate(data);
+            if (result) {
+                const { UPDATE_MAP } = this.mediator.getEventTypes();
+                this.mediator.call(UPDATE_MAP, result);
             }
         });
     }
@@ -206,16 +213,12 @@ class Server {
         return this.mediator.get<ILobby[]>(MEDIATOR.TRIGGERS.GET_LOBBIES);
     }
 
-    generateMap(): void {
-        this.socket.emit(MEDIATOR.EVENTS.GENERATE_MAP, { width: CONFIG.WIDTH, height: CONFIG.HEIGHT });
+    getRelief(mapGuid: string, userGuid: string): void {
+        this.socket.emit(MEDIATOR.EVENTS.GET_RELIEF, { mapGuid, userGuid });
     }
 
-    setGeneratedMap(data: TMap): void {
-        this.mediator.get(MEDIATOR.TRIGGERS.SET_GENERATED_MAP, data);
-    }
-
-    getGeneratedMap(): TMap | null {
-        return this.mediator.get(MEDIATOR.TRIGGERS.GET_GENERATED_MAP);
+    updateMap(mapGuid: string, userGuid: string): void {
+        this.socket.emit(MEDIATOR.EVENTS.UPDATE_MAP, { mapGuid, userGuid });
     }
 }
 

@@ -113,24 +113,27 @@ class Autopilot {
             mine: CONFIG.ECONOMY.MINE.IRON_COST
         };
 
+        let reservedIron = 0;
+
         for (const worker of economy.units.workers) {
             if (worker.assignedBuilding) continue;
 
             if (this.priority === 'army' && this.requestsFromArmy.buildings.length > 0) {
                 const buildingType = this.requestsFromArmy.buildings[0];
                 const cost = ironCosts[buildingType] || 0;
-                if (economy.resources.iron < cost) continue;
+                if (economy.resources.iron - reservedIron < cost) continue;
 
+                reservedIron += cost;
                 this.requestsFromArmy.buildings.shift();
                 worker.assignedBuilding = buildingType;
             } else {
                 const neededType = this._getNeededBuildingType(economy);
                 const cost = ironCosts[neededType] || 0;
 
-                if (economy.resources.iron < cost) continue;
+                if (economy.resources.iron - reservedIron < cost) continue;
 
+                reservedIron += cost;
                 worker.assignedBuilding = neededType;
-                break;
             }
         }
     }

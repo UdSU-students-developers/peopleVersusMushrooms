@@ -26,12 +26,11 @@ class Autopilot {
     }
 
     _getEnergyPerTick(economy) {
+        const { POWER } = CONFIG.ECONOMY.MYCELIUM;
         let sum = 0;
         for (const r of economy.buildings.reactors) {
-            const prod = r.type === CONFIG.ECONOMY.BIO_REACTOR_SMALL.TYPE
-                ? CONFIG.ECONOMY.BIO_REACTOR_SMALL.PRODUCTION
-                : CONFIG.ECONOMY.BIO_REACTOR.PRODUCTION;
-            sum += prod;
+            const consumable = r.getConsumable(economy.buildings.mycelium);
+            sum += consumable.length * POWER;
         }
         return sum;
     }
@@ -89,25 +88,16 @@ class Autopilot {
     _mutateLarvae(economy) {
         if (this.priority !== 'army') return;
 
-        const { MUTATION_IRON_COST, MUTATION_ENERGY_COST } = CONFIG.ECONOMY.LARVA;
         const larvaeCopy = [...economy.units.larvae];
 
         for (const larva of larvaeCopy) {
             if (this.requestsFromArmy.units.length === 0) break;
-            if (economy.resources.iron < MUTATION_IRON_COST) break;
-            if (economy.resources.energy < MUTATION_ENERGY_COST) break;
 
             const unitType = this.requestsFromArmy.units.shift();
-            economy.resources.iron -= MUTATION_IRON_COST;
-            economy.resources.energy -= MUTATION_ENERGY_COST;
-
-            economy.units.larvae = economy.units.larvae.filter(l => l.guid !== larva.guid);
-            economy.spawnArmyUnit({
-                armyGuid: economy.guids.mushroomsArmy,
-                type: unitType,
-                x: larva.x,
-                y: larva.y
-            });
+            if (!economy.mutateLarvaToArmyUnit(larva, unitType)) {
+                this.requestsFromArmy.units.unshift(unitType);
+                break;
+            }
         }
     }
 

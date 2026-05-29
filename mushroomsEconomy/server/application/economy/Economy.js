@@ -161,6 +161,25 @@ class Economy {
         return true;
     }
 
+    mutateLarvaToArmyUnit(lar, unitType) {
+        const { MUTATION_IRON_COST, MUTATION_ENERGY_COST } = CONFIG.ECONOMY.LARVA;
+        if (this.resources.iron < MUTATION_IRON_COST) return false;
+        if (this.resources.energy < MUTATION_ENERGY_COST) return false;
+
+        this.resources.iron -= MUTATION_IRON_COST;
+        this.resources.energy -= MUTATION_ENERGY_COST;
+        this.updatedUnits.push(lar.get());
+        this.units.larvae = this.units.larvae.filter(l => l.guid !== lar.guid);
+        this.spawnArmyUnit({
+            armyGuid: this.guids.mushroomsArmy,
+            type: unitType,
+            x: lar.x,
+            y: lar.y,
+        });
+        this.updated = true;
+        return true;
+    }
+
     addWorker(x, y) {
         const worker = new Worker({
             x,
@@ -339,9 +358,9 @@ class Economy {
 
     reactorsConsume() {
         for (const reactor of this.buildings.reactors) {
-            const consumed = reactor.consumeMycelium(this.buildings.mycelium);
-            if (consumed > 0) {
-                this.resources.energy += consumed;
+            const energyGained = reactor.consumeMycelium(this.buildings.mycelium);
+            if (energyGained > 0) {
+                this.resources.energy += energyGained;
                 this.updated = true;
             }
         }

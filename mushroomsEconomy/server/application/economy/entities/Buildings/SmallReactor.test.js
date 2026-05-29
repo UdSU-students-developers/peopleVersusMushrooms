@@ -31,6 +31,7 @@ jest.mock("../../../../config", () => ({
             PRODUCTION: 0,
             CAPACITY: 500,
             VISIBILITY: 2,
+            CONSUME_RADIUS: 1,
         },
         MYCELIUM: {
             MAX_LEVEL: 3,
@@ -80,7 +81,7 @@ describe('SmallReactor', () => {
         reactor.capacity = 300;
         const result = reactor.consumeMycelium(mycelium);
 
-        expect(result).toBe(3);
+        expect(result).toBe(450); // 100 + 150 + 200
         expect(reactor.energy).toBe(300); // 100 + 150 + 200 = 450, но cap 300
         expect(reactor.consumed).toBe(true);
         expect(mycelium[0].consume).toHaveBeenCalled();

@@ -125,8 +125,8 @@ const CONFIG = {
             TYPE: "larva",
             VISIBILITY: 2,
             SOURCES_VISIBILITY: 100,
-            GROWTH_LIMIT: 80, //сколько тиков нужно личинке чтобы превратиться в рабочего
-            MUTATION_ENERGY_COST: 15, // энергия для мутации личинки в рабочего
+            GROWTH_LIMIT: 70, //сколько тиков нужно личинке чтобы превратиться в рабочего
+            MUTATION_ENERGY_COST: 10, // энергия для мутации личинки в рабочего
             MUTATION_IRON_COST: 0,
         },
 

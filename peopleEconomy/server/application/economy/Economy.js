@@ -87,11 +87,11 @@ class Economy {
     }
 
     getUpdatedBuildings() {
-        return this.updatedBuildings;
+        return [...this.updatedBuildings];
     }
 
     getUpdatedUnits() {
-        return this.updatedUnits;
+        return [...this.updatedUnits];
     }
 
     _initEconomy() {
@@ -497,6 +497,12 @@ class Economy {
 
     }
 
+    planUnits() {
+        if (this.plannedUnits.length === 0) {
+            this.plannedUnits.push('soldier', 'soldier', 'soldier', 'soldier', 'sniper', 'sniper', 'partizan', 'bmp');
+        }
+    }
+
 
     update() {
         /***********************/
@@ -519,6 +525,7 @@ class Economy {
         // 6. рабочим построить что-нибудь
         this.build();
         // 7. Запланировать здания и юнитов
+        this.planUnits();
 
         if (this.updated) {
             this.updated = false;

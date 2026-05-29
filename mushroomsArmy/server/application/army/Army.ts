@@ -20,6 +20,16 @@ export const PEOPLE_ARMY_DEFAULT_HP: Record<string, number> = {
     partizan: 30,
 };
 
+export const PEOPLE_ECONOMY_BUILDING_TYPES = new Set(['barracks', 'driller', 'mine', 'pipe', 'smallGenerator']);
+
+export const PEOPLE_ECONOMY_DEFAULT_HP: Record<string, number> = {
+    barracks: 200,
+    driller: 100,
+    mine: 100,
+    pipe: 100,
+    smallGenerator: 100,
+};
+
 export type TBuildingInput = {
     guid: string;
     type: string;
@@ -274,12 +284,19 @@ export class Army {
 
     /** Создаёт proxy-юнита для здания и пробрасывает урон обратно в this.buildings. */
     private createEnemyProxy(entity: TBuildingInput): Unit {
+        // Используем дефолтное HP, если карта не передает актуальное значение
+        const defaultHp = PEOPLE_ARMY_UNIT_TYPES.has(entity.type)
+            ? (PEOPLE_ARMY_DEFAULT_HP[entity.type] ?? 10)
+            : PEOPLE_ECONOMY_BUILDING_TYPES.has(entity.type)
+                ? (PEOPLE_ECONOMY_DEFAULT_HP[entity.type] ?? 50)
+                : (entity.hp ?? 1);
+        
         const proxy = new Unit({
             guid: entity.guid,
             type: entity.type,
             x: entity.x,
             y: entity.y,
-            hp: entity.hp ?? 1,
+            hp: entity.hp ?? defaultHp,
             speed: 0,
             attackRange: 0,
         });

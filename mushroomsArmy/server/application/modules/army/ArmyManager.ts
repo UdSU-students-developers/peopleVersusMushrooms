@@ -390,7 +390,22 @@ class ArmyManager extends BaseManager {
         const route = resolveDamageRoute(target.type ?? '', target.unitGuid, target.amount, guids);
         if (!route) return;
 
-        await this.send(route.url, route.body);
+        const response = await this.send<Record<string, unknown>, { guid: string; hp: number }>(route.url, route.body);
+        
+        // Обновляем HP в прокси-объекте, если peopleArmy вернул актуальное HP
+        if (response && response.hp !== undefined) {
+            const army = this.army[armyGuid];
+            if (army) {
+                const proxy = army.enemyUnits.find(u => u.guid === target.unitGuid);
+                if (proxy) {
+                    proxy.hp = response.hp;
+                    if (proxy.hp <= 0) {
+                        proxy.isAlive = false;
+                        army.recentlyKilledGuids.set(proxy.guid, Date.now());
+                    }
+                }
+            }
+        }
     }
 
     private destroyArmy(guid: string): void {

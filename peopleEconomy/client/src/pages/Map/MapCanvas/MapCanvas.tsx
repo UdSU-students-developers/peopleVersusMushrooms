@@ -21,6 +21,71 @@ const MapCanvas: React.FC = () => {
     let dragStartX = 0;
     let dragStartY = 0
 
+    const isConnectable = (building: any): boolean => {
+        const connectableTypes = ['PIPE', 'DRILLER', 'BARRACKS', 'LARGE_REACTOR', 'SMALL_REACTOR', 'REACTOR', 'INCUBATOR', 'MINE'];
+        return connectableTypes.includes(building.type?.toUpperCase());
+    };
+
+    const getPipeTextureType = (x: number, y: number, buildings: any[]): number => {
+        const hasUp = buildings.some(b => b.x === x && b.y === y - 1 && isConnectable(b));
+        const hasDown = buildings.some(b => b.x === x && b.y === y + 1 && isConnectable(b));
+        const hasLeft = buildings.some(b => b.x === x - 1 && b.y === y && isConnectable(b));
+        const hasRight = buildings.some(b => b.x === x + 1 && b.y === y && isConnectable(b));
+        const upBuilding = buildings.find(b => b.x === x && b.y === y - 1 && isConnectable(b));
+        const downBuilding = buildings.find(b => b.x === x && b.y === y + 1 && isConnectable(b));
+        const leftBuilding = buildings.find(b => b.x === x - 1 && b.y === y && isConnectable(b));
+        const rightBuilding = buildings.find(b => b.x === x + 1 && b.y === y && isConnectable(b));
+        if (hasUp && hasDown && !hasLeft && !hasRight) {
+            return 2;
+        }
+
+        if (hasLeft && hasRight && !hasUp && !hasDown) {
+            return 1;
+        }
+
+        if (hasUp && hasRight && !hasDown && !hasLeft) {
+            return 4;
+        }
+        if (hasUp && hasLeft && !hasDown && !hasRight) {
+            return 5;
+        }
+        if (hasDown && hasRight && !hasUp && !hasLeft) {
+            return 3;
+        }
+        if (hasDown && hasLeft && !hasUp && !hasRight) {
+            return 6;
+        }
+        if (hasUp && hasDown && hasLeft && !hasRight) {
+            return 11;
+        }
+        if (hasUp && hasDown && hasRight && !hasLeft) {
+            return 9;
+        }
+        if (hasUp && hasLeft && hasRight && !hasDown) {
+            return 10;
+        }
+        if (hasDown && hasLeft && hasRight && !hasUp) {
+            return 8;
+        }
+        if (hasUp && hasDown && hasLeft && hasRight) {
+            return 7;
+        }
+        if (hasUp && !hasDown && !hasLeft && !hasRight) {
+            return 15;
+        }
+        if (!hasUp && hasDown && !hasLeft && !hasRight) {
+            return 13;
+        }
+        if (!hasUp && !hasDown && hasLeft && !hasRight) {
+            return 12;
+        }
+        if (!hasUp && !hasDown && !hasLeft && hasRight) {
+            return 14;
+        }
+        return 7;
+    };
+
+
     useEffect(() => {
         const { GET_RELIEF, UPDATE_MAP } = mediator.getEventTypes();
 
@@ -38,7 +103,6 @@ const MapCanvas: React.FC = () => {
                     resourceColor: null as string | null
                 }))
             );
-
 
             if (mapData.sources) {
                 mapData.sources.forEach((source: TSource) => {
@@ -71,7 +135,7 @@ const MapCanvas: React.FC = () => {
         };
     }, []);
 
-    const cellSize = WINDOW.WIDTH / CONFIG.WIDTH;
+    const cellSize = CONFIG.WINDOW.WIDTH / CONFIG.WIDTH;
 
     function render(): void {
         canvas.clear();
@@ -99,9 +163,11 @@ const MapCanvas: React.FC = () => {
             };
 
             map.buildings.slice().sort((a, b) => getRenderOrder(a.type) - getRenderOrder(b.type)).forEach((building) => {
+                if (building.type === 'PIPE') return;
                 const sprite = getSprite(sprites, building.type);
-                const anim = getAnim(animations, building.type);
+                if (!sprite) return;
 
+                const anim = getAnim(animations, building.type);
                 const frame = anim();
                 const sx = frame * sprite.frameWidth;
 
@@ -122,10 +188,45 @@ const MapCanvas: React.FC = () => {
                 canvas.sprite(sprite.image, sx, 0, sprite.frameWidth, sprite.frameHeight, dx, dy, dw, dh);
             });
 
+            const pipes = map.buildings.filter(b => b.type === 'PIPE');
+
+            pipes.forEach((pipe) => {
+                const textureType = getPipeTextureType(pipe.x, pipe.y, map?.buildings || []);
+                const pipeTypeWithTexture = `PIPE${textureType}`;
+                let sprite = getSprite(sprites, pipeTypeWithTexture);
+
+                if (!sprite) {
+                    sprite = getSprite(sprites, 'PIPE');
+                }
+
+                if (sprite) {
+                    const anim = getAnim(animations, 'PIPE');
+                    const frame = anim();
+                    const sx = frame * sprite.frameWidth;
+
+                    const worldW = pipe.size * cellSize;
+                    const worldH = pipe.size * cellSize;
+
+                    const scale = Math.min(
+                        worldW / sprite.frameWidth,
+                        worldH / sprite.frameHeight
+                    );
+
+                    const dw = sprite.frameWidth * scale;
+                    const dh = sprite.frameHeight * scale;
+
+                    const dx = pipe.x * cellSize + (worldW - dw) / 2;
+                    const dy = pipe.y * cellSize + (worldH - dh) / 2;
+
+                    canvas.sprite(sprite.image, sx, 0, sprite.frameWidth, sprite.frameHeight, dx, dy, dw, dh);
+                }
+            });
+
             map.units.slice().sort((a, b) => getRenderOrder(a.type) - getRenderOrder(b.type)).forEach((unit) => {
                 const sprite = getSprite(sprites, unit.type);
-                const anim = getAnim(animations, unit.type);
+                if (!sprite) return;
 
+                const anim = getAnim(animations, unit.type);
                 const frame = anim();
                 const sx = frame * sprite.frameWidth;
 
@@ -181,6 +282,7 @@ const MapCanvas: React.FC = () => {
     const mouseUp = () => {
         canMove = false;
     };
+
     const mouseLeave = () => {
         canMove = false;
     };

@@ -56,8 +56,8 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
         this.y = options.y;
         this.hp = options.hp ?? 200;
         this.projectiles = options.projectiles ?? [];
-        // Инициализируем таймер как отрицательный, чтобы башня была готова атаковать сразу
-        this.attackTimer = -this.attackCooldown;
+        // Рандомизируем начальный таймер, чтобы башни не атаковали синхронно
+        this.attackTimer = -this.attackCooldown + Math.random() * this.attackCooldown;
     }
 
     public update(enemies: Unit[], map: TMap, deltaTime: number): void {

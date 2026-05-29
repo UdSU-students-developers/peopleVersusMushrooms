@@ -67,15 +67,20 @@ class Autopilot {
         const mineUnits = mines.length;
         const incubatorUnits = incubators.length;
 
-        const targetRatios = { reactor: 3, mine: 2, incubator: 1 };
+        const targetWeights = mines.length >= 1
+            ? { reactor: 3, incubator: 1 }
+            : { reactor: 3, mine: 2, incubator: 1 };
+        const totalWeight = Object.values(targetWeights).reduce((a, b) => a + b, 0);
         const currentUnits = { reactor: reactorUnits, mine: mineUnits, incubator: incubatorUnits };
-        const totalUnits = reactorUnits + mineUnits + incubatorUnits;
+        const totalUnits = Object.keys(targetWeights).reduce((s, t) => s + currentUnits[t], 0);
 
         let mostNeeded = null;
         let worstRatio = Infinity;
 
-        for (const [type, target] of Object.entries(targetRatios)) {
-            const ratio = currentUnits[type] / (totalUnits * target);
+        for (const [type, weight] of Object.entries(targetWeights)) {
+            const currentShare = totalUnits > 0 ? currentUnits[type] / totalUnits : 0;
+            const targetShare = weight / totalWeight;
+            const ratio = currentShare / targetShare;
             if (ratio < worstRatio) {
                 worstRatio = ratio;
                 mostNeeded = type;
@@ -111,9 +116,7 @@ class Autopilot {
         for (const worker of economy.units.workers) {
             if (worker.assignedBuilding) continue;
 
-            if (this.priority === 'army') {
-                if (this.requestsFromArmy.buildings.length === 0) continue;
-
+            if (this.priority === 'army' && this.requestsFromArmy.buildings.length > 0) {
                 const buildingType = this.requestsFromArmy.buildings[0];
                 const cost = ironCosts[buildingType] || 0;
                 if (economy.resources.iron < cost) continue;

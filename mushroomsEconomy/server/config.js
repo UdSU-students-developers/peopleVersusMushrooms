@@ -103,7 +103,7 @@ const CONFIG = {
             HP: 80,
             SIZE: 1,
             CONSUMPTION: 1,
-            PRODUCTION: 1,
+            PRODUCTION: 0.2,
             CAPACITY: 500,
             VISIBILITY: 1,
             IRON_COST: 20,

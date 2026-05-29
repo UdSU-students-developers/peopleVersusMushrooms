@@ -398,13 +398,13 @@ export function drawBuildings(
       const vzImg = getBuildingImage(getVzryvomorFrameKey(0), VZRYVOMOR_FRAME_SRCS[0]);
       const barHeight = 4;
       let barX: number, barY: number, barWidth: number;
+      const cx = bx + cellW / 2;
+      const cy = by + cellH / 2;
+      const side = Math.min(cellW, cellH) * 0.88;
 
       if (isImageDrawable(vzImg) && tryDrawImageScaled(ctx, vzImg, bx, by, cellW, cellH)) {
         barX = bx; barY = by - 6; barWidth = cellW;
       } else {
-        const cx = bx + cellW / 2;
-        const cy = by + cellH / 2;
-        const side = Math.min(cellW, cellH) * 0.88;
         const half = side / 2;
         ctx.fillStyle = '#f1c40f';
         ctx.fillRect(cx - half, cy - half, side, side);

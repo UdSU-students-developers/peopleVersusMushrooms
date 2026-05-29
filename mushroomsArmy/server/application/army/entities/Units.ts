@@ -1,5 +1,5 @@
 import EasyStar = require('easystarjs');
-import { TMap } from '../Army';
+import { TMap, Army } from '../Army';
 
 // Тайл-ID для непроходимых клеток (null в исходной карте → этот номер в EasyStar)
 const BLOCKED_TILE = 3;
@@ -113,23 +113,23 @@ class Unit {
     }
 
 
-    update(enemies: Unit[], map: TMap, deltaTime: number, allies: Unit[] = []): void {
+    update(enemies: Unit[], map: TMap, deltaTime: number, allies: Unit[] = [], army?: Army): void {
         if (!this.isAlive) return;
 
         this.enemies = enemies;
         this.lastDeltaTime = deltaTime;
-        
+
         this.decisionAccumulator += deltaTime;
-        
+
         if (this.decisionAccumulator >= this.DECISION_INTERVAL) {
             this.decisionAccumulator = 0;
-            this.makeDecision(enemies, map);
+            this.makeDecision(enemies, map, army);
         }
-        
+
         this.moveTo(this.targetX, this.targetY, map, deltaTime);
     }
     
-    private makeDecision(enemies: Unit[], map: TMap): void {
+    private makeDecision(enemies: Unit[], map: TMap, army?: Army): void {
         if (this.formationHold && this.formationTarget) {
             this.targetX = this.formationTarget.x;
             this.targetY = this.formationTarget.y;
@@ -152,6 +152,14 @@ class Unit {
 
         for (const enemy of enemies) {
             if (!enemy.isAlive || !leashOk(enemy)) continue;
+
+            // Проверяем ограничение на количество атакующих (только в режиме атаки)
+            if (army && army.currentMode === 'attack') {
+                if (!army.canAttack(enemy.guid)) {
+                    continue; // Пропускаем врага, если уже атакуют 3 юнита
+                }
+            }
+
             const dx = enemy.x - this.x;
             const dy = enemy.y - this.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
@@ -163,7 +171,16 @@ class Unit {
 
         const target = nearestLoS ?? nearestAny;
         if (target) {
+            // Регистрируем атакующего на врага
+            if (army) {
+                army.registerAttacker(target.guid);
+            }
             this.onEnemyFound(target, nearestLoS ? nearestLoSDist : nearestAnyDist);
+        } else if (army && army.currentMode === 'attack') {
+            // В режиме атаки, если нет доступных целей (все атакуются по 3 юнита),
+            // идем к вражеской базе на координаты (1, 1)
+            this.targetX = 1;
+            this.targetY = 1;
         } else if (this.formationTarget) {
             this.targetX = this.formationTarget.x;
             this.targetY = this.formationTarget.y;

@@ -1,4 +1,3 @@
-// GameMenu.test.tsx
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MediatorContext } from '../../App';
@@ -87,8 +86,16 @@ jest.mock('../../config', () => ({
 
 import GameMenu from './GameMenu';
 
-const createMockMediator = (user = null) => {
-    const get = jest.fn((trigger, name) => {
+interface MockUser {
+    name: string;
+}
+
+interface MockMediator {
+    get: jest.Mock;
+}
+
+const createMockMediator = (user: MockUser | null = null): MockMediator => {
+    const get = jest.fn((trigger: string, name: string) => {
         if (trigger === 'GET_STORE' && name === 'user') return user;
         return null;
     });
@@ -103,7 +110,7 @@ describe('GameMenu', () => {
         jest.clearAllMocks();
     });
 
-    const renderGameMenu = (user = { name: 'TestPlayer' }) => {
+    const renderGameMenu = (user: MockUser | null = { name: 'TestPlayer' }) => {
         const mockMediator = createMockMediator(user);
         
         return render(
@@ -144,7 +151,7 @@ describe('GameMenu', () => {
         expect(screen.getByText('Чат')).toBeInTheDocument();
     });
 
-    test('вызывает setPage с PAGES.GAME при клике на "Вернуться в игру"', () => {
+    test('вызывает setPage при клике на "Вернуться в игру"', () => {
         renderGameMenu();
         
         fireEvent.click(screen.getByText('Вернуться в игру'));
@@ -152,7 +159,7 @@ describe('GameMenu', () => {
         expect(mockSetPage).toHaveBeenCalled();
     });
 
-    test('вызывает setPage с PAGES.CHAT при клике на "Чат"', () => {
+    test('вызывает setPage при клике на "Чат"', () => {
         renderGameMenu();
         
         fireEvent.click(screen.getByText('Чат'));

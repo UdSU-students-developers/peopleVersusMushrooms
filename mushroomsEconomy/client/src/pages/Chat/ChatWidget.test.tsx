@@ -1,8 +1,8 @@
-// ChatWidget.test.tsx
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import ChatWidget from './ChatWidget';
+import { TMessage } from '../../services/Server/types';
+import ChatWidget from './ChatWidget'; 
 
 jest.mock('../../Game/GameProcess', () => ({ __esModule: true, default: jest.fn() }));
 jest.mock('../../services/Canvas/Canvas', () => ({ __esModule: true, default: jest.fn() }));
@@ -35,13 +35,29 @@ jest.mock('../../config', () => ({
     },
 }));
 
-const createMockMediator = (user = null, messages = []) => {
+interface MockUser {
+    name: string;
+}
+
+interface MockMediator {
+    get: jest.Mock;
+    subscribe: jest.Mock;
+    unsubscribe: jest.Mock;
+    getEventTypes: jest.Mock;
+}
+
+interface MockServer {
+    sendMessage: jest.Mock;
+    getMessages: jest.Mock;
+}
+
+const createMockMediator = (user: MockUser | null = null, messages: TMessage[] = []): MockMediator => {
     const getEventTypes = jest.fn(() => ({
         NEW_MESSAGE: 'NEW_MESSAGE',
         MESSAGES_LOADED: 'MESSAGES_LOADED',
     }));
     
-    const get = jest.fn((trigger, name) => {
+    const get = jest.fn((trigger: string, name: string) => {
         if (trigger === 'GET_STORE' && name === 'user') return user;
         if (trigger === 'GET_STORE' && name === 'messages') return messages;
         return null;
@@ -53,14 +69,14 @@ const createMockMediator = (user = null, messages = []) => {
     return { get, subscribe, unsubscribe, getEventTypes };
 };
 
-const createMockServer = () => ({
+const createMockServer = (): MockServer => ({
     sendMessage: jest.fn(),
     getMessages: jest.fn(),
 });
 
 describe('ChatWidget', () => {
-    let mockServer: ReturnType<typeof createMockServer>;
-    let mockMediator: ReturnType<typeof createMockMediator>;
+    let mockServer: MockServer;
+    let mockMediator: MockMediator;
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -68,7 +84,7 @@ describe('ChatWidget', () => {
         mockMediator = createMockMediator({ name: 'TestUser' }, []);
     });
 
-    const renderChatWidget = (user = { name: 'TestUser' }, messages = []) => {
+    const renderChatWidget = (user: MockUser | null = { name: 'TestUser' }, messages: TMessage[] = []) => {
         mockMediator = createMockMediator(user, messages);
         
         const { MediatorContext, ServerContext, GameContext } = require('../../App');
@@ -118,7 +134,7 @@ describe('ChatWidget', () => {
     });
 
     test('отображает список сообщений', () => {
-        const messages = [
+        const messages: TMessage[] = [
             { author: 'User1', message: 'Привет!', created: new Date().toISOString() },
             { author: 'User2', message: 'Здравствуй!', created: new Date().toISOString() },
         ];

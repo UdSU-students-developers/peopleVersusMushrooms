@@ -1,137 +1,240 @@
-// ChatWidget.test.tsx
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import LobbyMenu from './LobbyMenu';
+import { MediatorContext, ServerContext } from '../../App';
 
-// Мокаем все зависимости
-jest.mock('../../Game/GameProcess', () => ({ __esModule: true, default: jest.fn() }));
-jest.mock('../../services/Canvas/Canvas', () => ({ __esModule: true, default: jest.fn() }));
-jest.mock('../../Game/Sprites', () => ({
-    getTerrainSprite: jest.fn(),
-    getMushroomSprite: jest.fn(),
-    SPRITE: {},
+jest.mock('../../components/Button/Button', () => ({
+    __esModule: true,
+    default: ({ onClick, text, variant, className, isDisabled }: any) => (
+        <button 
+            onClick={onClick} 
+            className={className} 
+            data-variant={variant}
+            disabled={isDisabled}
+        >
+            {text}
+        </button>
+    ),
 }));
+
 jest.mock('../../config', () => ({
-    CHAT_MAX_MESSAGE_LENGTH: 100,
-    MEDIATOR: { TRIGGERS: { GET_STORE: 'GET_STORE', SET_STORE: 'SET_STORE' } },
-    SOCKET: { START_GAME: 'START_GAME', UPDATE_SCENE: 'UPDATE_SCENE', RELIEF_LOADED: 'RELIEF_LOADED' },
-    GRAPHICS: { BORDER_PADDING: 0, MIN_ZOOM: 0.5, MAX_ZOOM: 2, ZOOM_FACTOR: 0.1, MAP_SIZE: 100, WINDOW: { WIDTH: 800, HEIGHT: 600, LEFT: 0, TOP: 0 } },
-}));
-
-// Глобальные переменные для моков
-const mockSubscribe = jest.fn();
-const mockUnsubscribe = jest.fn();
-const mockGetEventTypes = jest.fn(() => ({
-    NEW_MESSAGE: 'NEW_MESSAGE',
-    MESSAGES_LOADED: 'MESSAGES_LOADED',
-}));
-const mockGet = jest.fn();
-const mockSendMessage = jest.fn();
-const mockGetMessages = jest.fn();
-
-// Мокаем App с возвратом контекстов, которые используют замыкание на моки
-jest.mock('../../App', () => ({
-    MediatorContext: React.createContext({
-        get: (trigger: string, name: string) => {
-            if (trigger === 'GET_STORE' && name === 'user') return { name: 'TestUser' };
-            if (trigger === 'GET_STORE' && name === 'messages') return [];
-            return null;
+    MEDIATOR: {
+        TRIGGERS: {
+            GET_STORE: 'GET_STORE',
+            SET_STORE: 'SET_STORE',
         },
-        subscribe: (...args: any[]) => mockSubscribe(...args),
-        unsubscribe: (...args: any[]) => mockUnsubscribe(...args),
-        getEventTypes: () => mockGetEventTypes(),
-    }),
-    ServerContext: React.createContext({
-        sendMessage: (msg: string) => mockSendMessage(msg),
-        getMessages: () => mockGetMessages(),
-    }),
-    GameContext: React.createContext(null),
+    },
+    SOCKET: {
+        CREATE_LOBBY: 'CREATE_LOBBY',
+        GET_LOBBIES: 'GET_LOBBIES',
+        JOIN_TO_LOBBY: 'JOIN_TO_LOBBY',
+        LOBBY_UPDATED: 'LOBBY_UPDATED',
+        LOBBIES_LIST_UPDATED: 'LOBBIES_LIST_UPDATED',
+        SET_READY: 'SET_READY',
+        START_GAME: 'START_GAME',
+    },
 }));
 
-import ChatWidget from './ChatWidget';
+interface MockLobby {
+    lobbyGuid: string;
+    lobbyName: string;
+    playersGuids: {
+        spectator: string | null;
+        peopleArmy: string | null;
+        peopleEconomy: string | null;
+        mushroomsArmy: string | null;
+        mushroomsEconomy: string | null;
+        mapGuid: string | null;
+    };
+    playersIsReady: {
+        spectator: boolean;
+        peopleArmy: boolean;
+        peopleEconomy: boolean;
+        mushroomsArmy: boolean;
+        mushroomsEconomy: boolean;
+    };
+}
 
-describe('ChatWidget', () => {
+interface MockUser {
+    name: string;
+    guid: string;
+}
+
+interface MockMediator {
+    subscribe: jest.Mock;
+    unsubscribe: jest.Mock;
+    get: jest.Mock;
+    getEventTypes: jest.Mock;
+    call: jest.Mock;
+}
+
+interface MockServer {
+    createLobby: jest.Mock;
+    getLobbies: jest.Mock;
+    joinToLobby: jest.Mock;
+    setReady: jest.Mock;
+    startGame: jest.Mock;
+    dropFromLobby: jest.Mock;
+}
+
+const createMockMediator = (user: MockUser | null = null, lobby: MockLobby | null = null, lobbies: MockLobby[] = []): MockMediator => {
+    const subscribe = jest.fn();
+    const unsubscribe = jest.fn();
+    const call = jest.fn();
+    const getEventTypes = jest.fn(() => ({
+        LOBBY_UPDATED: 'LOBBY_UPDATED',
+        LOBBIES_LIST_UPDATED: 'LOBBIES_LIST_UPDATED',
+        START_GAME: 'START_GAME',
+    }));
+    
+    const get = jest.fn((trigger: string, name: string) => {
+        if (trigger === 'GET_STORE' && name === 'user') return user;
+        if (trigger === 'GET_STORE' && name === 'lobby') return lobby;
+        if (trigger === 'GET_STORE' && name === 'lobbies') return lobbies;
+        return null;
+    });
+    
+    return { subscribe, unsubscribe, get, getEventTypes, call };
+};
+
+const createMockServer = (): MockServer => ({
+    createLobby: jest.fn(),
+    getLobbies: jest.fn(),
+    joinToLobby: jest.fn(),
+    setReady: jest.fn(),
+    startGame: jest.fn(),
+    dropFromLobby: jest.fn(),
+});
+
+describe('LobbyMenu', () => {
+    let mockServer: MockServer;
+    let mockMediator: MockMediator;
+    const mockSetPage = jest.fn();
+
     beforeEach(() => {
         jest.clearAllMocks();
+        mockServer = createMockServer();
+        mockMediator = createMockMediator({ name: 'TestPlayer', guid: 'player-guid' });
     });
 
-    test('не рендерит ничего если пользователь не авторизован', async () => {
-        const { rerender } = render(<ChatWidget />);
+    const renderLobbyMenu = (user: MockUser | null = { name: 'TestPlayer', guid: 'player-guid' }, lobby: MockLobby | null = null, lobbies: MockLobby[] = []) => {
+        mockMediator = createMockMediator(user, lobby, lobbies);
         
-        expect(screen.queryByRole('button')).not.toBeInTheDocument();
+        const { MediatorContext, ServerContext } = require('../../App');
+        
+        return render(
+            <ServerContext.Provider value={mockServer as any}>
+                <MediatorContext.Provider value={mockMediator as any}>
+                    <LobbyMenu setPage={mockSetPage} />
+                </MediatorContext.Provider>
+            </ServerContext.Provider>
+        );
+    };
+
+    test('отображает заголовок лобби', () => {
+        renderLobbyMenu();
+        
+        expect(screen.getByText('Лобби')).toBeInTheDocument();
     });
 
-    test('показывает кнопку открытия чата когда пользователь авторизован', () => {
-        render(<ChatWidget />);
+    test('отображает имя пользователя', () => {
+        renderLobbyMenu({ name: 'TestPlayer', guid: 'player-guid' });
         
-        expect(screen.getByText('💬')).toBeInTheDocument();
+        expect(screen.getByText('Игрок: TestPlayer')).toBeInTheDocument();
     });
 
-    test('открывает окно чата при клике на кнопку', () => {
-        render(<ChatWidget />);
-        fireEvent.click(screen.getByText('💬'));
+    test('отображает поле ввода для создания лобби', () => {
+        renderLobbyMenu();
         
-        expect(screen.getByText('Чат')).toBeInTheDocument();
-        expect(screen.getByPlaceholderText('Сообщение...')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('Название лобби')).toBeInTheDocument();
     });
 
-    test('закрывает окно чата при клике на крестик', () => {
-        render(<ChatWidget />);
-        fireEvent.click(screen.getByText('💬'));
-        expect(screen.getByText('Чат')).toBeInTheDocument();
+    test('отображает кнопку создания лобби', () => {
+        renderLobbyMenu();
         
-        fireEvent.click(screen.getByText('✕'));
-        expect(screen.queryByText('Чат')).not.toBeInTheDocument();
-        expect(screen.getByText('💬')).toBeInTheDocument();
+        expect(screen.getByText('Создать лобби')).toBeInTheDocument();
     });
 
-    test('отправляет сообщение при клике на кнопку', async () => {
-        render(<ChatWidget />);
-        fireEvent.click(screen.getByText('💬'));
+    test('отображает кнопку обновления списка лобби', () => {
+        renderLobbyMenu();
         
-        const input = screen.getByPlaceholderText('Сообщение...');
-        await userEvent.type(input, 'Тестовое сообщение');
-        
-        fireEvent.click(screen.getByText('→'));
-        
-        expect(mockSendMessage).toHaveBeenCalledWith('Тестовое сообщение');
-        expect(input).toHaveValue('');
+        expect(screen.getByText('Обновить')).toBeInTheDocument();
     });
 
-    test('отправляет сообщение при нажатии Enter', async () => {
-        render(<ChatWidget />);
-        fireEvent.click(screen.getByText('💬'));
+    test('отображает список доступных лобби', () => {
+        const lobbies: MockLobby[] = [
+            {
+                lobbyGuid: 'lobby-1',
+                lobbyName: 'Test Lobby 1',
+                playersGuids: {
+                    spectator: null,
+                    peopleArmy: null,
+                    peopleEconomy: null,
+                    mushroomsArmy: null,
+                    mushroomsEconomy: null,
+                    mapGuid: null,
+                },
+                playersIsReady: {
+                    spectator: false,
+                    peopleArmy: false,
+                    peopleEconomy: false,
+                    mushroomsArmy: false,
+                    mushroomsEconomy: false,
+                },
+            },
+        ];
         
-        const input = screen.getByPlaceholderText('Сообщение...');
-        await userEvent.type(input, 'Сообщение с Enter{enter}');
+        renderLobbyMenu({ name: 'TestPlayer', guid: 'player-guid' }, null, lobbies);
         
-        expect(mockSendMessage).toHaveBeenCalledWith('Сообщение с Enter');
+        expect(screen.getByText('Test Lobby 1')).toBeInTheDocument();
     });
 
-    test('не отправляет пустое сообщение', async () => {
-        render(<ChatWidget />);
-        fireEvent.click(screen.getByText('💬'));
+    test('отображает сообщение об отсутствии лобби', () => {
+        renderLobbyMenu();
         
-        const input = screen.getByPlaceholderText('Сообщение...');
-        await userEvent.type(input, '   {enter}');
-        
-        expect(mockSendMessage).not.toHaveBeenCalled();
+        expect(screen.getByText('Нет доступных лобби')).toBeInTheDocument();
     });
 
-    test('показывает ошибку при превышении лимита символов', async () => {
-        const mockAlert = jest.spyOn(window, 'alert').mockImplementation(() => {});
-        render(<ChatWidget />);
-        fireEvent.click(screen.getByText('💬'));
+    test('создаёт лобби при клике на кнопку', () => {
+        renderLobbyMenu();
         
-        const input = screen.getByPlaceholderText('Сообщение...');
-        const longMessage = 'a'.repeat(101);
-        await userEvent.type(input, longMessage);
+        const input = screen.getByPlaceholderText('Название лобби');
+        fireEvent.change(input, { target: { value: 'New Lobby' } });
         
-        fireEvent.click(screen.getByText('→'));
+        fireEvent.click(screen.getByText('Создать лобби'));
         
-        expect(mockAlert).toHaveBeenCalledWith('Сообщение не должно превышать 100 символов');
-        expect(mockSendMessage).not.toHaveBeenCalled();
+        expect(mockServer.createLobby).toHaveBeenCalledWith('New Lobby');
+    });
+
+    test('не создаёт лобби с пустым названием', () => {
+        renderLobbyMenu();
         
-        mockAlert.mockRestore();
+        fireEvent.click(screen.getByText('Создать лобби'));
+        
+        expect(mockServer.createLobby).not.toHaveBeenCalled();
+    });
+
+    test('вызывает getLobbies при клике на обновить', () => {
+        renderLobbyMenu();
+        
+        fireEvent.click(screen.getByText('Обновить'));
+        
+        expect(mockServer.getLobbies).toHaveBeenCalled();
+    });
+
+    test('подписывается на события при монтировании', () => {
+        renderLobbyMenu();
+        
+        expect(mockMediator.subscribe).toHaveBeenCalledWith('LOBBY_UPDATED', expect.any(Function));
+        expect(mockMediator.subscribe).toHaveBeenCalledWith('LOBBIES_LIST_UPDATED', expect.any(Function));
+        expect(mockMediator.subscribe).toHaveBeenCalledWith('START_GAME', expect.any(Function));
+    });
+
+    test('отписывается от событий при размонтировании', () => {
+        const { unmount } = renderLobbyMenu();
+        unmount();
+        
+        expect(mockMediator.unsubscribe).toHaveBeenCalledWith('LOBBY_UPDATED', expect.any(Function));
+        expect(mockMediator.unsubscribe).toHaveBeenCalledWith('LOBBIES_LIST_UPDATED', expect.any(Function));
     });
 });

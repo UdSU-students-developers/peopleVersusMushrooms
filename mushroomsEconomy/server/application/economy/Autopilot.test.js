@@ -37,12 +37,14 @@ describe('Autopilot Tests', () => {
         mockEconomy = {
             resources: { iron: 100, energy: 100 },
             units: { larvae: [], workers: [] },
-            buildings: { mines: [], reactors: [], incubators: [] },
+            buildings: { 
+                mines: [], 
+                reactors: [], 
+                incubators: [] 
+            },
             guids: { mushroomsArmy: 'army-guid-123' },
             spawnArmyUnit: jest.fn(),
-            mutateWorkerToReactor: jest.fn(),
-            mutateWorkerToSmallReactor: jest.fn(),
-            mutateWorkerToIncubator: jest.fn(),
+            updated: false,
         };
     });
 
@@ -68,66 +70,63 @@ describe('Autopilot Tests', () => {
         });
     });
 
-    describe('_updatePriority', () => {
-        test('должен установить приоритет army когда запросов > 3', () => {
-            autopilot.addUnitRequests('sporomet', 2);
-            autopilot.addBuildingRequests('reactor', 2);
-            
-            autopilot._updatePriority();
-            expect(autopilot.prioritet).toBe('army');
-        });
-
-        test('должен установить приоритет economy когда запросов <= 3', () => {
-            autopilot.addUnitRequests('sporomet', 1);
-            autopilot.addBuildingRequests('reactor', 1);
-            
-            autopilot._updatePriority();
-            expect(autopilot.prioritet).toBe('economy');
-        });
-
-        test('должен установить приоритет economy когда запросов нет', () => {
-            autopilot._updatePriority();
-            expect(autopilot.prioritet).toBe('economy');
-        });
-    });
-
-    describe('_getIronProductionPerTick', () => {
+    describe('_getIronPerTick', () => {
         test('должен рассчитывать производство железа', () => {
             mockEconomy.buildings.mines = [{}, {}, {}];
-            const production = autopilot._getIronProductionPerTick(mockEconomy);
+            const production = autopilot._getIronPerTick(mockEconomy);
             expect(production).toBe(6);
         });
 
         test('должен вернуть 0 когда нет шахт', () => {
             mockEconomy.buildings.mines = [];
-            const production = autopilot._getIronProductionPerTick(mockEconomy);
+            const production = autopilot._getIronPerTick(mockEconomy);
             expect(production).toBe(0);
         });
     });
 
-    describe('_getEnergyProductionPerTick', () => {
+    describe('_getEnergyPerTick', () => {
         test('должен рассчитывать производство энергии', () => {
             mockEconomy.buildings.reactors = [
                 { type: 'reactor' },
                 { type: 'small_reactor' },
                 { type: 'reactor' },
             ];
-            const production = autopilot._getEnergyProductionPerTick(mockEconomy);
+            const production = autopilot._getEnergyPerTick(mockEconomy);
             expect(production).toBe(13);
         });
 
         test('должен вернуть 0 когда нет реакторов', () => {
             mockEconomy.buildings.reactors = [];
-            const production = autopilot._getEnergyProductionPerTick(mockEconomy);
+            const production = autopilot._getEnergyPerTick(mockEconomy);
             expect(production).toBe(0);
         });
     });
 
-    describe('_getLarvaeProductionPerTick', () => {
-        test('должен рассчитывать производство личинок', () => {
-            mockEconomy.buildings.incubators = [{}, {}, {}];
-            const production = autopilot._getLarvaeProductionPerTick(mockEconomy);
-            expect(production).toBe(3);
+    describe('_updatePriority', () => {
+        test('должен установить приоритет army когда есть запросы и экономика готова', () => {
+            mockEconomy.buildings.mines = [{}, {}];
+            mockEconomy.buildings.reactors = [{ type: 'reactor' }, { type: 'small_reactor' }];
+            autopilot.addUnitRequests('sporomet', 2);
+            
+            autopilot._updatePriority(mockEconomy);
+            expect(autopilot.priority).toBe('army');
+        });
+
+        test('должен установить приоритет economy когда запросов нет', () => {
+            autopilot._updatePriority(mockEconomy);
+            expect(autopilot.priority).toBe('economy');
+        });
+    });
+
+    describe('_getSmallReactorEquivalent', () => {
+        test('должен вернуть 1 для малого реактора', () => {
+            const result = autopilot._getSmallReactorEquivalent({ type: 'small_reactor' });
+            expect(result).toBe(1);
+        });
+
+        test('должен вернуть 2 для большого реактора', () => {
+            const result = autopilot._getSmallReactorEquivalent({ type: 'reactor' });
+            expect(result).toBe(2);
         });
     });
 
@@ -148,12 +147,12 @@ describe('Autopilot Tests', () => {
             expect(result).toBe('reactor');
         });
 
-        test('должен вернуть тип с наименьшей эффективностью', () => {
+        test('должен вернуть reactor когда соотношение наименьшее', () => {
             mockEconomy.buildings.mines = [{}];
-            mockEconomy.buildings.reactors = [{}];
+            mockEconomy.buildings.reactors = [{ type: 'small_reactor' }];
             mockEconomy.buildings.incubators = [{}];
             const result = autopilot._getNeededBuildingType(mockEconomy);
-            expect(result).toBe('incubator');
+            expect(result).toBe('reactor');
         });
     });
 
@@ -166,7 +165,7 @@ describe('Autopilot Tests', () => {
 
         test('должен мутировать личинку в армейский юнит при приоритете army', () => {
             autopilot.addUnitRequests('sporomet', 2);
-            autopilot.prioritet = 'army';
+            autopilot.priority = 'army';
             
             autopilot._mutateLarvae(mockEconomy);
             
@@ -185,7 +184,7 @@ describe('Autopilot Tests', () => {
         test('не должен мутировать если недостаточно железа', () => {
             mockEconomy.resources.iron = 5;
             autopilot.addUnitRequests('sporomet', 1);
-            autopilot.prioritet = 'army';
+            autopilot.priority = 'army';
             
             autopilot._mutateLarvae(mockEconomy);
             expect(mockEconomy.spawnArmyUnit).not.toHaveBeenCalled();
@@ -194,7 +193,7 @@ describe('Autopilot Tests', () => {
         test('не должен мутировать если недостаточно энергии', () => {
             mockEconomy.resources.energy = 10;
             autopilot.addUnitRequests('sporomet', 1);
-            autopilot.prioritet = 'army';
+            autopilot.priority = 'army';
             
             autopilot._mutateLarvae(mockEconomy);
             expect(mockEconomy.spawnArmyUnit).not.toHaveBeenCalled();
@@ -202,73 +201,62 @@ describe('Autopilot Tests', () => {
 
         test('не должен мутировать при приоритете economy', () => {
             autopilot.addUnitRequests('sporomet', 1);
-            autopilot.prioritet = 'economy';
+            autopilot.priority = 'economy';
             
             autopilot._mutateLarvae(mockEconomy);
             expect(mockEconomy.spawnArmyUnit).not.toHaveBeenCalled();
         });
     });
 
-    describe('_mutateWorkers (режим ARMY)', () => {
-        const mockWorker = { guid: 'worker-1' };
+    describe('_assignWorkers (режим ARMY)', () => {
+        const mockWorker = { guid: 'worker-1', assignedBuilding: null };
 
         beforeEach(() => {
             mockEconomy.units.workers = [mockWorker];
-            autopilot.prioritet = 'army';
+            autopilot.priority = 'army';
         });
 
-        test('должен мутировать рабочего в большой реактор со стоимостью 60 железа', () => {
+        test('должен назначить рабочему задание построить реактор', () => {
             autopilot.addBuildingRequests('reactor', 1);
             
-            autopilot._mutateWorkers(mockEconomy);
+            autopilot._assignWorkers(mockEconomy);
             
-            expect(mockEconomy.mutateWorkerToReactor).toHaveBeenCalledWith(mockWorker);
-            expect(mockEconomy.resources.iron).toBe(40);
+            expect(mockWorker.assignedBuilding).toBe('reactor');
             expect(autopilot.requestsFromArmy.buildings).toHaveLength(0);
         });
 
-        test('должен мутировать рабочего в малый реактор со стоимостью 30 железа', () => {
+        test('должен назначить рабочему задание построить малый реактор', () => {
             autopilot.addBuildingRequests('small_reactor', 1);
             
-            autopilot._mutateWorkers(mockEconomy);
+            autopilot._assignWorkers(mockEconomy);
             
-            expect(mockEconomy.mutateWorkerToSmallReactor).toHaveBeenCalledWith(mockWorker);
-            expect(mockEconomy.resources.iron).toBe(70);
+            expect(mockWorker.assignedBuilding).toBe('small_reactor');
         });
 
-        test('не должен мутировать если недостаточно железа', () => {
+        test('не должен назначать если недостаточно железа', () => {
             mockEconomy.resources.iron = 20;
             autopilot.addBuildingRequests('reactor', 1);
             
-            autopilot._mutateWorkers(mockEconomy);
-            expect(mockEconomy.mutateWorkerToReactor).not.toHaveBeenCalled();
+            autopilot._assignWorkers(mockEconomy);
+            expect(mockWorker.assignedBuilding).toBeNull();
         });
     });
 
-    describe('_mutateWorkers (режим ECONOMY)', () => {
-        const mockWorker = { guid: 'worker-1' };
+    describe('_assignWorkers (режим ECONOMY)', () => {
+        const mockWorker = { guid: 'worker-1', assignedBuilding: null };
 
         beforeEach(() => {
             mockEconomy.units.workers = [mockWorker];
-            autopilot.prioritet = 'economy';
+            autopilot.priority = 'economy';
+            mockEconomy.buildings.mines = [{}];
+            mockEconomy.buildings.reactors = [{ type: 'small_reactor' }];
+            mockEconomy.buildings.incubators = [];
         });
 
-        test('должен мутировать рабочего в малый реактор при необходимости', () => {
-            jest.spyOn(autopilot, '_getNeededBuildingType').mockReturnValue('reactor');
+        test('должен назначить рабочему задание на основе потребности', () => {
+            autopilot._assignWorkers(mockEconomy);
             
-            autopilot._mutateWorkers(mockEconomy);
-            
-            expect(mockEconomy.mutateWorkerToSmallReactor).toHaveBeenCalledWith(mockWorker);
-            expect(mockEconomy.resources.iron).toBe(70);
-        });
-
-        test('должен мутировать рабочего в инкубатор при необходимости', () => {
-            jest.spyOn(autopilot, '_getNeededBuildingType').mockReturnValue('incubator');
-            
-            autopilot._mutateWorkers(mockEconomy);
-            
-            expect(mockEconomy.mutateWorkerToIncubator).toHaveBeenCalledWith(mockWorker);
-            expect(mockEconomy.resources.iron).toBe(60);
+            expect(mockWorker.assignedBuilding).toBe('incubator');
         });
     });
 
@@ -276,13 +264,13 @@ describe('Autopilot Tests', () => {
         test('должен вызывать все методы обновления в правильном порядке', () => {
             const updatePrioritySpy = jest.spyOn(autopilot, '_updatePriority');
             const mutateLarvaeSpy = jest.spyOn(autopilot, '_mutateLarvae');
-            const mutateWorkersSpy = jest.spyOn(autopilot, '_mutateWorkers');
+            const assignWorkersSpy = jest.spyOn(autopilot, '_assignWorkers');
 
             autopilot.update(mockEconomy);
             
-            expect(updatePrioritySpy).toHaveBeenCalled();
+            expect(updatePrioritySpy).toHaveBeenCalledWith(mockEconomy);
             expect(mutateLarvaeSpy).toHaveBeenCalledWith(mockEconomy);
-            expect(mutateWorkersSpy).toHaveBeenCalledWith(mockEconomy);
+            expect(assignWorkersSpy).toHaveBeenCalledWith(mockEconomy);
         });
     });
 });

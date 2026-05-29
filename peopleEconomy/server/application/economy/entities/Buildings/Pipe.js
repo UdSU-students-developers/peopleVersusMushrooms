@@ -1,24 +1,18 @@
-const Building = require('./Building');
+const CONFIG = require('../../../../config');
+const Building = require('../Building');
 
 class Pipe extends Building {
-    constructor({ guid, x, y,  callbacks = {} }) {
+    constructor({ guid, x, y, callbacks = {} }) {
         super({
-            type: 'pipe',
             guid,
             x,
             y,
             callbacks,
-            hp: 100,
-            size: 1,
+            ...CONFIG.ECONOMY.BUILDINGS.PIPE
         });
-        
+        this.is_walkable = true;
     }
     
-    get() {
-        return {
-            ...super.get()
-        };
-    }
 }
 
 module.exports = Pipe;

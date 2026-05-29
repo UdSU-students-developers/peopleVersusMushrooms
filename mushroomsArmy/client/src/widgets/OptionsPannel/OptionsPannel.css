@@ -1,0 +1,313 @@
+.options-pannel-container {
+  position: fixed;
+  padding: 14px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  z-index: 20;
+  box-sizing: border-box;
+  width: min(var(--options-panel-size), calc(100vw - 12px));
+  height: min(var(--options-panel-size), calc(100vh - 12px));
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform-origin: top right;
+  border-radius: 0 0 10px 10px;
+  font-family: var(--font-main);
+}
+/* кнопка-кретсик -- выход из панели*/
+.options-close-button {
+  position: absolute;
+  top: 6px;
+  right:7px;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.options-pannel-container.is-open {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+.options-pannel-container.is-closed {
+  opacity: 0;
+  transform: scale(0.96);
+  pointer-events: none;
+}
+
+/* из текста пока только "размер интерфейса" */
+.options-title {
+  color: #321005;
+  font-family: var(--font-main);
+  font-size: 19px;
+  text-align: center;
+  margin-bottom: 16px;
+
+  margin-top: 25px;
+}
+/* надпись "настройки" */
+.options-settings-title {
+  color: #321005;
+  font-family: var(--font-main);
+  font-size: 24px;
+  text-align: center;
+  margin-top: -6px;
+  margin-bottom: 10px;
+}
+
+.options-controls {
+  margin-top: -120px;
+}
+
+/* черепушка-ползунок */
+.hud-scale-slider {
+  --slider-thumb-size: 25px;
+  --slider-thumb-border: 2px;
+  --slider-thumb-image: url('../../assets/ui/scull-button.webp');
+  width: 88%;
+  display: block;
+  margin: 0 auto;
+  padding: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+/* сам ползунок */
+.hud-scale-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  background: rgb(0, 16, 17);
+  border-radius: 20px;
+}
+.hud-scale-slider::-moz-range-track {
+  width: 100%;
+  height: 4px;
+  background: #a55f1e;
+  border-radius: 2px;
+}
+.hud-scale-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: var(--slider-thumb-size);
+  height: var(--slider-thumb-size);
+  margin-top: calc((4px - var(--slider-thumb-size)) / 2);
+  background-color: transparent;
+  background-image: var(--slider-thumb-image);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: none;
+  border-radius: 0;
+  cursor: grab;
+  box-shadow: none;
+}
+.hud-scale-slider::-moz-range-thumb {
+  width: var(--slider-thumb-size);
+  height: var(--slider-thumb-size);
+  background-color: transparent;
+  background-image: var(--slider-thumb-image);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: none;
+  border-radius: 0;
+  cursor: grab;
+  box-shadow: none;
+}
+.scale-dots-group {
+  width: 88%;
+  display: flex;
+  justify-content: space-between;
+  margin: 14px auto 0;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+.scale-dot {
+  width: 10px;
+  height: 10px;
+  background-color: rgb(118, 118, 92);
+  box-shadow: 20px, rgb(0, 16, 17);
+  border: 1px solid rgb(0, 16, 17);
+  border-radius: 20%;
+}
+.scale-dot.active {
+  background-color: #b72626;
+  box-shadow: 
+    0 0 10px rgba(255, 0, 0, 0.7),
+    0 0 20px rgba(255, 0, 0, 0.726),
+    0 0 30px rgba(255, 0, 0, 0.3);
+  border: rgb(125, 12, 12);
+}
+
+/* кнопки выхода (сдаться и выйти) используются на разных страницах */
+.options-surrender-button,
+.options-exit-button {
+  position: absolute;
+  left: 23px;
+  right: 23px;
+  bottom: 23px;
+  width: auto;
+  min-height: 34px;
+  background-color: #2d3d14;
+  color: #b30e0e;
+  border: 2px solid #bc1907;
+  border-radius: 6px;
+  font-family: var(--font-main);
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+/* Общий hover-эффект */
+.options-surrender-button:hover,
+.options-exit-button:hover {
+  background-color: #a00a0a;
+  border-color: #c0392b;
+  color: #ffd8d8;
+}
+
+@media (max-width: 768px) {
+  .options-pannel-container {
+    padding: 8px;
+  }
+}
+
+
+
+
+
+
+
+
+/*-------------------------------AUFTORISATION-------------------------------------------*/
+
+.options-pannel-container--auth {
+  background: rgba(52, 152, 219, 0.374);
+  border: 1px solid rgb(23, 32, 129);
+  border-top: none;
+}
+.options-pannel-container--auth .options-title {
+ color: rgb(238, 223, 218);
+ text-shadow: 
+    -0.9px -0.9px 0 rgb(23, 32, 129), 
+    0.9px -0.9px 0 rgb(23, 32, 129),
+    -0.9px  0.9px 0 rgb(23, 32, 129),
+    0.9px  0.9px 0 rgb(23, 32, 129);
+}
+.options-pannel-container--lobby .options-settings-title {
+  color: rgb(217, 144, 54);
+  /* text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); */
+  text-shadow: 
+    -0.9px -0.9px 0 rgb(113, 22, 22),  
+    0.9px -0.9px 0 rgb(113, 22, 22),
+    -0.9px  0.9px 0 rgb(113, 22, 22),
+    0.9px  0.9px 0 rgb(113, 22, 22);
+}
+.options-pannel-container--auth .options-settings-title {
+  color: rgb(29, 25, 95);
+  /* text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); */
+  text-shadow: 10px rgb(255, 255, 255);
+}
+/*----------------------------END--OF--AUFTORISATION-------------------------------------*/
+
+
+
+
+/*-------------------------------------LOBBY---------------------------------------------*/
+.options-pannel-container--lobby {
+  background: rgba(255, 255, 255, 0.08); 
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-top: none;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+.options-pannel-container--lobby::before {
+  content: "";
+  position: absolute;
+  
+  /* отступ от краев панели со всех сторон */
+  top: 6px;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  
+  border: 1px solid rgba(4, 15, 14, 0.568);
+  border-radius: 6px;
+  
+  pointer-events: none; 
+  box-sizing: border-box;
+}
+
+.options-pannel-container--lobby .options-title {
+ color: rgb(185, 177, 174);
+ text-shadow: 
+    -0.9px -0.9px 0 rgb(0, 16, 17),  
+    0.9px -0.9px 0 rgb(0, 16, 17),
+    -0.9px  0.9px 0 rgb(0, 16, 17),
+    0.9px  0.9px 0 rgb(0, 16, 17);
+}
+.options-pannel-container--lobby .options-settings-title {
+  color: rgb(217, 144, 54);
+  /* text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); */
+  text-shadow: 
+    -0.9px -0.9px 0 rgb(113, 22, 22),  
+    0.9px -0.9px 0 rgb(113, 22, 22),
+    -0.9px  0.9px 0 rgb(113, 22, 22),
+    0.9px  0.9px 0 rgb(113, 22, 22);
+}
+.options-pannel-container--lobby .options-exit-button {
+  background-color: transparent;
+  color: rgb(185, 177, 174);
+  border: 1px solid rgb(0, 16, 17);
+}
+.options-pannel-container--lobby .options-exit-button:hover {
+  background-color: #49060681;
+  color: rgb(217, 144, 54);
+}
+.options-pannel-container--lobby .options-close-button {
+  color: rgb(217, 144, 54); 
+  background-color: transparent;
+}
+.options-pannel-container--lobby .options-close-button:hover {
+  color: rgb(252, 162, 52);
+  background-color: #2d3d1489;
+}
+.options-pannel-container--lobby .scale-dot.scale-dot.active {
+  background-color: rgb(217, 144, 54);
+  box-shadow: 
+    0 0 10px rgba(217, 144, 54, 0.7),
+    0 0 20px rgba(217, 144, 54, 0.726),
+    0 0 30px rgba(217, 144, 54, 0.3);
+  border: 1px solid rgb(146, 93, 27)
+}
+/*-----------------------------END--OF--LOBBY----------------------------------------*/
+
+
+
+/*--------------------------------HUD----------------------------------------------------*/
+.options-pannel-container--hud {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-image: url('../../assets/ui/pixilart-optionsPannel.webp');
+}
+
+.options-pannel-container--hud .options-close-button {
+  color: #ee1704;
+  background: rgba(85, 22, 22, 0.911);
+  border: 1px solid #490606;
+}
+.options-pannel-container--hud .hud-scale-slider::-webkit-slider-runnable-track {
+  background: #908e62;
+  border: 1px solid rgba(0, 16, 17, 0.498);
+}
+.options-pannel-container--hud .options-close-button:hover {
+  color: rgba(255, 255, 255, 0.741);
+}
+
+/*------------------------------END--OF--HUD-------------------------------------------*/

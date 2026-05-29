@@ -98,6 +98,8 @@ export type TEconomyBuildings = {
 // ============= ЮНИТЫ ============
 
 export type TUnit = {
+    hp: number;
+    speed: number;
     guid: string;
     x: number;
     y: number;
@@ -106,27 +108,17 @@ export type TUnit = {
 }
 
 export type TWorker = TUnit & {
-    hp: number;
-    speed: number;
+    mode: 'wander' | 'goToIron';
+    targetResource: TPoint | null;
 }
 
 export type TLarva = TUnit & {
-    hp: number;
-    speed: number;
     growthScale: number;
-}
-
-export type TGeodesist = TUnit & {
-    hp: number;
-    speed: number;
-    mode: 'wander' | 'goToIron';
-    targetResource: TPoint | null;
 }
 
 export type TEconomyUnits = {
     workers: TWorker[];
     larvae: TLarva[];
-    geodezists: TGeodesist[];
 }
 
 
@@ -145,12 +137,21 @@ export type TMap = {
 
 }
 
+export type TResources = {
+    iron: number;
+    energy: number;
+}
+
 export type TScene = {
     guid: string;
     buildings: TEconomyBuildings;
     enemyBuildings: TBuilding[];
+    enemyUnits: TUnit[];
+    allyUnits: TUnit[];
     map: TMap;
     units: TEconomyUnits;
+    resources: TResources;
+    priority: string;
 }
 
 export type TLobby = {

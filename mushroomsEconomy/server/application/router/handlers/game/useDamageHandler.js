@@ -1,17 +1,17 @@
 module.exports = (mediator, answer) => (req, res) => {
-    const { APPLY_DAMAGE } = mediator.getEventTypes();
+    const { DAMAGE } = mediator.getEventTypes();
 
-    const { guid, damage, economyGuid } = req.body;
+    const { entityGuid, damage, mushroomsEconomy } = req.body;
 
-    if (!guid || typeof damage !== 'number' || !economyGuid) {
-        return res.json(answer.error('Invalid params'));
+    if (!entityGuid || typeof damage !== 'number' || !mushroomsEconomy) {
+        return res.send(answer.bad(242));
     }
 
-    const success = mediator.call(APPLY_DAMAGE, { guid, damage, economyGuid });
+    const response = mediator.call(DAMAGE, { entityGuid, damage, mushroomsEconomy });
 
-    if (!success) {
-        return res.json(answer.error('Target not found'));
+    if (response?.result) {
+        return res.send(response);
     }
 
-    return res.json(answer.success());
+    return res.send(answer.bad(4002));
 };

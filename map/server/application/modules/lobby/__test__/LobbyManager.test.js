@@ -214,4 +214,180 @@ describe('LobbyManager', () => {
             expect(result).toBeUndefined();
         });
     });
+
+        //========= ТЕСТЫ LEAVE_LOBBY =========
+    describe('ТЕСТЫ НА ВЫХОД ИЗ ЛОББИ', () => {
+        //positive
+        test('должен удалить обычного игрока из лобби при выходе', () => {
+            const mockLobby = {
+                lobbyGuid: 'lobby-guid',
+                removePlayer: jest.fn(() => true),
+                isGuidInLobby: jest.fn(() => true)
+            };
+        
+            lobbyManager.lobbies['lobby-guid'] = mockLobby;
+            lobbyManager.isGuidInAnyLobby = jest.fn(() => mockLobby);
+
+            const result = lobbyManager._leaveLobby({ guid: 'player-guid' });
+
+            expect(mockLobby.removePlayer).toHaveBeenCalledWith('player-guid');
+            expect(lobbyManager._destroyLobby).not.toHaveBeenCalled();
+            expect(mockAnswer.good).toHaveBeenCalledWith(true);
+        });
+
+        //positive
+        test('должен уничтожить все лобби, если выходит создатель', () => {
+            const mockLobby = {
+                lobbyGuid: 'lobby-guid',
+                removePlayer: jest.fn(),
+                isGuidInLobby: jest.fn(() => true)
+            };
+        
+            lobbyManager.lobbies['lobby-guid'] = mockLobby;
+            lobbyManager.isGuidInAnyLobby = jest.fn(() => mockLobby);
+
+            const result = lobbyManager._leaveLobby({ guid: 'lobby-guid' });
+
+            expect(mockLobby.removePlayer).not.toHaveBeenCalled();
+            expect(lobbyManager._destroyLobby).toHaveBeenCalledWith('lobby-guid');
+            expect(mockAnswer.good).toHaveBeenCalledWith(true);
+        });
+
+        //negative
+        test('должен вернуть ошибку 2006, если игрок не в лобби', () => {
+            lobbyManager.isGuidInAnyLobby = jest.fn(() => null);
+
+            const result = lobbyManager._leaveLobby({ guid: 'player-guid' });
+
+            expect(mockAnswer.bad).toHaveBeenCalledWith(2006);
+        });
+
+        //positive
+        test('должен корректно обработать выход игрока, который не является создателем, но в лобби есть другие игроки', () => {
+            const mockLobby = {
+                lobbyGuid: 'creator-guid',
+                removePlayer: jest.fn(() => true),
+                isGuidInLobby: jest.fn(() => true)
+            };
+        
+            lobbyManager.lobbies['creator-guid'] = mockLobby;
+            lobbyManager.isGuidInAnyLobby = jest.fn(() => mockLobby);
+
+            const result = lobbyManager._leaveLobby({ guid: 'player-guid' });
+
+            expect(mockLobby.removePlayer).toHaveBeenCalledWith('player-guid');
+            expect(lobbyManager.lobbies['creator-guid']).toBe(mockLobby);
+            expect(mockAnswer.good).toHaveBeenCalledWith(true);
+        });
+
+        //edge case
+        test('должен вернуть ошибку, если guid не передан', () => {
+           const result = lobbyManager._leaveLobby({ guid: undefined });
+        
+            expect(mockAnswer.bad).toHaveBeenCalledWith(2006);
+        });
+    });
+
+    //========= ТЕСТЫ START_GAME =========
+    describe('ТЕСТЫ НА СТАРТ ИГРЫ', () => {
+        //positive
+        test('должен успешно запустить игру, если все условия соблюдены', () => {
+            const mockLobby = {
+                lobbyGuid: 'creator-guid',
+                canStarted: jest.fn(() => true),
+                isGuidInLobby: jest.fn(() => true),
+                getGuids: jest.fn(() => ({
+                    lobbyGuid: 'creator-guid',
+                    spectator: 'spectator-guid',
+                    peopleArmy: 'army-guid',
+                    peopleEconomy: 'economy-guid',
+                    mushroomArmy: 'mushroom-army-guid',
+                    mushroomEconomy: 'mushroom-economy-guid'
+                }))
+            };
+        
+            lobbyManager.lobbies['creator-guid'] = mockLobby;
+            lobbyManager.isGuidInAnyLobby = jest.fn(() => mockLobby);
+            lobbyManager.mediator.call = jest.fn();
+
+            const result = lobbyManager._startGame({ guid: 'creator-guid' });
+
+            expect(mockLobby.canStarted).toHaveBeenCalled();
+            expect(lobbyManager.mediator.call).toHaveBeenCalledWith(
+                lobbyManager.EVENTS.START_GAME_MAP, 
+                mockLobby.getGuids()
+            );
+            expect(lobbyManager._destroyLobby).toHaveBeenCalledWith('creator-guid');
+            expect(mockAnswer.good).toHaveBeenCalledWith(true);
+        });
+
+        //negative
+        test('должен вернуть ошибку 2006, если игрок не в лобби', () => {
+            lobbyManager.isGuidInAnyLobby = jest.fn(() => null);
+
+            const result = lobbyManager._startGame({ guid: 'player-guid' });
+
+            expect(mockAnswer.bad).toHaveBeenCalledWith(2006);
+        });
+
+        //negative
+        test('должен вернуть ошибку 2010, если игрок не создатель лобби', () => {
+            const mockLobby = {
+                lobbyGuid: 'creator-guid',
+                canStarted: jest.fn(() => true),
+                isGuidInLobby: jest.fn(() => true)
+            };
+        
+            lobbyManager.lobbies['creator-guid'] = mockLobby;
+            lobbyManager.isGuidInAnyLobby = jest.fn(() => mockLobby);
+
+            const result = lobbyManager._startGame({ guid: 'player-guid' }); // не создатель
+
+            expect(mockAnswer.bad).toHaveBeenCalledWith(2010);
+            expect(mockLobby.canStarted).not.toHaveBeenCalled();
+            expect(lobbyManager._destroyLobby).not.toHaveBeenCalled();
+        });
+
+        //negative
+        test('должен вернуть ошибку 2012, если не все игроки готовы', () => {
+            const mockLobby = {
+                lobbyGuid: 'creator-guid',
+                canStarted: jest.fn(() => false), // не все готовы
+                isGuidInLobby: jest.fn(() => true)
+            };
+        
+            lobbyManager.lobbies['creator-guid'] = mockLobby;
+            lobbyManager.isGuidInAnyLobby = jest.fn(() => mockLobby);
+
+            const result = lobbyManager._startGame({ guid: 'creator-guid' });
+
+            expect(mockAnswer.bad).toHaveBeenCalledWith(2012);
+            expect(lobbyManager.mediator.call).not.toHaveBeenCalled();
+            expect(lobbyManager._destroyLobby).not.toHaveBeenCalled();
+        });
+
+        //edge case
+        test('должен корректно обработать ситуацию, когда лобби существует, но guid создателя не совпадает', () => {
+            const mockLobby = {
+                lobbyGuid: 'creator-guid',
+                canStarted: jest.fn(() => true),
+                isGuidInLobby: jest.fn(() => true)
+            };
+        
+            lobbyManager.lobbies['creator-guid'] = mockLobby;
+            lobbyManager.isGuidInAnyLobby = jest.fn(() => mockLobby);
+
+            const result = lobbyManager._startGame({ guid: 'wrong-creator-guid' });
+
+            expect(mockAnswer.bad).toHaveBeenCalledWith(2010);
+            expect(mockLobby.canStarted).not.toHaveBeenCalled();
+        });
+
+        //edge case
+        test('должен вернуть ошибку, если guid не передан', () => {
+            const result = lobbyManager._startGame({ guid: undefined });
+        
+            expect(mockAnswer.bad).toHaveBeenCalledWith(2006);
+        });
+    });
 });

@@ -45,7 +45,7 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
         this.guid = options.guid;
         this.x = options.x;
         this.y = options.y;
-        this.hp = options.hp ?? 160;
+        this.hp = options.hp ?? 200;
         this.projectiles = options.projectiles ?? [];
     }
 
@@ -109,18 +109,18 @@ class SporovayaBashnya implements IBuilding<TSporovayaBashnyaState> {
     }
 
     public getState(): TSporovayaBashnyaState {
-    return {
-        guid: this.guid,
-        type: this.type,
-        x: this.x,
-        y: this.y,
-        hp: this.hp,
-        sizeX: this.sizeX,
-        sizeY: this.sizeY,
-        isAlive: this.isAlive,
-        isAttacking: this.isAttacking,
-    };
-}
+        return {
+            guid: this.guid,
+            type: this.type,
+            x: this.x,
+            y: this.y,
+            hp: this.hp,
+            sizeX: this.sizeX,
+            sizeY: this.sizeY,
+            isAlive: this.isAlive,
+            isAttacking: this.isAttacking,
+        };
+    }
 }
 
 export default SporovayaBashnya;

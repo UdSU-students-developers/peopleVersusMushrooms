@@ -1,10 +1,16 @@
 const EasyStar = require('easystarjs');
 
+const DIRECTIONS = [
+    [0, 1], [0, -1], [1, 0], [-1, 0]
+];
+
 class Unit {
-    constructor({ x, y, guid, map, type, visibility, speed = 0.3 }) {
+    constructor({ x, y, guid, map, type, visibility, speed = 0.3, sourcesVisibility }) {
         this.guid = guid;
         this.type = type;
         this.visibility = visibility;
+        this.sourcesVisibility = sourcesVisibility;
+        this.units = [];
 
         this.x = x;
         this.y = y;
@@ -30,7 +36,6 @@ class Unit {
         }
     }
 
-
     get() {
         return {
             guid: this.guid,
@@ -38,6 +43,7 @@ class Unit {
             y: this.y,
             type: this.type,
             visibility: this.visibility,
+            sourcesVisibility: this.sourcesVisibility,
         };
     }
 
@@ -50,49 +56,33 @@ class Unit {
     setGrid(grid) {
         this.grid = grid;
         this.easyStar.setGrid(grid);
-
     }
 
     takeDamage(amount) {
-        if (amount <= 0) return false;
         this.hp = Math.max(0, this.hp - amount);
-        return this.hp === 0;
+        return this.hp <= 0;
     }
 
     findNearestCell() {
-        const cells = [];
         const currentX = Math.floor(this.x);
         const currentY = Math.floor(this.y);
 
-        const directions = [
-            [0, 1], [0, -1], [1, 0], [-1, 0]
-        ];
+        const occupiedCells = new Set();
 
-        const occupiedCells = [];
-
-        if (this.visibility.buildings) {
-            for (let i = 0; i < this.visibility.length; i++) {
-                const building = this.visibility.building[i];
-                const x = Math.floor(building.x);
-                const y = Math.floor(building.y);
-                occupiedCells.push({ x: x, y: y});
+        if (this.visibility.buildings.length) {
+            for (const building of this.visibility.buildings) {
+                occupiedCells.add(`${Math.floor(building.x)},${Math.floor(building.y)}`);
             }
         }
 
-        for (const [dx, dy] of directions) {
-            const newX = currentX + dx;
-            const newY = currentY + dy;
+        const cells = [];
 
-            if (this.grid[newY] && this.grid[newY][newX] !== undefined) {
-                let isOccupied = false;
-                for (let i = 0; i < occupiedCells.length; i++) {
-                    if (occupiedCells[i].x === newX && occupiedCells[i].y) {
-                       isOccupied = true;
-                       break; 
-                    }
-                }
+        for (const [dx, dy] of DIRECTIONS) {
+            const nx = currentX + dx;
+            const ny = currentY + dy;
 
-                if (!isOccupied) cells.push({ x: newX, y: newY });
+            if (this.grid[ny]?.[nx] !== undefined && !occupiedCells.has(`${nx},${ny}`)) {
+                cells.push({ x: nx, y: ny });
             }
         }
 
@@ -109,7 +99,6 @@ class Unit {
             this._tryStep();
         }
     }
-
 
     _hasReachedTarget() {
         return this.x === this.targetX && this.y === this.targetY;
@@ -135,9 +124,14 @@ class Unit {
 
         this.path = [];
 
+        const startX = Math.round(this.x);
+        const startY = Math.round(this.y);
+        const endX = Math.round(this.targetX);
+        const endY = Math.round(this.targetY);
+
         this.easyStar.findPath(
-            this.x, this.y,
-            this.targetX, this.targetY,
+            startX, startY,
+            endX, endY,
             (foundPath) => {
                 this.path = foundPath ? foundPath.slice(1) : [];
             }
@@ -146,8 +140,18 @@ class Unit {
         this.easyStar.calculate();
     }
 
+    setUnits(units) {
+        this.units = units;
+    }
+
     _isCellWalkable(x, y) {
-        return this.grid?.[y]?.[x] === 0;
+        if (this.grid?.[y]?.[x] !== 0) return false;
+
+        for (const unit of this.units) {
+            if (unit.guid !== this.guid && unit.x === x && unit.y === y) return false;
+        }
+
+        return true;
     }
 }
 

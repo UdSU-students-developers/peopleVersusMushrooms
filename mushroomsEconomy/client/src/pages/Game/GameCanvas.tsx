@@ -91,12 +91,22 @@ const GameCanvas: React.FC = () => {
         for (const l of scene.units.larvae)
             drawTile(SPRITE.LARVA, l.x, l.y);
 
-        // geodezists
-        for (const g of scene.units.geodezists ?? [])
-            drawTile(SPRITE.GEODEZIST, g.x, g.y);
+        // workers
+        for (const g of scene.units.workers ?? [])
+            drawTile(SPRITE.WORKER, g.x, g.y);
 
-        for (const enemy of scene.enemyBuildings)
-            drawTile(SPRITE.ENEMY_BUILDING, enemy.x, enemy.y);
+        //enemy
+        for (const enemy of scene.enemyBuildings) {
+            const tileSize = enemy.size ?? 1;
+            drawTileSized(SPRITE.ENEMY_BUILDING, enemy.x, enemy.y, tileSize);
+        }
+
+        for (const enemy of scene.enemyUnits)
+            drawTile(SPRITE.ENEMY_UNIT, enemy.x, enemy.y);
+
+        // ally units
+        for (const ally of scene.allyUnits)
+            drawTile(SPRITE.ALLY_UNIT, ally.x, ally.y);
     };
 
     function render(FPS: number) {

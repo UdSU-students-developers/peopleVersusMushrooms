@@ -2,8 +2,9 @@ import React, { useContext, useEffect } from "react";
 import { MediatorContext, ServerContext } from "../../../App";
 import CONFIG, { EMESSAGES } from "../../../config";
 import { Canvas, useCanvas } from "../../../services/canvas";
+import { EntityType, Sprite, useSprites } from "../hooks/useSprites";
+import { TEntities, TMap, TSource } from "../../../services/server/types";
 import Map from "../../../services/Map/Map";
-import { TMap, TSource } from "../../../services/server/types";
 
 const mapField = 'map-field';
 
@@ -14,13 +15,14 @@ const MapCanvas: React.FC = () => {
     const server = useContext(ServerContext);
     const Canvas = useCanvas(render);
     const { WINDOW } = CONFIG;
+    const { sprites, animations, getRenderOrder } = useSprites();
 
     let canMove = false;
     let dragStartX = 0;
-    let dragStartY = 0;
+    let dragStartY = 0
 
     useEffect(() => {
-        const { GET_RELIEF } = mediator.getEventTypes();
+        const { GET_RELIEF, UPDATE_MAP } = mediator.getEventTypes();
 
         const renderMap = (mapData: TMap) => {
             console.log('Наша карта', mapData);
@@ -51,10 +53,21 @@ const MapCanvas: React.FC = () => {
             map?.setCells(cells);
         };
 
+        const renderEntities = (entitiesData: TEntities) => {
+            console.log('Сущности', entitiesData);
+            const buildings = entitiesData.buildings.flat();
+            const units = entitiesData.units.flat();
+
+            map?.setBuildings(buildings);
+            map?.setUnits(units);
+        };
+
         mediator.subscribe(GET_RELIEF, renderMap);
+        mediator.subscribe(UPDATE_MAP, renderEntities);
 
         return () => {
             mediator.unsubscribe(GET_RELIEF, renderMap);
+            mediator.unsubscribe(UPDATE_MAP, renderEntities);
         };
     }, []);
 
@@ -74,6 +87,63 @@ const MapCanvas: React.FC = () => {
 
                     canvas.circle(centerX, centerY, radius, cell.resourceColor);
                 }
+            });
+
+            const getSprite = (sprites: Record<EntityType, Sprite>, type: string) => {
+                return sprites[type as EntityType] ?? [];
+            };
+
+            const getAnim = (animations: Partial<Record<EntityType, () => number>>, type: string) => {
+                const anim = animations[type as EntityType];
+                return typeof anim === 'function' ? anim : () => 0;
+            };
+
+            map.buildings.slice().sort((a, b) => getRenderOrder(a.type) - getRenderOrder(b.type)).forEach((building) => {
+                const sprite = getSprite(sprites, building.type);
+                const anim = getAnim(animations, building.type);
+
+                const frame = anim();
+                const sx = frame * sprite.frameWidth;
+
+                const worldW = building.size * cellSize;
+                const worldH = building.size * cellSize;
+
+                const scale = Math.min(
+                    worldW / sprite.frameWidth,
+                    worldH / sprite.frameHeight
+                );
+
+                const dw = sprite.frameWidth * scale;
+                const dh = sprite.frameHeight * scale;
+
+                const dx = building.x * cellSize + (worldW - dw) / 2;
+                const dy = building.y * cellSize + (worldH - dh) / 2;
+
+                canvas.sprite(sprite.image, sx, 0, sprite.frameWidth, sprite.frameHeight, dx, dy, dw, dh);
+            });
+
+            map.units.slice().sort((a, b) => getRenderOrder(a.type) - getRenderOrder(b.type)).forEach((unit) => {
+                const sprite = getSprite(sprites, unit.type);
+                const anim = getAnim(animations, unit.type);
+
+                const frame = anim();
+                const sx = frame * sprite.frameWidth;
+
+                const worldW = cellSize;
+                const worldH = cellSize;
+
+                const scale = Math.min(
+                    worldW / sprite.frameWidth,
+                    worldH / sprite.frameHeight
+                );
+
+                const dw = sprite.frameWidth * scale;
+                const dh = sprite.frameHeight * scale;
+
+                const dx = unit.x * cellSize + (worldW - dw) / 2;
+                const dy = unit.y * cellSize + (worldH - dh) / 2;
+
+                canvas.sprite(sprite.image, sx, 0, sprite.frameWidth, sprite.frameHeight, dx, dy, dw, dh);
             });
 
             canvas.render();

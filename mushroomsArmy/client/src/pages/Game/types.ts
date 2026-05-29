@@ -21,7 +21,9 @@ export type Unit = {
   type: 'sporomet' | 'champigneb' | 'eblekar' | 'pizdoglyad';
   hp: number;               
   visibility?: number;
-  isHealing?: boolean;          
+  isHealing?: boolean;
+  targetX?: number;
+  targetY?: number;
 };
 
 export type EnemyUnit = Omit<Unit, 'type'> & {
@@ -37,21 +39,15 @@ export type Building = {
   x: number;
   y: number;
   hp: number;
+  role?: string | null;
+  size?: number;
+  level?: number;
   visibility?: number;
   sizeX?: number;
   sizeY?: number;
   isAlive?: boolean;
   isExploding?: boolean;
   isAttacking?: boolean;
-};
-
-/**
- * Лужа слизи
- */
-export type SlimePuddle = {
-  x: number;               
-  y: number;                
-  radius: number;          
 };
 
 export type Projectile = {
@@ -65,6 +61,17 @@ export type Projectile = {
 };
 
 /**
+ * Юнит экономики грибов (личинка, геодезист)
+ */
+export type EconomyUnit = {
+  guid: string;
+  x: number;
+  y: number;
+  type: string;
+  hp: number;
+};
+
+/**
  * Полное состояние игры
  */
 export type GameState = {
@@ -72,7 +79,7 @@ export type GameState = {
   units: Unit[];
   enemyUnits?: EnemyUnit[];
   buildings: Building[];
-  slimePuddles: SlimePuddle[]; 
+  economyUnits?: EconomyUnit[];
   projectiles: Projectile[];
 };
 

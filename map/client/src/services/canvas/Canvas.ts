@@ -70,7 +70,7 @@ class Canvas {
         this.WINDOW = WINDOW;
         this.callbacks = callbacks;
 
-       this.canvas.addEventListener('wheel', (event) => this.mouseWheelHandler(event));
+        this.canvas.addEventListener('wheel', (event) => this.mouseWheelHandler(event));
         this.canvas.addEventListener('mousemove', (event) => this.mouseMoveHandler(event));
         this.canvas.addEventListener('mousedown', (event) => this.mouseDownHandler(event));
         this.canvas.addEventListener('mouseup', (event) => this.mouseUpHandler(event));
@@ -222,9 +222,9 @@ class Canvas {
         this.contextV.fillRect(this.xs(x), this.ys(y), width, height);
     }
 
-    spriteFull(image: HTMLImageElement, dx: number, dy: number, sx: number, sy: number, size: number): void {
+    sprite(image: HTMLImageElement, sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number): void {
         if (!this.contextV) return;
-        this.contextV.drawImage(image, sx, sy, size, size, this.xs(dx), this.ys(dy), size, size);
+        this.contextV.drawImage(image, sx, sy, sw, sh, this.xs(dx), this.ys(dy), this.dec(dw), this.dec(dh));
     }
 
     // копируем изображение с виртуального канваса на основной

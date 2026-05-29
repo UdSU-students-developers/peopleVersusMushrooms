@@ -1,10 +1,11 @@
 const EasyStar = require("easystarjs");
+const { buildPathGrid, isWalkable } = require("../pathGrid");
 
-// Количество накопленных очков ходьбы, необходимых для одного шага 
+// Количество накопленных очков ходьбы, необходимых для одного шага
 const WALK_POINTS_PER_STEP = 5;
 
 class Unit {
-    constructor({ guid, x, y }) {
+    constructor({ guid, x, y, shotCooldown, shotCooldownJitter } = {}) {
         this.guid = guid;
         this.x = x;
         this.y = y;
@@ -24,8 +25,17 @@ class Unit {
         this.targetY = null;
         /** Оставшиеся клетки маршрута; path[0] — следующий шаг */
         this.path = [];
-        // Накопленные очки ходьбы 
+        // Накопленные очки ходьбы
         this.walkPoints = 0;
+
+        this.shotCooldown = shotCooldown ?? 2;
+        this.shotCooldownJitter = shotCooldownJitter ?? Math.random() * 0.35;
+        this.lastShotTime = -999;
+        this.formationSlot = null;
+        this.moveGoal = null;
+        this.tacticalTarget = null;
+        this.tacticalAim = null;
+        this.tacticalRetreat = null;
     }
 
     // Задать цель движения юнита
@@ -72,13 +82,9 @@ class Unit {
     /**
      * Каждый такт накапливает очки ходьбы (this.speed за такт).
      * При накоплении WALK_POINTS_PER_STEP делает один шаг и вычитает порог.
-     *   soldier (speed = 1): шаг раз в 5 тактов
-     *   sniper  (speed = 1): шаг раз в 5 тактов
-     *   bmp     (speed = 3): примерно 3 шага за 5 тактов
-     *   partizan(speed = 4): примерно 4 шага за 5 тактов
      */
-    move(map, buildings, units, enemies, enemyBuildings) {
-        this.calculateUnitPath(map, buildings, units, enemies, enemyBuildings);
+    move(map, alliedBuildings = []) {
+        this.calculateUnitPath(map, alliedBuildings);
 
         this.walkPoints += this.speed;
 
@@ -88,12 +94,12 @@ class Unit {
 
         this.walkPoints -= WALK_POINTS_PER_STEP;
 
+        const grid = buildPathGrid(map, alliedBuildings);
         const next = this.path[0];
 
-        if (map[next.y][next.x] !== 0) {
+        if (!isWalkable(grid, next.x, next.y)) {
             this.path = [];
-            this.walkPoints = 0;
-            console.log('Юнит столкнулся с препятствием');
+            this.calculateUnitPath(map, alliedBuildings);
             return false;
         }
 
@@ -104,17 +110,11 @@ class Unit {
         return true;
     }
 
-    /** Обновить сетку у EasyStar после изменений this.map (препятствия и т.д.) */
-    updateMap(map, buildings, units, enemies, enemyBuildings) {
-        this.easyStar.setGrid(map);
-    }
-
     /**
-     * Путь от (x0,y0) до (x1,y1). Координаты как в карте: map[y][x].
-     * @returns {Array<{x:number,y:number}>|null} цепочка клеток от старта до цели, или null если пути нет
+     * Путь от текущей клетки до цели. grid — уже с учётом рельефа и зданий peopleEconomy.
      */
-    findPath(map, buildings, units, enemies, enemyBuildings) {
-        this.updateMap(map, buildings, units, enemies, enemyBuildings);
+    findPath(grid) {
+        this.easyStar.setGrid(grid);
         let result;
         let calculated = false;
         try {
@@ -131,28 +131,45 @@ class Unit {
         if (calculated) {
             return result;
         }
-        const limit = map.length * map.length * 4;
+        const limit = grid.length * grid.length * 4;
         for (let i = 0; i < limit && !calculated; i++) {
             this.easyStar.calculate();
         }
         return calculated ? result : null;
     }
 
-    /** Если у юнита есть цель, но ещё нет waypoints — считаем путь здесь. */
-    calculateUnitPath(map, buildings, units, enemies, enemyBuildings) {
+    /**
+     * Построить или обновить маршрут к цели.
+     * Если следующий шаг занят зданием — пересчитать путь.
+     */
+    calculateUnitPath(map, alliedBuildings = []) {
         if (this.targetX == null || this.targetY == null) {
             return;
         }
-        if (this.path.length > 0) {
+
+        const grid = buildPathGrid(map, alliedBuildings);
+
+        if (this.path.length > 0 && isWalkable(grid, this.path[0].x, this.path[0].y)) {
             return;
         }
-        const p = this.findPath(map, buildings, units, enemies, enemyBuildings);
-        if (p === null || p.length < 2) {
-            this.clearTarget();
+
+        const startX = Math.floor(this.x);
+        const startY = Math.floor(this.y);
+        const endX = Math.floor(this.targetX);
+        const endY = Math.floor(this.targetY);
+
+        if (startX === endX && startY === endY) {
+            this.path = [];
             return;
         }
-        // еслии у юнита есть цель, срезаем первый элемент массива path, т.к. он уже был достигнут
-        this.path = p.slice(1);
+
+        this.path = [];
+        const route = this.findPath(grid);
+        if (route === null || route.length < 2) {
+            // Цель сохраняем — пересчитаем путь на следующих тиках (здания/толпа).
+            return;
+        }
+        this.path = route.slice(1);
     }
 }
 

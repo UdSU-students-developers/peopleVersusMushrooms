@@ -91,9 +91,15 @@ const GLOBAL_CONFIG = {
         
         //people army
         TAKE_DAMAGE_PEOPLE_ARMY: '/unit/takeDamage',
+        CREATE_UNIT: '/unit/create',
 
-        APPLY_DAMAGE: '/applyDamage',
+        APPLY_DAMAGE: '/applyDamage', // НЕ ИСПОЛЬЗОВАТЬ
+        DAMAGE: '/damage',
         MOVE: '/move',
+
+        //mushroomsEconomy
+        REQUEST_UNITS: '/requestUnits',
+        REQUEST_BUILDINGS: '/requestBuildings',
     },
 
     ROLES: {
@@ -118,6 +124,12 @@ const GLOBAL_CONFIG = {
             SPOROMET: 'sporomet',
             CHAMPIGNEB: 'champigneb',
             EBLEKAR: 'eblekar',
+        },
+        PEOPLE_ARMY: {
+            BMP: 'bmp',
+            PARTIZAN: 'partizan',
+            SNIPER: 'sniper',
+            SOLDIER: 'soldier'
         }
     }
 };

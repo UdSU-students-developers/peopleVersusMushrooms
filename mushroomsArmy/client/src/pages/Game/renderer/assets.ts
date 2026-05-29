@@ -26,16 +26,31 @@ import sporovayaBashnyaIdle from '../../../assets/buildings/sporovaya_bashnya/id
 import sporovayaBashnyaAttack from '../../../assets/buildings/sporovaya_bashnya/attack.png';
 import sporovayaBashnyaDestroyed from '../../../assets/buildings/sporovaya_bashnya/destroyed.png';
 
+import pipeSrc from '../../../assets/buildings/pipe/pipe1.png';
+import oilBarrelSrc from '../../../assets/buildings/oil_barrel/oil_barrel1.png';
+import ironBarrelSrc from '../../../assets/buildings/iron_barrel/iron_barrel1.png';
+import barracksSrc from '../../../assets/buildings/barracks/barracks1.png';
+import smallReactorSrc from '../../../assets/buildings/small_reactor/small_reactor1.png';
+import largeReactorSrc from '../../../assets/buildings/large_reactor/large_reactor1.png';
+import drillerSrc from '../../../assets/buildings/driller/driller1.png';
+import peopleMineSrc from '../../../assets/buildings/mine/mine1.png';
+
 import champignebExplFrame0 from '../../../assets/units/champigneb_explosion/frame_0.png';
 import champignebExplFrame1 from '../../../assets/units/champigneb_explosion/frame_1.png';
 import champignebExplFrame2 from '../../../assets/units/champigneb_explosion/frame_2.png';
 import champignebExplFrame3 from '../../../assets/units/champigneb_explosion/frame_3.png';
 import champignebExplFrame4 from '../../../assets/units/champigneb_explosion/frame_4.png';
 
+import vzryvomorExplFrame0 from '../../../assets/buildings/vzryvomor_explosion/frame_0.png';
+import vzryvomorExplFrame1 from '../../../assets/buildings/vzryvomor_explosion/frame_1.png';
+import vzryvomorExplFrame2 from '../../../assets/buildings/vzryvomor_explosion/frame_2.png';
+import vzryvomorExplFrame3 from '../../../assets/buildings/vzryvomor_explosion/frame_3.png';
+import vzryvomorExplFrame4 from '../../../assets/buildings/vzryvomor_explosion/frame_4.png';
+
 import grassTextureSrc1 from '../../../assets/map/grass/grass1.webp';
 import grassTextureSrc2 from '../../../assets/map/grass/grass2.webp';
 import grassTextureSrc3 from '../../../assets/map/grass/grass3.webp';
-import grassWithFrlowersTextureSrc from '../../../assets/map/grass/grass_with_flowers.webp';
+import grassWithFlowersTextureSrc from '../../../assets/map/grass/grass_with_flowers.webp';
 import grassWithFlowersTextureSrc2 from '../../../assets/map/grass/grass_with_flowers2.webp';
 import grass1TextureSrc22 from '../../../assets/map/grass/grass_with_flowers22.webp';
 import grassWithOneFlowerTextureSrc from '../../../assets/map/grass/grass_with_one_flower.webp';
@@ -51,7 +66,7 @@ import mountainsTextureSrc from '../../../assets/map/mountains/mountains.webp';
 import tumanSrc from '../../../assets/map/fog/tuman.png';
 import tuman2Src from '../../../assets/map/fog/tuman2.png';
 import tuman3Src from '../../../assets/map/fog/tuman3.png';
-
+//ассеты перехода вода-трава
 import waterEdgeTop from '../../../assets/map/water-edges/edge-t.webp';
 import waterEdgeBottom from '../../../assets/map/water-edges/edge-b.webp';
 import waterEdgeLeft from '../../../assets/map/water-edges/edge-l.webp';
@@ -66,7 +81,26 @@ import waterInnerCornerTopRight from '../../../assets/map/water-edges/innerCorne
 import waterInnerCornerBottomLeft from '../../../assets/map/water-edges/innerCorner-bl.webp';
 import waterInnerCornerBottomRight from '../../../assets/map/water-edges/innerCorner-br.webp';
 
+//ассеты перехода горы-трава
+import mountainEdgeTopSrc from '../../../assets/map/mountains/mountain-edge-top.png';
+import mountainEdgeRightSrc from '../../../assets/map/mountains/mountain-edge-right.png';
+import mountainEdgeBottomSrc from '../../../assets/map/mountains/mountain-edge-bottom.png';
+import mountainEdgeLeftSrc from '../../../assets/map/mountains/mountain-edge-left.png';
+import mountainCornerTopLeftSrc from '../../../assets/map/mountains/mountain-edge-corner-tl.webp';
+import mountainCornerTopRightSrc from '../../../assets/map/mountains/mountain-edge-corner-tr.webp';
+import mountainCornerBottomLeftSrc from '../../../assets/map/mountains/mountain-edge-corner-bl.webp';
+import mountainCornerBottomRightSrc from '../../../assets/map/mountains/mountain-edge-corner-br.webp';
+
+
+//декорации
 import bushImgSrc from '../../../assets/map/decoration/bushbush.webp';
+import funnyTrusovFlower from '../../../assets/map/decoration/TrusovFlower2.webp';
+import cleanScullSrc from '../../../assets/map/decoration/clean-scull.webp';
+import scullWithSwordSrc from '../../../assets/map/decoration/scull-with-sword.webp';
+import scullSrc from '../../../assets/map/decoration/scull.webp';
+import economySpritesSrc from '../../../assets/economy_sprites.png';
+
+export { economySpritesSrc };
 
 export const UNIT_SRCS: Record<string, string> = {
   sporomet: sporometSrc,
@@ -82,7 +116,7 @@ export const PEOPLE_UNIT_SRCS: Record<string, string> = {
   partizan: peopleSoldierSrc,
 };
 
-export const CHAMPIGNEB_EXPL_FRAME_SRCS: string[] = [
+const CHAMPIGNEB_EXPL_FRAME_SRCS: string[] = [
   champignebExplFrame0,
   champignebExplFrame1,
   champignebExplFrame2,
@@ -91,6 +125,20 @@ export const CHAMPIGNEB_EXPL_FRAME_SRCS: string[] = [
 ];
 
 export const champignebExplImages: HTMLImageElement[] = CHAMPIGNEB_EXPL_FRAME_SRCS.map(src => {
+  const img = new Image();
+  img.src = src;
+  return img;
+});
+
+const VZRYVOMOR_EXPL_FRAME_SRCS: string[] = [
+  vzryvomorExplFrame0,
+  vzryvomorExplFrame1,
+  vzryvomorExplFrame2,
+  vzryvomorExplFrame3,
+  vzryvomorExplFrame4,
+];
+
+export const vzryvomorExplImages: HTMLImageElement[] = VZRYVOMOR_EXPL_FRAME_SRCS.map(src => {
   const img = new Image();
   img.src = src;
   return img;
@@ -113,10 +161,21 @@ export const SPOROVAYA_BASHNYA_SRCS = {
   destroyed: sporovayaBashnyaDestroyed,
 };
 
+export const PEOPLE_ECONOMY_BUILDING_SRCS: Record<string, string> = {
+  pipe: pipeSrc,
+  oil_barrel: oilBarrelSrc,
+  iron_barrel: ironBarrelSrc,
+  barracks: barracksSrc,
+  small_reactor: smallReactorSrc,
+  large_reactor: largeReactorSrc,
+  driller: drillerSrc,
+  mine: peopleMineSrc,
+};
+
 const grass1Img = Object.assign(new Image(), { src: grassTextureSrc1 });
 const grass2Img = Object.assign(new Image(), { src: grassTextureSrc2 });
 const grass3Img = Object.assign(new Image(), { src: grassTextureSrc3 });
-const flower1Img = Object.assign(new Image(), { src: grassWithFrlowersTextureSrc });
+const flower1Img = Object.assign(new Image(), { src: grassWithFlowersTextureSrc });
 const flower2Img = Object.assign(new Image(), { src: grassWithFlowersTextureSrc2 });
 const flower3Img = Object.assign(new Image(), { src: grass1TextureSrc22 });
 const flower4Img = Object.assign(new Image(), { src: grassWithOneFlowerTextureSrc });
@@ -155,6 +214,16 @@ export const edgeImages = {
   innerBottomRight: Object.assign(new Image(), { src: waterInnerCornerBottomRight }),
 };
 
+export const mountainEdgeImages = {
+  top: Object.assign(new Image(), { src: mountainEdgeTopSrc }),
+  bottom: Object.assign(new Image(), { src: mountainEdgeBottomSrc }),
+  left: Object.assign(new Image(), { src: mountainEdgeLeftSrc }),
+  right: Object.assign(new Image(), { src: mountainEdgeRightSrc }),
+  topLeft: Object.assign(new Image(), { src: mountainCornerTopLeftSrc }),
+  topRight: Object.assign(new Image(), { src: mountainCornerTopRightSrc }),
+  bottomLeft: Object.assign(new Image(), { src: mountainCornerBottomLeftSrc }),
+  bottomRight: Object.assign(new Image(), { src: mountainCornerBottomRightSrc }),
+};
 
 export const mountainImg = Object.assign(new Image(), { src: mountainsTextureSrc });
 
@@ -167,6 +236,14 @@ export const fogWarImages: HTMLImageElement[] = (FOG_WAR_TEXTURE_SRCS as readonl
   return img;
 });
 
-
+//лекорации!!
 export const bushImg = Object.assign(new Image(), { src: bushImgSrc });
-
+export const funnyTrusovFlowerImg = Object.assign(new Image(), { src: funnyTrusovFlower });
+export const cleanScullImg = Object.assign(new Image(), { src: cleanScullSrc });
+export const scullWithSwordImg = Object.assign(new Image(), { src: scullWithSwordSrc });
+export const scullImg = Object.assign(new Image(), { src: scullSrc });
+export const plainDecorImages: HTMLImageElement[] = [
+  cleanScullImg,
+  scullWithSwordImg,
+  scullImg,
+];

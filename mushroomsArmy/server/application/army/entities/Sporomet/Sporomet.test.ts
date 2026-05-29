@@ -37,9 +37,9 @@ const defaultOptions = {
     guid: 'test-sporomet-1',
     x: 50,
     y: 50,
-    hp: 8,
-    speed: 1,
-    attackRange: 12,
+    hp: 20,
+    speed: 2,
+    attackRange: 10,
     type: 'sporomet',
 };
 
@@ -55,11 +55,11 @@ describe('Sporomet', () => {
     
     it('параметры при создании соответствуют переданным в конструктор', () => {
         expect(sporomet.guid).toBe('test-sporomet-1');
-        expect(sporomet.hp).toBe(8);
+        expect(sporomet.hp).toBe(20);
         expect(sporomet.x).toBe(50);
         expect(sporomet.y).toBe(50);
-        expect(sporomet.speed).toBe(1);
-        expect(sporomet.attackRange).toBe(12);
+        expect(sporomet.speed).toBe(2);
+        expect(sporomet.attackRange).toBe(10);
         expect(typeof sporomet.hp).toBe('number');
     });
 
@@ -67,7 +67,7 @@ describe('Sporomet', () => {
         expect(sporomet.retreatRange).toBe(8);
         expect(sporomet.cooldown).toBe(2);
         expect(sporomet.aimTime).toBe(0.5);
-        expect(sporomet.attackDamage).toBe(5);
+        expect(sporomet.attackDamage).toBe(9);
         expect(sporomet.poisonDuration).toBe(10);
         expect(sporomet.poisonDamagePerSecond).toBe(10);
     });
@@ -76,26 +76,26 @@ describe('Sporomet', () => {
         const state = sporomet.getState();
         expect(state.type).toBe('sporomet');
         expect(state.guid).toBe('test-sporomet-1');
-        expect(state.hp).toBe(8);
+        expect(state.hp).toBe(20);
         expect(state.x).toBe(50);
         expect(state.y).toBe(50);
     });
 
     it('takeDamage(5) снижает hp на 5', () => {
         sporomet.takeDamage(5);
-        expect(sporomet.hp).toBe(3);
+        expect(sporomet.hp).toBe(15);
         expect(sporomet.isAlive).toBe(true);
     });
 
-    it('takeDamage(8) убивает споромета', () => {
-        sporomet.takeDamage(8);
+    it('takeDamage(20) убивает споромета', () => {
+        sporomet.takeDamage(20);
         expect(sporomet.hp).toBe(0);
         expect(sporomet.isAlive).toBe(false);
     });
 
     it('takeDamage с отрицательным уроном не изменяет hp', () => {
         sporomet.takeDamage(-10);
-        expect(sporomet.hp).toBe(8);
+        expect(sporomet.hp).toBe(20);
     });
 
     it('урон не наносится, если споромет мертв', () => {

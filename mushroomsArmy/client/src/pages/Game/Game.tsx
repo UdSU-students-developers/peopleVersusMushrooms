@@ -1,7 +1,7 @@
-import React, { useEffect, useRef, useState, useContext } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { MediatorContext, ServerContext } from '../../App';
 import CONFIG from '../../config';
-import { drawGame, preloadFogWarTextures } from './renderer/renderer';
+import { drawGame, preloadFogWarTextures, setupCameraListeners } from './renderer/renderer';
 import { GameState } from './types';
 import { PAGES } from '../PageManager';
 import { TUser } from '../../services/server/types';
@@ -9,24 +9,39 @@ import './Game.css';
 import { camera } from '../../utils/camera';
 import Header from '../../widgets/Header/Header';
 import Footer from '../../widgets/Footer/Footer';
-import Menu from '../../widgets/Menu/Menu';
 import GameOver from '../../widgets/GameOver/GameOver';
+import OptionsPannel from '../../widgets/OptionsPannel/OptionsPannel';
+import { useUIScale } from '../../widgets/UIScaleContext';
+import { HUD_LAYOUT } from '../../widgets/hudLayout';  // ← новый файл
 
 const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
+
+  const { scale } = useUIScale();  
+  const hudConfig = HUD_LAYOUT[scale]; 
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const gameStateRef = useRef<GameState | null>(null);
   const mediator = useContext(MediatorContext);
   const server = useContext(ServerContext);
-  const [isGameOver, setIsGameOver] = useState(true);
-  const [aliveUnitsCount, setAliveUnitsCount] = useState(0);
+
+  const [isGameOver, setIsGameOver] = useState(false);
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const [hudScaleStep, setHudScaleStep] = useState(2);
 
   const keysPressed = useRef<{ [key: string]: boolean }>({});
 
   const GET_STORE = mediator.getTriggerTypes().GET_STORE;
   const user = mediator.get(GET_STORE, 'user') as TUser | null;
   const username = user?.name || 'Игрок';
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const handleMenuClick = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
 
+  const handleCloseMenu = () => {
+    setIsMenuOpen(false);
+  };
   useEffect(() => {
     void preloadFogWarTextures();
   }, []);
@@ -37,23 +52,28 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     const ctx = canvas.getContext('2d');
     if (!ctx || !gameStateRef.current) return;
 
-    const widthCSS = canvas.clientWidth;
-    const heightCSS = canvas.clientHeight;
-    if (widthCSS === 0 || heightCSS === 0) return;
+    if (canvas.clientWidth === 0 || canvas.clientHeight === 0) return;
 
-    // Рисуем текущее состояние с учётом позиции камеры
-    drawGame(ctx, gameStateRef.current, widthCSS, heightCSS, camera);
+    drawGame(ctx, gameStateRef.current, camera);
   };
 
   useEffect(() => {
     const movementKeys = new Set([
-      'KeyW', 'KeyA', 'KeyS', 'KeyD',
-      'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+      'KeyW',
+      'KeyA',
+      'KeyS',
+      'KeyD',
+      'ArrowUp',
+      'ArrowDown',
+      'ArrowLeft',
+      'ArrowRight',
     ]);
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (movementKeys.has(e.code)) e.preventDefault();
       keysPressed.current[e.code] = true;
     };
+
     const handleKeyUp = (e: KeyboardEvent) => {
       if (movementKeys.has(e.code)) e.preventDefault();
       keysPressed.current[e.code] = false;
@@ -106,15 +126,13 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     if (!ctx) return;
 
     const resizeCanvas = () => {
-      const dpr = window.devicePixelRatio || 1;
       const displayWidth = canvas.clientWidth;
       const displayHeight = canvas.clientHeight;
       if (displayWidth === 0 || displayHeight === 0) return;
 
-      if (canvas.width !== displayWidth * dpr || canvas.height !== displayHeight * dpr) {
-        canvas.width = displayWidth * dpr;
-        canvas.height = displayHeight * dpr;
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+        canvas.width = displayWidth;
+        canvas.height = displayHeight;
         redrawCanvas();
       }
     };
@@ -138,19 +156,25 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
   }, []);
 
   useEffect(() => {
-  if (!mediator) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    return setupCameraListeners(canvas);
+  }, []);
+
+  useEffect(() => {
+    if (!mediator) return;
 
   const EVENT_NAME = CONFIG.MEDIATOR.EVENTS.GAME_STATE_UPDATED;
   const handler = (newState: GameState) => {
     gameStateRef.current = newState;
     
     // Считаем живых юнитов при получении нового состояния, а не в цикле отрисовки
-    const aliveCount = newState.units.filter((unit) => unit.hp > 0).length ?? 0;
-    setAliveUnitsCount(aliveCount);
+    //const aliveCount = newState.units.filter((unit) => unit.hp > 0).length ?? 0;
+    //setAliveUnitsCount(aliveCount);
   };
 
-  mediator.subscribe(EVENT_NAME, handler);
-  return () => mediator.unsubscribe(EVENT_NAME, handler);
+    mediator.subscribe(EVENT_NAME, handler);
+    return () => mediator.unsubscribe(EVENT_NAME, handler);
   }, [mediator]);
 
   useEffect(() => {
@@ -211,17 +235,38 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
     setIsGameOver(false);
   };
 
-  return (
-    <div className="game-page">
-      <Header
-        username={username}
-        isMenuOpen={isMenuOpen}
-        onMenuToggle={() => setIsMenuOpen(!isMenuOpen)}
-      />
+  const handleSurrender = () => {
+    setIsMenuOpen(false);
+    setIsGameOver(true);
+  };
 
-      <Menu 
-        isOpen={isMenuOpen} 
-        onExit={handleExitToLobby} 
+  const gamePageStyle = {
+  '--scale': (hudConfig.footerHeight / 112).toString(),
+  '--footer-height': `${hudConfig.footerHeight}px`,
+  '--minimap-box-size': `${hudConfig.minimapBox}px`,
+  '--minimap-canvas-size': `${hudConfig.minimapCanvas}px`,
+} as React.CSSProperties;
+
+  return (
+    <>
+    <Header
+        theme="hud"
+        scale={scale} 
+        nickname={username}
+        showNickname={true}
+        showMenuButton={true}
+        onMenuClick={handleMenuClick}
+        isMenuOpen={isMenuOpen}
+    />
+    
+    <div className="game-page" style={gamePageStyle}>
+      
+
+      <OptionsPannel
+        variant="hud"
+        isOpen={isMenuOpen}
+        onClose={handleCloseMenu}
+        onSurrender={handleSurrender}
       />
 
       <div className="game-canvas-wrapper">
@@ -230,13 +275,9 @@ const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
 
       <Footer />
 
-      {/* isGameOver && (
-        <GameOver 
-          onRestart={handleRestartGame} 
-          onExit={handleExitToLobby} 
-        />
-      ) */}
+      {isGameOver && <GameOver onRestart={handleRestartGame} onExit={handleExitToLobby} />}
     </div>
+    </>
   );
 };
 

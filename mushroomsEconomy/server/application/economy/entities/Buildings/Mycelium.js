@@ -33,6 +33,7 @@ class Mycelium extends Building {
             visibility: VISIBILITY,
         });
 
+        this.power = POWER;
         this.hp = HP;
         this.level = 1; // уровень выросших грибочков
         this.grow = 0;  // накопленный прогресс роста
@@ -47,19 +48,18 @@ class Mycelium extends Building {
     }
 
     update() {
-        if (!this.canGrow) {
-            return false;
-        }
+        if (!this.canGrow) return false;
+
         this.grow += GROW_SPEED;
-        if (this.grow >= GROW_LEVEL_UP) {
-            this.grow = 0;
-            if (this.level < MAX_LEVEL) {
-                this.level += 1;
-                return true;
-            } else {
-                this.canGrow = false;
-            }
+        if (this.grow < GROW_LEVEL_UP) return false;
+
+        this.grow = 0;
+        if (this.level < MAX_LEVEL) {
+            this.level += 1;
+            return true;
         }
+
+        this.canGrow = false;
         return false;
     }
 
@@ -71,17 +71,23 @@ class Mycelium extends Building {
     }
 
     getPower() {
-        return POWER;
+        return this.power;
     }
 
     _getFreeCells(relief, mycelium, buildings, enemyBuildings) {
-        if (!relief[0].length) return [];
+        if (!relief[0]?.length) return [];
 
         const rows = relief.length;
         const cols = relief[0].length;
         const { x, y } = this;
 
         const allBuildings = Object.values(buildings).flat();
+
+        const occupiesCell = (b, nx, ny) => {
+            const size = b.size ?? 1;
+            return nx >= b.x && nx < b.x + size &&
+                   ny >= b.y && ny < b.y + size;
+        };
 
         return DIRECTIONS
             .map(({ dx, dy }) => ({ x: x + dx, y: y + dy }))
@@ -90,8 +96,8 @@ class Mycelium extends Building {
                 ny >= 0 && ny < rows &&
                 relief[ny][nx] === 0 && // 0 - земля, 1 - вода, 2 - камень, null - нет видимости
                 !mycelium.some(mc => mc.x === nx && mc.y === ny) &&
-                !allBuildings.some(b => b.x === nx && b.y === ny) &&
-                !enemyBuildings.some(b => b.x === nx && b.y === ny)
+                !allBuildings.some(b => occupiesCell(b, nx, ny)) &&
+                !enemyBuildings.some(b => occupiesCell(b, nx, ny))
             );
     }
 

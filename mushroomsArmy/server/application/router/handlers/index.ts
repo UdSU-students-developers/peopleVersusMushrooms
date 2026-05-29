@@ -7,4 +7,3 @@ export { useTakeDamageHandler } from './useTakeDamageHandler';
 export { useStartGameHandler } from './useStartGameHandler';
 export { useGetLobbiesHandler } from './useGetLobbiesHandler';
 export { useSpawnBuildingHandler } from './useSpawnBuildingHandler';
-export { useUpdateEconomyBuildingsHandler } from './useUpdateEconomyBuildingsHandler';

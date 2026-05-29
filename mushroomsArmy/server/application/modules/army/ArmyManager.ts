@@ -361,7 +361,11 @@ class ArmyManager extends BaseManager {
 
         const clientEnemyUnits = visibleEnemyUnits
             .filter((unit) => PEOPLE_ARMY_UNIT_TYPES.has(unit.type) && !isMushroomsEconomyEntity(unit))
-            .map(normalizeMapUnitHp);
+            .map(unit => {
+                const proxy = proxyByGuid.get(unit.guid);
+                const hp = proxy ? proxy.hp : (PEOPLE_ARMY_DEFAULT_HP[unit.type] ?? 1);
+                return { ...unit, hp };
+            });
 
         const fogMap = this.buildFogMap(updatedState, army.map);
         const stateManager = this.armyStateManagers[guid];

@@ -313,12 +313,17 @@ class ArmyManager extends BaseManager {
         const isAlliedEconomyUnit = (u: TVisibleEntity & { role?: string }) =>
             u.role === 'mushroomsEconomy' && ALLIED_ECONOMY_UNIT_TYPES.has(u.type);
 
+        // Дополнительная фильтрация: ВСЕ сущности с role === 'mushroomsEconomy' считаются союзными
+        // независимо от типа, чтобы армия грибов не атаковала экономику грибов
+        const isMushroomsEconomyEntity = (e: TVisibleEntity & { role?: string }) =>
+            e.role === 'mushroomsEconomy';
+
         army.economyBuildings = visibleEnemyBuildings.filter(isAlliedEconomyBuilding);
         army.economyUnits     = visibleEnemyUnits.filter(u => isAlliedEconomyUnit(u));
 
         const visibleEnemies: TVisibleEntity[] = [
-            ...visibleEnemyUnits.filter(e => !isAlliedEconomyUnit(e)),
-            ...visibleEnemyBuildings.filter(e => !isAlliedEconomyBuilding(e)),
+            ...visibleEnemyUnits.filter(e => !isAlliedEconomyUnit(e) && !isMushroomsEconomyEntity(e)),
+            ...visibleEnemyBuildings.filter(e => !isAlliedEconomyBuilding(e) && !isMushroomsEconomyEntity(e)),
         ];
 
         const enemyEntities: TBuildingInput[] = visibleEnemies.map(entity => {
@@ -345,7 +350,7 @@ class ArmyManager extends BaseManager {
         // Также скрываем недавно убитые (recentlyKilledGuids) пока peopleEconomy
         // не уберёт их с карты через tombstone.
         const proxyByGuid = new Map(army.enemyUnits.map(u => [u.guid, u] as const));
-        for (const raw of visibleEnemyBuildings.filter(e => !isAlliedEconomyBuilding(e))) {
+        for (const raw of visibleEnemyBuildings.filter(e => !isAlliedEconomyBuilding(e) && !isMushroomsEconomyEntity(e))) {
             if (army.recentlyKilledGuids.has(raw.guid)) continue;
             const proxy = proxyByGuid.get(raw.guid);
             const hp = proxy
@@ -355,7 +360,7 @@ class ArmyManager extends BaseManager {
         }
 
         const clientEnemyUnits = visibleEnemyUnits
-            .filter((unit) => PEOPLE_ARMY_UNIT_TYPES.has(unit.type))
+            .filter((unit) => PEOPLE_ARMY_UNIT_TYPES.has(unit.type) && !isMushroomsEconomyEntity(unit))
             .map(normalizeMapUnitHp);
 
         const fogMap = this.buildFogMap(updatedState, army.map);

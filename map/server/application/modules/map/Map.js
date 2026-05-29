@@ -225,12 +225,11 @@ class Map {
         const ironSize = Math.floor(mapSize * this.iron / 100);
         const oilSize = Math.floor(mapSize * this.oil / 100);
         const positions = new Set();
-
         while (positions.size < ironSize + oilSize) {
             const pos = Math.floor(Math.random() * mapSize);
             positions.add(pos);
         }
-
+        this.sources.push(new Source({ x: 98, y: 98, type: CONFIG.FIELD_NAMES.IRON, saturation: MAP_CONFIG.SATURATION.IRON }));
         [...positions].forEach((pos, index) => {
             const y = Math.floor(pos / this.width);
             const x = pos % this.width;

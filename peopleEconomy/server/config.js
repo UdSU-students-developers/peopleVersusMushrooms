@@ -94,7 +94,7 @@ const CONFIG = {
                 production: 0,
                 capacity: {
                     OIL: 0,
-                    IRON: 120
+                    IRON: 130
                 },
             },
             SMALL_REACTOR: {

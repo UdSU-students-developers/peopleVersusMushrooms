@@ -78,6 +78,7 @@ class Barracks extends Building {
         if (cost) {
             units.splice(0, 1);
             this.store.IRON -= cost;
+            this.inertia = 0;
         }
         this.is_working = false;
         return;

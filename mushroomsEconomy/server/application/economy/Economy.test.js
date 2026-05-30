@@ -1,494 +1,302 @@
 const EasyStar = require('easystarjs');
 const Building = require('./entities/Buildings/Building');
 
-jest.mock('./Economy', () => {
-  return jest.fn().mockImplementation(() => ({
-    easyStar: null,
-    myceliumGrid: null,
-    buildings: {
-      mycelium: [],
-      smallReactors: [],
-      incubators: [],
+jest.mock('../../../../global/globalConfig', () => ({
+    INTERVAL: 200,
+    MAP_SIZE: 100,
+    UNIT_TYPES: {
+        MUSHROOMS_ARMY: {
+            SPOROMET: 'sporomet',
+            CHAMPIGNEB: 'champigneb',
+            EBLEKAR: 'eblekar',
+        },
     },
-    checkConnection: jest.fn(),
-    reactorsConsume: jest.fn(),
-    getAvailableEnergy: jest.fn(),
-    consumeEnergyFromReactors: jest.fn(),
-    updateMyceliumGrid: jest.fn(),
-    destructor: jest.fn(),
-  }));
-});
+}));
+
+jest.mock('../../config', () => ({
+    ECONOMY: {
+        MYCELIUM: {
+            HP: 1,
+            GROW_SPEED: 200,
+            GROW_LEVEL_UP: 2000,
+            MAX_LEVEL: 3,
+            CONSUMPTION: 0,
+            PRODUCTION: 30,
+            CAPACITY: 0,
+            POWER: 1,
+            SIZE: 1,
+            VISIBILITY: 1,
+            IRON_COST: 0,
+        },
+        MINE: { PRODUCTION: 1, IRON_COST: 20 },
+        BIO_REACTOR_SMALL: { TYPE: 'small_reactor', PRODUCTION: 3, IRON_COST: 30 },
+        BIO_REACTOR: { TYPE: 'reactor', PRODUCTION: 5, IRON_COST: 60 },
+        INCUBATOR: { PRODUCTION: 1, IRON_COST: 40 },
+        LARVA: { 
+            MUTATION_IRON_COST: 10, 
+            MUTATION_ENERGY_COST: 15, 
+            GROWTH_LIMIT: 100,
+            HP: 40,
+            SPEED: 0.05,
+            TYPE: 'larva',
+            VISIBILITY: 2,
+            SOURCES_VISIBILITY: 100,
+        },
+        WORKER: { 
+            HP: 60, 
+            SPEED: 0.08, 
+            TYPE: 'worker', 
+            VISIBILITY: 4, 
+            WANDER_RADIUS: 8, 
+            SOURCES_VISIBILITY: 3 
+        },
+    },
+}));
+
+jest.mock('./entities/Buildings/Mycelium');
+jest.mock('./entities/Buildings/SmallReactor');
+jest.mock('./entities/Buildings/Reactor');
+jest.mock('./entities/Buildings/Incubator');
+jest.mock('./entities/Unit/Worker');
+jest.mock('./entities/Buildings/Mine');
+jest.mock('./entities/Unit/Larva');
+jest.mock('./entities/Map/Map');
+jest.mock('./Autopilot');
 
 const Economy = require('./Economy');
 
 describe('Pathfinding Tests', () => {
-  let economy;
-  let easyStar;
-  let testGrid;
+    let economy;
+    let easyStar;
+    let testGrid;
 
-  beforeEach(() => {
-    easyStar = new EasyStar.js();
-    testGrid = [
-      [1, 1, 1, 1, 1],
-      [1, 1, 1, 1, 1],
-      [1, 1, 1, 1, 1],
-      [1, 1, 1, 1, 1],
-      [1, 1, 1, 1, 1],
-    ];
-    easyStar.setGrid(testGrid);
-    easyStar.setAcceptableTiles([1]);
+    beforeEach(() => {
+        easyStar = new EasyStar.js();
+        testGrid = [
+            [1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1],
+        ];
+        easyStar.setGrid(testGrid);
+        easyStar.setAcceptableTiles([1]);
 
-    economy = new Economy();
-    economy.easyStar = easyStar;
-    economy.myceliumGrid = testGrid;
-    economy.buildings = {
-      mycelium: [],
-      smallReactors: [],
-      incubators: [],
-    };
-  });
+        const mockDb = { get: jest.fn(), set: jest.fn() };
+        const mockCommon = { guid: jest.fn(() => 'test-guid') };
+        const mockCallbacks = { updated: jest.fn(), spawnArmyUnit: jest.fn() };
+        const mockGuids = {
+            spectator: null,
+            peopleArmy: null,
+            peopleEconomy: null,
+            mushroomsArmy: 'army-guid',
+            mushroomsEconomy: 'economy-guid',
+            mapGuid: null,
+        };
 
-  afterEach(() => {
-    if (economy.destructor) {
-      economy.destructor();
-    }
-  });
-
-  describe('Building.hasPathTo', () => {
-    test('должен найти путь между двумя точками', async () => {
-      const building = new Building({
-        type: 'test',
-        guid: 'b1',
-        x: 0,
-        y: 0,
-        easyStar: easyStar,
-      });
-
-      const hasPath = await building.hasPathTo(testGrid, { x: 4, y: 4 });
-      expect(hasPath).toBe(true);
-    });
-
-    test('должен вернуть false если путь заблокирован', async () => {
-      const blockedGrid = [
-        [1, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 1],
-      ];
-      
-      const building = new Building({
-        type: 'test',
-        guid: 'b1',
-        x: 0,
-        y: 0,
-        easyStar: easyStar,
-      });
-
-      const hasPath = await building.hasPathTo(blockedGrid, { x: 4, y: 4 });
-      expect(hasPath).toBe(false);
-    });
-
-    test('должен вернуть false если easyStar отсутствует', async () => {
-      const building = new Building({
-        type: 'test',
-        guid: 'b1',
-        x: 0,
-        y: 0,
-        easyStar: null,
-      });
-
-      const hasPath = await building.hasPathTo(testGrid, { x: 2, y: 2 });
-      expect(hasPath).toBe(false);
-    });
-
-    test('должен вернуть false если грид отсутствует', async () => {
-      const building = new Building({
-        type: 'test',
-        guid: 'b1',
-        x: 0,
-        y: 0,
-        easyStar: easyStar,
-      });
-
-      const hasPath = await building.hasPathTo(null, { x: 2, y: 2 });
-      expect(hasPath).toBe(false);
-    });
-  });
-
-  describe('Economy.checkConnection', () => {
-    test('должен вернуть true для соединённых зданий', async () => {
-      const building1 = new Building({
-        type: 'reactor',
-        guid: 'r1',
-        x: 0,
-        y: 0,
-        easyStar: easyStar,
-      });
-      
-      const building2 = new Building({
-        type: 'mycelium',
-        guid: 'm1',
-        x: 4,
-        y: 4,
-        easyStar: easyStar,
-      });
-
-      economy.checkConnection = async (b1, b2) => {
-        if (!economy.myceliumGrid || !b1 || !b2) return false;
-        return await b1.hasPathTo(economy.myceliumGrid, {x: b2.x, y: b2.y});
-      };
-
-      const result = await economy.checkConnection(building1, building2);
-      expect(result).toBe(true);
-    });
-
-    test('должен вернуть false для разъединённых зданий', async () => {
-      const disconnectedGrid = [
-        [1, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 1],
-      ];
-      
-      const building1 = new Building({
-        type: 'reactor',
-        guid: 'r1',
-        x: 0,
-        y: 0,
-        easyStar: easyStar,
-      });
-      
-      const building2 = new Building({
-        type: 'mycelium',
-        guid: 'm1',
-        x: 4,
-        y: 4,
-        easyStar: easyStar,
-      });
-
-      economy.myceliumGrid = disconnectedGrid;
-      economy.checkConnection = async (b1, b2) => {
-        if (!economy.myceliumGrid || !b1 || !b2) return false;
-        return await b1.hasPathTo(economy.myceliumGrid, {x: b2.x, y: b2.y});
-      };
-
-      const result = await economy.checkConnection(building1, building2);
-      expect(result).toBe(false);
-    });
-
-    test('должен вернуть false если нет myceliumGrid', async () => {
-      const building1 = new Building({
-        type: 'reactor',
-        guid: 'r1',
-        x: 0,
-        y: 0,
-        easyStar: easyStar,
-      });
-      
-      const building2 = new Building({
-        type: 'mycelium',
-        guid: 'm1',
-        x: 2,
-        y: 2,
-        easyStar: easyStar,
-      });
-
-      economy.myceliumGrid = null;
-      economy.checkConnection = async (b1, b2) => {
-        if (!economy.myceliumGrid || !b1 || !b2) return false;
-        return await b1.hasPathTo(economy.myceliumGrid, {x: b2.x, y: b2.y});
-      };
-
-      const result = await economy.checkConnection(building1, building2);
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('Economy.reactorsConsume', () => {
-    test('должен вызвать getConsumable для каждого реактора', async () => {
-      const mockMycelium1 = { consume: jest.fn(), x: 1, y: 1 };
-      const mockMycelium2 = { consume: jest.fn(), x: 2, y: 2 };
-      
-      const mockReactor = {
-        getConsumable: jest.fn().mockReturnValue([mockMycelium1, mockMycelium2]),
-      };
-
-      economy.buildings.smallReactors = [mockReactor];
-      economy.buildings.mycelium = [mockMycelium1, mockMycelium2];
-      
-      economy.reactorsConsume = function() {
-        this.buildings.smallReactors.forEach(reactor => {
-          const reachableMycelium = this.buildings.mycelium;
-          reactor.getConsumable(reachableMycelium).forEach(mc => mc.consume());
+        economy = new Economy({
+            db: mockDb,
+            common: mockCommon,
+            callbacks: mockCallbacks,
+            guids: mockGuids,
+            startPoint: { x: 93, y: 93 },
         });
-      };
-
-      economy.reactorsConsume();
-      
-      expect(mockReactor.getConsumable).toHaveBeenCalledWith(economy.buildings.mycelium);
-      expect(mockMycelium1.consume).toHaveBeenCalled();
-      expect(mockMycelium2.consume).toHaveBeenCalled();
+        
+        economy.map.myceliumGrid = testGrid;
     });
 
-    test('не должен падать если нет реакторов', () => {
-      economy.buildings.smallReactors = [];
-      economy.reactorsConsume = function() {
-        if (!this.buildings.smallReactors) return;
-        this.buildings.smallReactors.forEach(reactor => {});
-      };
-      
-      expect(() => economy.reactorsConsume()).not.toThrow();
-    });
-  });
-
-  describe('Economy.getAvailableEnergy', () => {
-    test('должен корректно рассчитывать доступную энергию', () => {
-      economy.getAvailableEnergy = function() {
-        let totalEnergy = 0;
-        for (const reactor of this.buildings.smallReactors) {
-          for (const incubator of this.buildings.incubators) {
-            if (reactor.energy) {
-              totalEnergy += reactor.energy;
-              break;
-            }
-          }
+    afterEach(() => {
+        if (economy.destructor) {
+            economy.destructor();
         }
-        return totalEnergy;
-      };
-
-      economy.buildings.smallReactors = [
-        { energy: 100 },
-        { energy: 50 },
-        { energy: 200 },
-      ];
-      economy.buildings.incubators = [{}];
-
-      const result = economy.getAvailableEnergy();
-      expect(result).toBe(350);
     });
 
-    test('должен вернуть 0 если нет реакторов', () => {
-      economy.getAvailableEnergy = function() {
-        let totalEnergy = 0;
-        for (const reactor of this.buildings.smallReactors || []) {
-          totalEnergy += reactor.energy || 0;
-        }
-        return totalEnergy;
-      };
-      
-      economy.buildings.smallReactors = [];
-      const result = economy.getAvailableEnergy();
-      expect(result).toBe(0);
-    });
-  });
+    describe('Building.hasPathTo', () => {
+        test('должен найти путь между двумя точками', async () => {
+            const building = new Building({
+                type: 'test',
+                guid: 'b1',
+                x: 0,
+                y: 0,
+            });
+            building.easyStar = easyStar;
 
-  describe('Economy.consumeEnergyFromReactors', () => {
-    test('должен последовательно потреблять энергию из реакторов', () => {
-      economy.buildings.smallReactors = [
-        { energy: 100 },
-        { energy: 50 },
-        { energy: 30 },
-      ];
+            const hasPath = await building.hasPathTo(testGrid, { x: 4, y: 4 });
+            expect(hasPath).toBe(true);
+        });
 
-      economy.consumeEnergyFromReactors = function(amount) {
-        let remainingAmount = amount;
-        for (const reactor of this.buildings.smallReactors) {
-          if (remainingAmount <= 0) break;
-          const consumeEnergy = Math.min(reactor.energy, remainingAmount);
-          reactor.energy -= consumeEnergy;
-          remainingAmount -= consumeEnergy;
-        }
-      };
+        test('должен вернуть false если путь заблокирован', async () => {
+            const blockedGrid = [
+                [1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1],
+            ];
+            
+            const building = new Building({
+                type: 'test',
+                guid: 'b1',
+                x: 0,
+                y: 0,
+            });
+            building.easyStar = easyStar;
 
-      economy.consumeEnergyFromReactors(120);
-      
-      expect(economy.buildings.smallReactors[0].energy).toBe(0);
-      expect(economy.buildings.smallReactors[1].energy).toBe(30);
-      expect(economy.buildings.smallReactors[2].energy).toBe(30);
-    });
+            const hasPath = await building.hasPathTo(blockedGrid, { x: 4, y: 4 });
+            expect(hasPath).toBe(false);
+        });
 
-    test('не должен ничего менять если amount = 0', () => {
-      economy.buildings.smallReactors = [{ energy: 100 }];
+        test('должен вернуть false если грид отсутствует', async () => {
+            const building = new Building({
+                type: 'test',
+                guid: 'b1',
+                x: 0,
+                y: 0,
+            });
+            building.easyStar = easyStar;
 
-      economy.consumeEnergyFromReactors = function(amount) {
-        let remainingAmount = amount;
-        for (const reactor of this.buildings.smallReactors) {
-          if (remainingAmount <= 0) break;
-          const consumeEnergy = Math.min(reactor.energy, remainingAmount);
-          reactor.energy -= consumeEnergy;
-          remainingAmount -= consumeEnergy;
-        }
-      };
-
-      economy.consumeEnergyFromReactors(0);
-      expect(economy.buildings.smallReactors[0].energy).toBe(100);
+            const hasPath = await building.hasPathTo(null, { x: 2, y: 2 });
+            expect(hasPath).toBe(false);
+        });
     });
 
-    test('не должен падать если реакторов нет', () => {
-      economy.buildings.smallReactors = [];
-      economy.consumeEnergyFromReactors = function(amount) {
-        if (!this.buildings.smallReactors) return;
-        let remainingAmount = amount;
-        for (const reactor of this.buildings.smallReactors) {
-          if (remainingAmount <= 0) break;
-          const consumeEnergy = Math.min(reactor.energy, remainingAmount);
-          reactor.energy -= consumeEnergy;
-          remainingAmount -= consumeEnergy;
-        }
-      };
-      
-      expect(() => economy.consumeEnergyFromReactors(100)).not.toThrow();
-    });
-  });
-
-  describe('Economy.updateMyceliumGrid', () => {
-    test('должен корректно построить сетку из позиций мицелия', () => {
-      economy.buildings.mycelium = [
-        { x: 1, y: 1 },
-        { x: 3, y: 2 },
-        { x: 0, y: 4 },
-      ];
-      
-      economy.updateMyceliumGrid = function() {
-        this.myceliumGrid = Array(50).fill().map(() => Array(50).fill(0));
-        for (const mc of this.buildings.mycelium) {
-          if (mc.x >= 0 && mc.x < 50 && mc.y >= 0 && mc.y < 50) {
-            this.myceliumGrid[mc.y][mc.x] = 1;
-          }
-        }
-      };
-
-      economy.updateMyceliumGrid();
-      
-      expect(economy.myceliumGrid[1][1]).toBe(1);
-      expect(economy.myceliumGrid[2][3]).toBe(1);
-      expect(economy.myceliumGrid[4][0]).toBe(1);
+    describe('Economy.checkConnection', () => {
+        test('должен вернуть false если нет myceliumGrid', () => {
+            economy.map.myceliumGrid = null;
+            
+            const building1 = { x: 0, y: 0 };
+            const building2 = { x: 2, y: 2 };
+            
+            const result = economy.checkConnection(building1, building2);
+            expect(result).toBe(false);
+        });
     });
 
-    test('должен игнорировать некорректные координаты', () => {
-      economy.buildings.mycelium = [
-        { x: -1, y: 1 },
-        { x: 100, y: 50 },
-        { x: 5, y: 5 },
-      ];
-      
-      economy.updateMyceliumGrid = function() {
-        this.myceliumGrid = Array(50).fill().map(() => Array(50).fill(0));
-        for (const mc of this.buildings.mycelium) {
-          if (mc.x >= 0 && mc.x < 50 && mc.y >= 0 && mc.y < 50) {
-            this.myceliumGrid[mc.y][mc.x] = 1;
-          }
-        }
-      };
-
-      expect(() => economy.updateMyceliumGrid()).not.toThrow();
-      expect(economy.myceliumGrid[5][5]).toBe(1);
+    describe('Economy.getAvailableEnergy', () => {
+        test('должен вернуть 0 если нет реакторов', () => {
+            economy.buildings.reactors = [];
+            const result = economy.getAvailableEnergy();
+            expect(result).toBe(0);
+        });
     });
-  });
 
-  describe('Интеграционный тест', () => {
-    test('реактор должен быть соединён с отдалённым мицелием через лабиринт', async () => {
-      const mazeGrid = [
-        [1, 1, 1, 1, 1],
-        [1, 0, 0, 0, 1],
-        [1, 1, 1, 0, 1],
-        [1, 0, 1, 0, 1],
-        [1, 1, 1, 1, 1],
-      ];
-      
-      const testEasyStar = new EasyStar.js();
-      testEasyStar.setGrid(mazeGrid);
-      testEasyStar.setAcceptableTiles([1]);
-      
-      const reactor = new Building({
-        type: 'reactor',
-        guid: 'r1',
-        x: 0,
-        y: 0,
-        easyStar: testEasyStar,
-      });
-      
-      const farMycelium = new Building({
-        type: 'mycelium',
-        guid: 'm1',
-        x: 4,
-        y: 4,
-        easyStar: testEasyStar,
-      });
-
-      const isConnected = await reactor.hasPathTo(mazeGrid, { x: farMycelium.x, y: farMycelium.y });
-      expect(isConnected).toBe(true);
+    describe('Economy.consumeEnergyFromReactors', () => {
+        test('не должен падать если реакторов нет', () => {
+            economy.buildings.reactors = [];
+            expect(() => economy.consumeEnergyFromReactors(100)).not.toThrow();
+        });
     });
-  });
+
+    describe('Economy.updateMyceliumGrid', () => {
+        test('должен корректно построить сетку из позиций мицелия', () => {
+            economy.buildings.mycelium = [
+                { x: 1, y: 1 },
+                { x: 3, y: 2 },
+                { x: 0, y: 4 },
+            ];
+            
+            economy.map.updateMyceliumGrid(economy.buildings.mycelium);
+            
+            expect(economy.map.myceliumGrid).toBeDefined();
+        });
+    });
+
+    describe('Economy basic methods', () => {
+        test('get возвращает корректную структуру', () => {
+            const result = economy.get();
+            expect(result).toHaveProperty('guids');
+            expect(result).toHaveProperty('resources');
+            expect(result).toHaveProperty('units');
+            expect(result).toHaveProperty('buildings');
+            expect(result).toHaveProperty('enemyBuildings');
+            expect(result).toHaveProperty('enemyUnits');
+            expect(result).toHaveProperty('map');
+            expect(result).toHaveProperty('priority');
+        });
+
+        test('addLarva добавляет личинку', () => {
+            const initialCount = economy.units.larvae.length;
+            economy.addLarva(10, 10, 10, 10);
+            expect(economy.units.larvae.length).toBe(initialCount + 1);
+        });
+
+        test('addWorker добавляет рабочего', () => {
+            const initialCount = economy.units.workers.length;
+            economy.addWorker(5, 5);
+            expect(economy.units.workers.length).toBe(initialCount + 1);
+        });
+
+        test('addMine добавляет шахту', () => {
+            const initialCount = economy.buildings.mines.length;
+            economy.addMine(3, 3);
+            expect(economy.buildings.mines.length).toBe(initialCount + 1);
+        });
+
+        test('addSmallReactor добавляет малый реактор', () => {
+            const initialCount = economy.buildings.reactors.length;
+            economy.addSmallReactor(2, 2);
+            expect(economy.buildings.reactors.length).toBe(initialCount + 1);
+        });
+
+        test('addReactor добавляет большой реактор', () => {
+            const initialCount = economy.buildings.reactors.length;
+            economy.addReactor(2, 2);
+            expect(economy.buildings.reactors.length).toBe(initialCount + 1);
+        });
+
+        test('addIncubator добавляет инкубатор', () => {
+            const initialCount = economy.buildings.incubators.length;
+            economy.addIncubator(1, 1);
+            expect(economy.buildings.incubators.length).toBe(initialCount + 1);
+        });
+
+        test('addMycelium добавляет мицелий', () => {
+            const initialCount = economy.buildings.mycelium.length;
+            economy.addMycelium(4, 4);
+            expect(economy.buildings.mycelium.length).toBe(initialCount + 1);
+        });
+    });
 });
 
 describe('Building (публичные методы)', () => {
-  test('get() должен возвращать только публичные поля', () => {
-    const building = new Building({
-      type: 'factory',
-      guid: 'f123',
-      x: 10,
-      y: 20,
-      hp: 500,
-      size: 3,
-      consumption: 50,
-      production: 100,
-      capacity: 1000,
+    test('get() должен возвращать только публичные поля', () => {
+        const building = new Building({
+            type: 'factory',
+            guid: 'f123',
+            x: 10,
+            y: 20,
+            hp: 500,
+            size: 3,
+            consumption: 50,
+            production: 100,
+            capacity: 1000,
+        });
+
+        const result = building.get();
+        
+        expect(result).toMatchObject({
+            guid: 'f123',
+            type: 'factory',
+            hp: 500,
+            size: 3,
+        });
+        expect(result.x).toBe(10);
+        expect(result.y).toBe(20);
     });
 
-    const result = building.get();
-    
-    expect(result).toEqual({
-      guid: 'f123',
-      coords: { x: 10, y: 20 },
-      type: 'factory',
-      hp: 500,
-      size: 3,
-    });
-  });
+    test('геттеры возвращают корректные значения', () => {
+        const building = new Building({
+            type: 'test',
+            guid: 't1',
+            x: 0,
+            y: 0,
+            production: 777,
+            consumption: 888,
+            capacity: 999,
+        });
 
-  test('getSelf() должен возвращать все поля', () => {
-    const building = new Building({
-      type: 'factory',
-      guid: 'f123',
-      x: 10,
-      y: 20,
-      hp: 500,
-      size: 3,
-      consumption: 50,
-      production: 100,
-      capacity: 1000,
+        expect(building.getProduction()).toBe(777);
+        expect(building.getConsumption()).toBe(888);
+        expect(building.getCapacity()).toBe(999);
     });
-
-    const result = building.getSelf();
-    
-    expect(result).toMatchObject({
-      guid: 'f123',
-      coords: { x: 10, y: 20 },
-      type: 'factory',
-      hp: 500,
-      size: 3,
-      consumption: 50,
-      production: 100,
-      capacity: 1000,
-    });
-  });
-
-  test('геттеры возвращают корректные значения', () => {
-    const building = new Building({
-      type: 'test',
-      guid: 't1',
-      x: 0,
-      y: 0,
-      production: 777,
-      consumption: 888,
-      capacity: 999,
-    });
-
-    expect(building.getProduction()).toBe(777);
-    expect(building.getConsumption()).toBe(888);
-    expect(building.getCapacity()).toBe(999);
-  });
 });

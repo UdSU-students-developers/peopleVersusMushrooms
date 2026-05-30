@@ -1,5 +1,6 @@
 const EasyStar = require('easystarjs');
 const CONFIG = require('../../config');
+const Worker = require('./entities/Units/Worker');
 
 const Map = require('./entities/Map/Map');
 const { 
@@ -46,6 +47,9 @@ class Economy {
         this.updatedBuildings = []; // { }
         this.updatedUnits = []; // { }
 
+        this.unknownPoints = [];
+        this.knownResources = [];
+
 
         // данные про игроков
         this.guids = {
@@ -83,14 +87,16 @@ class Economy {
     }
 
     getUpdatedBuildings() {
-        return this.updatedBuildings;
+        return [...this.updatedBuildings];
     }
 
     getUpdatedUnits() {
-        return this.updatedUnits;
+        return [...this.updatedUnits];
     }
 
     _initEconomy() {
+        this._initUnknownPoints()
+        this.createUnit({ x: 1, y: 1, type: 'worker'});
         this.createBuilding({ x: 2, y: 2, buildingType: DRILLER.type });
         this.createBuilding({ x: 2, y: 3, buildingType: MINE.type });
         this.createBuilding({ x: 3, y: 2, buildingType: PIPE.type });
@@ -101,7 +107,7 @@ class Economy {
 
     _destroyEntity(guid) {
         const index = [...this.buildings, ...this.workers].findIndex(u => u.guid === guid);
-        if (index + 1) return null;
+        if (!(index + 1)) return;
         if (index < this.buildings.length) {
             const building = this.buildings[index];
             this.updatedBuildings(building.getForMap());
@@ -114,10 +120,72 @@ class Economy {
             this.map.deleteUnit(unit.get());
             this.workers.splice[unitIndex];
         } 
+        this.updated = true;
+    }
+
+    //инициализация неизвестных точек
+    _initUnknownPoints() {
+        for (let x = 0; x < 100; x++) {
+            for (let y = 0; y < 100; y++) {
+                this.unknownPoints.push({ x, y });
+            }
+        }
+    }
+
+    getNearestUnknownPoint(x, y) {
+        if (this.unknownPoints.length === 0) return null;
+        
+        let nearest = null;
+        let minDistance = Infinity;
+        
+        for (const point of this.unknownPoints) {
+            const dx = Math.abs(x - point.x);
+            const dy = Math.abs(y - point.y);
+            const distance = dx * dx + dy * dy;
+            
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearest = point;
+            }
+        }
+        
+        return nearest;
+    }
+
+    //отметить точку как исследованную
+    markPointAsExplored(x, y) {
+        const index = this.unknownPoints.findIndex(p => p.x === x && p.y === y);
+        if (index !== -1) {
+            this.unknownPoints.splice(index, 1);
+        }
+    }
+
+    //добавить найденный ресурс
+    addKnownResource(x, y, type, saturation) {
+        const exists = this.knownResources.some(r => r.x === x && r.y === y);
+        if (!exists) {
+            this.knownResources.push({ x, y, type, saturation });
+            console.log(`НАЙДЕН РЕСУРС: (${x}, ${y}) тип: ${type}, насыщение: ${saturation}`);
+        }
+    }
+
+    //получить все известные ресурсы
+    getKnownResources() {
+        return this.knownResources;
+    }
+
+    //получить ресурс по координатам
+    getKnownResourceAt(x, y) {
+        return this.knownResources.find(r => r.x === x && r.y === y);
     }
 
     setRelief(relief) {
         this.map.setRelief(relief);
+        for (const worker of this.workers) {
+            if (worker.onReliefLoaded) {
+                worker.onReliefLoaded();
+            }
+        }
     }
 
     setResources(resources) {
@@ -125,7 +193,7 @@ class Economy {
     }
 
     findEntityByGuid(guid) {
-        [...this.workers, ...this.buildings].find(entity => entity.guid === guid);
+        const found = [...this.workers, ...this.buildings].find(entity => entity.guid === guid);
         if (found) return found;
         return null;
     }
@@ -134,29 +202,36 @@ class Economy {
         const entity = this.findEntityByGuid(guid);
         if (!entity) return false;
         const isDead = entity.takeDamage(damage);
-        this.updated = true;
-        if (isDead) {
-            this._destroyEntity(guid);
-        }
+        if (isDead) this._destroyEntity(guid);
         return true;
     }
 
     //создать юнита
-    createUnit({ x, y, type = null }) {
+    createUnit({ x, y, type = 'worker' }) {
+        const unitGuid = this.common.guid();
+        
+        if (type === 'worker') {
+            const worker = new Worker({
+                guid: unitGuid,
+                x,
+                y,
+                map: this.map,
+                easystar: this.easyStar,
+                economy: this
+            });
+            this.workers.push(worker);
+            this.map.setUnit(worker.get());
+            this.updatedUnits.push(worker.get());
+            this.updated = true;
+            return;
+        }
+        
         const unit = {
-            guid: this.common.guid(),
+            guid: this.guids.peopleArmy,
             x,
             y,
             type
         };
-        if (unit.type === 'worker') {
-            this.workers.push(unit);
-            this.map.setUnit(unit);
-            this.updatedUnits(unit);
-            this.updated = true;
-            return
-        }
-        unit.guid = this.guids.peopleArmy;
         this.callbacks.spawnArmyUnit(unit);
     }
 
@@ -344,9 +419,9 @@ class Economy {
                     );
                     consumer.store.OIL += oil - dispenser.store.OIL;
                 });
-                this.easyStar.calculate();
             });
         });
+        this.easyStar.calculate();
     }
 
     distributeIron(mines) {
@@ -369,9 +444,9 @@ class Economy {
                     );
                     consumer.store.IRON += iron - dispenser.store.IRON;
                 });
-                this.easyStar.calculate();
             });
         });
+        this.easyStar.calculate();
     }
 
     // 1. выработать энергию (потратить нефть)
@@ -379,7 +454,7 @@ class Economy {
         //пробежаться по всем реакторам
         //каждый реактор потребляет нефть, перераспределенную в конце последнего update
         //если он смог потребить нефть => выработать энергию
-        const reactors = this.buildings.filter(building => building.priority == 1);
+        const reactors = this.buildings.filter(building => building.priority === 1);
         reactors.forEach(reactor => reactor.update());
         //распределить энергию по зданиям в приоритетах
         // 2 - добывающие постройки
@@ -391,7 +466,7 @@ class Economy {
         // пробежаться по всем буровым
         // потребить энергию, полученную в прошлом шаге (если есть)
         // добыть нефть и железо
-        const miners = this.buildings.filter(building => building.priority == 2);
+        const miners = this.buildings.filter(building => building.priority === 2);
         miners.forEach(miner => miner.update());
         const drillers = miners.filter(miner => miner.type === DRILLER.type);
         const mines = miners.filter(miner => miner.type === MINE.type);
@@ -422,6 +497,12 @@ class Economy {
 
     }
 
+    planUnits() {
+        if (this.plannedUnits.length === 0) {
+            this.plannedUnits.push('soldier', 'soldier', 'soldier', 'soldier', 'sniper', 'sniper', 'partizan', 'bmp');
+        }
+    }
+
 
     update() {
         /***********************/
@@ -444,6 +525,7 @@ class Economy {
         // 6. рабочим построить что-нибудь
         this.build();
         // 7. Запланировать здания и юнитов
+        this.planUnits();
 
         if (this.updated) {
             this.updated = false;

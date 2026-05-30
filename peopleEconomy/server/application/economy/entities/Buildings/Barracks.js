@@ -58,7 +58,7 @@ class Barracks extends Building {
                 }
                 break
             case WORKER.TYPE:
-                if (this.chech(WORKER)) {
+                if (this.check(WORKER)) {
                     this.callbacks.createUnit(unitData);
                     return WORKER.COST;
                 }
@@ -78,6 +78,7 @@ class Barracks extends Building {
         if (cost) {
             units.splice(0, 1);
             this.store.IRON -= cost;
+            this.inertia = 0;
         }
         this.is_working = false;
         return;

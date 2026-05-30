@@ -96,11 +96,17 @@ const GameCanvas: React.FC = () => {
             drawTile(SPRITE.WORKER, g.x, g.y);
 
         //enemy
-        for (const enemy of scene.enemyBuildings)
-            drawTile(SPRITE.ENEMY_BUILDING, enemy.x, enemy.y);
+        for (const enemy of scene.enemyBuildings) {
+            const tileSize = enemy.size ?? 1;
+            drawTileSized(SPRITE.ENEMY_BUILDING, enemy.x, enemy.y, tileSize);
+        }
 
         for (const enemy of scene.enemyUnits)
             drawTile(SPRITE.ENEMY_UNIT, enemy.x, enemy.y);
+
+        // ally units
+        for (const ally of scene.allyUnits)
+            drawTile(SPRITE.ALLY_UNIT, ally.x, ally.y);
     };
 
     function render(FPS: number) {

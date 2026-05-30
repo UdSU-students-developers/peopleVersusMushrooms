@@ -1,4 +1,4 @@
-import { TMap } from "../../Army";
+import { TMap, Army } from "../../Army";
 import Unit, { TUnitOptions, TUnitState, ProjectileType } from "../Units";
 
 class Eblekar extends Unit {
@@ -26,7 +26,7 @@ class Eblekar extends Unit {
         this.lastHealTime = -this.healCooldown;
     }
 
-    public update(enemies: Unit[], map: TMap, deltaTime: number, allies: Unit[] = []): void {
+    public update(enemies: Unit[], map: TMap, deltaTime: number, allies: Unit[] = [], army?: Army): void {
         if (!this.isAlive) return;
 
         if (this.formationHold && this.formationTarget) {
@@ -88,8 +88,9 @@ class Eblekar extends Unit {
         let nearestAlly: Unit | null = null;
         let nearestDistance: number = Infinity;
 
+        // Проверяем других союзников
         for (const ally of allies) {
-            if (!ally.isAlive || ally.guid === this.guid) continue;
+            if (!ally.isAlive) continue;
             if (!this.canHealAlly(ally)) continue;
             if (ally.hp >= ally.baseHp) continue;
 
@@ -101,6 +102,12 @@ class Eblekar extends Unit {
                 nearestDistance = distance;
                 nearestAlly = ally;
             }
+        }
+
+        // Также проверяем себя - хилим себя если ранены и нет других раненых союзников
+        if (!nearestAlly && this.isAlive && this.hp < this.baseHp) {
+            nearestAlly = this;
+            nearestDistance = 0;
         }
 
         if (!nearestAlly) {

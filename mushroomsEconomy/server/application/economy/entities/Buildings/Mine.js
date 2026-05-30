@@ -34,7 +34,7 @@ class Mine extends Building {
 
         const res = resources[this.y][this.x];
         if (res && res.type === 'IRON') {
-            return res.saturation;
+            return res.saturation * this.production;
         }
 
         return 0;

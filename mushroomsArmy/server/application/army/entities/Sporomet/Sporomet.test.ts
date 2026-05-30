@@ -108,7 +108,7 @@ describe('Sporomet', () => {
         } as unknown as Unit;
         
         sporomet.takeDamage(8);
-        sporomet.update([enemy], [] as TMap, 5);
+        sporomet.update([enemy], [] as TMap, 5, [], undefined);
         expect(enemy.takeDamage).not.toHaveBeenCalled();
     });
 
@@ -126,7 +126,7 @@ describe('Sporomet', () => {
         (sporomet as unknown as ITSporometTestable).isAiming = true;
         (sporomet as unknown as ITSporometTestable).currentTarget = enemy;
         
-        sporomet.update([enemy], [] as TMap, 0.6);
+        sporomet.update([enemy], [] as TMap, 0.6, [], undefined);
         
         expect((sporomet as unknown as ITSporometTestable).isAiming).toBe(false);
         expect((sporomet as unknown as ITSporometTestable).currentTarget).toBe(null);
@@ -171,7 +171,7 @@ describe('Sporomet', () => {
             }],
         } as unknown as Unit;
         
-        sporomet.update([enemy], [] as TMap, 0.5);
+        sporomet.update([enemy], [] as TMap, 0.5, [], undefined);
         
         expect(enemy.takeDamage).toHaveBeenCalledWith(5);
     });
@@ -208,7 +208,7 @@ describe('Sporomet', () => {
 
         const initialProjectilesCount = sporomet.projectiles.length;
 
-        sporomet.update([enemy], [] as TMap, 0.1);
+        sporomet.update([enemy], [] as TMap, 0.1, [], undefined);
 
         expect((sporomet as unknown as ITSporometTestable).isAiming).toBe(false);
         expect((sporomet as unknown as ITSporometTestable).currentTarget).toBe(null);
@@ -223,12 +223,12 @@ describe('Sporomet', () => {
             isAlive: false,
             takeDamage: jest.fn(),
         } as unknown as Unit;
-        
+
         (sporomet as unknown as ITSporometTestable).isAiming = true;
         (sporomet as unknown as ITSporometTestable).currentTarget = enemy;
-        
-        sporomet.update([enemy], [] as TMap, 0.1);
-        
+
+        sporomet.update([enemy], [] as TMap, 0.1, [], undefined);
+
         expect((sporomet as unknown as ITSporometTestable).isAiming).toBe(false);
         expect((sporomet as unknown as ITSporometTestable).currentTarget).toBe(null);
     });
@@ -296,7 +296,7 @@ describe('Sporomet', () => {
 
     it('споромет корректно обрабатывает пустой массив врагов', () => {
         expect(() => {
-            sporomet.update([], [] as TMap, 0.1);
+            sporomet.update([], [] as TMap, 0.1, [], undefined);
         }).not.toThrow();
         expect(sporomet.isAlive).toBe(true);
     });
@@ -315,12 +315,12 @@ describe('Sporomet', () => {
             takeDamage: jest.fn(),
         } as unknown as Unit;
         
-        sporomet.takeDamage(8);
+        sporomet.takeDamage(20);
         expect(sporomet.isAlive).toBe(false);
-        
+
         const originalX = sporomet.x;
-        sporomet.update([enemy], [] as TMap, 1);
-        
+        sporomet.update([enemy], [] as TMap, 1, [], undefined);
+
         expect(sporomet.x).toBe(originalX);
         expect(enemy.takeDamage).not.toHaveBeenCalled();
     });

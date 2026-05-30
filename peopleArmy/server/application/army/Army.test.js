@@ -400,7 +400,7 @@ describe('уничтоженные здания', () => {
             type: 'sporovaya_bashnya',
             x: 1,
             y: 0,
-            hp: 160,
+            hp: 200,
         })];
 
         await army.shotUnits();
@@ -481,6 +481,32 @@ describe('уничтоженные здания', () => {
         });
         expect(army.enemyUnits).toHaveLength(1);
         expect(army.enemyUnits[0].guid).toBe('shroom-1');
+        expect(army.enemyUnits[0].maxHp).toBe(2);
+    });
+
+    test('setVisibility подставляет maxHp юнитов mushroomsArmy по типу', () => {
+        army.setVisibility({
+            units: [
+                makeEnemy({ guid: 'c1', type: 'champigneb', role: 'mushroomsArmy', x: 1, y: 0 }),
+                makeEnemy({ guid: 's1', type: 'sporomet', role: 'mushroomsArmy', x: 2, y: 0, hp: 12 }),
+            ],
+            buildings: [],
+        });
+        expect(army.enemyUnits.find((u) => u.guid === 'c1').maxHp).toBe(35);
+        expect(army.enemyUnits.find((u) => u.guid === 's1').hp).toBe(12);
+        expect(army.enemyUnits.find((u) => u.guid === 's1').maxHp).toBe(20);
+    });
+
+    test('setVisibility подставляет hp здания mushroomsArmy без hp с карты', () => {
+        army.setVisibility({
+            units: [],
+            buildings: [
+                { guid: 't1', type: 'sporovaya_bashnya', role: 'mushroomsArmy', x: 1, y: 0, size: 1 },
+                { guid: 'w1', type: 'vzryvomor', role: 'mushroomsArmy', x: 2, y: 0, size: 1 },
+            ],
+        });
+        expect(army.enemyBuildings.find((b) => b.guid === 't1').hp).toBe(200);
+        expect(army.enemyBuildings.find((b) => b.guid === 'w1').hp).toBe(70);
     });
 
     test('get() отдаёт destroyedEnemyBuildingGuids для клиента', async () => {
@@ -490,7 +516,7 @@ describe('уничтоженные здания', () => {
             type: 'sporovaya_bashnya',
             x: 1,
             y: 0,
-            hp: 160,
+            hp: 200,
         })];
         await army.shotUnits();
         expect(army.get().destroyedEnemyBuildingGuids).toEqual(['tower-1']);

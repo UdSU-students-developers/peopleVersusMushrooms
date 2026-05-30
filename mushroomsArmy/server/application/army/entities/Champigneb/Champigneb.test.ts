@@ -176,7 +176,7 @@ describe('Champigneb', () => {
 
         const originalX = champigneb.x;
         expect(() => {
-            champigneb.update([enemy], [] as TMap, 1);
+            champigneb.update([enemy], [] as TMap, 1, [], undefined);
         }).not.toThrow();
         expect(champigneb.x).toBe(originalX);
     });

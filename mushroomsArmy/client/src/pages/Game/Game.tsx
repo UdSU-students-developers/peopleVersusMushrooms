@@ -12,7 +12,7 @@ import Footer from '../../widgets/Footer/Footer';
 import GameOver from '../../widgets/GameOver/GameOver';
 import OptionsPannel from '../../widgets/OptionsPannel/OptionsPannel';
 import { useUIScale } from '../../widgets/UIScaleContext';
-import { HUD_LAYOUT } from '../../widgets/hudLayout';  // ← новый файл
+import { HUD_LAYOUT } from '../../widgets/hudLayout';  
 
 const Game: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
 

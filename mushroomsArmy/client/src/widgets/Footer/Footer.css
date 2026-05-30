@@ -198,6 +198,48 @@
   overflow: hidden;
 }
 
+/* ================= УБИТЫЕ ЮНИТЫ ==================== */
+.game-killed-units-box {
+  flex: 0 0 auto;
+  width: calc(200px * var(--scale));
+  height: calc(var(--footer-height) - (28px * var(--scale)));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: calc(16px * var(--scale));
+  box-sizing: border-box;
+  padding: calc(1px * var(--scale)) 15px;
+  margin-left: calc(10px * var(--scale));
+  border-left: 2px solid rgba(217, 144, 54, 0.3);
+  padding-left: calc(15px * var(--scale));
+}
+
+.killed-units-summary {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: calc(8px * var(--scale));
+}
+
+.killed-summary-label {
+  font-size: calc(16px * var(--scale));
+  font-weight: 400;
+  color: rgb(200, 100, 80);
+  text-shadow: 1px 1px 1px rgb(113, 22, 22);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.killed-summary-count {
+  font-family: 'Handjet', sans-serif;
+  font-size: calc(24px * var(--scale));
+  font-weight: 700;
+  color: rgb(220, 120, 80);
+  text-shadow: 1px 1px 2px rgb(0, 0, 0);
+  min-width: calc(30px * var(--scale));
+  text-align: center;
+}
+
 @media (max-width: 768px) {
   .minimap-container {
     width: min(var(--minimap-box-size), calc(100vw - 8px));

@@ -62,13 +62,15 @@ class SmallReactor extends Building {
             this.consumed = false;
         }
 
+        let totalEnergy = 0;
         for (const mc of consumableList) {
             const energyGain = mc.getPower();
+            totalEnergy += energyGain;
             this.energy = Math.min(this.energy + energyGain, this.capacity);
             mc.consume();
         }
-        
-        return consumableList.length;
+
+        return totalEnergy;
     }
 
     consumeMushroom(mycelium) {

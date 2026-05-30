@@ -22,6 +22,7 @@ export const SPRITE = {
     MINE: 14,
     ENEMY_BUILDING: 13,
     ENEMY_UNIT: 15,
+    ALLY_UNIT: 16,
 };
 
 export const getTerrainSprite = (type: number | null): number =>

@@ -40,17 +40,14 @@ export interface ArmyStateManagerOptions {
 
 export interface EconomyRequest {
     armyGuid: string;
-    requestType: 'resources' | 'can_build' | 'production_status';
-    data?: Record<string, unknown>;
+    requestType: 'request_buildings';
+    data?: {
+        buildingType: string;
+    };
 }
 
 export interface EconomyResponse {
     success: boolean;
-    data?: {
-        resources?: { gold?: number; food?: number; wood?: number };
-        canBuild?: boolean;
-        production?: { queue: string[]; eta: number };
-    };
 }
 
 export interface BuildQueueItem {
@@ -58,6 +55,7 @@ export interface BuildQueueItem {
     x: number;
     y: number;
     scheduledAt: number;
+    isRebuild?: boolean; // флаг, что это восстановление уничтоженного здания
 }
 
 export class ArmyStateManager {
@@ -89,6 +87,7 @@ export class ArmyStateManager {
     private buildQueue: BuildQueueItem[] = [];
     private readonly TOWER_BUILD_INTERVAL = 180000; // 180 сек
     private readonly WALL_BUILD_INTERVAL = 30000; // 30 сек
+    private readonly REBUILD_DELAY = 10000; // 10 сек для восстановления уничтоженного здания
     private lastTowerBuild = 0;
     private lastWallBuild = 0;
 
@@ -128,6 +127,8 @@ export class ArmyStateManager {
         this.updateUnitMetrics();
         this.updateBuildingMetrics();
         this.updateMode();
+        // Обновляем режим в Army
+        this.army.setMode(this.metrics.currentMode);
         this.updateFormationAndWalls();
         this.assignNewUnitsToFormation();
         this.updateScouts();
@@ -179,7 +180,7 @@ export class ArmyStateManager {
 
             if (allCombat.length === 0) return;
 
-            // Синхронизируем скорость сразу 
+            // Синхронизируем скорость
             this.syncGroupSpeed(allCombat);
 
             const avgX = allCombat.reduce((s, u) => s + u.x, 0) / allCombat.length;
@@ -196,14 +197,14 @@ export class ArmyStateManager {
                 ? Math.sqrt((nearestEnemy.x - avgX) ** 2 + (nearestEnemy.y - avgY) ** 2) <= 25
                 : false;
 
-            // Строим полукруг вокруг центра масс группы лицом в сторону марша
+            // Строим полукруг вокруг центра масс группы
             const slots = this.buildMarchSemicircle(
                 allCombat,
                 avgX, avgY,
                 marchDirX / marchNorm, marchDirY / marchNorm,
                 counts,
             );
-            
+
             this.assignFormationTargets(slots);
 
             const formationReady = allCombat.every(u => {
@@ -231,7 +232,7 @@ export class ArmyStateManager {
                         const slotOffsetX = u.formationTarget.x - avgX;
                         const slotOffsetY = u.formationTarget.y - avgY;
                         u.formationTarget = {
-                            x: Math.max(0, Math.round(slotOffsetX)), // слоты не уходят за карту
+                            x: Math.max(0, Math.round(slotOffsetX)),
                             y: Math.max(0, Math.round(slotOffsetY)),
                         };
                     } else {
@@ -246,17 +247,15 @@ export class ArmyStateManager {
             return;
         }
 
-        // Обычный/оборонительный режим
-        const isDefense = this.metrics.currentMode === 'defense';
+        // Оборонительный режим - армия стоит у базы и атакует всех врагов в пределах видимости
         for (const u of aliveUnits) {
             u.currentSpeed = u.speed;
             u.formationHold = false;
-            // В режиме обороны — ограничиваем поводок: юниты атакуют врагов,
-            // подошедших близко, но не уходят далеко от своего слота в строю.
-            u.leashRadius = isDefense ? 10 : Infinity;
+            u.leashRadius = 20;
         }
 
-        const slots = planner.updateForCounts(counts, { defenseHold: isDefense });
+        // В оборонительном режиме используем defenceHold
+        const slots = planner.updateForCounts(counts, { defenseHold: true });
         this.assignFormationTargets(slots);
 
         // Settle-detection (spec §5): юниты в transit и без слота не считаются —
@@ -272,67 +271,60 @@ export class ArmyStateManager {
             if (Math.max(dx, dy) > SETTLE_RADIUS) continue;
             unitPositions.push({ x: u.x, y: u.y });
         }
-        const newWallPositions = planner.checkWallTrigger(unitPositions);
-        if (newWallPositions) {
-            for (const pos of newWallPositions) {
-                this.army.spawnBuilding('vzryvomor', pos.x, pos.y, this.common);
-            }
-            this.spawnTowersBehindDefenseLine(newWallPositions);
-        }
+        // Динамическая генерация новых линий обороны по продвижению армии отключена.
     }
 
-private buildMarchSemicircle(
-    units: { type: string }[],
-    cx: number, cy: number,
-    dirX: number, dirY: number,
-    counts: { sporomet: number; eblekar: number; champigneb: number },
-): Record<'sporomet' | 'eblekar' | 'champigneb', { x: number; y: number }[]> {
-    const map = this.army.map;
-    const rows = map?.length ?? 0;
-    const cols = map?.[0]?.length ?? 0;
+    private buildMarchSemicircle(
+        units: { type: string }[],
+        cx: number, cy: number,
+        dirX: number, dirY: number,
+        counts: { sporomet: number; eblekar: number; champigneb: number },
+    ): Record<'sporomet' | 'eblekar' | 'champigneb', { x: number; y: number }[]> {
+        const map = this.army.map;
+        const rows = map?.length ?? 0;
+        const cols = map?.[0]?.length ?? 0;
 
-    const isWalkable = (x: number, y: number): boolean => {
-        if (x < 0 || y < 0 || x >= cols || y >= rows) return false;
-        const tile = map[y]?.[x];
-        return tile === 0 || tile === 2;
-    };
+        const isWalkable = (x: number, y: number): boolean => {
+            if (x < 0 || y < 0 || x >= cols || y >= rows) return false;
+            const tile = map[y]?.[x];
+            return tile === 0 || tile === 2;
+        };
 
-    const angle = Math.atan2(dirY, dirX);
-    const arcSlots = (
-        r: number, n: number, spreadRad: number, offsetAngle = 0,
-    ): { x: number; y: number }[] => {
-        if (n === 0) return [];
-        const slots: { x: number; y: number }[] = [];
-        for (let i = 0; i < n; i++) {
-            const t = n > 1 ? (i / (n - 1) - 0.5) * spreadRad : 0;
-            const a = angle + offsetAngle + t;
-            const sx = Math.round(cx + r * Math.cos(a));
-            const sy = Math.round(cy + r * Math.sin(a));
-            // Пробуем слот и ближайших соседей если непроходимо
-            let placed = false;
-            for (let dr = 0; dr <= 2 && !placed; dr++) {
-                for (const [ox, oy] of [[0,0],[1,0],[-1,0],[0,1],[0,-1]]) {
-                    const nx = sx + ox * dr, ny = sy + oy * dr;
-                    if (isWalkable(nx, ny)) {
-                        slots.push({ x: nx, y: ny });
-                        placed = true;
-                        break;
+        const angle = Math.atan2(dirY, dirX);
+        const arcSlots = (
+            r: number, n: number, spreadRad: number, offsetAngle = 0,
+        ): { x: number; y: number }[] => {
+            if (n === 0) return [];
+            const slots: { x: number; y: number }[] = [];
+            for (let i = 0; i < n; i++) {
+                const t = n > 1 ? (i / (n - 1) - 0.5) * spreadRad : 0;
+                const a = angle + offsetAngle + t;
+                const sx = Math.round(cx + r * Math.cos(a));
+                const sy = Math.round(cy + r * Math.sin(a));
+                let placed = false;
+                for (let dr = 0; dr <= 2 && !placed; dr++) {
+                    for (const [ox, oy] of [[0,0],[1,0],[-1,0],[0,1],[0,-1]]) {
+                        const nx = sx + ox * dr, ny = sy + oy * dr;
+                        if (isWalkable(nx, ny)) {
+                            slots.push({ x: nx, y: ny });
+                            placed = true;
+                            break;
+                        }
                     }
                 }
+                if (!placed) slots.push({ x: Math.max(0, sx), y: Math.max(0, sy) });
             }
-            if (!placed) slots.push({ x: Math.max(0, sx), y: Math.max(0, sy) });
-        }
-        return slots;
-    };
-    
-    const champSlots = arcSlots(8, counts.champigneb, Math.PI * 0.8);
-    const sporSlots = arcSlots(4, counts.sporomet, Math.PI * 0.7);
-    const eblSlots = arcSlots(4, counts.eblekar, Math.PI * 0.7, Math.PI);
+            return slots;
+        };
 
-    return { champigneb: champSlots, sporomet: sporSlots, eblekar: eblSlots };
-}
+        const champSlots = arcSlots(8, counts.champigneb, Math.PI * 0.8);
+        const sporSlots = arcSlots(4, counts.sporomet, Math.PI * 0.7);
+        const eblSlots = arcSlots(4, counts.eblekar, Math.PI * 0.7, Math.PI);
 
-    private findNearestEnemy(fromX: number, fromY: number,): { x: number; y: number } | null {
+        return { champigneb: champSlots, sporomet: sporSlots, eblekar: eblSlots };
+    }
+
+    private findNearestEnemy(fromX: number, fromY: number): { x: number; y: number } | null {
         const targets: { x: number; y: number }[] = [
             ...this.army.enemyUnits.filter(u => u.isAlive),
             ...this.army.enemyBuildings.filter(b => (b.hp ?? 1) > 0),
@@ -417,15 +409,19 @@ private buildMarchSemicircle(
         this.metrics.buildingsAlive = this.army.buildings.filter(b => b.isAlive).length;
     }
 
-    //Обновляет режим
+    //Обновляет режим: атака при >100 юнитов, оборона при <20
     private updateMode(): void {
         const count = this.metrics.aliveUnitsCount;
-        let newMode: ArmyMode = 'balanced';
+        let newMode: ArmyMode = 'defense';
 
-        if (count < 50) {
-            newMode = 'defense';
-        } else if (count > 100) {
+        // Логика: оборона до 100 юнитов, атака с 100 до 20, потом опять оборона
+        if (count >= 100) {
             newMode = 'attack';
+        } else if (count < 20) {
+            newMode = 'defense';
+        } else {
+            // 20 <= count < 100: оборона
+            newMode = 'defense';
         }
 
         if (newMode !== this.metrics.currentMode) {
@@ -544,6 +540,9 @@ private buildMarchSemicircle(
     private async processAutoBuild(): Promise<void> {
         const now = Date.now();
 
+        // Обработка очереди восстановления уничтоженных зданий
+        await this.processRebuildQueue(now);
+
         // Постройка башни каждые 180 сек
         if (now - this.lastTowerBuild >= this.TOWER_BUILD_INTERVAL) {
             await this.tryBuildStructure('sporovaya_bashnya');
@@ -557,79 +556,54 @@ private buildMarchSemicircle(
         }
     }
 
-    private async tryBuildStructure(type: 'sporovaya_bashnya' | 'vzryvomor'): Promise<void> {
-        if (this.economyRequestCallback) {
-            const response = await this.economyRequestCallback({
-                armyGuid: this.army.guid,
-                requestType: 'can_build',
-                data: { buildingType: type },
-            });
+    private async processRebuildQueue(now: number): Promise<void> {
+        const readyToRebuild = this.buildQueue.filter(item => 
+            item.isRebuild && (now - item.scheduledAt >= this.REBUILD_DELAY)
+        );
 
-            if (!response?.success || !response.data?.canBuild) {
-                return; // Недостаточно ресурсов
-            }
+        for (const item of readyToRebuild) {
+            await this.tryBuildStructure(item.type, item.x, item.y);
         }
 
-        // Ищем место для постройки
-        const position = this.findBuildPosition(type);
+        // Удаляем обработанные элементы из очереди
+        this.buildQueue = this.buildQueue.filter(item => 
+            !item.isRebuild || (now - item.scheduledAt < this.REBUILD_DELAY)
+        );
+    }
+
+    public scheduleRebuild(type: 'sporovaya_bashnya' | 'vzryvomor', x: number, y: number): void {
+        this.buildQueue.push({
+            type,
+            x,
+            y,
+            scheduledAt: Date.now(),
+            isRebuild: true
+        });
+    }
+
+    private async tryBuildStructure(
+        type: 'sporovaya_bashnya' | 'vzryvomor',
+        fixedX?: number,
+        fixedY?: number
+    ): Promise<void> {
+        if (!this.economyRequestCallback) return;
+
+        const response = await this.economyRequestCallback({
+            armyGuid: this.army.guid,
+            requestType: 'request_buildings',
+            data: { buildingType: type },
+        });
+
+        if (!response?.success) return;
+
+        // Ищем место для постройки (если не задано фиксированное место)
+        const position = fixedX !== undefined && fixedY !== undefined
+            ? { x: fixedX, y: fixedY }
+            : this.findBuildPosition(type);
         if (!position) return;
 
         // Строим
-        const result = this.army.spawnBuilding(type, position.x, position.y, this.common);
-        if (result) {
-            if (this.economyRequestCallback) {
-                await this.economyRequestCallback({
-                    armyGuid: this.army.guid,
-                    requestType: 'resources',
-                    data: { action: 'spend', buildingType: type },
-                });
-            }
-        }
-    }
-
-    /**
-     * Спавнит споровые башни каждые 10 клеток за L-линией обороны взрывоморов.
-     * Горизонтальное плечо (y=topY) — башни при y=topY+1.
-     * Вертикальное плечо (x=leftX) — башни при x=leftX+1.
-     * Башни могут ставиться на горах (разрешено в spawnBuilding для sporovaya_bashnya).
-     */
-    private spawnTowersBehindDefenseLine(wallPositions: ReadonlyArray<{ x: number; y: number }>): void {
-        if (wallPositions.length === 0) return;
-
-        const map = this.army.map;
-        const rows = map.length;
-        const cols = map[0]?.length ?? 0;
-
-        // Апекс L-линии: минимальные topY и leftX
-        let topY = Infinity, leftX = Infinity;
-        for (const p of wallPositions) {
-            if (p.y < topY) topY = p.y;
-            if (p.x < leftX) leftX = p.x;
-        }
-
-        // Горизонтальное плечо (y === topY): башни за ним — y = topY + 1
-        const topWall = wallPositions
-            .filter(p => p.y === topY)
-            .sort((a, b) => a.x - b.x);
-        for (let i = 0; i < topWall.length; i += 7) {
-            const tx = topWall[i].x;
-            const ty = topY + 1;
-            if (ty + 1 < rows) {
-                this.army.spawnBuilding('sporovaya_bashnya', tx, ty, this.common);
-            }
-        }
-
-        // Вертикальное плечо (x === leftX, y > topY): башни за ним — x = leftX + 1
-        const leftWall = wallPositions
-            .filter(p => p.x === leftX && p.y > topY)
-            .sort((a, b) => a.y - b.y);
-        for (let i = 0; i < leftWall.length; i += 7) {
-            const tx = leftX + 1;
-            const ty = leftWall[i].y;
-            if (tx + 1 < cols) {
-                this.army.spawnBuilding('sporovaya_bashnya', tx, ty, this.common);
-            }
-        }
+        this.army.spawnBuilding(type, position.x, position.y, this.common);
     }
 
     private findBuildPosition(type: 'sporovaya_bashnya' | 'vzryvomor'): { x: number; y: number } | null {

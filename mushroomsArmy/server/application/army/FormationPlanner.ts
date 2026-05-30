@@ -29,17 +29,7 @@ const SLOT_STEP          = 2;
 const L_STEP             = 2;   // расстояние между L-кольцами
 const SLOT_OFFSET        = 1;
 const MIN_D              = 1;
-const WALL_TRIGGER_RINGS = 5;
-// Максимальное количество L-стен взрывоморов: базовый спавн + 2 во время игры.
-// Итого 3 позиции (base, wall-1 на d=10, wall-2 на d=20).
-// После 2-й стены новые стены не строятся и армия не уходит дальше.
-const MAX_WALL_RINGS_COUNT = 2;
-// Схлопывание: кольцо сжимается только если юнитов < 60% ёмкости меньшего радиуса.
-const SHRINK_THRESHOLD   = 0.6;
-// Кулдаун между схлопываниями (тиков × 200 мс). 10 тиков = 2 сек.
-const SHRINK_COOLDOWN    = 10;
 // Шаг между лекарями вдоль плеча L: stride 4 × SLOT_STEP 2 = 8 клеток.
-// При переполнении inner L — формация раздувается чтобы все вошли.
 const EBLEKAR_SLOT_STRIDE = 4;
 
 // Авторитетная семантика: L-кольца вокруг угла базы,
@@ -52,11 +42,8 @@ export class FormationPlanner {
     private readonly mapRows: number;
     private readonly mapCols: number;
 
-    private lastWallRingIdx: number = 0;
-    // Текущий радиус формации (d_start). Расширяется немедленно при нехватке
-    // слотов, схлопывается постепенно с кулдауном — без рывков при потерях.
+    // Текущий радиус формации (d_start). В оборонительном режиме всегда MIN_D.
     private currentDStart: number = MIN_D;
-    private contractionCooldown: number = 0;
     private lastBuiltSlots: Record<FormationUnitType, FormationSlotPos[]> = {
         sporomet:   [],
         eblekar:    [],
@@ -74,11 +61,6 @@ export class FormationPlanner {
 
     public get center(): Readonly<{ x: number; y: number }> {
         return this._center;
-    }
-
-    /** Расстояние (в тайлах) от угла базы до последней построенной стены взрывоморов. */
-    public get lastWallShellDist(): number {
-        return this.lastWallRingIdx * L_STEP;
     }
 
     public updateForCounts(
@@ -104,58 +86,17 @@ export class FormationPlanner {
             return result;
         }
 
-        const maxD = Math.max(this.baseWallTopY, this.baseWallLeftX);
+        // В оборонительном режиме армия всегда стоит у базы на фиксированных 3 кольцах
+        this.currentDStart = MIN_D;
 
-        // Ёмкость трёх активных L при данном d_start.
-        const capacityAt = (d: number): number =>
-            this.lShellCells(d).length +
-            this.lShellCells(d + L_STEP).length +
-            this.lShellCells(d + 2 * L_STEP).length;
-
-        // Расширение: немедленно, пока юниты не помещаются ИЛИ inner L не вмещает
-        // всех лекарей при шаге EBLEKAR_SLOT_STRIDE (иначе один лекарь оказался бы
-        // без слота и убежал бы лечить раненых на 1-й линии).
-        // Жёсткий потолок формации в режиме обороны.
-        // Внешняя оболочка формации = currentDStart + 2*L_STEP.
-        // Чтобы армия стояла ПОЗАДИ взрывоморов (wall на d = lastWallRingIdx*L_STEP),
-        // нужно: currentDStart + 2*L_STEP < wall_d, т.е.
-        // maxDefenseD = (lastWallRingIdx - 2) * L_STEP.
-        // While-цикл останавливается при currentDStart+L_STEP > maxDefenseD,
-        // значит max currentDStart = (lastWallRingIdx-2)*L_STEP - 1 → outer = wall_d - 1.
-        // В небоевом режиме — стандартный буфер вперёд до следующего тригера.
-        const maxDefenseD = defenseHold
-            ? Math.max(MIN_D, (this.lastWallRingIdx - 2) * L_STEP)
-            : this.lastWallRingIdx * L_STEP + WALL_TRIGGER_RINGS * L_STEP;
-        const eblekarStrideCapacity = (d: number): number =>
-            Math.ceil(this.lShellCells(d).length / EBLEKAR_SLOT_STRIDE);
-        while (
-            (capacityAt(this.currentDStart) < total
-             || eblekarStrideCapacity(this.currentDStart) < remaining.eblekar)
-            && this.currentDStart + L_STEP < maxD
-            && this.currentDStart + L_STEP <= maxDefenseD
-        ) {
-            this.currentDStart += L_STEP;
-        }
-
-        // Схлопывание: одно кольцо за раз с кулдауном — без тряски при потерях.
-        if (this.contractionCooldown > 0) {
-            this.contractionCooldown--;
-        } else if (this.currentDStart > MIN_D) {
-            const smallerD = Math.max(MIN_D, this.currentDStart - L_STEP);
-            if (total <= Math.floor(capacityAt(smallerD) * SHRINK_THRESHOLD)) {
-                this.currentDStart = smallerD;
-                this.contractionCooldown = SHRINK_COOLDOWN;
-            }
-        }
-
-        const dStart = this.currentDStart;
-        const innerCells = this.lShellCells(dStart);
-        const middleCells = this.lShellCells(dStart + L_STEP);
-        const outerCells = this.lShellCells(dStart + 2 * L_STEP);
+        // Используем 3 фиксированных кольца на минимальном расстоянии
+        const innerCells = this.lShellCells(MIN_D);
+        const middleCells = this.lShellCells(MIN_D + L_STEP);
+        const outerCells = this.lShellCells(MIN_D + 2 * L_STEP);
 
         // Лекари — на inner L (3-я линия фронта, в тылу за боевыми).
         // Распределяем по обоим плечам с шагом ~8 клеток (stride 2 слота).
-        const innerArms = this.lShellArms(dStart);
+        const innerArms = this.lShellArms(MIN_D);
         const eblekarCells = this.distributeEblekars(innerArms, remaining.eblekar);
         result.eblekar.push(...eblekarCells);
         remaining.eblekar -= eblekarCells.length;
@@ -188,39 +129,6 @@ export class FormationPlanner {
 
     public getSlots(type: FormationUnitType): ReadonlyArray<FormationSlotPos> {
         return this.lastBuiltSlots[type];
-    }
-
-    // unitPositions — фактические позиции «осевших» юнитов (фильтрация на стороне
-    // ArmyStateManager); по слотам считать нельзя, иначе стены строятся на спавне.
-    public checkWallTrigger(unitPositions: ReadonlyArray<{ x: number; y: number }>): FormationSlotPos[] | null {
-        if (unitPositions.length === 0) return null;
-        let outerShell = -1;
-        for (const u of unitPositions) {
-            const shell = Math.max(this.baseWallTopY - u.y, this.baseWallLeftX - u.x);
-            if (shell > outerShell) outerShell = shell;
-        }
-        if (outerShell < 0) return null;
-
-        const outerRingIdx = Math.floor(outerShell / L_STEP);
-        if (outerRingIdx - this.lastWallRingIdx < WALL_TRIGGER_RINGS) return null;
-
-        // Не строим четвёртую и более стены: максимум MAX_WALL_RINGS_COUNT уровней.
-        if (this.lastWallRingIdx / WALL_TRIGGER_RINGS >= MAX_WALL_RINGS_COUNT) return null;
-
-        const newWallRingIdx = this.lastWallRingIdx + WALL_TRIGGER_RINGS;
-        const baseShell = newWallRingIdx * L_STEP;
-        // Fallback: если стена не замыкается на baseShell — пробуем чуть ближе/дальше.
-        // Иначе деньги на постройку незамкнутой стены — впустую.
-        for (const offset of [0, -1, 1, -2, 2]) {
-            const shell = baseShell + offset;
-            if (shell <= 0) continue;
-            const wall = this.generateWallL(shell);
-            if (wall.length > 0) {
-                this.lastWallRingIdx = newWallRingIdx;
-                return wall;
-            }
-        }
-        return null;
     }
 
     // -- private helpers --
@@ -320,181 +228,6 @@ export class FormationPlanner {
         return r.sporomet + r.eblekar + r.champigneb;
     }
 
-    // Стена L по контуру защищённой зоны.
-    // Враги ходят по равнине И по воде, гора непроходима. Алгоритм:
-    //   1. Каждая клетка L-линии (top-arm y=topY, left-arm x=leftX):
-    //      • равнина → стена;
-    //      • гора/туман → пропуск (гора сама непроходима);
-    //      • вода → flood-fill всего водоёма (по 4-связности) и стены на ВСЕХ
-    //        равнинных клетках, 8-смежных с водоёмом, ВНУТРИ защищённой зоны.
-    //   2. Верификация замкнутости: BFS из «снаружи L» через равнину+воду
-    //      (стены непроходимы). Если достигли равнины ВНУТРИ L → дыра, не строим.
-    private generateWallL(shellDist: number): FormationSlotPos[] {
-        const topY  = this.baseWallTopY  - shellDist;
-        const leftX = this.baseWallLeftX - shellDist;
-        const rows = this.mapRows, cols = this.mapCols;
-
-        const tileAt = (x: number, y: number): number | null | undefined =>
-            (y < 0 || y >= rows || x < 0 || x >= cols) ? undefined : this.map[y]?.[x];
-        const isInsideL = (x: number, y: number): boolean => x >= leftX && y >= topY;
-        const key = (x: number, y: number): string => `${x},${y}`;
-
-        const wallSet = new Set<string>();
-        const enqueueWall = (x: number, y: number): void => {
-            if (x < 0 || y < 0 || x >= cols || y >= rows) return;
-            if (tileAt(x, y) !== 0) return;
-            if (!isInsideL(x, y)) return;
-            wallSet.add(key(x, y));
-        };
-
-        const visitedWater = new Set<string>();
-        const NEIGHBORS_4: ReadonlyArray<readonly [number, number]> = [
-            [1,0],[-1,0],[0,1],[0,-1],
-        ];
-        const encloseLake = (startX: number, startY: number): void => {
-            const lake: Array<[number, number]> = [];
-            const stack: Array<[number, number]> = [[startX, startY]];
-            const seen = new Set<string>([key(startX, startY)]);
-            while (stack.length > 0) {
-                const cell = stack.pop()!;
-                const [x, y] = cell;
-                if (tileAt(x, y) !== 1) continue;
-                lake.push(cell);
-                for (const [dx, dy] of NEIGHBORS_4) {
-                    const nx = x + dx, ny = y + dy;
-                    const k = key(nx, ny);
-                    if (seen.has(k)) continue;
-                    seen.add(k);
-                    if (tileAt(nx, ny) === 1) stack.push([nx, ny]);
-                }
-            }
-            for (const [wx, wy] of lake) visitedWater.add(key(wx, wy));
-            // 4-смежные равнины внутри L — на стену. Это минимальное замыкание
-            // (соответствует 4-связному pathfinding'у врагов). Замкнутость
-            // проверяется отдельно через isWallClosed.
-            for (const [wx, wy] of lake) {
-                for (const [dx, dy] of NEIGHBORS_4) enqueueWall(wx + dx, wy + dy);
-            }
-        };
-
-        const processLLineCell = (x: number, y: number): void => {
-            const t = tileAt(x, y);
-            if (t === 0) enqueueWall(x, y);
-            else if (t === 1 && !visitedWater.has(key(x, y))) encloseLake(x, y);
-            // гора (2) / туман (null) / вне карты — пропуск
-        };
-
-        if (topY >= 0 && topY < rows) {
-            const xStart = Math.max(0, leftX);
-            for (let x = xStart; x < cols; x++) processLLineCell(x, topY);
-        }
-        if (leftX >= 0 && leftX < cols) {
-            const yStart = Math.max(0, topY + 1);  // апекс уже обработан верхним плечом
-            for (let y = yStart; y < rows; y++) processLLineCell(leftX, y);
-        }
-
-        // Верификация: BFS из «снаружи L» через равнину+воду (стены — препятствие).
-        if (!this.isWallClosed(wallSet, topY, leftX)) return [];
-
-        return [...wallSet].map(k => {
-            const [x, y] = k.split(',').map(Number);
-            return { x, y };
-        });
-    }
-
-    // Проверяем что после установки стен ни одна равнинная клетка внутри L
-    // не достижима из «снаружи L» (y < topY OR x < leftX) через равнину+воду.
-    private isWallClosed(wallSet: ReadonlySet<string>, topY: number, leftX: number): boolean {
-        const rows = this.mapRows, cols = this.mapCols;
-        const key = (x: number, y: number): string => `${x},${y}`;
-        const isPassable = (x: number, y: number): boolean => {
-            if (x < 0 || y < 0 || x >= cols || y >= rows) return false;
-            if (wallSet.has(key(x, y))) return false;
-            const t = this.map[y]?.[x];
-            return t === 0 || t === 1;
-        };
-
-        const visited = new Set<string>();
-        const stack: Array<[number, number]> = [];
-        // Seed: все проходимые клетки на границе «снаружи L».
-        for (let x = 0; x < cols; x++) {
-            for (let y = 0; y < rows; y++) {
-                if (x >= leftX && y >= topY) continue;  // только outside-L
-                if (!isPassable(x, y)) continue;
-                const k = key(x, y);
-                if (visited.has(k)) continue;
-                visited.add(k);
-                stack.push([x, y]);
-            }
-        }
-        const NEIGHBORS_4: ReadonlyArray<readonly [number, number]> = [
-            [1,0],[-1,0],[0,1],[0,-1],
-        ];
-        while (stack.length > 0) {
-            const [x, y] = stack.pop()!;
-            // Достигли равнины ВНУТРИ L → дыра.
-            if (x >= leftX && y >= topY && this.map[y]?.[x] === 0) return false;
-            for (const [dx, dy] of NEIGHBORS_4) {
-                const nx = x + dx, ny = y + dy;
-                const k = key(nx, ny);
-                if (visited.has(k)) continue;
-                if (!isPassable(nx, ny)) continue;
-                visited.add(k);
-                stack.push([nx, ny]);
-            }
-        }
-        return true;
-    }
-
-    public buildAttackSemicircle(
-        counts: FormationUnitCounts,
-        centerX: number,
-        centerY: number,
-    ): Record<FormationUnitType, FormationSlotPos[]> {
-        const result: Record<FormationUnitType, FormationSlotPos[]> = {
-            champigneb: [], sporomet: [], eblekar: [],
-        };
-
-        // Направление к врагу от центра полукруга
-        const dx = centerX - this._center.x;
-        const dy = centerY - this._center.y;
-        const norm = Math.sqrt(dx * dx + dy * dy) || 1;
-        // Базовый угол — в сторону врага
-        const ATTACK_ANGLE = Math.atan2(dy / norm, dx / norm);
-
-        // Шампиньебы — передняя дуга
-        const R_FRONT = 18;
-        // Спорометы — средняя дуга
-        const R_MID = 10;
-        // Еблекари
-        const R_BACK = 5;
-
-        const arcSlots = (
-            r: number,
-            n: number,
-            spreadRad: number,
-            offsetAngle = 0,
-        ): FormationSlotPos[] => {
-            if (n === 0) return [];
-            const slots: FormationSlotPos[] = [];
-            for (let i = 0; i < n; i++) {
-                const t = n > 1 ? (i / (n - 1) - 0.5) * spreadRad : 0;
-                const angle = ATTACK_ANGLE + offsetAngle + t;
-                const x = Math.round(this._center.x + r * Math.cos(angle));
-                const y = Math.round(this._center.y + r * Math.sin(angle));
-                if (x >= 0 && y >= 0 && x < this.mapCols && y < this.mapRows) {
-                    if (this.isWalkable(x, y)) slots.push({ x, y });
-                }
-            }
-            return slots;
-    };
-
-    result.champigneb = arcSlots(R_FRONT, counts.champigneb ?? 0, Math.PI * 0.9);
-    result.sporomet   = arcSlots(R_MID,   counts.sporomet   ?? 0, Math.PI * 0.7);
-    result.eblekar    = arcSlots(R_BACK,  counts.eblekar    ?? 0, Math.PI * 0.25, Math.PI);
-
-    return result;
-}
     private isWalkable(x: number, y: number): boolean {
         const tile = this.map[y]?.[x];
         return tile != null && WALKABLE_TILES.has(tile);

@@ -1,4 +1,4 @@
-﻿import React, { useContext, useEffect, useState } from 'react';
+﻿import React, { useContext, useEffect, useState, useRef } from 'react';
 import { MediatorContext } from '../../App';
 import CONFIG from '../../config';
 import Minimap from '../MiniMap/Minimap';
@@ -10,7 +10,7 @@ import { buildCircularVisibilityMask } from '../../pages/Game/renderer/fogOfWar'
 import sporometImg from '../../assets/units/Sporomet.png';
 import champignebImg from '../../assets/units/Champigneb.png';
 import eblekarImg from '../../assets/units/Eblekar.png';
-import pizdoglyadImg from '../../assets/units/Pizdoglyad1.png';
+import pizdoglyadImg from '../../assets/units/pizdoglyad/Pizdoglyad1.png';
 import vzryvomorImg from '../../assets/buildings/vzryvomor/frame_0.png'
 import sporovayaBashnyaImg from '../../assets/buildings/sporovaya_bashnya/idle.png'
 
@@ -86,6 +86,27 @@ const Footer: React.FC = () => {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [mushroomArmy, setMushroomArmy] = useState(getMushroomArmy(null));
   const [peopleArmy, setPeopleArmy] = useState(getPeopleArmy(null));
+  
+  // Отслеживаем убитых юнитов по guid
+  const [killedMushrooms, setKilledMushrooms] = useState<Record<string, number>>({});
+  const [killedPeople, setKilledPeople] = useState<Record<string, number>>({});
+  
+  const prevUnitGuidsRef = useRef<{ mushroom: Set<string>; people: Set<string> }>({
+    mushroom: new Set(),
+    people: new Set(),
+  });
+  
+  // Сохраняем информацию о всех когда-либо виденных юнитах для получения типа
+  const allSeenUnitsRef = useRef<{ mushroom: Map<string, string>; people: Map<string, string> }>({
+    mushroom: new Map(), // guid -> type
+    people: new Map(),
+  });
+  
+  // Сохраняем информацию об уже учтенных мертвецах
+  const alreadyCountedDeadRef = useRef<{ mushroom: Set<string>; people: Set<string> }>({
+    mushroom: new Set(),
+    people: new Set(),
+  });
 
   const [cameraState, setCameraState] = useState<TCamera>({ ...globalCamera });
 
@@ -94,8 +115,79 @@ const Footer: React.FC = () => {
 
     const handler = (newState: GameState) => {
       setGameState(newState);
-      setMushroomArmy(getMushroomArmy(newState));
-      setPeopleArmy(getPeopleArmy(newState));
+      const newMushroom = getMushroomArmy(newState);
+      const newPeople = getPeopleArmy(newState);
+      setMushroomArmy(newMushroom);
+      setPeopleArmy(newPeople);
+
+      // Собираем текущих живых грибов
+      const currentMushGuids = new Set<string>();
+      newState.units?.forEach((unit) => {
+        if (unit.hp > 0) {
+          currentMushGuids.add(unit.guid);
+          // Запоминаем тип юнита
+          allSeenUnitsRef.current.mushroom.set(unit.guid, unit.type);
+        }
+      });
+
+      // Собираем текущих живых людей
+      const currentPeopleGuids = new Set<string>();
+      newState.enemyUnits?.forEach((unit) => {
+        if ((unit.hp ?? 1) > 0) {
+          currentPeopleGuids.add(unit.guid);
+          // Запоминаем тип юнита
+          allSeenUnitsRef.current.people.set(unit.guid, unit.type);
+        }
+      });
+
+      // Находим убитых грибов
+      const newDeadMushGuids: Array<{ guid: string; type: string }> = [];
+      for (const guid of prevUnitGuidsRef.current.mushroom) {
+        // Если юнит был живой, теперь мертв, и мы его еще не учли
+        if (!currentMushGuids.has(guid) && !alreadyCountedDeadRef.current.mushroom.has(guid)) {
+          const type = allSeenUnitsRef.current.mushroom.get(guid) || 'sporomet';
+          newDeadMushGuids.push({ guid, type });
+          alreadyCountedDeadRef.current.mushroom.add(guid);
+        }
+      }
+
+      // Находим убитых людей
+      const newDeadPeopleGuids: Array<{ guid: string; type: string }> = [];
+      for (const guid of prevUnitGuidsRef.current.people) {
+        // Если юнит был живой, теперь мертв, и мы его еще не учли
+        if (!currentPeopleGuids.has(guid) && !alreadyCountedDeadRef.current.people.has(guid)) {
+          const type = allSeenUnitsRef.current.people.get(guid) || 'soldier';
+          newDeadPeopleGuids.push({ guid, type });
+          alreadyCountedDeadRef.current.people.add(guid);
+        }
+      }
+
+      // Обновляем счетчики убитых
+      if (newDeadMushGuids.length > 0) {
+        setKilledMushrooms((prev) => {
+          const updated = { ...prev };
+          newDeadMushGuids.forEach(({ type }) => {
+            updated[type] = (updated[type] ?? 0) + 1;
+          });
+          return updated;
+        });
+      }
+
+      if (newDeadPeopleGuids.length > 0) {
+        setKilledPeople((prev) => {
+          const updated = { ...prev };
+          newDeadPeopleGuids.forEach(({ type }) => {
+            updated[type] = (updated[type] ?? 0) + 1;
+          });
+          return updated;
+        });
+      }
+
+      // Обновляем предыдущие guids для следующего обновления
+      prevUnitGuidsRef.current = {
+        mushroom: currentMushGuids,
+        people: currentPeopleGuids,
+      };
     };
 
     mediator.subscribe(CONFIG.MEDIATOR.EVENTS.GAME_STATE_UPDATED, handler);
@@ -124,18 +216,6 @@ const Footer: React.FC = () => {
       </div>
 
       <div className="game-footer-main-panel">
-        {/* Ресурсы */}
-        {/* <div className="game-economy-box">
-          <span className="game-section-title">•РЕСУРСы•</span>
-          <div className="game-economy-list">
-            {ECONOMY_RESOURCES.map((res) => (
-              <div className="game-info-item" key={res.id}>
-                <span className="game-info-label">{res.label}:</span>
-                <span className="game-info-value">{res.value}</span>
-              </div>
-            ))}
-          </div>
-        </div> */}
 
         {/* Армия */}
         <div className="game-army-box">
@@ -174,6 +254,22 @@ const Footer: React.FC = () => {
                 <span className="unit-count">{unit.count}</span>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Убитые юниты - суммарно */}
+        <div className="game-killed-units-box">
+          <div className="killed-units-summary">
+            <span className="killed-summary-label">☠ грибы:</span>
+            <span className="killed-summary-count">
+              {Object.values(killedMushrooms).reduce((sum, count) => sum + count, 0)}
+            </span>
+          </div>
+          <div className="killed-units-summary">
+            <span className="killed-summary-label">☠ люди:</span>
+            <span className="killed-summary-count">
+              {Object.values(killedPeople).reduce((sum, count) => sum + count, 0)}
+            </span>
           </div>
         </div>
       </div>

@@ -1,5 +1,15 @@
 import { Unit, EnemyUnit, Projectile, EconomyUnit } from '../types';
-import { UNIT_SRCS, PEOPLE_UNIT_SRCS, PIZDOGLYAD_SRCS, champignebExplImages, vzryvomorExplImages, VZRYVOMOR_FRAME_SRCS, SPOROVAYA_BASHNYA_SRCS, economySpritesSrc } from './assets';
+import {
+  UNIT_SRCS, 
+  UNIT_FRAME_SRCS, 
+  PEOPLE_UNIT_SRCS, 
+  champignebExplImages, 
+  vzryvomorExplImages, 
+  VZRYVOMOR_FRAME_SRCS, 
+  SPOROVAYA_BASHNYA_SRCS, 
+  PEOPLE_ECONOMY_BUILDING_SRCS, 
+  economySpritesSrc 
+} from './assets';
 import { isImageDrawable, tryDrawImageScaled, getBuildingImage } from './buildingRenderer';
 import { getVzryvomorFrameKey } from './vzryvomorAnimation';
 import { Building, GameState } from '../types';
@@ -26,6 +36,17 @@ const PEOPLE_UNIT_COLORS: Record<string, { fill: string; stroke: string }> = {
 
 const ECONOMY_BUILDING_TYPES = new Set([
   'mycelium', 'incubator', 'reactor', 'small_reactor', 'mine',
+]);
+
+const PEOPLE_ECONOMY_BUILDING_TYPES = new Set([
+  'pipe',
+  'oil_barrel',
+  'iron_barrel',
+  'barracks',
+  'small_reactor',
+  'large_reactor',
+  'driller',
+  'mine',
 ]);
 
 // Спрайт-лист экономики: 32×32 пикселя на спрайт, 32 спрайта в строке (1-индексированные)
@@ -93,46 +114,148 @@ const ECONOMY_BUILDING_CONFIG: Record<string, { label: string; color: string }> 
   mine:         { label: 'Ш',  color: '#eab308' },
 };
 
-export const getMaxHp = (type: string): number => MAX_HP[type] ?? 100;
+const SPRITE_FRAME_MS = 180;
+const unitFrameImages: Record<string, HTMLImageElement[]> = {};
 
-const pizdoglyadImages: { idle: HTMLImageElement; walk: HTMLImageElement } = {
-  idle: Object.assign(new Image(), { src: PIZDOGLYAD_SRCS.idle }),
-  walk: Object.assign(new Image(), { src: PIZDOGLYAD_SRCS.walk }),
-};
+function spriteFrameIndex(frameCount: number): number {
+  if (frameCount <= 0) return 0;
+  return Math.floor(Date.now() / SPRITE_FRAME_MS) % frameCount;
+}
 
-const prevUnitPositions = new Map<string, { x: number; y: number }>();
+function normUnitType(type: string | undefined): string {
+  return String(type || '').trim().toLowerCase();
+}
+
+function getUnitFrames(type: string): HTMLImageElement[] {
+  const key = normUnitType(type);
+  if (unitFrameImages[key]) return unitFrameImages[key];
+  const srcs = UNIT_FRAME_SRCS[key];
+  if (!srcs) return [];
+  const imgs = srcs.map(src => Object.assign(new Image(), { src }));
+  unitFrameImages[key] = imgs;
+  return imgs;
+}
+
+function getUnitMoveProgress(unit: Unit): number | undefined {
+  const targetX = unit.targetX;
+  const targetY = unit.targetY;
+  if (targetX === undefined || targetY === undefined) return undefined;
+  if (unit.x === targetX && unit.y === targetY) return undefined;
+
+  const sourceX = targetX - Math.sign(targetX - unit.x);
+  const sourceY = targetY - Math.sign(targetY - unit.y);
+  const totalDistance = Math.hypot(targetX - sourceX, targetY - sourceY);
+  if (totalDistance <= 0) return undefined;
+
+  const currentDistance = Math.hypot(unit.x - sourceX, unit.y - sourceY);
+  return Math.max(0, Math.min(1, currentDistance / totalDistance));
+}
+
+export const getMaxHp = (type: string): number => MAX_HP[normUnitType(type)] ?? 100;
+
+function normalizeBuildingType(type: string): string {
+  return String(type || '').toLowerCase();
+}
+
+function getBuildingSize(building: Building): number {
+  return building.sizeX ?? building.sizeY ?? building.size ?? 1;
+}
+
+function isPeopleEconomyBuilding(building: Building, normalizedType: string): boolean {
+  if (building.role === 'peopleEconomy') return true;
+  if (building.role === 'mushroomsEconomy') return false;
+  return PEOPLE_ECONOMY_BUILDING_TYPES.has(normalizedType)
+    && !ECONOMY_BUILDING_TYPES.has(normalizedType);
+}
+
+const unitMovementState = new Map<
+  string,
+  {
+    startX: number;
+    startY: number;
+    endX: number;
+    endY: number;
+    moveStartTime: number;
+  }
+>();
+
+//рродолжительность движения между клетками в миллисекундах
+const UNIT_MOVE_DURATION_MS = 300;
+
+// функция для получения интерполированной позиции юнита
+function getInterpolatedUnitPosition(unit: Unit): { x: number; y: number } {
+  const state = unitMovementState.get(unit.guid);
+  if (!state) {
+    return { x: unit.x, y: unit.y };
+  }
+
+  const elapsed = Math.min(Date.now() - state.moveStartTime, UNIT_MOVE_DURATION_MS);
+  const progress = elapsed / UNIT_MOVE_DURATION_MS;
+
+  //если анимация завершена, возвращаем финальную позицию
+  if (progress >= 1) {
+    return { x: state.endX, y: state.endY };
+  }
+
+  const easeProgress = 1 - Math.pow(1 - progress, 3);
+
+  const x = state.startX + (state.endX - state.startX) * easeProgress;
+  const y = state.startY + (state.endY - state.startY) * easeProgress;
+
+  return { x, y };
+}
 
 const unitImages: Record<string, HTMLImageElement> = {};
 const peopleUnitImages: Record<string, HTMLImageElement> = {};
 
 function getUnitImage(unit: Unit): HTMLImageElement | undefined {
-  if (unit.type === 'pizdoglyad') {
-    const prev = prevUnitPositions.get(unit.guid);
-    const isMoving = prev !== undefined && (prev.x !== unit.x || prev.y !== unit.y);
-    prevUnitPositions.set(unit.guid, { x: unit.x, y: unit.y });
-    return isMoving ? pizdoglyadImages.walk : pizdoglyadImages.idle;
+  const type = normUnitType(unit.type);
+  const state = unitMovementState.get(unit.guid);
+
+  //если позиция изменилась запускается  новая анимация
+  if (!state || state.endX !== unit.x || state.endY !== unit.y) {
+    const prevState = state || { endX: unit.x, endY: unit.y };
+    unitMovementState.set(unit.guid, {
+      startX: prevState.endX,
+      startY: prevState.endY,
+      endX: unit.x,
+      endY: unit.y,
+      moveStartTime: Date.now(),
+    });
   }
 
-  if (!unitImages[unit.type]) {
-    const src = UNIT_SRCS[unit.type];
+  const frames = getUnitFrames(type);
+  if (frames.length > 0) {
+    if (unit.targetX !== undefined && unit.targetY !== undefined && (unit.x !== unit.targetX || unit.y !== unit.targetY)) {
+      const currentState = unitMovementState.get(unit.guid);
+      const startTime = currentState?.moveStartTime ?? Date.now();
+      const frameIndex = Math.floor((Date.now() - startTime) / SPRITE_FRAME_MS) % frames.length;
+      return frames[frameIndex];
+    }
+    return frames[0];
+  }
+
+  if (!unitImages[type]) {
+    const src = UNIT_SRCS[type];
     if (src === undefined) return undefined;
     const img = new Image();
     img.src = src;
-    unitImages[unit.type] = img;
+    unitImages[type] = img;
   }
-  return unitImages[unit.type];
+  return unitImages[type];
 }
 
 function getPeopleUnitImage(unit: EnemyUnit): HTMLImageElement | undefined {
-  if (!peopleUnitImages[unit.type]) {
-    const src = PEOPLE_UNIT_SRCS[unit.type];
+  const type = normUnitType(unit.type);
+  if (!peopleUnitImages[type]) {
+    const src = PEOPLE_UNIT_SRCS[type];
     if (src === undefined) return undefined;
     const img = new Image();
     img.src = src;
-    peopleUnitImages[unit.type] = img;
+    peopleUnitImages[type] = img;
   }
 
-  return peopleUnitImages[unit.type];
+  return peopleUnitImages[type];
 }
 
 const CHAMPIGNEB_EXPL_DURATION = 1000;
@@ -143,11 +266,33 @@ const prevChampignebHp = new Map<string, number>();
 
 function updateChampignebExplosions(units: Unit[], now: number): void {
   units.forEach(unit => {
-    if (unit.type !== 'champigneb') return;
-    const prevHp = prevChampignebHp.get(unit.guid) ?? unit.hp;
-    if (unit.hp <= 0 && prevHp > 0 && !champignebExplosions.has(unit.guid)) {
-      champignebExplosions.set(unit.guid, { x: unit.x, y: unit.y, startTime: now });
+    console.log('UNIT TYPE:', unit.type);
+
+    if (normUnitType(unit.type) !== 'champigneb') return;
+
+    const prevHp = prevChampignebHp.get(unit.guid);
+
+    console.log(
+      '[champigneb]',
+      unit.guid,
+      'hp=', unit.hp,
+      'prevHp=', prevHp
+    );
+
+    if (
+      unit.hp <= 0 &&
+      (prevHp === undefined || prevHp > 0) &&
+      !champignebExplosions.has(unit.guid)
+    ) {
+      console.log('EXPLOSION CREATED');
+
+      champignebExplosions.set(unit.guid, {
+        x: unit.x,
+        y: unit.y,
+        startTime: now
+      });
     }
+
     prevChampignebHp.set(unit.guid, unit.hp);
   });
 }
@@ -171,21 +316,31 @@ function drawChampignebExplosions(
     );
     const cx = entry.x * cellW + cellW / 2;
     const cy = entry.y * cellH + cellH / 2;
-    const size = 20 * Math.min(cellW, cellH);
+    const size = 15 * Math.min(cellW, cellH);
+
     const img = champignebExplImages[fi];
+
     if (isImageDrawable(img)) {
-      tryDrawImageScaled(ctx, img, cx - size / 2, cy - size / 2, size, size);
+      tryDrawImageScaled(
+        ctx,
+        img,
+        cx - size / 2,
+        cy - size / 2,
+        size,
+        size
+      );
     } else {
       const alpha = 1 - elapsed / CHAMPIGNEB_EXPL_DURATION;
+
       ctx.beginPath();
       ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(255,152,0,${alpha * 0.85})`;
       ctx.fill();
-      ctx.strokeStyle = `rgba(255,80,0,${alpha})`;
-      ctx.lineWidth = 3;
-      ctx.stroke();
     }
   }
+
+  console.log('DRAW EXPLOSIONS', champignebExplosions.size);
+  
 }
 
 const VZRYVOMOR_EXPL_DURATION = 1000;
@@ -241,7 +396,7 @@ function drawVzryvomorExplosions(
     );
     const cx = entry.x * cellW + cellW / 2;
     const cy = entry.y * cellH + cellH / 2;
-    const size = 24 * Math.min(cellW, cellH);
+    const size = 4 * Math.min(cellW, cellH);
     const img = vzryvomorExplImages[fi];
     if (isImageDrawable(img)) {
       tryDrawImageScaled(ctx, img, cx - size / 2, cy - size / 2, size, size);
@@ -324,6 +479,12 @@ function preloadBuildingImages(): void {
   getBuildingImage('sporovaya_bashnya:idle', SPOROVAYA_BASHNYA_SRCS.idle);
   getBuildingImage('sporovaya_bashnya:attack', SPOROVAYA_BASHNYA_SRCS.attack);
   getBuildingImage('sporovaya_bashnya:destroyed', SPOROVAYA_BASHNYA_SRCS.destroyed);
+  Object.entries(PEOPLE_ECONOMY_BUILDING_SRCS).forEach(([type, src]) => {
+    getBuildingImage(`people_economy:${type}`, src);
+  });
+  champignebExplImages.forEach(img => {
+    img.decode?.().catch(() => {});
+  });
 }
 
 preloadBuildingImages();
@@ -339,9 +500,11 @@ export function drawBuildings(
   updateVzryvomorExplosions(state.buildings ?? [], now);
 
   (state.buildings ?? []).forEach(building => {
-    if (building.hp <= 0 && !ECONOMY_BUILDING_TYPES.has(building.type)) return;
-    const sx = building.sizeX ?? 1;
-    const sy = building.sizeY ?? 1;
+    const buildingType = normalizeBuildingType(building.type);
+    if (building.hp <= 0 && !ECONOMY_BUILDING_TYPES.has(buildingType)) return;
+    const footprintSize = getBuildingSize(building);
+    const sx = building.sizeX ?? footprintSize;
+    const sy = building.sizeY ?? footprintSize;
     let buildingVisibleNow = false;
     for (let yy = 0; yy < sy && !buildingVisibleNow; yy++) {
       for (let xx = 0; xx < sx; xx++) {
@@ -353,27 +516,27 @@ export function drawBuildings(
         }
       }
     }
-    const isFriendly = building.type === 'vzryvomor' || building.type === 'sporovaya_bashnya' || ECONOMY_BUILDING_TYPES.has(building.type);
+    const isFriendly = buildingType === 'vzryvomor' || buildingType === 'sporovaya_bashnya' || ECONOMY_BUILDING_TYPES.has(buildingType);
     if (!buildingVisibleNow && !isFriendly) return;
 
     const bx = building.x * cellW;
     const by = building.y * cellH;
-    const hpPercent = Math.max(0, Math.min(1, building.hp / getMaxHp(building.type)));
+    const hpPercent = Math.max(0, Math.min(1, building.hp / getMaxHp(buildingType)));
 
-    if (building.type === 'vzryvomor') {
+    if (buildingType === 'vzryvomor') {
       if (isVzryvomorExplosionPlaying(building.guid, now) || building.isExploding === true) {
         return;
       }
       const vzImg = getBuildingImage(getVzryvomorFrameKey(0), VZRYVOMOR_FRAME_SRCS[0]);
       const barHeight = 4;
       let barX: number, barY: number, barWidth: number;
+      const cx = bx + cellW / 2;
+      const cy = by + cellH / 2;
+      const side = Math.min(cellW, cellH) * 0.88;
 
       if (isImageDrawable(vzImg) && tryDrawImageScaled(ctx, vzImg, bx, by, cellW, cellH)) {
         barX = bx; barY = by - 6; barWidth = cellW;
       } else {
-        const cx = bx + cellW / 2;
-        const cy = by + cellH / 2;
-        const side = Math.min(cellW, cellH) * 0.88;
         const half = side / 2;
         ctx.fillStyle = '#f1c40f';
         ctx.fillRect(cx - half, cy - half, side, side);
@@ -397,7 +560,7 @@ export function drawBuildings(
       return;
     }
 
-    if (building.type === 'sporovaya_bashnya') {
+    if (buildingType === 'sporovaya_bashnya') {
       const bsx = building.sizeX ?? 2;
       const bsy = building.sizeY ?? 2;
       const px = bx, py = by;
@@ -430,14 +593,39 @@ export function drawBuildings(
       return;
     }
 
-    const economyBuilding = ECONOMY_BUILDING_CONFIG[building.type];
+    const peopleEconomyBuildingSrc = isPeopleEconomyBuilding(building, buildingType)
+      ? PEOPLE_ECONOMY_BUILDING_SRCS[buildingType]
+      : undefined;
+    if (peopleEconomyBuildingSrc) {
+      const pw = sx * cellW;
+      const ph = sy * cellH;
+      const img = getBuildingImage(`people_economy:${buildingType}`, peopleEconomyBuildingSrc);
+
+      if (!isImageDrawable(img) || !tryDrawImageScaled(ctx, img, bx, by, pw, ph)) {
+        ctx.fillStyle = '#c0392b';
+        ctx.fillRect(bx, by, pw, ph);
+        ctx.strokeStyle = '#7b241c';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(bx, by, pw, ph);
+      }
+
+      if (Number.isFinite(hpPercent) && hpPercent > 0) {
+        ctx.fillStyle = '#d32f2f';
+        ctx.fillRect(bx, by - 6, pw, 4);
+        ctx.fillStyle = '#4caf50';
+        ctx.fillRect(bx, by - 6, pw * hpPercent, 4);
+      }
+      return;
+    }
+
+    const economyBuilding = ECONOMY_BUILDING_CONFIG[buildingType];
     if (economyBuilding) {
       const bw = cellW * 1.4;
       const bh = cellH * 1.4;
       const bOffX = bx - bw / 2 + cellW / 2;
       const bOffY = by - bh / 2 + cellH / 2;
 
-      const spriteNo = getEconomyBuildingSpriteNum(building.type, building.level);
+      const spriteNo = getEconomyBuildingSpriteNum(buildingType, building.level);
       const drawnSprite = spriteNo !== undefined && drawEconomySprite(ctx, spriteNo, bOffX, bOffY, bw, bh);
 
       if (!drawnSprite) {
@@ -486,6 +674,56 @@ export function drawBuildings(
   drawVzryvomorExplosions(ctx, cellW, cellH, now);
 }
 
+/**
+ * Рисует тонкую стрелку от юнита к его цели
+ */
+function drawTargetArrow(
+  ctx: CanvasRenderingContext2D,
+  fromX: number,
+  fromY: number,
+  toX: number,
+  toY: number,
+  cellW: number,
+  cellH: number,
+  color: string = 'rgba(200, 200, 200, 0.6)'
+): void {
+  const x1 = fromX * cellW + cellW / 2;
+  const y1 = fromY * cellH + cellH / 2;
+  const x2 = toX * cellW + cellW / 2;
+  const y2 = toY * cellH + cellH / 2;
+
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (dist < 1) return; // Стрелка слишком короткая
+
+  // Направление
+  const dirX = dx / dist;
+  const dirY = dy / dist;
+
+  // Линия
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Стрелочка в конце
+  const arrowSize = 6;
+  const perp1X = -dirY * arrowSize;
+  const perp1Y = dirX * arrowSize;
+
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - dirX * arrowSize + perp1X * 0.5, y2 - dirY * arrowSize + perp1Y * 0.5);
+  ctx.lineTo(x2 - dirX * arrowSize - perp1X * 0.5, y2 - dirY * arrowSize - perp1Y * 0.5);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
 export function drawUnits(
   ctx: CanvasRenderingContext2D,
   units: Unit[],
@@ -495,18 +733,23 @@ export function drawUnits(
 ): void {
   const now = Date.now();
   updateChampignebExplosions(units, now);
-  drawChampignebExplosions(ctx, cellW, cellH, now);
 
   units.forEach(unit => {
-    if (unit.hp <= 0) return;
-    const ux = Math.floor(unit.x);
-    const uy = Math.floor(unit.y);
+    if (unit.hp <= 0) {
+      unit.deadAt ??= Date.now();
+      return;
+    }
+    
+    // Получаем интерполированную позицию
+    const interpolated = getInterpolatedUnitPosition(unit);
+    const ux = Math.floor(interpolated.x);
+    const uy = Math.floor(interpolated.y);
     const isFriendly = unit.type === 'sporomet' || unit.type === 'champigneb' || unit.type === 'eblekar' || unit.type === 'pizdoglyad';
     const unitVisibleNow = circularVisibilityMask[uy]?.[ux] === true;
     if (!unitVisibleNow && !isFriendly) return;
 
-    const cx = unit.x * cellW + cellW / 2;
-    const cy = unit.y * cellH + cellH / 2;
+    const cx = interpolated.x * cellW + cellW / 2;
+    const cy = interpolated.y * cellH + cellH / 2;
     const radius = Math.min(cellW, cellH) * 0.35;
     const size = radius * 2;
 
@@ -531,7 +774,16 @@ export function drawUnits(
     ctx.fillRect(barX, barY, barWidth, barHeight);
     ctx.fillStyle = '#4caf50';
     ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight);
+
+    // Рисуем стрелку к цели, если она есть
+    if (unit.targetX !== undefined && unit.targetY !== undefined) {
+      const arrowColor = unit.type === 'sporomet' ? 'rgba(76, 175, 80, 0.4)' : 'rgba(224, 64, 251, 0.4)';
+      drawTargetArrow(ctx, interpolated.x, interpolated.y, unit.targetX, unit.targetY, cellW, cellH, arrowColor);
+    }
   });
+
+  drawChampignebExplosions(ctx, cellW, cellH, now);
+
 }
 
 export function drawEnemyUnits(
@@ -543,12 +795,15 @@ export function drawEnemyUnits(
 ): void {
   units.forEach(unit => {
     if ((unit.hp ?? 1) <= 0) return;
-    const ux = Math.floor(unit.x);
-    const uy = Math.floor(unit.y);
+    
+    // Получаем интерполированную позицию для врагов (используем тот же механизм)
+    const interpolated = getInterpolatedUnitPosition(unit as any);
+    const ux = Math.floor(interpolated.x);
+    const uy = Math.floor(interpolated.y);
     if (circularVisibilityMask[uy]?.[ux] !== true) return;
 
-    const cx = unit.x * cellW + cellW / 2;
-    const cy = unit.y * cellH + cellH / 2;
+    const cx = interpolated.x * cellW + cellW / 2;
+    const cy = interpolated.y * cellH + cellH / 2;
     const radius = Math.min(cellW, cellH) * 0.35;
     const peopleUnitColor = PEOPLE_UNIT_COLORS[unit.type];
 
@@ -611,6 +866,11 @@ export function drawEnemyUnits(
     ctx.fillRect(barX, barY, barWidth, barHeight);
     ctx.fillStyle = '#4caf50';
     ctx.fillRect(barX, barY, barWidth * hpPercent, barHeight);
+
+    // Рисуем стрелку к цели для врагов, если она есть
+    if (unit.targetX !== undefined && unit.targetY !== undefined) {
+      drawTargetArrow(ctx, interpolated.x, interpolated.y, unit.targetX, unit.targetY, cellW, cellH, 'rgba(200, 100, 100, 0.4)');
+    }
   });
 }
 

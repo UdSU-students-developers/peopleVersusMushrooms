@@ -1,5 +1,15 @@
 import { Unit, EnemyUnit, Projectile, EconomyUnit } from '../types';
-import { UNIT_SRCS, PEOPLE_UNIT_SRCS, PIZDOGLYAD_SRCS, champignebExplImages, vzryvomorExplImages, VZRYVOMOR_FRAME_SRCS, SPOROVAYA_BASHNYA_SRCS, PEOPLE_ECONOMY_BUILDING_SRCS, economySpritesSrc } from './assets';
+import {
+  UNIT_SRCS, 
+  UNIT_FRAME_SRCS, 
+  PEOPLE_UNIT_SRCS, 
+  champignebExplImages, 
+  vzryvomorExplImages, 
+  VZRYVOMOR_FRAME_SRCS, 
+  SPOROVAYA_BASHNYA_SRCS, 
+  PEOPLE_ECONOMY_BUILDING_SRCS, 
+  economySpritesSrc 
+} from './assets';
 import { isImageDrawable, tryDrawImageScaled, getBuildingImage } from './buildingRenderer';
 import { getVzryvomorFrameKey } from './vzryvomorAnimation';
 import { Building, GameState } from '../types';
@@ -104,7 +114,44 @@ const ECONOMY_BUILDING_CONFIG: Record<string, { label: string; color: string }> 
   mine:         { label: 'Ш',  color: '#eab308' },
 };
 
-export const getMaxHp = (type: string): number => MAX_HP[type] ?? 100;
+const SPRITE_FRAME_MS = 180;
+const unitFrameImages: Record<string, HTMLImageElement[]> = {};
+
+function spriteFrameIndex(frameCount: number): number {
+  if (frameCount <= 0) return 0;
+  return Math.floor(Date.now() / SPRITE_FRAME_MS) % frameCount;
+}
+
+function normUnitType(type: string | undefined): string {
+  return String(type || '').trim().toLowerCase();
+}
+
+function getUnitFrames(type: string): HTMLImageElement[] {
+  const key = normUnitType(type);
+  if (unitFrameImages[key]) return unitFrameImages[key];
+  const srcs = UNIT_FRAME_SRCS[key];
+  if (!srcs) return [];
+  const imgs = srcs.map(src => Object.assign(new Image(), { src }));
+  unitFrameImages[key] = imgs;
+  return imgs;
+}
+
+function getUnitMoveProgress(unit: Unit): number | undefined {
+  const targetX = unit.targetX;
+  const targetY = unit.targetY;
+  if (targetX === undefined || targetY === undefined) return undefined;
+  if (unit.x === targetX && unit.y === targetY) return undefined;
+
+  const sourceX = targetX - Math.sign(targetX - unit.x);
+  const sourceY = targetY - Math.sign(targetY - unit.y);
+  const totalDistance = Math.hypot(targetX - sourceX, targetY - sourceY);
+  if (totalDistance <= 0) return undefined;
+
+  const currentDistance = Math.hypot(unit.x - sourceX, unit.y - sourceY);
+  return Math.max(0, Math.min(1, currentDistance / totalDistance));
+}
+
+export const getMaxHp = (type: string): number => MAX_HP[normUnitType(type)] ?? 100;
 
 function normalizeBuildingType(type: string): string {
   return String(type || '').toLowerCase();
@@ -121,44 +168,94 @@ function isPeopleEconomyBuilding(building: Building, normalizedType: string): bo
     && !ECONOMY_BUILDING_TYPES.has(normalizedType);
 }
 
-const pizdoglyadImages: { idle: HTMLImageElement; walk: HTMLImageElement } = {
-  idle: Object.assign(new Image(), { src: PIZDOGLYAD_SRCS.idle }),
-  walk: Object.assign(new Image(), { src: PIZDOGLYAD_SRCS.walk }),
-};
+const unitMovementState = new Map<
+  string,
+  {
+    startX: number;
+    startY: number;
+    endX: number;
+    endY: number;
+    moveStartTime: number;
+  }
+>();
 
-const prevUnitPositions = new Map<string, { x: number; y: number }>();
+//рродолжительность движения между клетками в миллисекундах
+const UNIT_MOVE_DURATION_MS = 300;
+
+// функция для получения интерполированной позиции юнита
+function getInterpolatedUnitPosition(unit: Unit): { x: number; y: number } {
+  const state = unitMovementState.get(unit.guid);
+  if (!state) {
+    return { x: unit.x, y: unit.y };
+  }
+
+  const elapsed = Math.min(Date.now() - state.moveStartTime, UNIT_MOVE_DURATION_MS);
+  const progress = elapsed / UNIT_MOVE_DURATION_MS;
+
+  //если анимация завершена, возвращаем финальную позицию
+  if (progress >= 1) {
+    return { x: state.endX, y: state.endY };
+  }
+
+  const easeProgress = 1 - Math.pow(1 - progress, 3);
+
+  const x = state.startX + (state.endX - state.startX) * easeProgress;
+  const y = state.startY + (state.endY - state.startY) * easeProgress;
+
+  return { x, y };
+}
 
 const unitImages: Record<string, HTMLImageElement> = {};
 const peopleUnitImages: Record<string, HTMLImageElement> = {};
 
 function getUnitImage(unit: Unit): HTMLImageElement | undefined {
-  if (unit.type === 'pizdoglyad') {
-    const prev = prevUnitPositions.get(unit.guid);
-    const isMoving = prev !== undefined && (prev.x !== unit.x || prev.y !== unit.y);
-    prevUnitPositions.set(unit.guid, { x: unit.x, y: unit.y });
-    return isMoving ? pizdoglyadImages.walk : pizdoglyadImages.idle;
+  const type = normUnitType(unit.type);
+  const state = unitMovementState.get(unit.guid);
+
+  //если позиция изменилась запускается  новая анимация
+  if (!state || state.endX !== unit.x || state.endY !== unit.y) {
+    const prevState = state || { endX: unit.x, endY: unit.y };
+    unitMovementState.set(unit.guid, {
+      startX: prevState.endX,
+      startY: prevState.endY,
+      endX: unit.x,
+      endY: unit.y,
+      moveStartTime: Date.now(),
+    });
   }
 
-  if (!unitImages[unit.type]) {
-    const src = UNIT_SRCS[unit.type];
+  const frames = getUnitFrames(type);
+  if (frames.length > 0) {
+    if (unit.targetX !== undefined && unit.targetY !== undefined && (unit.x !== unit.targetX || unit.y !== unit.targetY)) {
+      const currentState = unitMovementState.get(unit.guid);
+      const startTime = currentState?.moveStartTime ?? Date.now();
+      const frameIndex = Math.floor((Date.now() - startTime) / SPRITE_FRAME_MS) % frames.length;
+      return frames[frameIndex];
+    }
+    return frames[0];
+  }
+
+  if (!unitImages[type]) {
+    const src = UNIT_SRCS[type];
     if (src === undefined) return undefined;
     const img = new Image();
     img.src = src;
-    unitImages[unit.type] = img;
+    unitImages[type] = img;
   }
-  return unitImages[unit.type];
+  return unitImages[type];
 }
 
 function getPeopleUnitImage(unit: EnemyUnit): HTMLImageElement | undefined {
-  if (!peopleUnitImages[unit.type]) {
-    const src = PEOPLE_UNIT_SRCS[unit.type];
+  const type = normUnitType(unit.type);
+  if (!peopleUnitImages[type]) {
+    const src = PEOPLE_UNIT_SRCS[type];
     if (src === undefined) return undefined;
     const img = new Image();
     img.src = src;
-    peopleUnitImages[unit.type] = img;
+    peopleUnitImages[type] = img;
   }
 
-  return peopleUnitImages[unit.type];
+  return peopleUnitImages[type];
 }
 
 const CHAMPIGNEB_EXPL_DURATION = 1000;
@@ -169,11 +266,33 @@ const prevChampignebHp = new Map<string, number>();
 
 function updateChampignebExplosions(units: Unit[], now: number): void {
   units.forEach(unit => {
-    if (unit.type !== 'champigneb') return;
-    const prevHp = prevChampignebHp.get(unit.guid) ?? unit.hp;
-    if (unit.hp <= 0 && prevHp > 0 && !champignebExplosions.has(unit.guid)) {
-      champignebExplosions.set(unit.guid, { x: unit.x, y: unit.y, startTime: now });
+    console.log('UNIT TYPE:', unit.type);
+
+    if (normUnitType(unit.type) !== 'champigneb') return;
+
+    const prevHp = prevChampignebHp.get(unit.guid);
+
+    console.log(
+      '[champigneb]',
+      unit.guid,
+      'hp=', unit.hp,
+      'prevHp=', prevHp
+    );
+
+    if (
+      unit.hp <= 0 &&
+      (prevHp === undefined || prevHp > 0) &&
+      !champignebExplosions.has(unit.guid)
+    ) {
+      console.log('EXPLOSION CREATED');
+
+      champignebExplosions.set(unit.guid, {
+        x: unit.x,
+        y: unit.y,
+        startTime: now
+      });
     }
+
     prevChampignebHp.set(unit.guid, unit.hp);
   });
 }
@@ -197,21 +316,31 @@ function drawChampignebExplosions(
     );
     const cx = entry.x * cellW + cellW / 2;
     const cy = entry.y * cellH + cellH / 2;
-    const size = 20 * Math.min(cellW, cellH);
+    const size = 15 * Math.min(cellW, cellH);
+
     const img = champignebExplImages[fi];
+
     if (isImageDrawable(img)) {
-      tryDrawImageScaled(ctx, img, cx - size / 2, cy - size / 2, size, size);
+      tryDrawImageScaled(
+        ctx,
+        img,
+        cx - size / 2,
+        cy - size / 2,
+        size,
+        size
+      );
     } else {
       const alpha = 1 - elapsed / CHAMPIGNEB_EXPL_DURATION;
+
       ctx.beginPath();
       ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(255,152,0,${alpha * 0.85})`;
       ctx.fill();
-      ctx.strokeStyle = `rgba(255,80,0,${alpha})`;
-      ctx.lineWidth = 3;
-      ctx.stroke();
     }
   }
+
+  console.log('DRAW EXPLOSIONS', champignebExplosions.size);
+  
 }
 
 const VZRYVOMOR_EXPL_DURATION = 1000;
@@ -267,7 +396,7 @@ function drawVzryvomorExplosions(
     );
     const cx = entry.x * cellW + cellW / 2;
     const cy = entry.y * cellH + cellH / 2;
-    const size = 24 * Math.min(cellW, cellH);
+    const size = 4 * Math.min(cellW, cellH);
     const img = vzryvomorExplImages[fi];
     if (isImageDrawable(img)) {
       tryDrawImageScaled(ctx, img, cx - size / 2, cy - size / 2, size, size);
@@ -352,6 +481,9 @@ function preloadBuildingImages(): void {
   getBuildingImage('sporovaya_bashnya:destroyed', SPOROVAYA_BASHNYA_SRCS.destroyed);
   Object.entries(PEOPLE_ECONOMY_BUILDING_SRCS).forEach(([type, src]) => {
     getBuildingImage(`people_economy:${type}`, src);
+  });
+  champignebExplImages.forEach(img => {
+    img.decode?.().catch(() => {});
   });
 }
 
@@ -601,18 +733,23 @@ export function drawUnits(
 ): void {
   const now = Date.now();
   updateChampignebExplosions(units, now);
-  drawChampignebExplosions(ctx, cellW, cellH, now);
 
   units.forEach(unit => {
-    if (unit.hp <= 0) return;
-    const ux = Math.floor(unit.x);
-    const uy = Math.floor(unit.y);
+    if (unit.hp <= 0) {
+      unit.deadAt ??= Date.now();
+      return;
+    }
+    
+    // Получаем интерполированную позицию
+    const interpolated = getInterpolatedUnitPosition(unit);
+    const ux = Math.floor(interpolated.x);
+    const uy = Math.floor(interpolated.y);
     const isFriendly = unit.type === 'sporomet' || unit.type === 'champigneb' || unit.type === 'eblekar' || unit.type === 'pizdoglyad';
     const unitVisibleNow = circularVisibilityMask[uy]?.[ux] === true;
     if (!unitVisibleNow && !isFriendly) return;
 
-    const cx = unit.x * cellW + cellW / 2;
-    const cy = unit.y * cellH + cellH / 2;
+    const cx = interpolated.x * cellW + cellW / 2;
+    const cy = interpolated.y * cellH + cellH / 2;
     const radius = Math.min(cellW, cellH) * 0.35;
     const size = radius * 2;
 
@@ -641,9 +778,12 @@ export function drawUnits(
     // Рисуем стрелку к цели, если она есть
     if (unit.targetX !== undefined && unit.targetY !== undefined) {
       const arrowColor = unit.type === 'sporomet' ? 'rgba(76, 175, 80, 0.4)' : 'rgba(224, 64, 251, 0.4)';
-      drawTargetArrow(ctx, unit.x, unit.y, unit.targetX, unit.targetY, cellW, cellH, arrowColor);
+      drawTargetArrow(ctx, interpolated.x, interpolated.y, unit.targetX, unit.targetY, cellW, cellH, arrowColor);
     }
   });
+
+  drawChampignebExplosions(ctx, cellW, cellH, now);
+
 }
 
 export function drawEnemyUnits(
@@ -655,12 +795,15 @@ export function drawEnemyUnits(
 ): void {
   units.forEach(unit => {
     if ((unit.hp ?? 1) <= 0) return;
-    const ux = Math.floor(unit.x);
-    const uy = Math.floor(unit.y);
+    
+    // Получаем интерполированную позицию для врагов (используем тот же механизм)
+    const interpolated = getInterpolatedUnitPosition(unit as any);
+    const ux = Math.floor(interpolated.x);
+    const uy = Math.floor(interpolated.y);
     if (circularVisibilityMask[uy]?.[ux] !== true) return;
 
-    const cx = unit.x * cellW + cellW / 2;
-    const cy = unit.y * cellH + cellH / 2;
+    const cx = interpolated.x * cellW + cellW / 2;
+    const cy = interpolated.y * cellH + cellH / 2;
     const radius = Math.min(cellW, cellH) * 0.35;
     const peopleUnitColor = PEOPLE_UNIT_COLORS[unit.type];
 
@@ -726,7 +869,7 @@ export function drawEnemyUnits(
 
     // Рисуем стрелку к цели для врагов, если она есть
     if (unit.targetX !== undefined && unit.targetY !== undefined) {
-      drawTargetArrow(ctx, unit.x, unit.y, unit.targetX, unit.targetY, cellW, cellH, 'rgba(200, 100, 100, 0.4)');
+      drawTargetArrow(ctx, interpolated.x, interpolated.y, unit.targetX, unit.targetY, cellW, cellH, 'rgba(200, 100, 100, 0.4)');
     }
   });
 }

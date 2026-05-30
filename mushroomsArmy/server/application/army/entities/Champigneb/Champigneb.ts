@@ -1,3 +1,4 @@
+import { Army } from "../../Army";
 import Unit, { TUnitOptions } from "../Units";
 
 class Champigneb extends Unit {

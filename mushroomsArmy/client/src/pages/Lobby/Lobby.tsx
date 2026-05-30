@@ -358,83 +358,94 @@ const Lobby: React.FC<{ setPage: (page: PAGES) => void }> = ({ setPage }) => {
 
 
 
-        <div className="lobby" style={lobbyPageStyle}>
-            <div className="lobby__container">
-                <div className="lobby__inner-border">
-                    {errorMsg && <div className="lobby__errorToast">{errorMsg}</div>}
+        <div className="lobbyPresentation" style={lobbyPageStyle}>
 
-                    <h1 className="lobby__title">•список комнат•</h1>
+            <section className="lobby__screen lobby__screen--main">
+                <div className="lobby__container">
+                    <div className="lobby__inner-border">
+                        {errorMsg && <div className="lobby__errorToast">{errorMsg}</div>}
 
-                    <div className="lobby__list">
-                    {lobbies.length === 0 ? (
-                        <div className="lobby__empty">пока нет комнат :(</div>
-                    ) : (
-                        lobbies.map((lobby) => {
-                            const takenSlotsCount = LOBBY_ROLES.filter((role) => lobby.playersGuids[role] !== null).length;
-                            const armySlotTaken = lobby.playersGuids['mushroomsArmy'] !== null
-                                && lobby.playersGuids['mushroomsArmy'] !== user?.guid;
+                        <h1 className="lobby__title">•список комнат•</h1>
 
-                            return (
-                                <div key={lobby.lobbyGuid} className="lobby__card">
-                                    <div className="lobby__cardHeader">
-                                        <h3 className="lobby__cardTitle">{lobby.lobbyName}</h3>
-                                        <span className="lobby__slots">{takenSlotsCount}/5</span>
+                        <div className="lobby__list">
+                        {lobbies.length === 0 ? (
+                            <div className="lobby__empty">пока нет комнат :(</div>
+                        ) : (
+                            lobbies.map((lobby) => {
+                                const takenSlotsCount = LOBBY_ROLES.filter((role) => lobby.playersGuids[role] !== null).length;
+                                const armySlotTaken = lobby.playersGuids['mushroomsArmy'] !== null
+                                    && lobby.playersGuids['mushroomsArmy'] !== user?.guid;
+
+                                return (
+                                    <div key={lobby.lobbyGuid} className="lobby__card">
+                                        <div className="lobby__cardHeader">
+                                            <h3 className="lobby__cardTitle">{lobby.lobbyName}</h3>
+                                            <span className="lobby__slots"><span className="lobby__digit">{takenSlotsCount}</span>/<span className="lobby__digit">5</span></span>
+                                        </div>
+
+                                        <div className="lobby__cardActions">
+                                            <span className="lobby__roleLabel">армия грибов</span>
+
+                                            <button
+                                                className="lobby__primaryButton"
+                                                disabled={armySlotTaken}
+                                                onClick={() => handleJoinLobby(lobby.lobbyGuid)}
+                                            >
+                                                войти
+                                            </button>
+                                        </div>
                                     </div>
+                                );
+                            })
+                        )}
+                        </div>
 
-                                    <div className="lobby__cardActions">
-                                        <span className="lobby__roleLabel">армия грибов</span>
+                        <button 
+                        className="lobby__secondaryButton lobby__secondaryButton--create" 
+                        onClick={handleCreateLobby}
+                        >
+                            создать комнату
+                        </button>
 
-                                        <button
-                                            className="lobby__primaryButton"
-                                            disabled={armySlotTaken}
-                                            onClick={() => handleJoinLobby(lobby.lobbyGuid)}
-                                        >
-                                            войти
-                                        </button>
-                                    </div>
+                        {isCreateModalOpen && (
+                        <div className="lobby__modalOverlay" onClick={() => setIsCreateModalOpen(false)}>
+                            <div className="lobby__modal" onClick={(event) => event.stopPropagation()}>
+                                <h3 className="lobby__modalTitle">создать комнату</h3>
+
+                                <input
+                                    className="lobby__input"
+                                    placeholder="название комнаты"
+                                    value={newLobbyName}
+                                    onChange={(event) => setNewLobbyName(event.target.value)}
+                                />
+
+                                <div className="lobby__modalActions">
+                                    <button className="lobby__secondaryButton" onClick={() => setIsCreateModalOpen(false)}>
+                                        отмена
+                                    </button>
+                                    <button
+                                        className="lobby__primaryButton"
+                                        disabled={!newLobbyName.trim()}
+                                        onClick={handleConfirmCreateLobby}
+                                    >
+                                        создать
+                                    </button>
                                 </div>
-                            );
-                        })
-                    )}
-                    </div>
-
-                    <button 
-                    className="lobby__secondaryButton lobby__secondaryButton--create" 
-                    onClick={handleCreateLobby}
-                    >
-                        создать комнату
-                    </button>
-
-                    {isCreateModalOpen && (
-                    <div className="lobby__modalOverlay" onClick={() => setIsCreateModalOpen(false)}>
-                        <div className="lobby__modal" onClick={(event) => event.stopPropagation()}>
-                            <h3 className="lobby__modalTitle">создать комнату</h3>
-
-                            <input
-                                className="lobby__input"
-                                placeholder="название комнаты"
-                                value={newLobbyName}
-                                onChange={(event) => setNewLobbyName(event.target.value)}
-                            />
-
-                            <div className="lobby__modalActions">
-                                <button className="lobby__secondaryButton" onClick={() => setIsCreateModalOpen(false)}>
-                                    отмена
-                                </button>
-                                <button
-                                    className="lobby__primaryButton"
-                                    disabled={!newLobbyName.trim()}
-                                    onClick={handleConfirmCreateLobby}
-                                >
-                                    создать
-                                </button>
                             </div>
                         </div>
+                        )}
                     </div>
-                    )}
                 </div>
-            </div>
+            </section>
+        
+
+            <section className="lobby__screen lobby__screen--credits">
+                {/* ДОСКА ПОЧЕТА */}
+            </section>  
+
+
         </div>
+
 
         <OptionsPannel
             variant="lobby" 

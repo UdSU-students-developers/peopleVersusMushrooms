@@ -1,4 +1,4 @@
-import { TMap } from "../../Army";
+import { TMap, Army } from "../../Army";
 import Unit, { TPoisonEffect, TUnitOptions, ProjectileType } from "../Units";
 
 class Sporomet extends Unit {
@@ -142,12 +142,12 @@ class Sporomet extends Unit {
         }
     }
 
-    public update(enemies: Unit[], map: TMap, deltaTime: number): void {
+    public update(enemies: Unit[], map: TMap, deltaTime: number, allies: Unit[] = [], army?: Army): void {
         if (!this.isAlive) return;
 
         this.updatePoisonEffects(enemies, deltaTime);
 
-        super.update(enemies, map, deltaTime);
+        super.update(enemies, map, deltaTime, allies, army);
 
         if (this.isAiming && this.currentTarget) {
             // Цель умерла — сброс

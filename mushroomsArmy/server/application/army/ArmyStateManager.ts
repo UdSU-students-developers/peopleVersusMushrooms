@@ -127,6 +127,8 @@ export class ArmyStateManager {
         this.updateUnitMetrics();
         this.updateBuildingMetrics();
         this.updateMode();
+        // Обновляем режим в Army
+        this.army.setMode(this.metrics.currentMode);
         this.updateFormationAndWalls();
         this.assignNewUnitsToFormation();
         this.updateScouts();

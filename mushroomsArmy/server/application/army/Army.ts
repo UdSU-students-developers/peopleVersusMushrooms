@@ -6,7 +6,7 @@ import Sporomet from "./entities/Sporomet/Sporomet";
 import SporovayaBashnya from "./entities/SporovayaBashnya/SporovayaBashnya";
 import Unit, { TProjectile, TUnitState } from "./entities/Units";
 import { IBuilding, Vzryvomor } from "./entities/Vzryvomor/Vzryvomor";
-import type { TFormationState } from './ArmyStateManager';
+import type { TFormationState, ArmyMode } from './ArmyStateManager';
 
 
 export type TMap = (number | null)[][];
@@ -116,6 +116,12 @@ export class Army {
     // Игнорируем такие guid'ы N мс, чтобы прокси не воскресал.
     public recentlyKilledGuids: Map<string, number> = new Map();
     public readonly KILLED_GUID_TTL_MS = 5000;
+    // Отслеживание количества атакующих на каждого врага (ключ - guid врага)
+    private attackersCount: Map<string, number> = new Map();
+    // Максимальное количество атакующих на одного врага
+    private readonly MAX_ATTACKERS_PER_TARGET = 3;
+    // Текущий режим армии
+    public currentMode: ArmyMode = 'defense';
     // public sentBuildingGuids: Set<string> = new Set();
     /** Последнее состояние юнитов, отданное карте (протокол UPDATE_UNITS). */
     public projectiles: TProjectile[] = [];
@@ -473,18 +479,47 @@ export class Army {
         return visibleEnemies;
     }
 
+    /** Сбрасывает счетчики атакующих перед каждым тиком */
+    private resetAttackersCount(): void {
+        this.attackersCount.clear();
+    }
+
+    /** Возвращает количество атакующих на указанного врага */
+    public getAttackersCount(enemyGuid: string): number {
+        return this.attackersCount.get(enemyGuid) ?? 0;
+    }
+
+    /** Регистрирует атакующего на врага */
+    public registerAttacker(enemyGuid: string): void {
+        const current = this.attackersCount.get(enemyGuid) ?? 0;
+        this.attackersCount.set(enemyGuid, current + 1);
+    }
+
+    /** Проверяет, может ли юнит атаковать данного врага (с учетом ограничения) */
+    public canAttack(enemyGuid: string): boolean {
+        return this.getAttackersCount(enemyGuid) < this.MAX_ATTACKERS_PER_TARGET;
+    }
+
+    /** Устанавливает режим армии */
+    public setMode(mode: ArmyMode): void {
+        this.currentMode = mode;
+    }
+
     private update(): void {
         const deltaTime = 0.2;
         this.projectiles.length = 0;
+
+        // Сбрасываем счетчики атакующих перед каждым тиком
+        this.resetAttackersCount();
 
         const aliveAllies = this.units.filter(u => u.isAlive);
 
         for (const unit of this.units) {
             if (unit.isAlive) {
                 if (unit.type === 'eblekar' || unit.type === 'pizdoglyad') {
-                    (unit as Eblekar).update(this.calculateSharedVisibility(), this.map, deltaTime, aliveAllies);
+                    (unit as Eblekar).update(this.calculateSharedVisibility(), this.map, deltaTime, aliveAllies, this);
                 } else {
-                    unit.update(this.calculateSharedVisibility(), this.map, deltaTime);
+                    unit.update(this.calculateSharedVisibility(), this.map, deltaTime, undefined, this);
                 }
             }
         }

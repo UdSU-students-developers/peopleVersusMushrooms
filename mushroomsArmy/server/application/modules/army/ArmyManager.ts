@@ -46,7 +46,7 @@ const PEOPLE_ECONOMY_DEFAULT_HP: Record<string, number> = {
 
 function normalizeMapUnitHp(unit: TVisibleEntity): TVisibleEntity {
     const parsed = Number(unit.hp);
-    if (Number.isFinite(parsed) && parsed > 0) {
+    if (Number.isFinite(parsed) && parsed >= 0) {
         return { ...unit, hp: parsed };
     }
     return { ...unit, hp: PEOPLE_ARMY_DEFAULT_HP[unit.type] ?? 1 };
